@@ -1,8 +1,8 @@
-const CACHE = 'agenda-lagares-v12';
-const APP_SHELL = ['./', './manifest.webmanifest'];
+const CACHE = 'agenda-lagares-v13';
+const APP_SHELL = ['./', './manifest.webmanifest', './apple-enhance.js', './apple-bridge.js'];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)));
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)).catch(() => {}));
   self.skipWaiting();
 });
 
@@ -10,8 +10,29 @@ self.addEventListener('activate', event => {
   event.waitUntil(self.clients.claim());
 });
 
+async function enhancedPage(request) {
+  const response = await fetch(request);
+  const contentType = response.headers.get('content-type') || '';
+  if (!response.ok || !contentType.includes('text/html')) return response;
+  const html = await response.text();
+  if (html.includes('apple-enhance.js')) return response;
+  const headers = new Headers(response.headers);
+  headers.delete('content-length');
+  headers.delete('content-encoding');
+  const injection = '<script src="./apple-enhance.js?v=13"></script><script src="./apple-bridge.js?v=13"></script>';
+  return new Response(html.replace('</body>', `${injection}</body>`), {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
+
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+  if (event.request.mode === 'navigate') {
+    event.respondWith(enhancedPage(event.request).catch(() => caches.match(event.request).then(response => response || caches.match('./'))));
+    return;
+  }
   event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
 });
 
