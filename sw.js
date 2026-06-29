@@ -1,5 +1,5 @@
-const CACHE = 'agenda-lagares-v13';
-const APP_SHELL = ['./', './manifest.webmanifest', './apple-enhance.js', './apple-bridge.js'];
+const CACHE = 'agenda-lagares-v14';
+const APP_SHELL = ['./', './manifest.webmanifest', './apple-enhance.js', './apple-bridge.js', './sync-github.js'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)).catch(() => {}));
@@ -15,11 +15,11 @@ async function enhancedPage(request) {
   const contentType = response.headers.get('content-type') || '';
   if (!response.ok || !contentType.includes('text/html')) return response;
   const html = await response.text();
-  if (html.includes('apple-enhance.js')) return response;
+  if (html.includes('sync-github.js')) return response;
   const headers = new Headers(response.headers);
   headers.delete('content-length');
   headers.delete('content-encoding');
-  const injection = '<script src="./apple-enhance.js?v=13"></script><script src="./apple-bridge.js?v=13"></script>';
+  const injection = '<script src="./apple-enhance.js?v=15"></script><script src="./apple-bridge.js?v=15"></script><script src="./sync-github.js?v=1"></script>';
   return new Response(html.replace('</body>', `${injection}</body>`), {
     status: response.status,
     statusText: response.statusText,
