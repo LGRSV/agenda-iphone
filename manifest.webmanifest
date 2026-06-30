@@ -1,9 +1,10 @@
 {
+  "id": "./",
   "name": "Agenda Lagares",
   "short_name": "Agenda",
   "start_url": "./?app=1",
   "display": "standalone",
-  "background_color": "#212121",
-  "theme_color": "#212121",
-  "description": "Agenda pessoal com compromissos, tarefas e lembretes."
+  "background_color": "#17181c",
+  "theme_color": "#17181c",
+  "description": "Agenda pessoal com tarefas, lembretes e alertas para iPhone."
 }
