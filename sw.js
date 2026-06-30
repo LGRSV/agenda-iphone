@@ -1,56 +1,40 @@
-const CACHE = 'agenda-lagares-v14';
-const APP_SHELL = ['./', './manifest.webmanifest', './apple-enhance.js', './apple-bridge.js', './sync-github.js'];
+const CACHE = 'agenda-lagares-v15';
 
-self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)).catch(() => {}));
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(self.clients.claim());
-});
-
-async function enhancedPage(request) {
-  const response = await fetch(request);
-  const contentType = response.headers.get('content-type') || '';
-  if (!response.ok || !contentType.includes('text/html')) return response;
-  const html = await response.text();
-  if (html.includes('sync-github.js')) return response;
-  const headers = new Headers(response.headers);
-  headers.delete('content-length');
-  headers.delete('content-encoding');
-  const injection = '<script src="./apple-enhance.js?v=15"></script><script src="./apple-bridge.js?v=15"></script><script src="./sync-github.js?v=1"></script>';
-  return new Response(html.replace('</body>', `${injection}</body>`), {
-    status: response.status,
-    statusText: response.statusText,
-    headers
-  });
-}
-
-self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-  if (event.request.mode === 'navigate') {
-    event.respondWith(enhancedPage(event.request).catch(() => caches.match(event.request).then(response => response || caches.match('./'))));
-    return;
-  }
-  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+  event.waitUntil((async () => {
+    const names = await caches.keys();
+    await Promise.all(names.filter(name => name !== CACHE).map(name => caches.delete(name)));
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener('push', event => {
-  let data = { title: 'Agenda Lagares', body: 'Você tem um compromisso próximo.' };
-  try { data = { ...data, ...(event.data ? event.data.json() : {}) }; } catch {}
+  let data = { title: 'Lembrete da agenda', body: 'Você tem uma tarefa agendada.' };
+  try {
+    data = { ...data, ...(event.data ? event.data.json() : {}) };
+  } catch (_) {
+    if (event.data) data.body = event.data.text();
+  }
+
   event.waitUntil(self.registration.showNotification(data.title, {
     body: data.body,
-    tag: data.tag || 'agenda-reminder',
+    tag: data.tag || 'agenda-alerta',
     renotify: true,
-    data: data.data || {}
+    data: { url: data.url || './?alert=1' }
   }));
 });
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-    const existing = list.find(client => client.url.includes('agenda-iphone'));
-    return existing ? existing.focus() : clients.openWindow('./?app=1');
-  }));
+  const target = new URL(event.notification.data?.url || './', self.location.origin).href;
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const current = windows.find(client => client.url.startsWith(self.location.origin));
+    if (current) return current.focus();
+    return self.clients.openWindow(target);
+  })());
 });
