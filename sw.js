@@ -1,4 +1,5 @@
-const CACHE = 'agenda-lagares-v15';
+const CACHE = 'agenda-lagares-v16';
+const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=1"><\/script>';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -9,6 +10,29 @@ self.addEventListener('activate', event => {
     const names = await caches.keys();
     await Promise.all(names.filter(name => name !== CACHE).map(name => caches.delete(name)));
     await self.clients.claim();
+  })());
+});
+
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET' || event.request.mode !== 'navigate') return;
+
+  event.respondWith((async () => {
+    const response = await fetch(event.request, { cache: 'no-store' });
+    const contentType = response.headers.get('content-type') || '';
+    if (!response.ok || !contentType.includes('text/html')) return response;
+
+    let html = await response.text();
+    if (!html.includes('edit-enhancement.js')) html = html.replace('</body>', `${EDIT_SCRIPT}</body>`);
+
+    const headers = new Headers(response.headers);
+    headers.delete('content-length');
+    headers.delete('content-encoding');
+    headers.set('cache-control', 'no-store');
+    return new Response(html, {
+      status: response.status,
+      statusText: response.statusText,
+      headers
+    });
   })());
 });
 
