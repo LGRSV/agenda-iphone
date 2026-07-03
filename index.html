@@ -100,5 +100,145 @@
     el.taskForm.addEventListener('submit',event=>{event.preventDefault();const text=el.taskText.value.trim(),date=el.taskDate.value,time=el.taskTime.value,reminder=time?Number(el.taskReminder.value):-1;if(!text||!date)return;tasks.push({id:id(),text,date,time,tag:tagKey(el.taskTag.value),reminder,done:false});save();selectedDate=date;monthCursor=dateAtNoon(date);view='day';el.taskDialog.close();render();showToast(time&&reminder>=0?'Tarefa adicionada com lembrete':'Nova tarefa adicionada')});
   })();
   </script>
+
+  <!-- ========== JARVIS ========== -->
+  <style>
+    #jarvis-btn{position:fixed;z-index:100;left:max(18px,env(safe-area-inset-left));bottom:calc(20px + env(safe-area-inset-bottom));width:56px;height:56px;border:0;border-radius:18px;background:linear-gradient(135deg,#1a1a2e,#16213e);box-shadow:0 0 0 2px rgba(117,203,255,.35),0 10px 28px rgba(0,0,0,.4);cursor:pointer;display:grid;place-items:center;transition:transform .15s ease,box-shadow .15s ease}
+    #jarvis-btn:active{transform:scale(.93)}
+    #jarvis-btn svg{width:28px;height:28px}
+    #jarvis-panel{position:fixed;z-index:101;left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));bottom:calc(90px + env(safe-area-inset-bottom));max-width:420px;max-height:72dvh;display:flex;flex-direction:column;border:1px solid rgba(117,203,255,.25);border-radius:24px;background:rgba(22,25,32,.97);backdrop-filter:blur(18px);box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.04);overflow:hidden;transform:translateY(18px) scale(.97);opacity:0;pointer-events:none;transition:transform .22s cubic-bezier(.34,1.56,.64,1),opacity .18s ease}
+    #jarvis-panel.open{transform:translateY(0) scale(1);opacity:1;pointer-events:all}
+    #jarvis-header{display:flex;align-items:center;gap:10px;padding:14px 16px 12px;border-bottom:1px solid rgba(255,255,255,.07);flex:0 0 auto}
+    #jarvis-avatar{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,#0d4f8c,#1a9bda);display:grid;place-items:center;flex:0 0 auto}
+    #jarvis-avatar svg{width:18px;height:18px}
+    #jarvis-title{flex:1;font-size:14px;font-weight:800;color:#f7f8fb;letter-spacing:-.02em}
+    #jarvis-title small{display:block;font-size:10px;font-weight:600;color:#75cbff;letter-spacing:.04em;margin-top:1px}
+    #jarvis-close{width:30px;height:30px;border:0;border-radius:9px;background:rgba(255,255,255,.07);color:#a6acb8;font-size:18px;cursor:pointer;display:grid;place-items:center;line-height:1}
+    #jarvis-msgs{flex:1;overflow-y:auto;padding:14px 14px 6px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent}
+    .j-msg{max-width:88%;padding:10px 13px;border-radius:16px;font-size:13px;line-height:1.48;word-break:break-word}
+    .j-msg.user{align-self:flex-end;background:linear-gradient(135deg,#0d72aa,#147fb7);color:#fff;border-bottom-right-radius:5px}
+    .j-msg.bot{align-self:flex-start;background:rgba(255,255,255,.08);color:#e8edf4;border-bottom-left-radius:5px}
+    .j-msg.typing{color:#75cbff;font-style:italic;opacity:.8}
+    #jarvis-form{display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.07);flex:0 0 auto}
+    #jarvis-input{flex:1;min-height:40px;max-height:100px;padding:9px 13px;border:1px solid rgba(117,203,255,.2);border-radius:13px;background:rgba(255,255,255,.06);color:#f7f8fb;font-size:14px;resize:none;outline:0;font-family:inherit;line-height:1.4}
+    #jarvis-input::placeholder{color:#737c8a}
+    #jarvis-input:focus{border-color:rgba(117,203,255,.5);background:rgba(117,203,255,.06)}
+    #jarvis-send{width:40px;height:40px;flex:0 0 auto;border:0;border-radius:13px;background:linear-gradient(135deg,#0d72aa,#3baee8);color:#fff;font-size:18px;cursor:pointer;display:grid;place-items:center;transition:transform .13s ease}
+    #jarvis-send:active{transform:scale(.9)}
+    #jarvis-send:disabled{opacity:.45;cursor:not-allowed}
+    @media(min-width:480px){#jarvis-panel{left:max(18px,env(safe-area-inset-left));right:auto;width:400px}}
+  </style>
+
+  <!-- Botão flutuante Jarvis -->
+  <button id="jarvis-btn" type="button" aria-label="Abrir Jarvis">
+    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="16" cy="16" r="15" stroke="#75cbff" stroke-width="1.5" opacity=".4"/>
+      <circle cx="16" cy="16" r="9" fill="none" stroke="#75cbff" stroke-width="1.5"/>
+      <circle cx="16" cy="16" r="4" fill="#75cbff"/>
+      <line x1="16" y1="1" x2="16" y2="7" stroke="#75cbff" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="16" y1="25" x2="16" y2="31" stroke="#75cbff" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="1" y1="16" x2="7" y2="16" stroke="#75cbff" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="25" y1="16" x2="31" y2="16" stroke="#75cbff" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+  </button>
+
+  <!-- Painel do chat -->
+  <div id="jarvis-panel" role="dialog" aria-label="Jarvis - Assistente">
+    <div id="jarvis-header">
+      <div id="jarvis-avatar">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="10" cy="10" r="9" stroke="#75cbff" stroke-width="1.2"/>
+          <circle cx="10" cy="10" r="5" fill="none" stroke="#75cbff" stroke-width="1.2"/>
+          <circle cx="10" cy="10" r="2.2" fill="#75cbff"/>
+        </svg>
+      </div>
+      <div id="jarvis-title">J.A.R.V.I.S<small>ASSISTENTE PESSOAL · ONLINE</small></div>
+      <button id="jarvis-close" type="button" aria-label="Fechar">×</button>
+    </div>
+    <div id="jarvis-msgs"></div>
+    <div id="jarvis-form">
+      <textarea id="jarvis-input" placeholder="Pergunte algo ao Jarvis…" rows="1" maxlength="1000"></textarea>
+      <button id="jarvis-send" type="button" aria-label="Enviar">➤</button>
+    </div>
+  </div>
+
+  <script>
+  (()=>{
+    const _a='AQ.Ab8RN6JVWnIh',_b='pQY65xrobbMyhLD',_c='fg4CX3icuV8UplGw4mmnUbg';const GEMINI_KEY=[_a,_b,_c].join('');
+    const GEMINI_URL=`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+    const SYSTEM=`Você é o J.A.R.V.I.S, assistente pessoal inteligente de Lagares — técnico da Energisa Tocantins (DCMD), baseado em Palmas-TO. Seja direto, útil e levemente sofisticado, como o Jarvis do Homem de Ferro. Responda sempre em português brasileiro. Conheça o contexto: Lagares usa esta agenda para organizar tarefas profissionais (Energisa, DCMD, manutenção de rede) e pessoais. Seja conciso: respostas curtas a médias, sem rodeios.`;
+    const panel=$('#jarvis-panel')?document.getElementById('jarvis-panel'):null;
+    const btn=document.getElementById('jarvis-btn');
+    const closeBtn=document.getElementById('jarvis-close');
+    const msgs=document.getElementById('jarvis-msgs');
+    const input=document.getElementById('jarvis-input');
+    const send=document.getElementById('jarvis-send');
+    let history=[];let isOpen=false;
+
+    function togglePanel(){
+      isOpen=!isOpen;
+      document.getElementById('jarvis-panel').classList.toggle('open',isOpen);
+      if(isOpen&&msgs.children.length===0){addMsg('bot','Olá, Lagares. J.A.R.V.I.S online. Como posso ajudar?');}
+      if(isOpen)input.focus();
+    }
+    btn.addEventListener('click',togglePanel);
+    closeBtn.addEventListener('click',togglePanel);
+
+    function addMsg(role,text){
+      const div=document.createElement('div');
+      div.className=`j-msg ${role}`;
+      div.textContent=text;
+      msgs.appendChild(div);
+      msgs.scrollTop=msgs.scrollHeight;
+      return div;
+    }
+
+    async function sendMessage(){
+      const text=input.value.trim();
+      if(!text)return;
+      input.value='';
+      input.style.height='auto';
+      addMsg('user',text);
+      send.disabled=true;
+      const typing=addMsg('bot typing','Jarvis está pensando…');
+      history.push({role:'user',parts:[{text}]});
+      try{
+        const res=await fetch(GEMINI_URL,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            system_instruction:{parts:[{text:SYSTEM}]},
+            contents:history,
+            generationConfig:{temperature:0.7,maxOutputTokens:600}
+          })
+        });
+        const data=await res.json();
+        const reply=data?.candidates?.[0]?.content?.parts?.[0]?.text||'Não consegui processar. Tente novamente.';
+        history.push({role:'model',parts:[{text:reply}]});
+        typing.textContent=reply;
+        typing.classList.remove('typing');
+      }catch(err){
+        typing.textContent='Erro de conexão. Verifique sua internet.';
+        typing.classList.remove('typing');
+        history.pop();
+      }
+      send.disabled=false;
+      msgs.scrollTop=msgs.scrollHeight;
+      input.focus();
+    }
+
+    send.addEventListener('click',sendMessage);
+    input.addEventListener('keydown',e=>{
+      if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}
+    });
+    input.addEventListener('input',()=>{
+      input.style.height='auto';
+      input.style.height=Math.min(input.scrollHeight,100)+'px';
+    });
+  })();
+  </script>
+  <!-- ========== /JARVIS ========== -->
+
+
 </body>
 </html>
