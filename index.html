@@ -139,6 +139,13 @@
     #jarvis-send{width:40px;height:40px;flex:0 0 auto;border:0;border-radius:13px;background:linear-gradient(135deg,#0d72aa,#3baee8);color:#fff;font-size:17px;cursor:pointer;display:grid;place-items:center;transition:transform .13s ease}
     #jarvis-send:active{transform:scale(.9)}
     #jarvis-send:disabled{opacity:.45;cursor:not-allowed}
+    #jarvis-avatar.speaking{animation:jspeak .85s ease-in-out infinite}
+    @keyframes jspeak{0%,100%{box-shadow:0 0 0 0 rgba(117,203,255,.55)}50%{box-shadow:0 0 0 9px rgba(117,203,255,0)}}
+    #jarvis-eq{display:none;gap:3px;align-items:flex-end;height:18px;flex:0 0 auto;margin-right:2px}
+    #jarvis-eq.on{display:flex}
+    #jarvis-eq span{width:3px;background:#75cbff;border-radius:2px;height:5px;animation:jeq .75s ease-in-out infinite}
+    #jarvis-eq span:nth-child(2){animation-delay:.12s}#jarvis-eq span:nth-child(3){animation-delay:.24s}#jarvis-eq span:nth-child(4){animation-delay:.36s}#jarvis-eq span:nth-child(5){animation-delay:.48s}
+    @keyframes jeq{0%,100%{height:4px}50%{height:18px}}
     @media(min-width:480px){#jarvis-panel{left:max(18px,env(safe-area-inset-left));right:auto;width:400px}}
   </style>
 
@@ -189,13 +196,19 @@
     let history=[],isOpen=false,busy=false;
     let voiceOn=localStorage.getItem(VOICE_KEY)!=='0';
 
+    const avatarEl=q('jarvis-avatar');
+    const eq=document.createElement('div');eq.id='jarvis-eq';eq.innerHTML='<span></span><span></span><span></span><span></span><span></span>';
+    q('jarvis-header').insertBefore(eq,voiceToggle);
     function refreshVoiceBtn(){voiceToggle.classList.toggle('on',voiceOn);voiceToggle.title=voiceOn?'Voz ligada':'Voz desligada';voiceToggle.innerHTML=voiceOn?'&#128266;':'&#128263;';}
     refreshVoiceBtn();
     voiceToggle.addEventListener('click',()=>{voiceOn=!voiceOn;localStorage.setItem(VOICE_KEY,voiceOn?'1':'0');if(!voiceOn)window.speechSynthesis&&window.speechSynthesis.cancel();refreshVoiceBtn();});
 
     function addMsg(cls,text){const d=document.createElement('div');d.className='j-msg '+cls;d.textContent=text;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d;}
 
+    let ttsUnlocked=false;
+    function unlockTTS(){if(ttsUnlocked||!('speechSynthesis'in window))return;try{const u0=new SpeechSynthesisUtterance(' ');u0.volume=0;window.speechSynthesis.speak(u0);}catch(_){}ttsUnlocked=true;}
     function togglePanel(){
+      unlockTTS();
       isOpen=!isOpen;panel.classList.toggle('open',isOpen);btn.classList.toggle('pulse',!isOpen);
       if(isOpen&&!msgs.children.length){
         const h=new Date().getHours(),g=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
@@ -240,6 +253,9 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
         ||voicesCache.find(v=>/pt[-_]BR/i.test(v.lang))
         ||voicesCache.find(v=>/^pt/i.test(v.lang));
       if(v)u.voice=v;
+      u.onstart=()=>{avatarEl.classList.add('speaking');eq.classList.add('on');statusEl.textContent='FALANDO\u2026';};
+      const jdone=()=>{avatarEl.classList.remove('speaking');eq.classList.remove('on');statusEl.textContent='ASSISTENTE PESSOAL \u00B7 ONLINE';};
+      u.onend=jdone;u.onerror=jdone;
       window.speechSynthesis.speak(u);
     }
 
@@ -278,7 +294,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
             body:JSON.stringify({
               system_instruction:{parts:[{text:systemPrompt()}]},
               contents:history,
-              generationConfig:{temperature:0.6,maxOutputTokens:700}
+              generationConfig:{temperature:0.6,maxOutputTokens:1600,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}}
             })
           });
           const data=await res.json();
