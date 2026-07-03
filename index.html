@@ -133,6 +133,7 @@
     #jarvis-form{display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.07);flex:0 0 auto;align-items:flex-end}
     #jarvis-mic{width:40px;height:40px;flex:0 0 auto;border:0;border-radius:13px;background:rgba(255,255,255,.08);color:#a6acb8;font-size:17px;cursor:pointer;display:grid;place-items:center;transition:background .15s,color .15s}
     #jarvis-mic.rec{background:rgba(255,80,80,.25);color:#ff9c9c;animation:jpulse 1.2s ease-in-out infinite}
+    #jarvis-mic svg,#jarvis-send svg{width:19px;height:19px;display:block}
     #jarvis-input{flex:1;min-height:40px;max-height:100px;padding:9px 13px;border:1px solid rgba(117,203,255,.2);border-radius:13px;background:rgba(255,255,255,.06);color:#f7f8fb;font-size:14px;resize:none;outline:0;font-family:inherit;line-height:1.4}
     #jarvis-input::placeholder{color:#737c8a}
     #jarvis-input:focus{border-color:rgba(117,203,255,.5)}
@@ -176,9 +177,9 @@
     </div>
     <div id="jarvis-msgs"></div>
     <div id="jarvis-form">
-      <button id="jarvis-mic" type="button" aria-label="Falar">&#127908;</button>
+      <button id="jarvis-mic" type="button" aria-label="Falar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="21.5"/><line x1="8.5" y1="21.5" x2="15.5" y2="21.5"/></svg></button>
       <textarea id="jarvis-input" placeholder="Fale ou digite para o Jarvis&hellip;" rows="1" maxlength="1000"></textarea>
-      <button id="jarvis-send" type="button" aria-label="Enviar">&#10148;</button>
+      <button id="jarvis-send" type="button" aria-label="Enviar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21.8 12 3.4 3.6l-.01 6.53L15.5 12 3.39 13.87z"/></svg></button>
     </div>
   </div>
 
@@ -236,8 +237,8 @@
 DATA E HORA ATUAL: ${now.human} (ISO: ${now.iso}).
 TAREFAS PENDENTES DA AGENDA DO USUARIO: ${agendaSnapshot()}
 VOCE CONTROLA A AGENDA. Responda SEMPRE e SOMENTE com um JSON puro (sem markdown, sem crases) neste formato:
-{"action":"none|add_task|complete_task|delete_task","task":{"text":"","date":"YYYY-MM-DD","time":"HH:MM ou vazio","tag":"trabalho|pessoal|casa|faculdade|saude|financeiro|outros"},"query":"","reply":"sua resposta ao usuario em PT-BR"}
-Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (preencha task; se nao houver horario, deixe time vazio; escolha a tag mais adequada). Use complete_task quando disserem que concluiram algo, e delete_task para remover/cancelar (preencha query com palavras-chave exatas do texto da tarefa). Use none para conversas e perguntas. Calcule datas relativas (amanha, segunda que vem) a partir da data atual. No reply, confirme a acao naturalmente.`;
+{"action":"none|add_task|complete_task|delete_task","task":{"text":"","date":"YYYY-MM-DD","time":"HH:MM ou vazio","tag":"trabalho|pessoal|casa|faculdade|saude|financeiro|outros"},"query":"","transcript":"","reply":"sua resposta ao usuario em PT-BR"}
+Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (preencha task; se nao houver horario, deixe time vazio; escolha a tag mais adequada). Use complete_task quando disserem que concluiram algo, e delete_task para remover/cancelar (preencha query com palavras-chave exatas do texto da tarefa). Use none para conversas e perguntas. Quando receber AUDIO, preencha transcript com a transcricao exata em PT-BR do que o usuario falou. Calcule datas relativas (amanha, segunda que vem) a partir da data atual. No reply, confirme a acao naturalmente.`;
     }
 
     function stripForSpeech(t){return t.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,'').replace(/\*/g,'');}
@@ -315,7 +316,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       return null;
     }
 
-    async function callGemini(){
+    async function callGemini(contents){
       let lastErr='';
       for(const model of MODELS){
         try{
@@ -323,7 +324,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
             method:'POST',headers:{'Content-Type':'application/json'},
             body:JSON.stringify({
               system_instruction:{parts:[{text:systemPrompt()}]},
-              contents:history,
+              contents,
               generationConfig:{temperature:0.6,maxOutputTokens:1600,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}}
             })
           });
@@ -336,54 +337,95 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       throw new Error(lastErr);
     }
 
-    async function sendMessage(fromMic){
-      const text=input.value.trim();
-      if(!text||busy)return;
-      busy=true;input.value='';input.style.height='auto';
-      addMsg('user',text);send.disabled=true;statusEl.textContent='PROCESSANDO\u2026';
+    async function ask(userParts,userBubble,fallbackUserText){
+      busy=true;send.disabled=true;statusEl.textContent='PROCESSANDO\u2026';
       const typing=addMsg('bot typing','Processando\u2026');
-      history.push({role:'user',parts:[{text}]});
-      if(history.length>24)history=history.slice(-24);
+      const contents=history.concat([{role:'user',parts:userParts}]);
       try{
-        const raw=await callGemini();
-        history.push({role:'model',parts:[{text:raw}]});
+        const raw=await callGemini(contents);
         const j=parseJarvis(raw);
         const reply=j.reply||'Feito.';
+        if(j.transcript&&userBubble)userBubble.textContent=j.transcript;
+        history.push({role:'user',parts:[{text:j.transcript||fallbackUserText}]});
+        history.push({role:'model',parts:[{text:raw}]});
+        if(history.length>24)history=history.slice(-24);
         typing.textContent=reply;typing.classList.remove('typing');
         const actionNote=runAction(j);
         if(actionNote)addMsg('action','\u2713 '+actionNote);
         speak(reply);
       }catch(e){
-        typing.textContent='Falha de conexao com meus servidores, Senhor. Verifique a internet e tente novamente.';
+        typing.textContent='Falha de conexao com meus servidores, Senhor. Tente novamente.';
         typing.classList.remove('typing');
-        history.pop();
       }
-      busy=false;send.disabled=false;statusEl.textContent='ASSISTENTE PESSOAL \u00B7 ONLINE';
+      busy=false;send.disabled=false;
+      if(statusEl.textContent==='PROCESSANDO\u2026')statusEl.textContent='ASSISTENTE PESSOAL \u00B7 ONLINE';
       msgs.scrollTop=msgs.scrollHeight;
     }
 
-    send.addEventListener('click',()=>sendMessage(false));
-    input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage(false);}});
+    function sendText(){
+      const text=input.value.trim();
+      if(!text||busy)return;
+      input.value='';input.style.height='auto';
+      const bubble=addMsg('user',text);
+      ask([{text}],bubble,text);
+    }
+
+    send.addEventListener('click',sendText);
+    input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendText();}});
     input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,100)+'px';});
 
-    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-    if(SR){
-      const rec=new SR();
-      rec.lang='pt-BR';rec.continuous=false;rec.interimResults=false;
-      rec.onresult=e=>{
-        mic.classList.remove('rec');
-        const t=e.results[0][0].transcript;
-        if(t){input.value=t;sendMessage(true);}
-      };
-      rec.onerror=()=>{mic.classList.remove('rec');statusEl.textContent='MICROFONE: PERMISSAO NEGADA OU ERRO';setTimeout(()=>statusEl.textContent='ASSISTENTE PESSOAL \u00B7 ONLINE',2500);};
-      rec.onend=()=>mic.classList.remove('rec');
-      mic.addEventListener('click',()=>{
-        if(mic.classList.contains('rec')){rec.stop();return;}
-        try{stopSpeech();rec.start();mic.classList.add('rec');statusEl.textContent='OUVINDO\u2026';}catch(_){}
-      });
-    }else{
-      mic.style.opacity='.3';mic.style.cursor='not-allowed';
-      mic.title='Voz nao suportada neste navegador';
+    // ---- Captacao de voz: grava e o Gemini OUVE o audio diretamente ----
+    let mediaStream=null,recorder=null,chunks=[],recTimer=null;
+    function recMime(){
+      const cands=['audio/mp4','audio/webm;codecs=opus','audio/webm','audio/ogg'];
+      for(const m of cands){if(window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(m))return m;}
+      return'';
+    }
+    function stopTracks(){if(mediaStream){mediaStream.getTracks().forEach(t=>t.stop());mediaStream=null;}}
+    async function startRec(){
+      if(busy)return;
+      stopSpeech();
+      try{
+        mediaStream=await navigator.mediaDevices.getUserMedia({audio:true});
+      }catch(_){
+        statusEl.textContent='PERMITA O MICROFONE PARA USAR A VOZ';
+        setTimeout(()=>statusEl.textContent='ASSISTENTE PESSOAL \u00B7 ONLINE',3000);
+        return;
+      }
+      chunks=[];
+      const mime=recMime();
+      try{recorder=mime?new MediaRecorder(mediaStream,{mimeType:mime}):new MediaRecorder(mediaStream);}catch(_){recorder=new MediaRecorder(mediaStream);}
+      recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};
+      recorder.onstop=onRecStop;
+      recorder.start();
+      mic.classList.add('rec');
+      statusEl.textContent='OUVINDO\u2026 TOQUE PARA ENVIAR';
+      recTimer=setTimeout(()=>{if(recorder&&recorder.state==='recording')recorder.stop();},30000);
+    }
+    async function onRecStop(){
+      clearTimeout(recTimer);
+      mic.classList.remove('rec');
+      stopTracks();
+      statusEl.textContent='ASSISTENTE PESSOAL \u00B7 ONLINE';
+      const blob=new Blob(chunks,{type:(recorder&&recorder.mimeType)||'audio/mp4'});
+      if(blob.size<1500){
+        statusEl.textContent='AUDIO MUITO CURTO \u2014 FALE E DEPOIS TOQUE PARA ENVIAR';
+        setTimeout(()=>statusEl.textContent='ASSISTENTE PESSOAL \u00B7 ONLINE',2600);
+        return;
+      }
+      let b64;
+      try{
+        b64=await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result).split(',')[1]);fr.onerror=rej;fr.readAsDataURL(blob);});
+      }catch(_){return;}
+      const bubble=addMsg('user','Mensagem de voz\u2026');
+      ask([{inlineData:{mimeType:(blob.type||'audio/mp4').split(';')[0],data:b64}},{text:'(mensagem de voz do usuario: transcreva em transcript e responda)'}],bubble,'(mensagem de voz)');
+    }
+    mic.addEventListener('click',()=>{
+      if(recorder&&recorder.state==='recording'){recorder.stop();return;}
+      startRec();
+    });
+    if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)||!window.MediaRecorder){
+      mic.style.opacity='.3';mic.style.cursor='not-allowed';mic.title='Microfone nao suportado neste navegador';
     }
   })();
   </script>
