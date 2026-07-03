@@ -201,12 +201,12 @@
     q('jarvis-header').insertBefore(eq,voiceToggle);
     function refreshVoiceBtn(){voiceToggle.classList.toggle('on',voiceOn);voiceToggle.title=voiceOn?'Voz ligada':'Voz desligada';voiceToggle.innerHTML=voiceOn?'&#128266;':'&#128263;';}
     refreshVoiceBtn();
-    voiceToggle.addEventListener('click',()=>{voiceOn=!voiceOn;localStorage.setItem(VOICE_KEY,voiceOn?'1':'0');if(!voiceOn)window.speechSynthesis&&window.speechSynthesis.cancel();refreshVoiceBtn();});
+    voiceToggle.addEventListener('click',()=>{voiceOn=!voiceOn;localStorage.setItem(VOICE_KEY,voiceOn?'1':'0');if(!voiceOn)stopSpeech();refreshVoiceBtn();});
 
     function addMsg(cls,text){const d=document.createElement('div');d.className='j-msg '+cls;d.textContent=text;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d;}
 
     let ttsUnlocked=false;
-    function unlockTTS(){if(ttsUnlocked||!('speechSynthesis'in window))return;try{const u0=new SpeechSynthesisUtterance(' ');u0.volume=0;window.speechSynthesis.speak(u0);}catch(_){}ttsUnlocked=true;}
+    function unlockTTS(){if(ttsUnlocked)return;ttsUnlocked=true;try{jAudio.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';jAudio.play().catch(()=>{});}catch(_){}if('speechSynthesis'in window){try{const u0=new SpeechSynthesisUtterance(' ');u0.volume=0;window.speechSynthesis.speak(u0);}catch(_){}}}
     function togglePanel(){
       unlockTTS();
       isOpen=!isOpen;panel.classList.toggle('open',isOpen);btn.classList.toggle('pulse',!isOpen);
@@ -244,19 +244,49 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
     let voicesCache=[];
     function loadVoices(){voicesCache=window.speechSynthesis?window.speechSynthesis.getVoices():[];}
     if('speechSynthesis'in window){loadVoices();window.speechSynthesis.onvoiceschanged=loadVoices;}
-    function speak(text){
-      if(!voiceOn||!('speechSynthesis'in window))return;
-      window.speechSynthesis.cancel();
-      const u=new SpeechSynthesisUtterance(stripForSpeech(text));
-      u.lang='pt-BR';u.pitch=0.7;u.rate=0.9;u.volume=1;
-      const v=voicesCache.find(v=>/pt[-_]BR/i.test(v.lang)&&/male|masc|felipe|daniel|ricardo/i.test(v.name))
-        ||voicesCache.find(v=>/pt[-_]BR/i.test(v.lang))
-        ||voicesCache.find(v=>/^pt/i.test(v.lang));
+    const jAudio=new Audio();let jUrl=null;
+    function animOn(){avatarEl.classList.add('speaking');eq.classList.add('on');statusEl.textContent='FALANDO\u2026';}
+    function animOff(){avatarEl.classList.remove('speaking');eq.classList.remove('on');statusEl.textContent='ASSISTENTE PESSOAL \u00B7 ONLINE';}
+    function stopSpeech(){try{jAudio.pause();jAudio.currentTime=0;}catch(_){}if(jUrl){URL.revokeObjectURL(jUrl);jUrl=null;}if('speechSynthesis'in window)window.speechSynthesis.cancel();animOff();}
+    jAudio.onplay=animOn;jAudio.onended=()=>{animOff();if(jUrl){URL.revokeObjectURL(jUrl);jUrl=null;}};jAudio.onerror=()=>animOff();
+    function pcmToWav(pcm,rate){const n=pcm.length,buf=new ArrayBuffer(44+n),v=new DataView(buf);const ws=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};ws(0,'RIFF');v.setUint32(4,36+n,true);ws(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);ws(36,'data');v.setUint32(40,n,true);new Uint8Array(buf,44).set(pcm);return new Blob([buf],{type:'audio/wav'});}
+    function browserSpeak(t){
+      if(!('speechSynthesis'in window))return;
+      const u=new SpeechSynthesisUtterance(t);
+      u.lang='pt-BR';u.pitch=0.7;u.rate=0.9;
+      const v=voicesCache.find(v=>/pt[-_]BR/i.test(v.lang)&&/male|masc|felipe|daniel|ricardo/i.test(v.name))||voicesCache.find(v=>/pt[-_]BR/i.test(v.lang))||voicesCache.find(v=>/^pt/i.test(v.lang));
       if(v)u.voice=v;
-      u.onstart=()=>{avatarEl.classList.add('speaking');eq.classList.add('on');statusEl.textContent='FALANDO\u2026';};
-      const jdone=()=>{avatarEl.classList.remove('speaking');eq.classList.remove('on');statusEl.textContent='ASSISTENTE PESSOAL \u00B7 ONLINE';};
-      u.onend=jdone;u.onerror=jdone;
+      u.onstart=animOn;u.onend=animOff;u.onerror=animOff;
       window.speechSynthesis.speak(u);
+    }
+    async function speak(text){
+      if(!voiceOn)return;
+      stopSpeech();
+      let t=stripForSpeech(text).trim();
+      if(t.length>420){const cut=t.slice(0,420);const m=cut.match(/^[\s\S]*[.!?]/);t=m?m[0]:cut;}
+      if(!t)return;
+      try{
+        statusEl.textContent='GERANDO VOZ\u2026';
+        const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${KEY}`,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            contents:[{parts:[{text:'Fale em portugues brasileiro com tom calmo, grave e sofisticado de assistente de IA britanico: '+t}]}],
+            generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:'Charon'}}}}
+          })});
+        const d=await r.json();
+        const p=d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0];
+        const b64=p&&p.inlineData&&p.inlineData.data;
+        if(!b64)throw new Error('sem audio');
+        const rm=/rate=(\d+)/.exec(p.inlineData.mimeType||'');
+        const bin=atob(b64),pcm=new Uint8Array(bin.length);
+        for(let i=0;i<bin.length;i++)pcm[i]=bin.charCodeAt(i);
+        jUrl=URL.createObjectURL(pcmToWav(pcm,rm?+rm[1]:24000));
+        jAudio.src=jUrl;
+        await jAudio.play();
+      }catch(e){
+        animOff();
+        browserSpeak(t);
+      }
     }
 
     function parseJarvis(raw){
@@ -349,7 +379,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       rec.onend=()=>mic.classList.remove('rec');
       mic.addEventListener('click',()=>{
         if(mic.classList.contains('rec')){rec.stop();return;}
-        try{window.speechSynthesis&&window.speechSynthesis.cancel();rec.start();mic.classList.add('rec');statusEl.textContent='OUVINDO\u2026';}catch(_){}
+        try{stopSpeech();rec.start();mic.classList.add('rec');statusEl.textContent='OUVINDO\u2026';}catch(_){}
       });
     }else{
       mic.style.opacity='.3';mic.style.cursor='not-allowed';
