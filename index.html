@@ -188,7 +188,7 @@
     'use strict';
     const K1='AQ.Ab8RN6JVWnIhpQY',K2='65xrobbMyhLDfg4CX3',K3='icuV8UplGw4mmnUbg';
     const KEY=[K1,K2,K3].join('');
-    const MODELS=['gemini-3.5-flash','gemini-2.5-flash','gemini-2.5-flash-lite'];
+    const MODELS=['gemini-2.5-flash-lite','gemini-3.5-flash','gemini-2.5-flash'];
     const VOICE_KEY='jarvis_voice_on';
     const q=s=>document.getElementById(s);
     const panel=q('jarvis-panel'),btn=q('jarvis-btn'),closeBtn=q('jarvis-close'),
@@ -238,7 +238,7 @@ DATA E HORA ATUAL: ${now.human} (ISO: ${now.iso}).
 TAREFAS PENDENTES DA AGENDA DO USUARIO: ${agendaSnapshot()}
 VOCE CONTROLA A AGENDA. Responda SEMPRE e SOMENTE com um JSON puro (sem markdown, sem crases) neste formato:
 {"action":"none|add_task|complete_task|delete_task","task":{"text":"","date":"YYYY-MM-DD","time":"HH:MM ou vazio","tag":"trabalho|pessoal|casa|faculdade|saude|financeiro|outros"},"query":"","transcript":"","reply":"sua resposta ao usuario em PT-BR"}
-Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (preencha task; se nao houver horario, deixe time vazio; escolha a tag mais adequada). Use complete_task quando disserem que concluiram algo, e delete_task para remover/cancelar (preencha query com palavras-chave exatas do texto da tarefa). Use none para conversas e perguntas. Quando receber AUDIO, preencha transcript com a transcricao exata em PT-BR do que o usuario falou. Calcule datas relativas (amanha, segunda que vem) a partir da data atual. No reply, confirme a acao naturalmente.`;
+Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (preencha task; se nao houver horario, deixe time vazio; escolha a tag mais adequada). Use complete_task quando disserem que concluiram algo, e delete_task para remover/cancelar (preencha query com palavras-chave exatas do texto da tarefa). Use none para conversas e perguntas. Quando receber AUDIO, preencha transcript com a transcricao exata em PT-BR do que o usuario falou. Calcule datas relativas (amanha, segunda que vem) a partir da data atual. No reply, confirme a acao naturalmente. Seja conciso: reply com no maximo 2-3 frases diretas, salvo quando o usuario pedir detalhes.`;
     }
 
     function stripForSpeech(t){return t.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,'').replace(/\*/g,'');}
@@ -264,7 +264,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       if(!voiceOn)return;
       stopSpeech();
       let t=stripForSpeech(text).trim();
-      if(t.length>420){const cut=t.slice(0,420);const m=cut.match(/^[\s\S]*[.!?]/);t=m?m[0]:cut;}
+      if(t.length>280){const cut=t.slice(0,280);const m=cut.match(/^[\s\S]*[.!?]/);t=m?m[0]:cut;}
       if(!t)return;
       try{
         statusEl.textContent='GERANDO VOZ\u2026';
