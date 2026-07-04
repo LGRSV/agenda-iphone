@@ -349,11 +349,13 @@ function esc(s){const d=document.createElement('div');d.textContent=s==null?'':s
 
 function yn(v){return v==='SIM'?'<b style="color:#2e7d32">SIM</b>':v==='NÃO'?'<span style="color:#b0bec5">não</span>':esc(v||'—');}
 function dt(v){return (v||'').replace(' 00:00:00','');}
+function redeLabel(v){return v==='RR'?'Rede rural (RR)':v==='UB'?'Rede urbana (UB)':'';}
 function miniHTML(l,v,small){return v?`<div class="mini"><div class="ml">${l}</div><div class="mv"${small?' style="font-size:10.5px"':''}>${esc(v)}</div></div>`:'';}
 function eeHTML(c){
   const e=c.ee||{};
   if(!e.aj&&!e.eto&&!e.conf) return `<div class="ee-box"><div style="font-size:11.5px;color:#78909c">Não localizado nas planilhas de Equipamentos Especiais (ETO) nem de Ajustes.</div></div>`;
-  const etoTag=e.eto?`<span class="ee-ok">✔ Cadastro ETO${e.rede?' · '+esc(e.rede):''}</span>`:`<span class="ee-no">✗ Fora do cadastro ETO</span>`;
+  const rede=redeLabel(e.rede);
+  const etoTag=e.eto?`<span class="ee-ok">✔ Cadastro ETO${rede?' · '+rede:''}</span>`:`<span class="ee-no">✗ Fora do cadastro ETO</span>`;
   const ajTag=e.aj?`<span class="ee-ok">✔ Estudo de ajustes</span>`:`<span class="ee-no">✗ Sem estudo de ajustes</span>`;
   const confTag=e.conf?`<div class="ee-warn">⚠ Consta na lista "CONFERIR SE EXISTE" — validar cadastro/existência</div>`:'';
   const grid=`<div class="grid2">
