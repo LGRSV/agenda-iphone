@@ -136,11 +136,11 @@ body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:lin
 <div class="chip" data-f="compra">Compra necessária</div>
 </div>
 <div class="ctrl" id="filtros-cat">
-<div class="chip" data-f="cat-aprovar">✅ Aprovados <b class="cnt" data-c="aprovar">0</b></div>
-<div class="chip" data-f="cat-execucao">🔧 Em execução <b class="cnt" data-c="execucao">0</b></div>
-<div class="chip" data-f="cat-analise">↩︎ Em análise <b class="cnt" data-c="analise">0</b></div>
-<div class="chip" data-f="cat-ncon">⛔ Não conf. <b class="cnt" data-c="ncon">0</b></div>
-<div class="chip" data-f="cat-none">◻︎ Sem categoria <b class="cnt" data-c="none">0</b></div>
+<div class="chip" data-f="cat-aprovar">Aprovados <b class="cnt" data-c="aprovar">0</b></div>
+<div class="chip" data-f="cat-execucao">Em execução <b class="cnt" data-c="execucao">0</b></div>
+<div class="chip" data-f="cat-analise">Em análise <b class="cnt" data-c="analise">0</b></div>
+<div class="chip" data-f="cat-ncon">Não conf. <b class="cnt" data-c="ncon">0</b></div>
+<div class="chip" data-f="cat-none">Sem categoria <b class="cnt" data-c="none">0</b></div>
 </div>
 
 <div class="counter" id="counter">–</div>
@@ -159,21 +159,21 @@ body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:lin
 <button id="next" onclick="go(1)">Próximo →</button>
 </div>
 <div class="catbar">
-<button class="cb-aprovar" data-cat="aprovar" onclick="setCat('aprovar')">✅ Aprovar p/ compra</button>
-<button class="cb-execucao" data-cat="execucao" onclick="setCat('execucao')">🔧 Em execução</button>
-<button class="cb-analise" data-cat="analise" onclick="setCat('analise')">↩︎ Voltar p/ análise</button>
-<button class="cb-ncon" data-cat="ncon" onclick="setCat('ncon')">⛔ Não conformidade</button>
+<button class="cb-aprovar" data-cat="aprovar" onclick="setCat('aprovar')">Aprovar p/ compra</button>
+<button class="cb-execucao" data-cat="execucao" onclick="setCat('execucao')">Em execução</button>
+<button class="cb-analise" data-cat="analise" onclick="setCat('analise')">Voltar p/ análise</button>
+<button class="cb-ncon" data-cat="ncon" onclick="setCat('ncon')">Não conformidade</button>
 </div>
 <div class="toolbar">
-<button class="prim" onclick="openEditCurrent()">✏️ Editar card</button>
-<button class="obr" onclick="openEE()">🏗️ Obras / Equip. Especiais</button>
-<button onclick="newCard()">＋ Novo card</button>
-<button onclick="exportBackup()">⬇︎ Salvar backup</button>
-<button onclick="document.getElementById('importFile').click()">⬆︎ Restaurar</button>
+<button class="prim" onclick="openEditCurrent()">Editar card</button>
+<button class="obr" onclick="openEE()">Obras / Equip. Especiais</button>
+<button onclick="newCard()">Novo card</button>
+<button onclick="exportBackup()">Salvar backup</button>
+<button onclick="document.getElementById('importFile').click()">Restaurar</button>
 <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importBackup(event)">
 </div>
 <div class="foot">Teclado: ← → navega · Espaço vira · Filtros no topo · Suas edições ficam salvas neste aparelho</div>
-<div class="foot" style="opacity:.5;margin-top:2px">Imagens ilustrativas: religador — Wikimedia Commons (CC BY 4.0) · regulador — ITB Equipamentos Elétricos. Substitua pela foto real do equipamento em ✏️ Editar.</div>
+<div class="foot" style="opacity:.5;margin-top:2px">Imagens ilustrativas: religador — Wikimedia Commons (CC BY 4.0) · regulador — ITB Equipamentos Elétricos. Substitua pela foto real do equipamento em Editar.</div>
 
 <div class="modal-bg" id="eeModal">
 <div class="modal-card">
@@ -235,7 +235,7 @@ const FIELDS=[
  {k:'etapa',l:'Etapa mais avançada',t:'text'},
  {k:'imped',l:'Impedimento',t:'text'},
  {k:'desc',l:'Descrição completa (Parecer COEP)',t:'textarea'},
- {k:'aval',l:'★ Minha avaliação / observações',t:'textarea',hlp:'Suas anotações desta avaliação — aparecem em destaque no verso do card.'},
+ {k:'aval',l:'Minha avaliação / observações',t:'textarea',hlp:'Suas anotações desta avaliação — aparecem em destaque no verso do card.'},
  {k:'pecas',l:'Peças a comprar',t:'pecas',hlp:'Uma peça por linha:  peça ; código ; qtd ; material ; MO ; total'},
 ];
 
@@ -245,7 +245,7 @@ function blankCard(){return {id:'NOVO-'+Date.now().toString().slice(-5),tipo:'RL
 function fotoPlaceholder(tipo){
   const t=tipo==='RT'?'rt':'rl';
   const nome=tipo==='RT'?'REGULADOR DE TENSÃO':'RELIGADOR';
-  return `<div class="hero-ph ${t}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13H11l-1 9 9-11.5H12l1-8.5z"/></svg><div class="pht">${nome}</div><div class="phs">Sem foto · toque em ✏️ Editar para adicionar</div></div>`;
+  return `<div class="hero-ph ${t}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13H11l-1 9 9-11.5H12l1-8.5z"/></svg><div class="pht">${nome}</div><div class="phs">Sem foto · toque em Editar para adicionar</div></div>`;
 }
 function onFotoPick(ev){
   const file=ev.target.files&&ev.target.files[0];if(!file)return;
@@ -370,7 +370,7 @@ function filtered(){
     return true;
   });
 }
-const CAT_LABELS={aprovar:'✅ Aprovado para compra',execucao:'🔧 Em execução',analise:'↩︎ Voltar para análise',ncon:'⛔ Não conformidade'};
+const CAT_LABELS={aprovar:'Aprovado para compra',execucao:'Em execução',analise:'Voltar para análise',ncon:'Não conformidade'};
 function catBadge(c){return c.cat?`<div class="cat-badge ${c.cat}">${CAT_LABELS[c.cat]||esc(c.cat)}</div>`:'';}
 function setCat(k){
   const list=filtered();if(!list.length){alert('Nenhum card no filtro atual.');return;}
@@ -472,7 +472,7 @@ function render(){
   const kv=c.kv==='ND'?'ND':c.kv+' kV';
   // FRENTE
   const fotoSrc=c.foto||(typeof TYPE_PHOTO!=='undefined'?TYPE_PHOTO[c.tipo]:'');
-  const fotoHTML=fotoSrc?`<img class="hero-img" src="${escAttr(fotoSrc)}" alt="Foto do equipamento">${!c.foto?'<span class="hero-cred">Imagem ilustrativa do modelo · toque em ✏️ para usar a foto real</span>':''}`:fotoPlaceholder(c.tipo);
+  const fotoHTML=fotoSrc?`<img class="hero-img" src="${escAttr(fotoSrc)}" alt="Foto do equipamento">${!c.foto?'<span class="hero-cred">Imagem ilustrativa do modelo · toque em Editar para usar a foto real</span>':''}`:fotoPlaceholder(c.tipo);
   document.getElementById('front').innerHTML=`
     <div class="hero">${fotoHTML}</div>
     <div class="hero-cap">
@@ -484,7 +484,7 @@ function render(){
     <div class="serie">${esc(c.serie)}</div>
     <div class="patr">Patrim.: ${esc(c.patr)} · SS ${esc(c.ss)}</div>
     <div class="local">${esc(c.local)}</div>
-    <div class="tags"><span class="tag ${critClass(c.crit)}">${esc(c.crit)}</span>${c.imped.includes('⚖')?'<span class="tag" style="background:#FFF2CC;color:#7f6000">⚖ Judicial</span>':''}</div>
+    <div class="tags"><span class="tag ${critClass(c.crit)}">${esc(c.crit)}</span>${c.imped.includes('⚖')?'<span class="tag" style="background:#FFF2CC;color:#7f6000">Judicial</span>':''}</div>
     <div class="lbl">Defeito</div>
     <div class="def">${esc(c.defeito)}</div>
     <div class="stbox ${stClass(c.st)}">Status: ${esc(c.st)}</div>
@@ -494,7 +494,7 @@ function render(){
   const etapa=c.etapa&&c.etapa!=='—'?(c.etapa.includes('Inconsist')?`<span class="incons">${esc(c.etapa)}</span>`:esc(c.etapa)):'—';
   document.getElementById('back').innerHTML=`
     <div class="row1"><span class="tp tp-${c.tipo}">${esc(c.serie)}</span><span class="idc">${esc(c.local)}</span></div>
-    ${c.aval?`<div class="aval-box"><div class="al">★ Minha avaliação</div>${esc(c.aval)}</div>`:''}
+    ${c.aval?`<div class="aval-box"><div class="al">Minha avaliação</div>${esc(c.aval)}</div>`:''}
     <div class="lbl">Descrição completa (Parecer COEP)</div>
     <div class="desc">${esc(c.desc)||'—'}</div>
     <div class="lbl">Peça(s) a comprar</div>
