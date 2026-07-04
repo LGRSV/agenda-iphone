@@ -147,6 +147,20 @@
     #jarvis-eq span{width:3px;background:#75cbff;border-radius:2px;height:5px;animation:jeq .75s ease-in-out infinite}
     #jarvis-eq span:nth-child(2){animation-delay:.12s}#jarvis-eq span:nth-child(3){animation-delay:.24s}#jarvis-eq span:nth-child(4){animation-delay:.36s}#jarvis-eq span:nth-child(5){animation-delay:.48s}
     @keyframes jeq{0%,100%{height:4px}50%{height:18px}}
+    *{-webkit-tap-highlight-color:transparent}
+    button{transition:transform .13s cubic-bezier(.34,1.56,.64,1)}
+    button:active{transform:scale(.95)}
+    .j-msg{animation:msgIn .28s cubic-bezier(.21,1.02,.73,1) both}
+    @keyframes msgIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+    .j-msg.action{animation:actIn .45s cubic-bezier(.34,1.56,.64,1) both}
+    @keyframes actIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+    .jdot{display:inline-block;width:7px;height:7px;margin:0 2px;border-radius:50%;background:#75cbff;animation:jb .9s ease-in-out infinite}
+    .jdot:nth-child(2){animation-delay:.15s}.jdot:nth-child(3){animation-delay:.3s}
+    @keyframes jb{0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(-5px);opacity:1}}
+    #jarvis-chips{display:flex;gap:8px;padding:4px 12px 8px;overflow-x:auto;flex:0 0 auto;scrollbar-width:none}
+    #jarvis-chips::-webkit-scrollbar{display:none}
+    .j-chip{flex:0 0 auto;border:1px solid rgba(117,203,255,.3);background:rgba(117,203,255,.08);color:#9fd8ff;font-size:12px;font-weight:700;padding:7px 13px;border-radius:99px;cursor:pointer}
+    .j-chip:active{background:rgba(117,203,255,.22)}
     @media(min-width:480px){#jarvis-panel{left:max(18px,env(safe-area-inset-left));right:auto;width:400px}}
   </style>
 
@@ -176,6 +190,11 @@
       <button id="jarvis-close" class="jarvis-hbtn" type="button" aria-label="Fechar">&times;</button>
     </div>
     <div id="jarvis-msgs"></div>
+    <div id="jarvis-chips">
+      <button class="j-chip" type="button" data-p="Me dê um briefing do meu dia: tarefas de hoje e o que priorizar.">📋 Meu dia</button>
+      <button class="j-chip" type="button" data-p="Resumo da minha semana: o que tenho nos próximos 7 dias?">📅 Semana</button>
+      <button class="j-chip" type="button" data-p="Analise minhas tarefas pendentes e sugira uma ordem de prioridade.">💡 Organizar</button>
+    </div>
     <div id="jarvis-form">
       <button id="jarvis-mic" type="button" aria-label="Falar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="21.5"/><line x1="8.5" y1="21.5" x2="15.5" y2="21.5"/></svg></button>
       <textarea id="jarvis-input" placeholder="Fale ou digite para o Jarvis&hellip;" rows="1" maxlength="1000"></textarea>
@@ -213,7 +232,14 @@
       isOpen=!isOpen;panel.classList.toggle('open',isOpen);btn.classList.toggle('pulse',!isOpen);
       if(isOpen&&!msgs.children.length){
         const h=new Date().getHours(),g=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
-        addMsg('bot',g+', Lagares. J.A.R.V.I.S online. Posso adicionar, concluir ou remover tarefas da sua agenda — basta pedir. Como posso ajudar?');
+        let extra='';
+        try{
+          const n=new Date(),iso=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+          const ts=(window.AgendaAPI?window.AgendaAPI.getTasks():[]).filter(t=>!t.done);
+          const hoje=ts.filter(t=>t.date===iso).length;
+          extra=hoje>0?` O senhor tem ${hoje} tarefa${hoje>1?'s':''} para hoje.`:(ts.length>0?` ${ts.length} pendência${ts.length>1?'s':''} na agenda.`:' Agenda em dia.');
+        }catch(_){}
+        addMsg('bot',g+', Lagares. J.A.R.V.I.S online.'+extra+' Como posso ajudar?');
       }
     }
     btn.addEventListener('click',togglePanel);
@@ -430,7 +456,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
 
     async function ask(userParts,userBubble,fallbackUserText){
       busy=true;send.disabled=true;statusEl.textContent='PROCESSANDO\u2026';
-      const typing=addMsg('bot typing','Processando\u2026');
+      const typing=addMsg('bot typing','');typing.innerHTML='<span class="jdot"></span><span class="jdot"></span><span class="jdot"></span>';
       const contents=history.concat([{role:'user',parts:userParts}]);
       try{
         const raw=await callGemini(contents);
@@ -461,6 +487,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       ask([{text}],bubble,text);
     }
 
+    document.querySelectorAll('.j-chip').forEach(ch=>ch.addEventListener('click',()=>{if(busy)return;input.value=ch.dataset.p;sendText();}));
     send.addEventListener('click',sendText);
     input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendText();}});
     input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,100)+'px';});
