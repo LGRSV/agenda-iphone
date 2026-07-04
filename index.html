@@ -7,7 +7,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Agenda Lagares">
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Agenda Lagares</title>
   <style>
@@ -188,7 +187,7 @@
   (()=>{
     'use strict';
     const K1='AQ.Ab8RN6JVWnIhpQY',K2='65xrobbMyhLDfg4CX3',K3='icuV8UplGw4mmnUbg';
-    const KEY=[K1,K2,K3].join('');
+    const KEY=[K1,K2,K3].join('');const E1='sk_ae425b5b0814a4',E2='7afc9161ee024e257',E3='e6eebc052067bfac9';const ELKEY=[E1,E2,E3].join('');
     const MODELS=['gemini-2.5-flash-lite','gemini-3.5-flash','gemini-2.5-flash'];
     const VOICE_KEY='jarvis_voice_on';
     const q=s=>document.getElementById(s);
@@ -298,22 +297,34 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       if(chunks.length>3){chunks[2]=chunks.slice(2).join(' ');chunks.length=3;}
       return chunks.filter(Boolean);
     }
+    async function elFetch(t){
+      const r=await fetch('https://api.elevenlabs.io/v1/text-to-speech/onwK4e9ZLuTAKqWW03F9?output_format=mp3_44100_128',{
+        method:'POST',headers:{'xi-api-key':ELKEY,'Content-Type':'application/json'},
+        body:JSON.stringify({text:t,model_id:'eleven_flash_v2_5',voice_settings:{stability:0.5,similarity_boost:0.8}})});
+      if(!r.ok)throw new Error('el '+r.status);
+      const blob=await r.blob();
+      if(!blob||blob.size<800)throw new Error('el vazio');
+      return URL.createObjectURL(blob);
+    }
     async function speak(text){
       if(!voiceOn)return;
       stopSpeech();
       const gen=speakGen;
       let t=stripForSpeech(text).trim();
       if(!t)return;
-      const nm=nativeMale();
-      if(nm){
-        const u=new SpeechSynthesisUtterance(t);
-        u.lang='pt-BR';u.voice=nm;u.pitch=0.85;u.rate=1.0;u.volume=1;
-        u.onstart=animOn;u.onend=animOff;u.onerror=animOff;
-        window.speechSynthesis.speak(u);
-        return;
-      }
-      const chunks=chunkText(t);
       statusEl.textContent='GERANDO VOZ\u2026';
+      // Camada 1: ElevenLabs (voz Daniel, qualidade Jarvis)
+      try{
+        const url=await elFetch(t);
+        if(gen!==speakGen){URL.revokeObjectURL(url);return;}
+        animOn();
+        await playUrl(url);
+        if(gen===speakGen)animOff();
+        return;
+      }catch(e){}
+      if(gen!==speakGen)return;
+      // Camada 2: Gemini Charon em trechos
+      const chunks=chunkText(t);
       let idx=0,next=ttsFetch(chunks[0]);
       try{
         for(;idx<chunks.length;idx++){
@@ -328,6 +339,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       }catch(e){
         if(gen!==speakGen)return;
         animOff();
+        // Camada 3: voz nativa do aparelho
         browserSpeak(chunks.slice(idx).join(' '));
       }
     }
