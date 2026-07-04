@@ -62,6 +62,19 @@ body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:lin
 .toolbar button:hover{background:rgba(255,255,255,.26)}
 .toolbar button.prim{background:#7EC8E3;color:#0f1c33;border-color:#7EC8E3}
 .toolbar button.obr{background:#FFB300;color:#3e2b00;border-color:#FFB300}
+.catbar{display:flex;gap:6px;width:100%;max-width:640px;margin:2px 0 4px;flex-wrap:wrap}
+.catbar button{flex:1;min-width:132px;border:none;border-radius:10px;padding:11px 8px;font-size:12px;font-weight:800;cursor:pointer;transition:.15s}
+.cb-aprovar{background:#E6F4EA;color:#1e7e34}
+.cb-execucao{background:#E8F0FA;color:#1565c0}
+.cb-analise{background:#FFF3CD;color:#8a6100}
+.cb-ncon{background:#FCE8E6;color:#b3261e}
+.catbar button.on{box-shadow:inset 0 0 0 3px currentColor}
+.cat-badge{display:inline-block;padding:5px 13px;border-radius:20px;font-size:12.5px;font-weight:800;margin-bottom:9px}
+.cat-badge.aprovar{background:#E6F4EA;color:#1e7e34;border:1px solid #b7dfc3}
+.cat-badge.execucao{background:#E8F0FA;color:#1565c0;border:1px solid #bcd6f2}
+.cat-badge.analise{background:#FFF3CD;color:#8a6100;border:1px solid #ffe08a}
+.cat-badge.ncon{background:#FCE8E6;color:#b3261e;border:1px solid #f3c2bd}
+.chip .cnt{font-size:10px;opacity:.8;font-weight:800}
 .aval-box{background:#FFF8E1;border:1px solid #FFE082;border-left:4px solid #FFB300;border-radius:8px;padding:10px 12px;margin:2px 0 10px;white-space:pre-wrap;font-size:12.5px;color:#5d4037;line-height:1.5;flex-shrink:0;max-height:180px;overflow:auto}
 .aval-box .al{font-size:9.5px;text-transform:uppercase;letter-spacing:1px;color:#e08600;font-weight:800;margin-bottom:4px}
 .edited-badge{background:#FFB300;color:#3e2b00;border-radius:5px;padding:1px 6px;font-size:9px;font-weight:800;margin-left:6px;vertical-align:middle}
@@ -122,6 +135,13 @@ body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:lin
 <div class="chip" data-f="dmsl">Travados no DMSL</div>
 <div class="chip" data-f="compra">Compra necessária</div>
 </div>
+<div class="ctrl" id="filtros-cat">
+<div class="chip" data-f="cat-aprovar">✅ Aprovados <b class="cnt" data-c="aprovar">0</b></div>
+<div class="chip" data-f="cat-execucao">🔧 Em execução <b class="cnt" data-c="execucao">0</b></div>
+<div class="chip" data-f="cat-analise">↩︎ Em análise <b class="cnt" data-c="analise">0</b></div>
+<div class="chip" data-f="cat-ncon">⛔ Não conf. <b class="cnt" data-c="ncon">0</b></div>
+<div class="chip" data-f="cat-none">◻︎ Sem categoria <b class="cnt" data-c="none">0</b></div>
+</div>
 
 <div class="counter" id="counter">–</div>
 <div class="progress"><div class="bar" id="bar"></div></div>
@@ -137,6 +157,12 @@ body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:lin
 <button id="prev" onclick="go(-1)">← Anterior</button>
 <button onclick="flip()">↻ Virar</button>
 <button id="next" onclick="go(1)">Próximo →</button>
+</div>
+<div class="catbar">
+<button class="cb-aprovar" data-cat="aprovar" onclick="setCat('aprovar')">✅ Aprovar p/ compra</button>
+<button class="cb-execucao" data-cat="execucao" onclick="setCat('execucao')">🔧 Em execução</button>
+<button class="cb-analise" data-cat="analise" onclick="setCat('analise')">↩︎ Voltar p/ análise</button>
+<button class="cb-ncon" data-cat="ncon" onclick="setCat('ncon')">⛔ Não conformidade</button>
 </div>
 <div class="toolbar">
 <button class="prim" onclick="openEditCurrent()">✏️ Editar card</button>
@@ -186,7 +212,7 @@ function effectiveCards(){
 }
 function findCard(id){return effectiveCards().find(c=>c.id===id);}
 function isNew(id){return (overrides.__new__||[]).some(c=>c.id===id);}
-function isEdited(id){return isNew(id)||overrides[id]!==undefined;}
+function isEdited(id){if(isNew(id))return true;const o=overrides[id];return !!o&&Object.keys(o).some(k=>k!=='cat');}
 function escAttr(s){return esc(s==null?'':s).replace(/"/g,'&quot;');}
 
 const FIELDS=[
@@ -339,7 +365,24 @@ function filtered(){
     if(filtro==='RT')return c.tipo==='RT';
     if(filtro==='dmsl')return c.st.includes('DMSL');
     if(filtro==='compra')return c.dec==='Compra necessária';
+    if(filtro==='cat-none')return !c.cat;
+    if(filtro.slice(0,4)==='cat-')return c.cat===filtro.slice(4);
+    return true;
   });
+}
+const CAT_LABELS={aprovar:'✅ Aprovado para compra',execucao:'🔧 Em execução',analise:'↩︎ Voltar para análise',ncon:'⛔ Não conformidade'};
+function catBadge(c){return c.cat?`<div class="cat-badge ${c.cat}">${CAT_LABELS[c.cat]||esc(c.cat)}</div>`:'';}
+function setCat(k){
+  const list=filtered();if(!list.length){alert('Nenhum card no filtro atual.');return;}
+  const id=list[idx].id;const cur=(findCard(id)||{}).cat||'';const nv=cur===k?'':k;
+  if(isNew(id)){const it=(overrides.__new__||[]).find(c=>c.id===id);if(it)it.cat=nv;}
+  else{overrides[id]=Object.assign({},overrides[id]||{},{cat:nv});}
+  saveOverrides();render();
+}
+function updateCatCounts(){
+  const cnt={aprovar:0,execucao:0,analise:0,ncon:0,none:0};
+  effectiveCards().forEach(c=>{cnt[c.cat||'none']=(cnt[c.cat||'none']||0)+1;});
+  document.querySelectorAll('.cnt').forEach(el=>{el.textContent=cnt[el.dataset.c]||0;});
 }
 function kvClass(kv){return kv==='13,8'?'kv138':kv==='34,5'?'kv345':'kvnd';}
 function critClass(c){return {'Muito Alta':'cr-ma','Alta':'cr-a','Média':'cr-m','Baixa':'cr-b'}[c]||'cr-p';}
@@ -424,7 +467,7 @@ function closeEE(){document.getElementById('eeModal').classList.remove('open');}
 function render(){
   const list=filtered();
   if(idx>=list.length)idx=0;
-  if(list.length===0){document.getElementById('front').innerHTML='<div style="margin:auto;color:#90a4ae">Nenhum caso neste filtro.</div>';document.getElementById('back').innerHTML='';document.getElementById('counter').textContent='0 de 0';document.getElementById('bar').style.width='0%';return;}
+  if(list.length===0){document.getElementById('front').innerHTML='<div style="margin:auto;color:#90a4ae">Nenhum caso neste filtro.</div>';document.getElementById('back').innerHTML='';document.getElementById('counter').textContent='0 de 0';document.getElementById('bar').style.width='0%';document.querySelectorAll('.catbar button').forEach(b=>b.classList.remove('on'));updateCatCounts();return;}
   const c=list[idx];
   const kv=c.kv==='ND'?'ND':c.kv+' kV';
   // FRENTE
@@ -436,6 +479,7 @@ function render(){
       <div class="hero-modelo"><span class="ml">Modelo</span>${esc(c.modelo)||'Não informado'}</div>
       <div class="hero-kv ${c.kv==='34,5'?'kv345':''}"><span class="kl">Faixa de tensão</span>${c.kv==='ND'?'ND':esc(c.kv)+' kV'}</div>
     </div>
+    ${catBadge(c)}
     <div class="row1"><span class="tp tp-${c.tipo}">${c.tipo}</span><span class="idc">${esc(c.id)}${isEdited(c.id)?'<span class="edited-badge">editado</span>':''}</span></div>
     <div class="serie">${esc(c.serie)}</div>
     <div class="patr">Patrim.: ${esc(c.patr)} · SS ${esc(c.ss)}</div>
@@ -468,6 +512,8 @@ function render(){
   document.getElementById('bar').style.width=((idx+1)/list.length*100)+'%';
   document.getElementById('prev').disabled=idx===0;
   document.getElementById('next').disabled=idx===list.length-1;
+  document.querySelectorAll('.catbar button').forEach(b=>b.classList.toggle('on',b.dataset.cat===(c.cat||'')));
+  updateCatCounts();
   if(flipped){flipped=false;document.getElementById('card').classList.remove('flip');}
 }
 function flip(){flipped=!flipped;document.getElementById('card').classList.toggle('flip');}
