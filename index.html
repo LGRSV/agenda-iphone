@@ -313,17 +313,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       let t=stripForSpeech(text).trim();
       if(!t)return;
       statusEl.textContent='GERANDO VOZ\u2026';
-      // Camada 1: ElevenLabs (voz Daniel, qualidade Jarvis)
-      try{
-        const url=await elFetch(t);
-        if(gen!==speakGen){URL.revokeObjectURL(url);return;}
-        animOn();
-        await playUrl(url);
-        if(gen===speakGen)animOff();
-        return;
-      }catch(e){}
-      if(gen!==speakGen)return;
-      // Camada 2: Gemini Charon em trechos
+      // Camada 1: Gemini Charon (sotaque brasileiro)
       const chunks=chunkText(t);
       let idx=0,next=ttsFetch(chunks[0]);
       try{
@@ -336,12 +326,23 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
           if(gen!==speakGen)return;
         }
         animOff();
-      }catch(e){
-        if(gen!==speakGen)return;
-        animOff();
-        // Camada 3: voz nativa do aparelho
-        browserSpeak(chunks.slice(idx).join(' '));
-      }
+        return;
+      }catch(e){}
+      if(gen!==speakGen)return;
+      // Camada 2: ElevenLabs Daniel (retoma do trecho que faltou)
+      const rest=chunks.slice(idx).join(' ');
+      try{
+        const url=await elFetch(rest);
+        if(gen!==speakGen){URL.revokeObjectURL(url);return;}
+        animOn();
+        await playUrl(url);
+        if(gen===speakGen)animOff();
+        return;
+      }catch(e2){}
+      if(gen!==speakGen)return;
+      // Camada 3: voz nativa
+      animOff();
+      browserSpeak(rest);
     }
 
     function parseJarvis(raw){
