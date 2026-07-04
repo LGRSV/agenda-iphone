@@ -345,11 +345,48 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       browserSpeak(rest);
     }
 
+    function extractJson(t){
+      const s=t.indexOf('{');
+      if(s<0)return null;
+      let depth=0,inStr=false,esc=false;
+      for(let i=s;i<t.length;i++){
+        const ch=t[i];
+        if(esc){esc=false;continue;}
+        if(ch==='\\'){esc=true;continue;}
+        if(ch==='"'){inStr=!inStr;continue;}
+        if(inStr)continue;
+        if(ch==='{')depth++;
+        else if(ch==='}'){depth--;if(depth===0)return t.slice(s,i+1);}
+      }
+      return null;
+    }
+    function rgxStr(t,key){
+      const m=new RegExp('"'+key+'"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"').exec(t);
+      if(!m)return null;
+      try{return JSON.parse('"'+m[1]+'"');}catch(_){return m[1];}
+    }
     function parseJarvis(raw){
       let t=String(raw||'').trim().replace(/^```(json)?/i,'').replace(/```$/,'').trim();
-      const a=t.indexOf('{'),b=t.lastIndexOf('}');
-      if(a>=0&&b>a)t=t.slice(a,b+1);
-      try{return JSON.parse(t);}catch(_){return{action:'none',reply:String(raw||'').trim()};}
+      const cand=extractJson(t);
+      if(cand){try{return JSON.parse(cand);}catch(_){}}
+      const reply=rgxStr(t,'reply');
+      if(reply){
+        const j={action:'none',reply};
+        const tr=rgxStr(t,'transcript');if(tr)j.transcript=tr;
+        const am=/"action"\s*:\s*"(none|add_task|complete_task|delete_task)"/.exec(t);
+        if(am){
+          j.action=am[1];
+          const tx=rgxStr(t,'text'),dm=/"date"\s*:\s*"(\d{4}-\d{2}-\d{2})"/.exec(t),
+                tm=/"time"\s*:\s*"(\d{2}:\d{2})"/.exec(t),tg=rgxStr(t,'tag'),qr=rgxStr(t,'query');
+          if(j.action==='add_task'){
+            if(tx&&dm)j.task={text:tx,date:dm[1],time:tm?tm[1]:'',tag:tg||'pessoal'};
+            else j.action='none';
+          }else if(qr)j.query=qr;
+          else if(j.action!=='none')j.action='none';
+        }
+        return j;
+      }
+      return{action:'none',reply:'Desculpe, Senhor, tive uma falha ao formatar a resposta. Pode repetir?'};
     }
 
     function runAction(j){
@@ -380,7 +417,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
             body:JSON.stringify({
               system_instruction:{parts:[{text:systemPrompt()}]},
               contents,
-              generationConfig:{temperature:0.6,maxOutputTokens:1600,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}}
+              generationConfig:{temperature:0.6,maxOutputTokens:1600,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0},responseSchema:{type:'OBJECT',properties:{action:{type:'STRING',enum:['none','add_task','complete_task','delete_task']},task:{type:'OBJECT',properties:{text:{type:'STRING'},date:{type:'STRING'},time:{type:'STRING'},tag:{type:'STRING'}}},query:{type:'STRING'},transcript:{type:'STRING'},reply:{type:'STRING'}},required:['action','reply']}}
             })
           });
           const data=await res.json();
