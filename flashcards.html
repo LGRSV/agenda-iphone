@@ -79,6 +79,25 @@ body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:lin
 .btn-cancel{background:#eceff1;color:#546e7a}
 .btn-del{background:#C00000;color:#fff}
 .btn-reset{background:#FFE0B2;color:#8a5100}
+.hero{position:relative;width:100%;border-radius:12px;overflow:hidden;margin-bottom:10px;background:#eef3f8;flex-shrink:0}
+.hero-img{display:block;width:100%;height:160px;object-fit:cover;background:#eef3f8}
+.hero-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;height:150px;color:#fff}
+.hero-ph.rl{background:linear-gradient(135deg,#1565c0,#42a5f5)}
+.hero-ph.rt{background:linear-gradient(135deg,#c15e1a,#f5a05a)}
+.hero-ph svg{width:50px;height:50px;opacity:.95}
+.hero-ph .pht{font-size:12.5px;font-weight:800;letter-spacing:1px;margin-top:7px}
+.hero-ph .phs{font-size:9.5px;opacity:.9;margin-top:3px}
+.hero-cap{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;flex-shrink:0}
+.hero-modelo{font-size:15px;font-weight:800;color:#1F3864;line-height:1.15}
+.hero-modelo .ml{display:block;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#90a4ae;font-weight:800;margin-bottom:1px}
+.hero-kv{background:#DDEBF7;color:#1565c0;padding:5px 13px;border-radius:9px;font-weight:800;font-size:14px;white-space:nowrap;text-align:center}
+.hero-kv.kv345{background:#FCE4D6;color:#c15e1a}
+.hero-kv .kl{display:block;font-size:8px;text-transform:uppercase;letter-spacing:.5px;opacity:.75;font-weight:800}
+.foto-prev{border:1px solid #cfd8dc;border-radius:8px;min-height:80px;display:flex;align-items:center;justify-content:center;background:#f7fafc;overflow:hidden}
+.foto-prev img{max-width:100%;max-height:190px;display:block}
+.foto-empty{color:#b0bec5;font-size:12px}
+.foto-clear{margin-top:6px;background:#eceff1;color:#546e7a;border:none;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer}
+.fld input[type=file]{padding:7px;font-size:12px}
 </style></head><body>
 
 <div class="hd">
@@ -149,7 +168,9 @@ function escAttr(s){return esc(s==null?'':s).replace(/"/g,'&quot;');}
 
 const FIELDS=[
  {k:'id',l:'ID do card',t:'text',newOnly:true,hlp:'Identificador único'},
+ {k:'foto',l:'Foto do equipamento',t:'foto',hlp:'Tire ou escolha uma foto — fica salva neste aparelho e no backup.'},
  {k:'tipo',l:'Tipo',t:'select',opts:['RL','RT']},
+ {k:'modelo',l:'Modelo',t:'text',hlp:'Ex.: NOJA OSM15, Cooper NOVA, Siemens 7SR...'},
  {k:'serie',l:'Série',t:'text'},
  {k:'patr',l:'Patrimônio',t:'text'},
  {k:'local',l:'Localização',t:'text'},
@@ -171,7 +192,32 @@ const FIELDS=[
 
 function pecasToText(arr){return (arr||[]).map(p=>[p.peca||'',p.cod||'',p.qtd||'',p.mat||'',p.mo||'',p.tot||''].join(' ; ')).join('\n');}
 function textToPecas(t){return (t||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split(';').map(x=>x.trim());return {peca:p[0]||'',cod:p[1]||'',qtd:p[2]||'',mat:p[3]||'',mo:p[4]||'',tot:p[5]||''};});}
-function blankCard(){return {id:'NOVO-'+Date.now().toString().slice(-5),tipo:'RL',serie:'',patr:'',local:'',ss:'',kv:'ND',crit:'—',defeito:'',st:'',dec:'',ql:'',pa:'',rp:'',etapa:'—',imped:'—',desc:'',aval:'',pecas:[]};}
+function blankCard(){return {id:'NOVO-'+Date.now().toString().slice(-5),tipo:'RL',modelo:'',foto:'',serie:'',patr:'',local:'',ss:'',kv:'ND',crit:'—',defeito:'',st:'',dec:'',ql:'',pa:'',rp:'',etapa:'—',imped:'—',desc:'',aval:'',pecas:[]};}
+function fotoPlaceholder(tipo){
+  const t=tipo==='RT'?'rt':'rl';
+  const nome=tipo==='RT'?'REGULADOR DE TENSÃO':'RELIGADOR';
+  return `<div class="hero-ph ${t}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13H11l-1 9 9-11.5H12l1-8.5z"/></svg><div class="pht">${nome}</div><div class="phs">Sem foto · toque em ✏️ Editar para adicionar</div></div>`;
+}
+function onFotoPick(ev){
+  const file=ev.target.files&&ev.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=900;let w=img.width,h=img.height;
+      if(w>h&&w>max){h=Math.round(h*max/w);w=max;} else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      let data;try{data=cv.toDataURL('image/jpeg',0.7);}catch(e){data=r.result;}
+      document.getElementById('f_foto').value=data;
+      document.getElementById('fotoPrev').innerHTML='<img src="'+data+'">';
+    };
+    img.onerror=()=>alert('Não consegui ler esta imagem.');
+    img.src=r.result;
+  };
+  r.readAsDataURL(file);ev.target.value='';
+}
+function clearFoto(){document.getElementById('f_foto').value='';document.getElementById('fotoPrev').innerHTML='<span class="foto-empty">Sem foto</span>';}
 
 let editingId=null;
 function buildForm(card,creating){
@@ -179,6 +225,7 @@ function buildForm(card,creating){
   FIELDS.forEach(f=>{
     if(f.newOnly&&!creating)return;
     const v=card[f.k];
+    if(f.t==='foto'){h+=`<div class="fld"><label>${f.l}</label><div id="fotoPrev" class="foto-prev">${v?`<img src="${escAttr(v)}">`:'<span class="foto-empty">Sem foto</span>'}</div><input type="hidden" id="f_foto" value="${escAttr(v)}"><input type="file" id="fotoFile" accept="image/*" onchange="onFotoPick(event)"><button type="button" class="foto-clear" onclick="clearFoto()">Remover foto</button><div class="hlp">${f.hlp}</div></div>`;return;}
     if(f.t==='pecas'){h+=`<div class="fld"><label>${f.l}</label><textarea id="f_${f.k}" rows="3">${esc(pecasToText(v))}</textarea><div class="hlp">${f.hlp}</div></div>`;return;}
     if(f.t==='textarea'){h+=`<div class="fld"><label>${f.l}</label><textarea id="f_${f.k}">${esc(v==null?'':v)}</textarea>${f.hlp?`<div class="hlp">${f.hlp}</div>`:''}</div>`;return;}
     if(f.t==='select'){const o=f.opts.map(op=>`<option${op===v?' selected':''}>${op}</option>`).join('');h+=`<div class="fld"><label>${f.l}</label><select id="f_${f.k}">${o}</select></div>`;return;}
@@ -283,12 +330,18 @@ function render(){
   const c=list[idx];
   const kv=c.kv==='ND'?'ND':c.kv+' kV';
   // FRENTE
+  const fotoHTML=c.foto?`<img class="hero-img" src="${escAttr(c.foto)}" alt="Foto do equipamento">`:fotoPlaceholder(c.tipo);
   document.getElementById('front').innerHTML=`
+    <div class="hero">${fotoHTML}</div>
+    <div class="hero-cap">
+      <div class="hero-modelo"><span class="ml">Modelo</span>${esc(c.modelo)||'Não informado'}</div>
+      <div class="hero-kv ${c.kv==='34,5'?'kv345':''}"><span class="kl">Faixa de tensão</span>${c.kv==='ND'?'ND':esc(c.kv)+' kV'}</div>
+    </div>
     <div class="row1"><span class="tp tp-${c.tipo}">${c.tipo}</span><span class="idc">${esc(c.id)}${isEdited(c.id)?'<span class="edited-badge">editado</span>':''}</span></div>
     <div class="serie">${esc(c.serie)}</div>
     <div class="patr">Patrim.: ${esc(c.patr)} · SS ${esc(c.ss)}</div>
     <div class="local">${esc(c.local)}</div>
-    <div class="tags"><span class="tag ${kvClass(c.kv)}">${kv}</span><span class="tag ${critClass(c.crit)}">${esc(c.crit)}</span>${c.imped.includes('⚖')?'<span class="tag" style="background:#FFF2CC;color:#7f6000">⚖ Judicial</span>':''}</div>
+    <div class="tags"><span class="tag ${critClass(c.crit)}">${esc(c.crit)}</span>${c.imped.includes('⚖')?'<span class="tag" style="background:#FFF2CC;color:#7f6000">⚖ Judicial</span>':''}</div>
     <div class="lbl">Defeito</div>
     <div class="def">${esc(c.defeito)}</div>
     <div class="stbox ${stClass(c.st)}">Status: ${esc(c.st)}</div>
