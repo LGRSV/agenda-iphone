@@ -260,12 +260,20 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       u.onstart=animOn;u.onend=animOff;u.onerror=animOff;
       window.speechSynthesis.speak(u);
     }
+    function nativeMale(){return voicesCache.find(v=>/pt[-_]BR/i.test(v.lang)&&/felipe|daniel|ricardo|male|masc/i.test(v.name))||null;}
     async function speak(text){
       if(!voiceOn)return;
       stopSpeech();
       let t=stripForSpeech(text).trim();
-      if(t.length>280){const cut=t.slice(0,280);const m=cut.match(/^[\s\S]*[.!?]/);t=m?m[0]:cut;}
       if(!t)return;
+      const nm=nativeMale();
+      if(nm){
+        const u=new SpeechSynthesisUtterance(t);
+        u.lang='pt-BR';u.voice=nm;u.pitch=0.85;u.rate=1.0;u.volume=1;
+        u.onstart=animOn;u.onend=animOff;u.onerror=animOff;
+        window.speechSynthesis.speak(u);
+        return;
+      }
       try{
         statusEl.textContent='GERANDO VOZ\u2026';
         const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${KEY}`,{
