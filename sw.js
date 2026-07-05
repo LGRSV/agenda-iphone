@@ -1,5 +1,6 @@
-const CACHE = 'agenda-lagares-v16';
+const CACHE = 'agenda-lagares-v17';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=1"><\/script>';
+const TREINO_SCRIPT = '<script src="./treino.js?v=1"><\/script>';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -23,6 +24,7 @@ self.addEventListener('fetch', event => {
 
     let html = await response.text();
     if (!html.includes('edit-enhancement.js')) html = html.replace('</body>', `${EDIT_SCRIPT}</body>`);
+    if (!html.includes('treino.js')) html = html.replace('</body>', `${TREINO_SCRIPT}</body>`);
 
     const headers = new Headers(response.headers);
     headers.delete('content-length');
