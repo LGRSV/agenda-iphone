@@ -556,7 +556,7 @@ render();
   function playUrl(url){return new Promise(res=>{jUrl=url;jAudio.src=url;jAudio.onplay=()=>{played=true;setStatus(true);};jAudio.onended=()=>{URL.revokeObjectURL(url);jUrl=null;setStatus(false);res(true);};jAudio.onerror=()=>{URL.revokeObjectURL(url);jUrl=null;setStatus(false);res(false);};jAudio.play().catch(()=>{setStatus(false);res(false);});});}
   async function speak(text){
     if(!voiceOn)return;stopSpeech();
-    const t=(text||'').replace(/\*/g,'').trim();if(!t)return;
+    const t=(text||'').replace(/J\.?A\.?R\.?V\.?I\.?S\.?/gi,'Jarvis').replace(/\*/g,'').trim();if(!t)return;
     setStatus(true,'gen');
     try{const url=await gttsFetch(t);const ok=await playUrl(url);if(ok)return;}catch(e){}
     browserSpeak(t);

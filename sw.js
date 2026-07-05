@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v18';
+const CACHE = 'agenda-lagares-v19';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=2"><\/script>';
 
 self.addEventListener('install', () => {
