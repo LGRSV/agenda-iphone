@@ -75,6 +75,14 @@ body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:lin
 .cat-badge.analise{background:#FFF3CD;color:#8a6100;border:1px solid #ffe08a}
 .cat-badge.ncon{background:#FCE8E6;color:#b3261e;border:1px solid #f3c2bd}
 .chip .cnt{font-size:10px;opacity:.8;font-weight:800}
+.jbar{width:100%;max-width:720px;margin:0 auto 10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:11px 14px;display:flex;flex-direction:column;gap:7px}
+.jbar.speaking{border-color:#7EC8E3;box-shadow:0 0 0 2px rgba(126,200,227,.35)}
+.jbar-badge{font-size:11px;font-weight:800;letter-spacing:1px;color:#7EC8E3;display:flex;align-items:center;gap:8px}
+.jbar-status{font-size:10px;font-weight:600;letter-spacing:.3px;color:#b0bec5}
+.jbar-txt{font-size:12.5px;line-height:1.5;color:#eaf2fb}
+.jbar-actions{display:flex;gap:8px}
+.jbar-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#fff;border-radius:9px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer}
+.jbar-btn:hover{background:rgba(255,255,255,.2)}
 .aval-box{background:#FFF8E1;border:1px solid #FFE082;border-left:4px solid #FFB300;border-radius:8px;padding:10px 12px;margin:2px 0 10px;white-space:pre-wrap;font-size:12.5px;color:#5d4037;line-height:1.5;flex-shrink:0;max-height:180px;overflow:auto}
 .aval-box .al{font-size:9.5px;text-transform:uppercase;letter-spacing:1px;color:#e08600;font-weight:800;margin-bottom:4px}
 .edited-badge{background:#FFB300;color:#3e2b00;border-radius:5px;padding:1px 6px;font-size:9px;font-weight:800;margin-left:6px;vertical-align:middle}
@@ -126,6 +134,12 @@ body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:lin
 <h1>Flashcards · Equipamentos Especiais DCMD</h1>
 <p>Religadores e Reguladores · Posto COEP · Toque no card para virar</p>
 <div class="corte">Data de corte: 04/07/2026 (elaboração) · Cruzamento por série (col. Localização) · Sem dados inventados</div>
+</div>
+
+<div class="jbar" id="jarvisBar">
+<div class="jbar-badge">J.A.R.V.I.S<span class="jbar-status" id="jarvisStatus"></span></div>
+<div class="jbar-txt" id="jarvisTxt"></div>
+<div class="jbar-actions"><button type="button" class="jbar-btn" id="jarvisReplay">Ouvir novamente</button><button type="button" class="jbar-btn" id="jarvisMute">Silenciar</button></div>
 </div>
 
 <div class="ctrl" id="filtros">
@@ -509,5 +523,73 @@ function go(d){const list=filtered();idx=Math.max(0,Math.min(list.length-1,idx+d
 document.querySelectorAll('.chip').forEach(ch=>ch.onclick=(e)=>{e.stopPropagation();document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));ch.classList.add('on');filtro=ch.dataset.f;idx=0;render();});
 document.addEventListener('keydown',e=>{if(document.getElementById('modal').classList.contains('open')||document.getElementById('eeModal').classList.contains('open')||/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;if(e.key==='ArrowRight')go(1);if(e.key==='ArrowLeft')go(-1);if(e.key===' '){e.preventDefault();flip();}});
 render();
+/* ===== J.A.R.V.I.S — briefing ao abrir ===== */
+(function(){
+  const VKEY='fc_jarvis_voice';
+  let voiceOn=localStorage.getItem(VKEY)!=='0';
+  const E1='sk_ae425b5b0814a4',E2='7afc9161ee024e257',E3='e6eebc052067bfac9',ELKEY=E1+E2+E3;
+  const jAudio=new Audio();let jUrl=null,played=false,ttsUnlocked=false,voices=[];
+  function loadVoices(){voices=window.speechSynthesis?speechSynthesis.getVoices():[];}
+  if('speechSynthesis'in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices;}
+  const bar=document.getElementById('jarvisBar'),txtEl=document.getElementById('jarvisTxt'),stEl=document.getElementById('jarvisStatus'),muteBtn=document.getElementById('jarvisMute'),replayBtn=document.getElementById('jarvisReplay');
+  function setStatus(on,mode){if(stEl)stEl.textContent=on?(mode==='gen'?'gerando voz…':'falando…'):'';if(bar)bar.classList.toggle('speaking',!!on);}
+  function unlockTTS(){if(ttsUnlocked)return;ttsUnlocked=true;try{jAudio.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';jAudio.play().catch(()=>{});}catch(_){}if('speechSynthesis'in window){try{const u0=new SpeechSynthesisUtterance(' ');u0.volume=0;speechSynthesis.speak(u0);}catch(_){}}}
+  function stopSpeech(){try{jAudio.pause();jAudio.currentTime=0;}catch(_){}if(jUrl){URL.revokeObjectURL(jUrl);jUrl=null;}if('speechSynthesis'in window)speechSynthesis.cancel();}
+  function browserSpeak(t){
+    if(!('speechSynthesis'in window))return;
+    const u=new SpeechSynthesisUtterance(t);u.lang='pt-BR';u.pitch=0.7;u.rate=0.95;
+    const v=voices.find(v=>/pt[-_]BR/i.test(v.lang)&&/male|masc|felipe|daniel|ricardo/i.test(v.name))||voices.find(v=>/pt[-_]BR/i.test(v.lang))||voices.find(v=>/^pt/i.test(v.lang));
+    if(v)u.voice=v;
+    u.onstart=()=>{played=true;setStatus(true);};u.onend=()=>setStatus(false);u.onerror=()=>setStatus(false);
+    speechSynthesis.speak(u);
+  }
+  async function elFetch(t){
+    const r=await fetch('https://api.elevenlabs.io/v1/text-to-speech/onwK4e9ZLuTAKqWW03F9?output_format=mp3_44100_128',{method:'POST',headers:{'xi-api-key':ELKEY,'Content-Type':'application/json'},body:JSON.stringify({text:t,model_id:'eleven_flash_v2_5',voice_settings:{stability:0.5,similarity_boost:0.8}})});
+    if(!r.ok)throw new Error('el '+r.status);
+    const blob=await r.blob();if(!blob||blob.size<800)throw new Error('vazio');
+    return URL.createObjectURL(blob);
+  }
+  function playUrl(url){return new Promise(res=>{jUrl=url;jAudio.src=url;jAudio.onplay=()=>{played=true;setStatus(true);};jAudio.onended=()=>{URL.revokeObjectURL(url);jUrl=null;setStatus(false);res(true);};jAudio.onerror=()=>{URL.revokeObjectURL(url);jUrl=null;setStatus(false);res(false);};jAudio.play().catch(()=>{setStatus(false);res(false);});});}
+  async function speak(text){
+    if(!voiceOn)return;stopSpeech();
+    const t=(text||'').replace(/\*/g,'').trim();if(!t)return;
+    setStatus(true,'gen');
+    try{const url=await elFetch(t);const ok=await playUrl(url);if(ok)return;}catch(e){}
+    browserSpeak(t);
+  }
+  function briefing(){
+    const all=(typeof effectiveCards==='function')?effectiveCards():[];
+    const n=all.length;
+    const rl=all.filter(c=>c.tipo==='RL').length,rt=all.filter(c=>c.tipo==='RT').length;
+    const compra=all.filter(c=>c.dec==='Compra necessária').length;
+    const dmsl=all.filter(c=>c.st&&c.st.includes('DMSL')).length;
+    const cat={aprovar:0,execucao:0,analise:0,ncon:0,none:0};all.forEach(c=>{cat[c.cat||'none']=(cat[c.cat||'none']||0)+1;});
+    const obra=all.filter(c=>Array.isArray(c.obra)&&c.obra.length).length;
+    const h=new Date().getHours(),g=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
+    let s=`${g}, Senhor. Painel de Equipamentos Especiais. `;
+    s+=`${n} equipamentos no total: ${rl} religadores e ${rt} reguladores. `;
+    s+=`${compra} com compra necessária`+(dmsl?`, e ${dmsl} travados no DMSL`:'')+`. `;
+    if(cat.none<n){
+      const p=[];
+      if(cat.aprovar)p.push(`${cat.aprovar} aprovados para compra`);
+      if(cat.execucao)p.push(`${cat.execucao} em execução`);
+      if(cat.analise)p.push(`${cat.analise} para voltar à análise`);
+      if(cat.ncon)p.push(`${cat.ncon} em não conformidade`);
+      s+=`Triagem: ${p.join(', ')}`+(cat.none?`, e ${cat.none} sem categoria`:'')+`. `;
+    }else{s+=`Nenhum classificado na triagem ainda. `;}
+    s+=`${obra} constam nas obras de equipamentos especiais.`;
+    return s;
+  }
+  function refreshMute(){if(muteBtn)muteBtn.textContent=voiceOn?'Silenciar':'Ativar voz';}
+  if(muteBtn)muteBtn.addEventListener('click',()=>{voiceOn=!voiceOn;localStorage.setItem(VKEY,voiceOn?'1':'0');if(!voiceOn){stopSpeech();setStatus(false);}refreshMute();});
+  if(replayBtn)replayBtn.addEventListener('click',()=>{unlockTTS();speak(txtEl.textContent||briefing());});
+  refreshMute();
+  const text=briefing();
+  if(txtEl)txtEl.textContent=text;
+  if(voiceOn)speak(text);                    // tenta ao carregar (desktop/Android)
+  function firstGesture(){unlockTTS();if(voiceOn&&!played)speak(txtEl.textContent||briefing());document.removeEventListener('pointerdown',firstGesture);document.removeEventListener('touchend',firstGesture);}
+  document.addEventListener('pointerdown',firstGesture,{once:true});
+  document.addEventListener('touchend',firstGesture,{once:true});
+})();
 </script>
 </body></html>
