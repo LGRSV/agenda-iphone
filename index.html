@@ -99,7 +99,7 @@
     function endDateTime(date,time){const start=new Date(`${date}T${time}:00`);start.setMinutes(start.getMinutes()+30);return icsDateTime(iso(start),`${String(start.getHours()).padStart(2,'0')}:${String(start.getMinutes()).padStart(2,'0')}`)}
     function exportCalendar(){const items=tasks.filter(task=>!task.done&&task.time&&task.reminder>=0);if(!items.length){showToast('Defina horário e lembrete em pelo menos uma tarefa.');return}const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Agenda Lagares//Alertas iPhone//PT','CALSCALE:GREGORIAN','METHOD:PUBLISH'];items.forEach(task=>{const trigger=task.reminder===0?'PT0M':`-PT${task.reminder}M`;const meta=tagMeta(task.tag);lines.push('BEGIN:VEVENT',`UID:${icsEscape(task.id)}@agenda-lagares`,`DTSTAMP:${stamp}`,`DTSTART:${icsDateTime(task.date,task.time)}`,`DTEND:${endDateTime(task.date,task.time)}`,`SUMMARY:${icsEscape(task.text)}`,`DESCRIPTION:${icsEscape(`Tag: ${meta.label}`)}`,'BEGIN:VALARM',`TRIGGER:${trigger}`,'ACTION:DISPLAY',`DESCRIPTION:${icsEscape(task.text)}`,'END:VALARM','END:VEVENT')});lines.push('END:VCALENDAR');const blob=new Blob([lines.join('\r\n')],{type:'text/calendar;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='agenda-lembretes.ics';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast('Arquivo criado. Abra-o e adicione ao Calendário.')}
 
-    el.currentDate.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'}).format(new Date());applyTheme(localStorage.getItem(THEME_KEY)==='light'?'light':'dark');render();if('serviceWorker'in navigator)registerWorker().catch(()=>{});setInterval(checkAlerts,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAlerts()});
+    el.currentDate.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'}).format(new Date());applyTheme(localStorage.getItem(THEME_KEY)==='light'?'light':'dark');render();if('serviceWorker'in navigator){let swReloaded=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(swReloaded)return;swReloaded=true;location.reload();});registerWorker().catch(()=>{});}setInterval(checkAlerts,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAlerts()});
     el.themeToggle.addEventListener('click',()=>applyTheme(el.root.dataset.theme==='dark'?'light':'dark'));el.alertsBtn.addEventListener('click',()=>{updateAlertsStatus();el.alertsDialog.showModal()});$('#closeAlertsDialog').addEventListener('click',()=>el.alertsDialog.close());$('#activateAlerts').addEventListener('click',activateAlerts);$('#exportCalendar').addEventListener('click',exportCalendar);$('#openDialog').addEventListener('click',openTaskForm);$('#closeTaskDialog').addEventListener('click',()=>el.taskDialog.close());
     el.viewTabs.addEventListener('click',event=>{const button=event.target.closest('[data-view]');if(!button)return;view=button.dataset.view;render()});el.filters.addEventListener('click',event=>{const button=event.target.closest('[data-filter]');if(!button)return;filter=button.dataset.filter;render()});
     el.viewContent.addEventListener('click',event=>{const del=event.target.closest('[data-action="delete"]');if(del){deleteTask(del.dataset.id);return}const dayNav=event.target.closest('[data-day-shift]');if(dayNav){moveDay(Number(dayNav.dataset.dayShift));return}const monthNav=event.target.closest('[data-month-shift]');if(monthNav){moveMonth(Number(monthNav.dataset.monthShift));return}const cell=event.target.closest('[data-calendar-date]');if(cell){selectedDate=cell.dataset.calendarDate;monthCursor=dateAtNoon(selectedDate);view='day';render();return}const clear=event.target.closest('#clearDone');if(clear){const count=tasks.filter(t=>t.done).length;if(!count)return;tasks=tasks.filter(t=>!t.done);save();render();showToast(`${count} tarefa${count>1?'s':''} removida${count>1?'s':''}`)}});el.viewContent.addEventListener('change',event=>{if(event.target.matches('[data-action="toggle"]'))toggleTask(event.target.dataset.id)});
@@ -347,17 +347,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       let t=stripForSpeech(text).trim();
       if(!t)return;
       statusEl.textContent='GERANDO VOZ\u2026';
-      // Camada 1: ElevenLabs Daniel (timbre Jarvis)
-      try{
-        const url=await elFetch(t);
-        if(gen!==speakGen){URL.revokeObjectURL(url);return;}
-        animOn();
-        await playUrl(url);
-        if(gen===speakGen)animOff();
-        return;
-      }catch(e){}
-      if(gen!==speakGen)return;
-      // Camada 2: Gemini Charon em trechos
+      // Camada 1: Google (Gemini Charon) em trechos
       const chunks=chunkText(t);
       let idx=0,next=ttsFetch(chunks[0]);
       try{
@@ -373,10 +363,37 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
         return;
       }catch(e2){}
       if(gen!==speakGen)return;
+      // Camada 2: ElevenLabs (reserva)
+      try{
+        const url=await elFetch(t);
+        if(gen!==speakGen){URL.revokeObjectURL(url);return;}
+        animOn();
+        await playUrl(url);
+        if(gen===speakGen)animOff();
+        return;
+      }catch(e){}
+      if(gen!==speakGen)return;
       // Camada 3: voz nativa
       animOff();
-      browserSpeak(chunks.slice(idx).join(' '));
+      browserSpeak(t);
     }
+
+    let jarvisBriefed=false;
+    function agendaBriefing(){
+      const h=new Date().getHours(),g=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
+      const n=new Date(),iso=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+      let ts=[];try{ts=(window.AgendaAPI?window.AgendaAPI.getTasks():[]).filter(t=>!t.done);}catch(_){}
+      const hoje=ts.filter(t=>t.date===iso).length,atras=ts.filter(t=>t.date&&t.date<iso).length;
+      let s=`${g}, Lagares. J.A.R.V.I.S online. `;
+      if(hoje>0)s+=`O senhor tem ${hoje} tarefa${hoje>1?'s':''} para hoje`+(atras>0?`, e ${atras} em atraso`:'')+'. ';
+      else if(atras>0)s+=`${atras} tarefa${atras>1?'s':''} em atraso. `;
+      else if(ts.length>0)s+=`${ts.length} pendência${ts.length>1?'s':''} na agenda. `;
+      else s+='Agenda em dia, senhor. ';
+      return s;
+    }
+    function fireBriefing(){if(jarvisBriefed)return;jarvisBriefed=true;unlockTTS();if(voiceOn)speak(agendaBriefing());}
+    document.addEventListener('pointerdown',fireBriefing,{once:true});
+    document.addEventListener('touchend',fireBriefing,{once:true});
 
     function extractJson(t){
       const s=t.indexOf('{');
