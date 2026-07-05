@@ -15,6 +15,7 @@
   const STYLE_ID = 'treinoStyles';
   const HORIZON = 90;   // gera treinos para os próximos 90 dias
   const REGEN = 60;     // regera quando a cobertura cair abaixo de 60 dias
+  const META_VERSION = 2; // sobe quando a regra de geração muda (seg–sex)
 
   /* ---------- animações dos exercícios (SVG + SMIL, tudo offline) -------- */
   const STROKE = 'var(--accent)';
@@ -145,8 +146,20 @@
     const d = new Date(dstr + 'T12:00:00'); d.setDate(d.getDate() + n);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
-  const dayIndex = dstr => Math.floor(Date.parse(dstr + 'T12:00:00') / 86400000);
-  const workoutForDate = dstr => ['A', 'B', 'C'][(((dayIndex(dstr) % 3) + 3) % 3)];
+  function isWeekend(dstr) {
+    const g = new Date(dstr + 'T12:00:00').getDay();
+    return g === 0 || g === 6; // domingo ou sábado
+  }
+  // contador contínuo de dias úteis (epoch 1970-01-05 = segunda-feira),
+  // para a rotação A -> B -> C não reiniciar toda semana
+  const EPOCH = Math.floor(Date.parse('1970-01-05T12:00:00') / 86400000);
+  function weekdayIndex(dstr) {
+    const days = Math.floor(Date.parse(dstr + 'T12:00:00') / 86400000) - EPOCH;
+    const weeks = Math.floor(days / 7);
+    let rem = days % 7; if (rem < 0) rem += 7;
+    return weeks * 5 + Math.min(rem, 4);
+  }
+  const workoutForDate = dstr => ['A', 'B', 'C'][(((weekdayIndex(dstr) % 3) + 3) % 3)];
   const esc = v => { const d = document.createElement('div'); d.textContent = v; return d.innerHTML; };
   function prettyDate(dstr) {
     try { return new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(dstr + 'T12:00:00')); }
@@ -155,28 +168,47 @@
   const shortDate = dstr => { const p = dstr.split('-'); return `${p[2]}/${p[1]}`; };
 
   /* -------------- gera os cards de treino diários na agenda -------------- */
+  const workoutText = w => `🏋️ Treino ${w} · ${WORKOUTS[w].muscles}`;
+
   function ensureTasks() {
     const meta = readJSON(META_KEY, {}) || {};
     const t0 = today();
-    if (meta.generatedUntil && meta.generatedUntil >= addDays(t0, REGEN)) return false;
+    const upgrade = meta.version !== META_VERSION;
+    if (!upgrade && meta.generatedUntil && meta.generatedUntil >= addDays(t0, REGEN)) return false;
 
     const target = addDays(t0, HORIZON);
     const tasks = readTasks();
-    const have = new Set(tasks.filter(x => String(x.id).startsWith('treino-')).map(x => x.date));
-    let added = 0;
-    for (let d = t0; d <= target; d = addDays(d, 1)) {
-      if (have.has(d)) continue;
-      const w = workoutForDate(d);
-      tasks.push({
-        id: 'treino-' + d,
-        text: `🏋️ Treino ${w} · ${WORKOUTS[w].muscles}`,
-        date: d, time: '06:00', tag: 'saude', reminder: 0, done: false
-      });
-      added++;
+    let changed = false;
+
+    // 1) reconcilia treinos já existentes: remove os de fim de semana (não
+    //    concluídos) e corrige a letra/horário dos de dia útil que mudaram
+    for (let i = tasks.length - 1; i >= 0; i--) {
+      const tk = tasks[i];
+      if (!String(tk.id).startsWith('treino-')) continue;
+      if (isWeekend(tk.date)) {
+        if (!tk.done) { tasks.splice(i, 1); changed = true; }
+        continue;
+      }
+      if (!tk.done) {
+        const text = workoutText(workoutForDate(tk.date));
+        if (tk.text !== text) { tk.text = text; changed = true; }
+        if (tk.time !== '06:00') { tk.time = '06:00'; changed = true; }
+      }
     }
+
+    // 2) cria os treinos de dia útil que faltam na janela
+    const have = new Set(tasks.filter(x => String(x.id).startsWith('treino-')).map(x => x.date));
+    for (let d = t0; d <= target; d = addDays(d, 1)) {
+      if (isWeekend(d) || have.has(d)) continue;
+      const w = workoutForDate(d);
+      tasks.push({ id: 'treino-' + d, text: workoutText(w), date: d, time: '06:00', tag: 'saude', reminder: 0, done: false });
+      changed = true;
+    }
+
+    meta.version = META_VERSION;
     meta.generatedUntil = target;
     localStorage.setItem(META_KEY, JSON.stringify(meta));
-    if (added > 0) { writeTasks(tasks); return true; }
+    if (changed) { writeTasks(tasks); return true; }
     return false;
   }
 
@@ -196,6 +228,21 @@
       .tr-head h3{margin:0;font-size:24px;letter-spacing:-.04em}
       .tr-sub{margin:5px 0 0;color:var(--muted);font-size:13px;text-transform:capitalize}
       .tr-close{position:absolute;top:14px;right:14px;width:34px;height:34px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--text);font-size:19px;line-height:1;display:grid;place-items:center}
+      .tr-timer{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--line);background:var(--surface)}
+      .tr-ring{position:relative;width:52px;height:52px;flex:0 0 auto}
+      .tr-ring svg{transform:rotate(-90deg)}
+      .tr-ring .bg{stroke:var(--soft2)}
+      .tr-ring .fg{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .3s linear}
+      .tr-ring.done .fg{stroke:#78d88b}
+      .tr-time{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+      .tr-timer-main{flex:1;min-width:0}
+      .tr-timer-label{color:var(--faint);font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+      .tr-presets{display:flex;gap:6px;margin-top:6px}
+      .tr-preset{padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--soft);color:var(--text);font-size:11px;font-weight:800;line-height:1}
+      .tr-preset.on{border-color:var(--accent);background:var(--accent);color:var(--accentInk)}
+      .tr-timer-btns{display:flex;gap:7px;flex:0 0 auto}
+      .tr-tbtn{width:42px;height:42px;border:1px solid var(--line);border-radius:13px;background:var(--soft);color:var(--text);font-size:17px;line-height:1;display:grid;place-items:center}
+      .tr-tbtn.play{border-color:var(--accent);background:var(--accent);color:var(--accentInk)}
       .tr-body{overflow-y:auto;padding:12px 14px 8px}
       .tr-tip{margin:0 0 12px;padding:11px 13px;border:1px solid var(--line);border-radius:14px;background:var(--soft);color:var(--muted);font-size:12px;line-height:1.45}
       .tr-tip strong{color:var(--text)}
@@ -227,6 +274,63 @@
   /* ------------------------------ dialog --------------------------------- */
   let dialogEl = null, currentDate = null, currentW = null;
 
+  /* ----------------------- cronômetro de descanso ------------------------ */
+  const RING_C = 2 * Math.PI * 23; // circunferência do anel (r=23)
+  let restTotal = 60, restLeft = 60, restInt = null, audioCtx = null;
+  const fmtTime = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+  function beep() {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      [0, 0.22].forEach(t => {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = 880;
+        o.connect(g); g.connect(audioCtx.destination);
+        const s = audioCtx.currentTime + t;
+        g.gain.setValueAtTime(0.0001, s);
+        g.gain.exponentialRampToValueAtTime(0.3, s + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, s + 0.18);
+        o.start(s); o.stop(s + 0.2);
+      });
+    } catch (_) {}
+  }
+
+  function paintTimer() {
+    if (!dialogEl) return;
+    dialogEl.querySelector('#trTime').textContent = fmtTime(Math.max(0, restLeft));
+    const off = RING_C * (1 - Math.max(0, restLeft) / restTotal);
+    dialogEl.querySelector('#trRingFg').setAttribute('stroke-dashoffset', off.toFixed(1));
+  }
+  function stopTimer() { clearInterval(restInt); restInt = null; dialogEl.querySelector('#trToggle').textContent = '▶'; }
+  function timerFinished() {
+    stopTimer();
+    restLeft = 0; paintTimer();
+    dialogEl.querySelector('#trRing').classList.add('done');
+    if (navigator.vibrate) navigator.vibrate([140, 70, 140]);
+    beep();
+    toast('Descanso concluído — bora pra próxima série! 💪');
+  }
+  function startTimer() {
+    if (restInt) { stopTimer(); return; }
+    if (restLeft <= 0) restLeft = restTotal;
+    dialogEl.querySelector('#trRing').classList.remove('done');
+    dialogEl.querySelector('#trToggle').textContent = '⏸';
+    try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch (_) {}
+    restInt = setInterval(() => {
+      restLeft--;
+      paintTimer();
+      if (restLeft <= 0) timerFinished();
+    }, 1000);
+  }
+  function resetTimer() { stopTimer(); restLeft = restTotal; dialogEl.querySelector('#trRing').classList.remove('done'); paintTimer(); }
+  function setPreset(sec) {
+    restTotal = sec; restLeft = sec; stopTimer();
+    dialogEl.querySelector('#trRing').classList.remove('done');
+    dialogEl.querySelectorAll('.tr-preset').forEach(b => b.classList.toggle('on', Number(b.dataset.sec) === sec));
+    paintTimer();
+  }
+
   function ensureDialog() {
     if (dialogEl) return dialogEl;
     dialogEl = document.createElement('dialog');
@@ -239,6 +343,28 @@
           <p class="tr-sub" id="trSub"></p>
           <button class="tr-close" id="trClose" type="button" aria-label="Fechar">×</button>
         </div>
+        <div class="tr-timer">
+          <div class="tr-ring" id="trRing">
+            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" stroke-width="4">
+              <circle class="bg" cx="26" cy="26" r="23"/>
+              <circle class="fg" id="trRingFg" cx="26" cy="26" r="23" stroke-dasharray="144.5" stroke-dashoffset="0"/>
+            </svg>
+            <span class="tr-time" id="trTime">1:00</span>
+          </div>
+          <div class="tr-timer-main">
+            <span class="tr-timer-label">Descanso entre séries</span>
+            <div class="tr-presets" id="trPresets">
+              <button class="tr-preset" type="button" data-sec="30">30s</button>
+              <button class="tr-preset on" type="button" data-sec="60">60s</button>
+              <button class="tr-preset" type="button" data-sec="90">90s</button>
+              <button class="tr-preset" type="button" data-sec="120">2min</button>
+            </div>
+          </div>
+          <div class="tr-timer-btns">
+            <button class="tr-tbtn play" id="trToggle" type="button" aria-label="Iniciar descanso">▶</button>
+            <button class="tr-tbtn" id="trReset" type="button" aria-label="Zerar">↺</button>
+          </div>
+        </div>
         <div class="tr-body" id="trBody"></div>
         <div class="tr-foot">
           <button class="tr-btn ghost" id="trSave" type="button">Salvar cargas</button>
@@ -248,8 +374,17 @@
     document.body.appendChild(dialogEl);
     dialogEl.querySelector('#trClose').addEventListener('click', () => dialogEl.close());
     dialogEl.addEventListener('click', e => { if (e.target === dialogEl) dialogEl.close(); });
+    dialogEl.addEventListener('close', stopTimer);
     dialogEl.querySelector('#trSave').addEventListener('click', () => saveSession(false));
     dialogEl.querySelector('#trDone').addEventListener('click', () => saveSession(true));
+    dialogEl.querySelector('#trToggle').addEventListener('click', startTimer);
+    dialogEl.querySelector('#trReset').addEventListener('click', resetTimer);
+    dialogEl.querySelector('#trPresets').addEventListener('click', e => {
+      const b = e.target.closest('.tr-preset');
+      if (b) setPreset(Number(b.dataset.sec));
+    });
+    const fgc = dialogEl.querySelector('#trRingFg');
+    fgc.setAttribute('stroke-dasharray', RING_C.toFixed(1));
     return dialogEl;
   }
 
@@ -315,9 +450,10 @@
     dlg.querySelector('#trSub').textContent = prettyDate(currentDate);
     dlg.querySelector('#trDone').textContent = task.done ? 'Concluído ✓' : 'Salvar e concluir ✓';
     dlg.querySelector('#trBody').innerHTML =
-      `<p class="tr-tip"><strong>Aquecimento:</strong> 5 min de esteira/bike. <strong>Descanso:</strong> 60–90 s entre as séries. Anote a carga de cada exercício para acompanhar sua evolução.</p>` +
+      `<p class="tr-tip"><strong>Aquecimento:</strong> 5 min de esteira/bike. Use o cronômetro acima para cronometrar o descanso e anote a carga de cada exercício para acompanhar sua evolução.</p>` +
       plan.exercises.map(ex => exerciseRow(ex, logs)).join('');
-    dlg.showModal();
+    if (!restInt) paintTimer();
+    if (!dlg.open) dlg.showModal();
   }
 
   function saveSession(markDone) {
