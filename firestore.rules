@@ -1,0 +1,14 @@
+rules_version = '2';
+
+// Cada usuário só enxerga e grava o próprio documento em /users/{uid}.
+// Ninguém acessa dados de outra pessoa, mesmo autenticado.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+  }
+}

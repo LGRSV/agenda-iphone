@@ -292,17 +292,23 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
     }
     function nativeMale(){return voicesCache.find(v=>/pt[-_]BR/i.test(v.lang)&&/felipe|daniel|ricardo|male|masc/i.test(v.name))||null;}
     async function ttsFetch(t){
-      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${KEY}`,{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          contents:[{parts:[{text:'Fale em portugues brasileiro com tom calmo, grave e sofisticado de assistente de IA britanico: '+t}]}],
-          generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:'Charon'}}}}
-        })});
-      const d=await r.json();
-      const p=d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0];
-      const b64=p&&p.inlineData&&p.inlineData.data;
+      let b64,mime;
+      if(window.JarvisBackend&&window.JarvisBackend.ready()){
+        const d=await window.JarvisBackend.ttsGemini(t);
+        b64=d&&d.audioBase64;mime=d&&d.mimeType;
+      }else{
+        const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${KEY}`,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            contents:[{parts:[{text:'Fale em portugues brasileiro com tom calmo, grave e sofisticado de assistente de IA britanico: '+t}]}],
+            generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:'Charon'}}}}
+          })});
+        const d=await r.json();
+        const p=d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0];
+        b64=p&&p.inlineData&&p.inlineData.data;mime=p&&p.inlineData&&p.inlineData.mimeType;
+      }
       if(!b64)throw new Error('sem audio');
-      const rm=/rate=(\d+)/.exec(p.inlineData.mimeType||'');
+      const rm=/rate=(\d+)/.exec(mime||'');
       const bin=atob(b64),pcm=new Uint8Array(bin.length);
       for(let i=0;i<bin.length;i++)pcm[i]=bin.charCodeAt(i);
       return URL.createObjectURL(pcmToWav(pcm,rm?+rm[1]:24000));
@@ -328,6 +334,15 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       return chunks.filter(Boolean);
     }
     async function elFetch(t){
+      if(window.JarvisBackend&&window.JarvisBackend.ready()){
+        const b64=await window.JarvisBackend.ttsEleven(t);
+        if(!b64)throw new Error('el vazio');
+        const bin=atob(b64),bytes=new Uint8Array(bin.length);
+        for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+        const blob=new Blob([bytes],{type:'audio/mpeg'});
+        if(blob.size<800)throw new Error('el vazio');
+        return URL.createObjectURL(blob);
+      }
       const r=await fetch('https://api.elevenlabs.io/v1/text-to-speech/onwK4e9ZLuTAKqWW03F9?output_format=mp3_44100_128',{
         method:'POST',headers:{'xi-api-key':ELKEY,'Content-Type':'application/json'},
         body:JSON.stringify({text:t,model_id:'eleven_flash_v2_5',voice_settings:{stability:0.5,similarity_boost:0.8}})});
@@ -437,17 +452,28 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       return null;
     }
 
+    function geminiBody(contents){
+      return {
+        system_instruction:{parts:[{text:systemPrompt()}]},
+        contents,
+        generationConfig:{temperature:0.6,maxOutputTokens:1600,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0},responseSchema:{type:'OBJECT',properties:{action:{type:'STRING',enum:['none','add_task','complete_task','delete_task']},task:{type:'OBJECT',properties:{text:{type:'STRING'},date:{type:'STRING'},time:{type:'STRING'},tag:{type:'STRING'}}},query:{type:'STRING'},transcript:{type:'STRING'},reply:{type:'STRING'}},required:['action','reply']}}
+      };
+    }
     async function callGemini(contents){
+      const body=geminiBody(contents);
+      // Preferência: proxy seguro (chaves escondidas no servidor)
+      if(window.JarvisBackend&&window.JarvisBackend.ready()){
+        const txt=await window.JarvisBackend.aiGemini(body);
+        if(txt)return txt;
+        throw new Error('resposta vazia');
+      }
+      // Fallback: chamada direta (enquanto o Firebase não está configurado)
       let lastErr='';
       for(const model of MODELS){
         try{
           const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${KEY}`,{
             method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-              system_instruction:{parts:[{text:systemPrompt()}]},
-              contents,
-              generationConfig:{temperature:0.6,maxOutputTokens:1600,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0},responseSchema:{type:'OBJECT',properties:{action:{type:'STRING',enum:['none','add_task','complete_task','delete_task']},task:{type:'OBJECT',properties:{text:{type:'STRING'},date:{type:'STRING'},time:{type:'STRING'},tag:{type:'STRING'}}},query:{type:'STRING'},transcript:{type:'STRING'},reply:{type:'STRING'}},required:['action','reply']}}
-            })
+            body:JSON.stringify(body)
           });
           const data=await res.json();
           const txt=data&&data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text;
@@ -552,6 +578,16 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
   })();
   </script>
   <!-- ========== /JARVIS v2 ========== -->
+
+  <!-- ========== Firebase (proxy seguro + base na nuvem) ========== -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
+  <script src="./firebase-config.js"></script>
+  <script src="./firebase-client.js"></script>
+  <script src="./firebase-sync.js"></script>
 
   <script src="./treino.js?v=1"></script>
 </body>
