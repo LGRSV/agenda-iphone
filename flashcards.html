@@ -240,6 +240,11 @@ body>*{animation:fadeUp .55s var(--ease) both}
 @keyframes cardIn{from{opacity:.25;transform:translateX(var(--dir,0)) scale(.965)}to{opacity:1;transform:none}}
 .card.enter{animation:cardIn .44s var(--spring)}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.06s!important}}
+/* rodada 1: topo mais enxuto — filtros em rolagem horizontal */
+.ctrl{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:8px 0;padding:1px 2px;-webkit-mask:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 14px),transparent);mask:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 14px),transparent)}
+.ctrl::-webkit-scrollbar{display:none}
+.ctrl .chip{flex:0 0 auto}
+.jbar{margin-bottom:8px}
 </style></head><body>
 
 <div class="hd">
@@ -727,6 +732,17 @@ render();
       else playEnter(dx<0?1:-1);
     }
   });
+})();
+/* ===== rodada 1: retomar ultimo filtro e posicao (nao afeta dados) ===== */
+(function(){
+  const POS='fc_pos_v1';
+  try{
+    const pos=JSON.parse(localStorage.getItem(POS)||'{}');
+    if(pos.filtro){const chip=document.querySelector('.chip[data-f="'+pos.filtro+'"]');if(chip){document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));chip.classList.add('on');filtro=pos.filtro;}}
+    if(typeof pos.idx==='number')idx=pos.idx;
+    render();
+  }catch(_){}
+  if(typeof render==='function'){const r=render;render=function(){r();try{localStorage.setItem(POS,JSON.stringify({filtro:filtro,idx:idx}));}catch(_){}};}
 })();
 </script>
 </body></html>
