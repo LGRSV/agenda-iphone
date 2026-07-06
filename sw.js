@@ -1,8 +1,9 @@
-const CACHE = 'agenda-lagares-v25';
+const CACHE = 'agenda-lagares-v26';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=2"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=1"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=1"><\/script>';
 const NOTAS_SCRIPT = '<script src="./notas.js?v=1"><\/script>';
+const SYNC_SCRIPT = '<script src="./sync.js?v=1"><\/script>';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -29,6 +30,7 @@ self.addEventListener('fetch', event => {
     if (!html.includes('treino.js')) html = html.replace('</body>', `${TREINO_SCRIPT}</body>`);
     if (!html.includes('painel.js')) html = html.replace('</body>', `${PAINEL_SCRIPT}</body>`);
     if (!html.includes('notas.js')) html = html.replace('</body>', `${NOTAS_SCRIPT}</body>`);
+    if (!html.includes('sync.js')) html = html.replace('</body>', `${SYNC_SCRIPT}</body>`);
 
     const headers = new Headers(response.headers);
     headers.delete('content-length');
