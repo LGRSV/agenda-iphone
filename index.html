@@ -180,7 +180,7 @@
     @media(min-width:480px){#jarvis-panel{left:max(18px,env(safe-area-inset-left));right:auto;width:400px}}
   </style>
 
-  <div id="app-ver">v40</div>
+  <div id="app-ver">v41</div>
   <button id="jarvis-btn" class="pulse" type="button" aria-label="Abrir Jarvis">
     <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="16" cy="16" r="15" stroke="#75cbff" stroke-width="1.5" opacity=".4"/>
@@ -204,6 +204,7 @@
       </div>
       <div id="jarvis-title">J.A.R.V.I.S<small id="jarvis-status">ASSISTENTE PESSOAL &middot; ONLINE</small></div>
       <button id="jarvis-voice-toggle" class="jarvis-hbtn on" type="button" title="Voz ligada" aria-label="Alternar voz">&#128266;</button>
+      <button id="jarvis-key" class="jarvis-hbtn" type="button" title="Configurar chave" aria-label="Configurar chave do Jarvis"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4.2"/><path d="M10.9 12.1 20 3"/><path d="M16.5 6.5 19 9M14 9l1.8 1.8"/></svg></button>
       <button id="jarvis-close" class="jarvis-hbtn" type="button" aria-label="Fechar">&times;</button>
     </div>
     <div id="jarvis-msgs"></div>
@@ -239,6 +240,17 @@
     function refreshVoiceBtn(){voiceToggle.classList.toggle('on',voiceOn);voiceToggle.title=voiceOn?'Voz ligada':'Voz desligada';voiceToggle.innerHTML=voiceOn?'&#128266;':'&#128263;';}
     refreshVoiceBtn();
     voiceToggle.addEventListener('click',()=>{voiceOn=!voiceOn;localStorage.setItem(VOICE_KEY,voiceOn?'1':'0');if(!voiceOn)stopSpeech();refreshVoiceBtn();});
+
+    const keyBtn=q('jarvis-key');
+    function configureKeys(){
+      const cur=jarvisKeys().join(', ');
+      const v=prompt('Cole aqui a(s) chave(s) de API do Gemini.\nVárias? separe por vírgula — o Jarvis usa a próxima quando uma esgota.\n\nElas ficam salvas SÓ neste aparelho, nunca no código do site.',cur);
+      if(v===null)return;
+      const arr=v.split(/[\n,;\s]+/).map(s=>s.trim()).filter(Boolean);
+      localStorage.setItem('jarvis_keys',arr.join('\n'));
+      if(isOpen)addMsg('bot',arr.length?('Pronto, Senhor. '+arr.length+' chave'+(arr.length>1?'s':'')+' guardada'+(arr.length>1?'s':'')+' neste aparelho. Já posso operar em pleno vapor.'):'Chaves removidas deste aparelho, Senhor.');
+    }
+    keyBtn.addEventListener('click',configureKeys);
 
     function addMsg(cls,text){const d=document.createElement('div');d.className='j-msg '+cls;d.textContent=text;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d;}
 
@@ -334,7 +346,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
     }
     function nativeMale(){return voicesCache.find(v=>/pt[-_]BR/i.test(v.lang)&&/felipe|daniel|ricardo|male|masc/i.test(v.name))||null;}
     async function ttsFetch(t){
-      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${KEY}`,{
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${jarvisKeys()[0]||KEY}`,{
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           contents:[{parts:[{text:'Fale em portugues brasileiro neutro, com tom calmo, grave, claro e sofisticado, como um assistente de IA: '+t}]}],
@@ -493,23 +505,32 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       return null;
     }
 
+    function jarvisKeys(){try{return (localStorage.getItem('jarvis_keys')||'').split(/[\n,;\s]+/).map(s=>s.trim()).filter(Boolean);}catch(_){return[];}}
     async function callGemini(contents){
       let lastErr='';
-      for(const model of MODELS){
-        try{
-          const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${KEY}`,{
-            method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-              system_instruction:{parts:[{text:systemPrompt()}]},
-              contents,
-              generationConfig:{temperature:0.6,maxOutputTokens:1600,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0},responseSchema:{type:'OBJECT',properties:{action:{type:'STRING',enum:['none','add_task','complete_task','delete_task']},task:{type:'OBJECT',properties:{text:{type:'STRING'},date:{type:'STRING'},time:{type:'STRING'},tag:{type:'STRING'}}},query:{type:'STRING'},transcript:{type:'STRING'},reply:{type:'STRING'}},required:['action','reply']}}
-            })
-          });
-          const data=await res.json();
-          const txt=data&&data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text;
-          if(txt)return txt;
-          lastErr=(data&&data.error&&(((data.error.code||'')+' '+(data.error.status||'')+' '+(data.error.message||'')).trim()))||(res&&!res.ok?('http '+res.status):'resposta vazia');
-        }catch(e){lastErr=String(e);}
+      const keys=jarvisKeys();
+      if(!keys.length)throw new Error('NO_KEY');
+      const QUOTA=/quota|resource_exhausted|exhausted|rate.?limit|exceeded|credit|deplet|billing|prepay|\b429\b/;
+      for(const apiKey of keys){
+        let quota=false;
+        for(const model of MODELS){
+          try{
+            const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,{
+              method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({
+                system_instruction:{parts:[{text:systemPrompt()}]},
+                contents,
+                generationConfig:{temperature:0.6,maxOutputTokens:1600,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0},responseSchema:{type:'OBJECT',properties:{action:{type:'STRING',enum:['none','add_task','complete_task','delete_task']},task:{type:'OBJECT',properties:{text:{type:'STRING'},date:{type:'STRING'},time:{type:'STRING'},tag:{type:'STRING'}}},query:{type:'STRING'},transcript:{type:'STRING'},reply:{type:'STRING'}},required:['action','reply']}}
+              })
+            });
+            const data=await res.json();
+            const txt=data&&data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text;
+            if(txt)return txt;
+            lastErr=(data&&data.error&&(((data.error.code||'')+' '+(data.error.status||'')+' '+(data.error.message||'')).trim()))||(res&&!res.ok?('http '+res.status):'resposta vazia');
+            if(QUOTA.test(lastErr.toLowerCase())){quota=true;break;}
+          }catch(e){lastErr=String(e);}
+        }
+        if(quota)continue;
       }
       throw new Error(lastErr);
     }
@@ -532,8 +553,11 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
         speak(reply);
       }catch(e){
         const emsg=String((e&&e.message)||e||'').toLowerCase();
+        const semChave=/no_key/.test(emsg);
         const cota=/quota|resource_exhausted|exhausted|rate.?limit|exceeded|credit|deplet|billing|prepay|\b429\b/.test(emsg);
-        const reply=cota
+        const reply=semChave
+          ?'Preciso de uma chave de API para pensar, Senhor. Toque no ícone de chave 🔑 aqui em cima e cole a sua — fica salva só neste aparelho.'
+          :cota
           ?'Senhor, meu núcleo de inteligência ficou sem créditos de uso no momento. Enquanto isso, sigo cuidando da sua agenda normalmente — pode adicionar, concluir e apagar tarefas à vontade.'
           :'Falha de conexão com meus servidores, Senhor. Verifique a internet e tente novamente.';
         typing.textContent=reply;
