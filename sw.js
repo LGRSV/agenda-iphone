@@ -74,3 +74,5 @@ self.addEventListener('notificationclick', event => {
     return self.clients.openWindow(target);
   })());
 });
+
+// redeploy trigger v49
