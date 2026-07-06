@@ -15,7 +15,7 @@
     pessoal: { label: 'Pessoal', color: '#bb86fc' },
     casa: { label: 'Casa', color: '#71d6be' },
     faculdade: { label: 'Faculdade', color: '#ffb74d' },
-    saude: { label: 'Saúde', color: '#78d88b' },
+    saude: { label: 'Academia', color: '#78d88b' },
     financeiro: { label: 'Financeiro', color: '#ff7f91' },
     outros: { label: 'Outros', color: '#aab3c2' }
   };
