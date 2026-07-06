@@ -670,7 +670,8 @@ render();
 (function(){
   const VKEY='fc_jarvis_voice';
   let voiceOn=localStorage.getItem(VKEY)!=='0';
-  const K1='AQ.Ab8RN6JVWnIhpQY',K2='65xrobbMyhLDfg4CX3',K3='icuV8UplGw4mmnUbg',GKEY=K1+K2+K3;
+  // chaves ficam no aparelho (mesmo jarvis_keys da tela principal) — nunca no codigo publico
+  function jarvisKeys(){try{return (localStorage.getItem('jarvis_keys')||'').split(/[\n,;\s]+/).map(s=>s.trim()).filter(Boolean);}catch(_){return[];}}
   const jAudio=new Audio();let jUrl=null,played=false,ttsUnlocked=false,voices=[];
   function loadVoices(){voices=window.speechSynthesis?speechSynthesis.getVoices():[];}
   if('speechSynthesis'in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices;}
@@ -688,13 +689,27 @@ render();
   }
   function pcmToWav(pcm,rate){const n=pcm.length,buf=new ArrayBuffer(44+n),v=new DataView(buf);const ws=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};ws(0,'RIFF');v.setUint32(4,36+n,true);ws(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);ws(36,'data');v.setUint32(40,n,true);new Uint8Array(buf,44).set(pcm);return new Blob([buf],{type:'audio/wav'});}
   async function gttsFetch(t){
-    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${GKEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:'Fale em portugues brasileiro, tom calmo, grave e sofisticado de assistente de IA: '+t}]}],generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:'Charon'}}}}})});
-    const d=await r.json();
-    const p=d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0];
-    const b64=p&&p.inlineData&&p.inlineData.data;if(!b64)throw new Error('sem audio');
-    const rm=/rate=(\d+)/.exec(p.inlineData.mimeType||'');const bin=atob(b64),pcm=new Uint8Array(bin.length);
-    for(let i=0;i<bin.length;i++)pcm[i]=bin.charCodeAt(i);
-    return URL.createObjectURL(pcmToWav(pcm,rm?+rm[1]:24000));
+    const keys=jarvisKeys();
+    if(!keys.length)throw new Error('sem chave');
+    const QUOTA=/quota|resource_exhausted|exhausted|rate.?limit|exceeded|credit|deplet|billing|prepay|\b429\b/;
+    let lastErr='';
+    for(const key of keys){                    // rodizio: a voz tem cota propria e menor
+      try{
+        const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:'Fale em portugues brasileiro, tom calmo, grave e sofisticado de assistente de IA: '+t}]}],generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:'Charon'}}}}})});
+        const d=await r.json();
+        const p=d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0];
+        const b64=p&&p.inlineData&&p.inlineData.data;
+        if(b64){
+          const rm=/rate=(\d+)/.exec(p.inlineData.mimeType||'');const bin=atob(b64),pcm=new Uint8Array(bin.length);
+          for(let i=0;i<bin.length;i++)pcm[i]=bin.charCodeAt(i);
+          return URL.createObjectURL(pcmToWav(pcm,rm?+rm[1]:24000));
+        }
+        const em=(d&&d.error&&(((d.error.code||'')+' '+(d.error.status||'')+' '+(d.error.message||'')).trim()))||('http '+r.status);
+        lastErr=String(em).slice(0,90);
+        if(!QUOTA.test(lastErr.toLowerCase()))break;
+      }catch(e){lastErr=String((e&&e.message)||e||'');}
+    }
+    throw new Error(lastErr||'tts falhou');
   }
   function playUrl(url){return new Promise(res=>{jUrl=url;jAudio.src=url;jAudio.onplay=()=>{played=true;setStatus(true);};jAudio.onended=()=>{URL.revokeObjectURL(url);jUrl=null;setStatus(false);res(true);};jAudio.onerror=()=>{URL.revokeObjectURL(url);jUrl=null;setStatus(false);res(false);};jAudio.play().catch(()=>{setStatus(false);res(false);});});}
   async function speak(text){
