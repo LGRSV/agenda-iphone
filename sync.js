@@ -14,8 +14,9 @@
   const TLOGS = 'agenda_treino_logs_v1';
   const TMETA = 'agenda_treino_meta_v1';
   const APP = 'agenda_lagares_config_v1';
+  const RULES = 'agenda_lagares_rules_v1';
   const SYNC = 'agenda_lagares_gitsync_v1';
-  const WATCH = [TASKS, NOTES, TLOGS, TMETA, APP];
+  const WATCH = [TASKS, NOTES, TLOGS, TMETA, APP, RULES];
   const FILE = 'agenda-lagares.json';
   const DIALOG_ID = 'syncDialog';
   const STYLE_ID = 'syncStyles';
@@ -85,7 +86,7 @@
   }
 
   function snapshot(c) {
-    return { tarefas: json(TASKS, []), notas: json(NOTES, {}), treinoLogs: json(TLOGS, {}), treinoMeta: json(TMETA, {}), config: json(APP, {}), atualizadoEm: new Date().toISOString(), aparelho: c.aparelho };
+    return { tarefas: json(TASKS, []), notas: json(NOTES, {}), treinoLogs: json(TLOGS, {}), treinoMeta: json(TMETA, {}), config: json(APP, {}), regras: json(RULES, []), atualizadoEm: new Date().toISOString(), aparelho: c.aparelho };
   }
   function aplicar(dados) {
     if (Array.isArray(dados.tarefas)) salvar(TASKS, dados.tarefas);
@@ -93,6 +94,7 @@
     if (dados.treinoLogs && typeof dados.treinoLogs === 'object') salvar(TLOGS, dados.treinoLogs);
     if (dados.treinoMeta && typeof dados.treinoMeta === 'object') salvar(TMETA, dados.treinoMeta);
     if (dados.config && typeof dados.config === 'object') salvar(APP, dados.config);
+    if (Array.isArray(dados.regras)) salvar(RULES, dados.regras);
   }
 
   /* ------------------------------ ações --------------------------------- */
