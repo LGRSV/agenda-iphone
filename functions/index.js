@@ -28,7 +28,7 @@ function requireAuth(req) {
 
 /* ----------------- Conversa / ações do Jarvis (Gemini) ----------------- */
 exports.aiGemini = onCall(
-  { secrets: [GEMINI_KEY], enforceAppCheck: true },
+  { secrets: [GEMINI_KEY], enforceAppCheck: false }, // App Check opcional — ligar depois (reCAPTCHA v3) p/ reforço
   async (req) => {
     requireAuth(req);
     const body = req.data && req.data.body;
@@ -57,7 +57,7 @@ exports.aiGemini = onCall(
 
 /* ---------------------- Voz do Jarvis (Gemini TTS) --------------------- */
 exports.ttsGemini = onCall(
-  { secrets: [GEMINI_KEY], enforceAppCheck: true },
+  { secrets: [GEMINI_KEY], enforceAppCheck: false }, // App Check opcional — ligar depois (reCAPTCHA v3) p/ reforço
   async (req) => {
     requireAuth(req);
     const text = String((req.data && req.data.text) || '').trim();
@@ -85,7 +85,7 @@ exports.ttsGemini = onCall(
 
 /* --------------------- Voz do Jarvis (ElevenLabs) --------------------- */
 exports.ttsEleven = onCall(
-  { secrets: [ELEVEN_KEY], enforceAppCheck: true },
+  { secrets: [ELEVEN_KEY], enforceAppCheck: false }, // App Check opcional — ligar depois (reCAPTCHA v3) p/ reforço
   async (req) => {
     requireAuth(req);
     const text = String((req.data && req.data.text) || '').trim();
