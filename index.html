@@ -180,7 +180,7 @@
     @media(min-width:480px){#jarvis-panel{left:max(18px,env(safe-area-inset-left));right:auto;width:400px}}
   </style>
 
-  <div id="app-ver">v47</div>
+  <div id="app-ver">v48</div>
   <button id="jarvis-btn" class="pulse" type="button" aria-label="Abrir Jarvis">
     <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="16" cy="16" r="15" stroke="#75cbff" stroke-width="1.5" opacity=".4"/>
@@ -223,8 +223,7 @@
   <script>
   (()=>{
     'use strict';
-    const K1='AQ.Ab8RN6JVWnIhpQY',K2='65xrobbMyhLDfg4CX3',K3='icuV8UplGw4mmnUbg';
-    const KEY=[K1,K2,K3].join('');const E1='sk_ae425b5b0814a4',E2='7afc9161ee024e257',E3='e6eebc052067bfac9';const ELKEY=[E1,E2,E3].join('');
+    const E1='sk_ae425b5b0814a4',E2='7afc9161ee024e257',E3='e6eebc052067bfac9';const ELKEY=[E1,E2,E3].join('');
     const MODELS=['gemini-2.5-flash-lite','gemini-3.5-flash','gemini-2.5-flash'];
     const VOICE_KEY='jarvis_voice_on';
     const q=s=>document.getElementById(s);
@@ -346,7 +345,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
     }
     function nativeMale(){return voicesCache.find(v=>/pt[-_]BR/i.test(v.lang)&&/felipe|daniel|ricardo|male|masc/i.test(v.name))||null;}
     async function ttsFetch(t){
-      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${jarvisKeys()[0]||KEY}`,{
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${jarvisKeys()[0]||''}`,{
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           contents:[{parts:[{text:'Fale em portugues brasileiro neutro, com tom calmo, grave, claro e sofisticado, como um assistente de IA: '+t}]}],
