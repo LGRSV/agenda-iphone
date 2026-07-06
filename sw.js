@@ -75,4 +75,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v49
+// redeploy trigger v60
