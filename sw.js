@@ -1,6 +1,6 @@
-const CACHE = 'agenda-lagares-v56';
+const CACHE = 'agenda-lagares-v57';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=2"><\/script>';
-const TREINO_SCRIPT = '<script src="./treino.js?v=2"><\/script>';
+const TREINO_SCRIPT = '<script src="./treino.js?v=3"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
 const NOTAS_SCRIPT = '<script src="./notas.js?v=2"><\/script>';
 const SYNC_SCRIPT = '<script src="./sync.js?v=9"><\/script>';
