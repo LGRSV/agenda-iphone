@@ -260,6 +260,10 @@ body>*{animation:fadeUp .55s var(--ease) both}
 .map-legend i{width:12px;height:12px;border-radius:50%;display:inline-block;border:2px solid #fff}
 .leaflet-popup-content{font-size:12.5px;line-height:1.5}
 .leaflet-popup-content a{color:#1565c0;font-weight:700}
+.buscabar{width:100%;max-width:640px;margin:0 auto 8px}
+.buscabar input{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line,rgba(255,255,255,.25));background:var(--surface2,rgba(255,255,255,.1));color:var(--text,#fff);font-size:14px;font-family:inherit;-webkit-appearance:none}
+.buscabar input::placeholder{color:var(--muted,#b0bec5)}
+.buscabar input:focus{outline:none;border-color:var(--accent,#7EC8E3)}
 .opbox{background:#FCE8E6;border:1px solid #f3c2bd;border-radius:10px;padding:9px 12px;margin:10px 0;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .opbox .opl{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:#b3261e;font-weight:800}
 .opbox .opl b{display:block;font-size:13px;color:#9C0006;margin-top:1px;letter-spacing:0}
@@ -275,6 +279,10 @@ body>*{animation:fadeUp .55s var(--ease) both}
 <h1>Flashcards · Equipamentos Especiais DCMD</h1>
 <p>Religadores e Reguladores · Posto COEP · Toque para virar · deslize para navegar</p>
 <div class="corte">Data de corte: 04/07/2026 (elaboração) · Cruzamento por série (col. Localização) · Sem dados inventados</div>
+</div>
+
+<div class="buscabar">
+<input id="busca" type="search" inputmode="numeric" autocomplete="off" placeholder="Buscar por nº do ativo, patrimônio, cidade…" oninput="onBusca(this.value)">
 </div>
 
 <div class="ctrl" id="filtros">
@@ -521,8 +529,18 @@ function importBackup(ev){
 }
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
 document.getElementById('eeModal').addEventListener('click',e=>{if(e.target.id==='eeModal')closeEE();});
-let filtro='all', idx=0, flipped=false;
+let filtro='all', busca='', idx=0, flipped=false;
 function filtered(){
+  const q=(busca||'').trim().toLowerCase();
+  if(q){                                   // busca global por ativo/patrimonio/cidade/modelo (ignora o chip)
+    const qd=q.replace(/\D/g,'');
+    return effectiveCards().filter(c=>{
+      const serie=String(c.serie||'').toLowerCase(),patr=String(c.patr||'').toLowerCase();
+      const local=String(c.local||'').toLowerCase(),modelo=String(c.modelo||'').toLowerCase();
+      if(qd&&(serie.replace(/\D/g,'').includes(qd)||patr.replace(/\D/g,'').includes(qd)))return true;
+      return serie.includes(q)||patr.includes(q)||local.includes(q)||modelo.includes(q);
+    });
+  }
   return effectiveCards().filter(c=>{
     if(filtro==='all')return true;
     if(filtro==='RL')return c.tipo==='RL';
@@ -534,6 +552,8 @@ function filtered(){
     return true;
   });
 }
+function onBusca(v){busca=v;idx=0;render();}
+function limparBusca(){const el=document.getElementById('busca');if(el)el.value='';busca='';idx=0;render();}
 const CAT_LABELS={aprovar:'Aprovado para compra',execucao:'Em execução',analise:'Voltar para análise',ncon:'Não conformidade'};
 function catBadge(c){return c.cat?`<div class="cat-badge ${c.cat}">${CAT_LABELS[c.cat]||esc(c.cat)}</div>`:'';}
 function setCat(k){
