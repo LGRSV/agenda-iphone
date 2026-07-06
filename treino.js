@@ -284,6 +284,16 @@
       .tr-timer-btns{display:flex;gap:7px;flex:0 0 auto}
       .tr-tbtn{width:42px;height:42px;border:1px solid var(--line);border-radius:13px;background:var(--soft);color:var(--text);font-size:17px;line-height:1;display:grid;place-items:center}
       .tr-tbtn.play{border-color:var(--accent);background:var(--accent);color:var(--accentInk)}
+      .tr-cardio{margin:0 0 12px;padding:12px 13px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(135deg,var(--surface),var(--soft))}
+      .tr-cardio-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:9px}
+      .tr-cardio-label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+      .tr-cardio-time{font-size:22px;font-weight:850;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+      .tr-cardio-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px}
+      .tr-cpreset{padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);font-size:12px;font-weight:800;line-height:1}
+      .tr-cpreset.on{border-color:var(--accent);background:var(--accent);color:var(--accentInk)}
+      .tr-cardio-ctrl{display:flex;gap:8px}
+      .tr-cbtn{min-height:40px;border-radius:12px;font-size:13px;font-weight:800;border:1px solid var(--line);background:var(--soft);color:var(--text);padding:0 14px}
+      .tr-cbtn.play{flex:1;border-color:var(--accent);background:var(--accent);color:var(--accentInk)}
       .tr-body{overflow-y:auto;padding:12px 14px 8px}
       .tr-tip{margin:0 0 12px;padding:11px 13px;border:1px solid var(--line);border-radius:14px;background:var(--soft);color:var(--muted);font-size:12px;line-height:1.45}
       .tr-tip strong{color:var(--text)}
@@ -322,6 +332,7 @@
   /* ----------------------- cronômetro de descanso ------------------------ */
   const RING_C = 2 * Math.PI * 23; // circunferência do anel (r=23)
   let restTotal = 60, restLeft = 60, restInt = null, audioCtx = null;
+  let cardioTotal = 300, cardioLeft = 300, cardioInt = null; // cardio de aquecimento (5 min padrão)
   const fmtTime = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
   function beep() {
@@ -376,6 +387,32 @@
     paintTimer();
   }
 
+  /* ----------------------- cardio (aquecimento) ------------------------- */
+  function cardioSection() {
+    return `<div class="tr-cardio">` +
+      `<div class="tr-cardio-top"><span class="tr-cardio-label">Cardio (aquecimento)</span><span class="tr-cardio-time" id="trCardioTime">${fmtTime(cardioLeft)}</span></div>` +
+      `<div class="tr-cardio-presets" id="trCardioPresets">${[5, 10, 15, 20].map(m => `<button class="tr-cpreset ${cardioTotal === m * 60 ? 'on' : ''}" type="button" data-cardio="${m}">${m} min</button>`).join('')}</div>` +
+      `<div class="tr-cardio-ctrl"><button class="tr-cbtn play" id="trCardioToggle" type="button">${cardioInt ? '⏸ Pausar' : '▶ Iniciar'}</button><button class="tr-cbtn" id="trCardioReset" type="button" aria-label="Zerar">↺</button></div>` +
+      `</div>`;
+  }
+  function paintCardio() { const t = document.getElementById('trCardioTime'); if (t) t.textContent = fmtTime(Math.max(0, cardioLeft)); }
+  function syncCardioUI() {
+    paintCardio();
+    const tog = document.getElementById('trCardioToggle'); if (tog) tog.textContent = cardioInt ? '⏸ Pausar' : '▶ Iniciar';
+    document.querySelectorAll('.tr-cpreset').forEach(b => b.classList.toggle('on', Number(b.dataset.cardio) * 60 === cardioTotal));
+  }
+  function stopCardio() { clearInterval(cardioInt); cardioInt = null; const tog = document.getElementById('trCardioToggle'); if (tog) tog.textContent = '▶ Iniciar'; }
+  function cardioFinished() { stopCardio(); cardioLeft = 0; paintCardio(); if (navigator.vibrate) navigator.vibrate([160, 80, 160]); beep(); toast('Cardio concluído — bora pro treino!'); }
+  function startCardio() {
+    if (cardioInt) { stopCardio(); return; }
+    if (cardioLeft <= 0) cardioLeft = cardioTotal;
+    const tog = document.getElementById('trCardioToggle'); if (tog) tog.textContent = '⏸ Pausar';
+    try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch (_) {}
+    cardioInt = setInterval(() => { cardioLeft--; paintCardio(); if (cardioLeft <= 0) cardioFinished(); }, 1000);
+  }
+  function resetCardio() { stopCardio(); cardioLeft = cardioTotal; paintCardio(); }
+  function setCardio(min) { cardioTotal = min * 60; cardioLeft = cardioTotal; stopCardio(); syncCardioUI(); }
+
   function ensureDialog() {
     if (dialogEl) return dialogEl;
     dialogEl = document.createElement('dialog');
@@ -419,7 +456,13 @@
     document.body.appendChild(dialogEl);
     dialogEl.querySelector('#trClose').addEventListener('click', () => dialogEl.close());
     dialogEl.addEventListener('click', e => { if (e.target === dialogEl) dialogEl.close(); });
-    dialogEl.addEventListener('close', stopTimer);
+    dialogEl.addEventListener('close', () => { stopTimer(); stopCardio(); });
+    dialogEl.addEventListener('click', e => {
+      const cp = e.target.closest('[data-cardio]');
+      if (cp) { setCardio(Number(cp.dataset.cardio)); return; }
+      if (e.target.closest('#trCardioToggle')) { startCardio(); return; }
+      if (e.target.closest('#trCardioReset')) { resetCardio(); }
+    });
     dialogEl.querySelector('#trSave').addEventListener('click', () => saveSession(false));
     dialogEl.querySelector('#trDone').addEventListener('click', () => saveSession(true));
     dialogEl.querySelector('#trToggle').addEventListener('click', startTimer);
@@ -495,8 +538,10 @@
     dlg.querySelector('#trSub').textContent = prettyDate(currentDate);
     dlg.querySelector('#trDone').textContent = task.done ? 'Concluído ✓' : 'Salvar e concluir ✓';
     dlg.querySelector('#trBody').innerHTML =
-      `<p class="tr-tip"><strong>Aquecimento:</strong> 5 min de esteira/bike. Use o cronômetro acima para cronometrar o descanso e anote a carga de cada exercício para acompanhar sua evolução.</p>` +
+      cardioSection() +
+      `<p class="tr-tip"><strong>Faça o cardio acima</strong> para aquecer e depois os exercícios. Cronômetro de descanso no topo; anote a carga de cada exercício para acompanhar sua evolução.</p>` +
       plan.exercises.map(ex => exerciseRow(ex, logs)).join('');
+    syncCardioUI();
     if (!restInt) paintTimer();
     if (!dlg.open) dlg.showModal();
   }
