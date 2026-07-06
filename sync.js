@@ -291,6 +291,7 @@
           <button class="sy-btn ghost wide" id="syGet" type="button">Baixar da nuvem</button>
           <button class="sy-btn ghost wide" id="syRecover" type="button">Recuperar versão anterior…</button>
           <button class="sy-btn ghost wide" id="syDevice" type="button">Recuperar deste aparelho</button>
+          <button class="sy-btn ghost wide" id="syImport" type="button">Importar tarefas (código)</button>
         </div>
         <div id="syRecList" class="sy-reclist"></div>
         <button class="sy-close" id="syClose" type="button">Fechar</button>
@@ -303,6 +304,7 @@
     dialogEl.querySelector('#syGet').addEventListener('click', baixar);
     dialogEl.querySelector('#syRecover').addEventListener('click', recuperar);
     dialogEl.querySelector('#syDevice').addEventListener('click', recuperarAparelho);
+    dialogEl.querySelector('#syImport').addEventListener('click', importarCodigo);
     dialogEl.querySelector('#syRecList').addEventListener('click', e => {
       const rev = e.target.closest('[data-rev]');
       if (rev) { aplicarRevisao(rev.dataset.rev); return; }
@@ -352,6 +354,40 @@
     salvar(TASKS, merged);
     toast('Tarefas recuperadas deste aparelho. Atualizando…', 'ok');
     setTimeout(() => location.reload(), 500);
+  }
+
+  // importa tarefas a partir de um código/link (funciona dentro do app instalado,
+  // sem depender de abrir a página adicionar.html — que o iOS descarta no PWA)
+  function importarCodigo() {
+    const raw = prompt('Cole aqui o código (ou o link) de importação de tarefas que o assistente te enviou:');
+    if (!raw) return;
+    try {
+      let token = String(raw).trim();
+      const m = token.match(/[#?&]d=([^&\s]+)/);
+      if (m) token = m[1];
+      token = token.replace(/-/g, '+').replace(/_/g, '/');
+      token += '='.repeat((4 - token.length % 4) % 4);
+      const bytes = Uint8Array.from(atob(token), ch => ch.charCodeAt(0));
+      const payload = JSON.parse(new TextDecoder().decode(bytes));
+      if (!payload || !Array.isArray(payload.tasks) || !payload.tasks.length) throw new Error('sem tarefas');
+      const cur = json(TASKS, []) || [];
+      const ids = new Set(cur.map(t => String(t && t.id)));
+      let added = 0;
+      for (const t of payload.tasks) {
+        if (!t || !t.id || !t.text || ids.has(String(t.id))) continue;
+        cur.push(t); ids.add(String(t.id)); added++;
+      }
+      localStorage.setItem(TASKS, JSON.stringify(cur));
+      if (payload.notas && typeof payload.notas === 'object') {
+        let n = {}; try { n = json(NOTES, {}) || {}; } catch (_) {}
+        Object.assign(n, payload.notas);
+        localStorage.setItem(NOTES, JSON.stringify(n));
+      }
+      toast(added ? `${added} tarefa${added > 1 ? 's' : ''} importada${added > 1 ? 's' : ''}. Atualizando…` : 'As tarefas já estavam na agenda.', 'ok');
+      setTimeout(() => location.reload(), 800);
+    } catch (e) {
+      toast('Código inválido. Cole o código completo que o assistente enviou.', 'erro');
+    }
   }
 
   // ---- recuperação por histórico de versões ----------------------------
