@@ -75,4 +75,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v60-2
+// redeploy trigger v60-map
