@@ -292,16 +292,21 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
         jSrc=jCtx.createMediaElementSource(jAudio);
         const hp=jCtx.createBiquadFilter();hp.type='highpass';hp.frequency.value=95;
         const body=jCtx.createBiquadFilter();body.type='lowshelf';body.frequency.value=180;body.gain.value=3;
-        const pres=jCtx.createBiquadFilter();pres.type='peaking';pres.frequency.value=2600;pres.Q.value=1;pres.gain.value=4;
-        const soft=jCtx.createBiquadFilter();soft.type='highshelf';soft.frequency.value=7200;soft.gain.value=-3;
-        const comp=jCtx.createDynamicsCompressor();comp.threshold.value=-24;comp.ratio.value=4;comp.attack.value=0.004;comp.release.value=0.18;
-        const conv=jCtx.createConvolver();conv.buffer=makeIR(jCtx,0.5,2.4);
-        const wet=jCtx.createGain();wet.gain.value=0.16;
-        const dry=jCtx.createGain();dry.gain.value=0.92;
+        const pres=jCtx.createBiquadFilter();pres.type='peaking';pres.frequency.value=2600;pres.Q.value=1;pres.gain.value=6;
+        const soft=jCtx.createBiquadFilter();soft.type='highshelf';soft.frequency.value=7600;soft.gain.value=-2;
+        const comp=jCtx.createDynamicsCompressor();comp.threshold.value=-26;comp.ratio.value=6;comp.attack.value=0.003;comp.release.value=0.16;
+        const conv=jCtx.createConvolver();conv.buffer=makeIR(jCtx,0.9,2);
+        const wet=jCtx.createGain();wet.gain.value=0.32;
+        const dry=jCtx.createGain();dry.gain.value=0.82;
+        // eco metalico curto (comb) para o timbre eletronico/robotico
+        const delay=jCtx.createDelay();delay.delayTime.value=0.026;
+        const fb=jCtx.createGain();fb.gain.value=0.34;
+        const comb=jCtx.createGain();comb.gain.value=0.22;
         const master=jCtx.createGain();master.gain.value=1;
         jSrc.connect(hp);hp.connect(body);body.connect(pres);pres.connect(soft);soft.connect(comp);
         comp.connect(dry);dry.connect(master);
         comp.connect(conv);conv.connect(wet);wet.connect(master);
+        comp.connect(delay);delay.connect(fb);fb.connect(delay);delay.connect(comb);comb.connect(master);
         master.connect(jCtx.destination);
       }catch(_){try{if(jSrc)jSrc.connect(jCtx.destination);}catch(__){}}
     }
