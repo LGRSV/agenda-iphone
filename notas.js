@@ -18,11 +18,12 @@
 
   const load = () => { try { const v = JSON.parse(localStorage.getItem(NOTES_KEY)); return v && typeof v === 'object' ? v : {}; } catch (_) { return {}; } };
   const saveAll = a => localStorage.setItem(NOTES_KEY, JSON.stringify(a));
-  const getNote = id => { const n = load()[id]; return { durationMin: n && n.durationMin || null, detail: n && n.detail || '', valor: n && n.valor || '', subs: n && Array.isArray(n.subs) ? n.subs : [] }; };
+  const getNote = id => { const n = load()[id]; return { prio: n && n.prio || '', durationMin: n && n.durationMin || null, detail: n && n.detail || '', valor: n && n.valor || '', subs: n && Array.isArray(n.subs) ? n.subs : [] }; };
+  const PRIOS = { alta: { label: '🚩 Alta', color: '#ffb74d' }, urgente: { label: '🔴 Urgente', color: '#ff7f91' } };
   function taskTag(id){try{const a=JSON.parse(localStorage.getItem('agenda_lagares_v3')||'[]');const t=Array.isArray(a)?a.find(x=>String(x.id)===String(id)):null;return t&&t.tag||'';}catch(_){return '';}}
   function setNote(id, note) {
     const all = load();
-    const empty = !note.durationMin && !note.detail.trim() && !note.valor && (!note.subs || !note.subs.length);
+    const empty = !note.prio && !note.durationMin && !note.detail.trim() && !note.valor && (!note.subs || !note.subs.length);
     if (empty) delete all[id]; else all[id] = note;
     saveAll(all);
   }
@@ -54,6 +55,12 @@
       .notas-durs{display:flex;flex-wrap:wrap;gap:6px}
       .notas-dur{padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);font-size:12px;font-weight:800;line-height:1}
       .notas-dur.on{border-color:var(--accent);background:var(--accent);color:var(--accentInk)}
+      .notas-prios{display:flex;flex-wrap:wrap;gap:6px}
+      .notas-prio{padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);font-size:12px;font-weight:800;line-height:1}
+      .notas-prio.on{border-color:var(--accent);background:var(--accent);color:var(--accentInk)}
+      .notas-prio.p-alta.on{border-color:#ffb74d;background:#ffb74d;color:#3a2a06}
+      .notas-prio.p-urgente.on{border-color:#ff7f91;background:#ff7f91;color:#3a0a12}
+      .notas-flag{display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:800;line-height:1;color:var(--pc,#ffb74d);border:1px solid color-mix(in srgb,var(--pc,#ffb74d) 50%,var(--line));background:color-mix(in srgb,var(--pc,#ffb74d) 16%,transparent)}
       .notas-sep{height:1px;background:var(--line);margin:12px 0}
       .notas-sub{display:grid;grid-template-columns:22px 1fr 26px;gap:8px;align-items:center;margin-bottom:6px}
       .notas-check{appearance:none;width:20px;height:20px;flex:0 0 auto;border:1.5px solid var(--faint);border-radius:6px;background:transparent;display:grid;place-items:center;color:var(--accentInk);font-size:12px;font-weight:900}
@@ -99,8 +106,12 @@
     panel.hidden = true;
     panel.dataset.nid = id;
     panel.dataset.durmin = note.durationMin ? String(note.durationMin) : '';
+    panel.dataset.priolevel = note.prio || '';
     const isFin = taskTag(id) === 'financeiro';
+    const prioChips = `<button class="notas-prio ${!note.prio ? 'on' : ''}" type="button" data-prio="">Normal</button>` +
+      Object.keys(PRIOS).map(k => `<button class="notas-prio p-${k} ${note.prio === k ? 'on' : ''}" type="button" data-prio="${k}">${PRIOS[k].label}</button>`).join('');
     panel.innerHTML =
+      `<p class="notas-label">Prioridade</p><div class="notas-prios">${prioChips}</div><div class="notas-sep"></div>` +
       (isFin ? `<p class="notas-label">Valor (R$)</p><div class="notas-valor-row"><span>R$</span><input class="notas-valor" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00" value="${escAttr(note.valor || '')}"></div><div class="notas-sep"></div>` : '') +
       `<p class="notas-label">Duração</p>` +
       `<div class="notas-durs">` +
@@ -132,7 +143,8 @@
     const durationMin = panel.dataset.durmin ? Number(panel.dataset.durmin) : null;
     const vEl = panel.querySelector('.notas-valor');
     const valor = vEl ? vEl.value.trim() : (getNote(id).valor || '');
-    setNote(id, { durationMin, detail, valor, subs });
+    const prio = panel.dataset.priolevel || '';
+    setNote(id, { prio, durationMin, detail, valor, subs });
     updateToggle(id);
   }
   const debouncedSave = panel => { clearTimeout(saveTimer); saveTimer = setTimeout(() => saveFromPanel(panel), 400); };
@@ -143,7 +155,7 @@
     const btn = card.querySelector('.notas-toggle');
     if (!btn) return;
     const note = getNote(id);
-    const has = !!(note.valor || note.durationMin || note.detail.trim() || note.subs.length);
+    const has = !!(note.prio || note.valor || note.durationMin || note.detail.trim() || note.subs.length);
     btn.classList.toggle('has', has);
     let label = '🗒️';
     if (note.valor) label += ' R$ ' + note.valor;
@@ -151,6 +163,13 @@
     else if (note.subs.length) { const d = note.subs.filter(s => s.done).length; label += ` ${d}/${note.subs.length}`; }
     else if (note.detail.trim()) label += ' •';
     btn.textContent = label;
+    // bandeira de prioridade no card
+    const footer = card.querySelector('.task-footer');
+    let flag = card.querySelector('.notas-flag');
+    if (note.prio && PRIOS[note.prio]) {
+      if (!flag && footer) { flag = document.createElement('span'); flag.className = 'notas-flag'; footer.insertBefore(flag, footer.firstChild); }
+      if (flag) { flag.textContent = PRIOS[note.prio].label; flag.style.setProperty('--pc', PRIOS[note.prio].color); }
+    } else if (flag) { flag.remove(); }
   }
 
   /* ---------------------------- expand/collapse ------------------------- */
@@ -187,6 +206,13 @@
       const cur = panel.dataset.durmin || '';
       panel.dataset.durmin = cur === v ? '' : v;
       panel.querySelectorAll('.notas-dur').forEach(x => x.classList.toggle('on', x.dataset.dur === panel.dataset.durmin));
+      saveFromPanel(panel); return;
+    }
+    const prioBtn = e.target.closest('[data-prio]');
+    if (prioBtn) {
+      const v = prioBtn.dataset.prio || '';
+      panel.dataset.priolevel = v;
+      panel.querySelectorAll('.notas-prio').forEach(x => x.classList.toggle('on', (x.dataset.prio || '') === v));
       saveFromPanel(panel); return;
     }
     if (e.target.closest('[data-add]')) {
