@@ -25,7 +25,7 @@
   <main class="app">
     <header class="topbar">
       <div><span class="eyebrow">Organização pessoal</span><h1>Minha agenda</h1><p class="subhead" id="currentDate"></p></div>
-      <div class="head-actions"><button class="icon-btn" id="alertsBtn" type="button" title="Alertas" aria-label="Configurar alertas">♧</button><button class="icon-btn" id="themeToggle" type="button" title="Modo claro" aria-label="Mudar para modo claro">☀︎</button></div>
+      <div class="head-actions"><button class="icon-btn" id="alertsBtn" type="button" title="Alertas" aria-label="Configurar alertas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button><button class="icon-btn" id="themeToggle" type="button" title="Modo claro" aria-label="Mudar para modo claro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2.5 12H5M19 12h2.5M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg></button></div>
     </header>
 
     <a class="ee-shortcut" href="flashcards.html" target="_blank" rel="noopener"><b>Equipamentos Especiais</b><small>Flashcards de religadores e reguladores</small></a>
@@ -80,11 +80,14 @@
     function tagPill(tag){const meta=tagMeta(tag);return`<span class="tag-pill" style="--tag:${meta.color}">${meta.label}</span>`}
     function taskSort(a,b){return a.date.localeCompare(b.date)||(a.time||'99:99').localeCompare(b.time||'99:99')||Number(a.done)-Number(b.done)||a.text.localeCompare(b.text)}
     function showToast(message){el.toast.textContent=message;el.toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.toast.classList.remove('show'),2400)}
-    function applyTheme(theme){el.root.dataset.theme=theme;el.themeColor.content=theme==='dark'?'#17181c':'#f4f6fa';el.themeToggle.textContent=theme==='dark'?'☀︎':'◐';el.themeToggle.title=theme==='dark'?'Modo claro':'Modo escuro';el.themeToggle.setAttribute('aria-label',theme==='dark'?'Mudar para modo claro':'Mudar para modo escuro');localStorage.setItem(THEME_KEY,theme)}
+    const SUN_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2.5 12H5M19 12h2.5M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>';
+    const MOON_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4 7 7 0 1 0 20 14.5z"/></svg>';
+    function applyTheme(theme){el.root.dataset.theme=theme;el.themeColor.content=theme==='dark'?'#17181c':'#f4f6fa';el.themeToggle.innerHTML=theme==='dark'?SUN_SVG:MOON_SVG;el.themeToggle.title=theme==='dark'?'Modo claro':'Modo escuro';el.themeToggle.setAttribute('aria-label',theme==='dark'?'Mudar para modo claro':'Mudar para modo escuro');localStorage.setItem(THEME_KEY,theme)}
     function matches(task){return filter==='all'||(filter==='open'?!task.done:task.done)}
     function tasksOn(date){return tasks.filter(task=>task.date===date&&matches(task)).sort(taskSort)}
     function renderSummary(){const total=tasks.length,done=tasks.filter(t=>t.done).length,pct=total?Math.round(done/total*100):0;el.progressText.innerHTML=`${done}<small>/${total}</small>`;el.progressBar.style.width=`${pct}%`;el.progressMessage.textContent=total===0?'Sua agenda está vazia.':done===total?'Tudo concluído. Excelente trabalho!':`${pct}% das tarefas concluídas.`}
-    function taskCard(task){const meta=[task.time,task.time&&task.reminder>=0?`🔔 ${reminderLabel(task.reminder)}`:''].filter(Boolean).join(' · ');return`<article class="task-card ${task.done?'done':''}"><input class="check" type="checkbox" data-action="toggle" data-id="${task.id}" aria-label="Concluir tarefa" ${task.done?'checked':''}><div class="task-main"><span class="task-title">${esc(task.text)}</span><div class="task-footer">${tagPill(task.tag)}${meta?`<span class="task-time">${meta}</span>`:''}</div></div><button class="delete" type="button" data-action="delete" data-id="${task.id}" aria-label="Excluir tarefa">×</button></article>`}
+    const BELL_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>';
+    function taskCard(task){const meta=[task.time,task.time&&task.reminder>=0?`${BELL_SVG}${reminderLabel(task.reminder)}`:''].filter(Boolean).join(' · ');return`<article class="task-card ${task.done?'done':''}"><input class="check" type="checkbox" data-action="toggle" data-id="${task.id}" aria-label="Concluir tarefa" ${task.done?'checked':''}><div class="task-main"><span class="task-title">${esc(task.text)}</span><div class="task-footer">${tagPill(task.tag)}${meta?`<span class="task-time">${meta}</span>`:''}</div></div><button class="delete" type="button" data-action="delete" data-id="${task.id}" aria-label="Excluir tarefa">×</button></article>`}
     function toolbar(title,sub,prev,next,todayButton){return`<header class="toolbar"><button class="nav-btn" type="button" data-shift="${prev}" aria-label="Anterior">‹</button><div class="toolbar-title">${title}${sub?`<small>${sub}</small>`:''}</div>${todayButton?`<button class="today-btn" type="button" data-today="1">Hoje</button>`:`<button class="nav-btn" type="button" data-shift="${next}" aria-label="Próximo">›</button>`}</header>`}
     function renderDay(){const list=tasksOn(selectedDate);const subtitle=selectedDate===today()?'Hoje':dateShort(selectedDate);const header=`<header class="toolbar"><button class="nav-btn" type="button" data-day-shift="-1" aria-label="Dia anterior">‹</button><div class="toolbar-title day-pick"><label>${fullDate(selectedDate)} ▾<small>${subtitle}</small><input type="date" class="day-pick-input" value="${selectedDate}" aria-label="Escolher data"></label></div><button class="nav-btn" type="button" data-day-shift="1" aria-label="Próximo dia">›</button></header>`;const body=list.length?`<div class="day-content">${list.map(taskCard).join('')}</div>`:`<div class="day-empty"><strong>Nenhuma tarefa neste dia</strong><span>Use “Nova tarefa” para preencher sua agenda.</span></div>`;el.viewContent.innerHTML=`<section class="view-shell">${header}${body}</section>`}
     function renderMonth(){const year=monthCursor.getFullYear(),month=monthCursor.getMonth();const first=new Date(year,month,1,12),start=new Date(year,month,1-first.getDay(),12);const cells=[];for(let index=0;index<42;index++){const day=new Date(start);day.setDate(start.getDate()+index);const key=iso(day),items=tasksOn(key),unique=[...new Set(items.map(t=>t.tag))],shown=unique.slice(0,2);const chips=shown.map(tag=>{const meta=tagMeta(tag);return`<span class="calendar-tag" style="--tag:${meta.color}">${meta.label}</span>`}).join('');const more=items.length>shown.length?`<span class="calendar-more">+${items.length-shown.length}</span>`:'';const classes=['calendar-day',day.getMonth()===month?'current':'outside',key===selectedDate?'selected':'',key===today()?'today':''].filter(Boolean).join(' ');cells.push(`<button class="${classes}" type="button" data-calendar-date="${key}" aria-label="Abrir ${key}"><span class="day-number">${day.getDate()}</span><span class="calendar-tags">${chips}${more}</span></button>`)}const legend=Object.entries(TAGS).map(([key,meta])=>`<span class="tag-pill" style="--tag:${meta.color}">${meta.label}</span>`).join('');const header=`<header class="toolbar"><button class="nav-btn" type="button" data-month-shift="-1" aria-label="Mês anterior">‹</button><div class="toolbar-title">${monthName(monthCursor)}<small>Toque em um dia para abrir a agenda diária</small></div><button class="nav-btn" type="button" data-month-shift="1" aria-label="Próximo mês">›</button></header>`;el.viewContent.innerHTML=`<section class="view-shell">${header}<div class="month-grid-wrap"><div class="week-labels"><span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span></div><div class="month-grid">${cells.join('')}</div></div><footer class="calendar-legend">${legend}</footer></section>`}
@@ -176,11 +179,16 @@
     #jarvis-chips::-webkit-scrollbar{display:none}
     .j-chip{flex:0 0 auto;border:1px solid rgba(117,203,255,.3);background:rgba(117,203,255,.08);color:#9fd8ff;font-size:12px;font-weight:700;padding:7px 13px;border-radius:99px;cursor:pointer}
     .j-chip:active{background:rgba(117,203,255,.22)}
+    .icon-btn{color:var(--accent)}
+    .icon-btn svg{width:22px;height:22px;display:block}
+    .j-chip{display:inline-flex;align-items:center;gap:6px}
+    .j-chip svg{width:15px;height:15px;flex:0 0 auto}
+    .task-time svg{width:12px;height:12px;vertical-align:-2px;margin-right:2px;stroke:var(--accent)}
     #app-ver{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:calc(6px + env(safe-area-inset-bottom));z-index:99;font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:.06em;pointer-events:none;font-family:'Barlow',sans-serif}
     @media(min-width:480px){#jarvis-panel{left:max(18px,env(safe-area-inset-left));right:auto;width:400px}}
   </style>
 
-  <div id="app-ver">v49</div>
+  <div id="app-ver">v50</div>
   <button id="jarvis-btn" class="pulse" type="button" aria-label="Abrir Jarvis">
     <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="16" cy="16" r="15" stroke="#75cbff" stroke-width="1.5" opacity=".4"/>
@@ -209,9 +217,9 @@
     </div>
     <div id="jarvis-msgs"></div>
     <div id="jarvis-chips">
-      <button class="j-chip" type="button" data-p="Me dê um briefing do meu dia: tarefas de hoje e o que priorizar.">📋 Meu dia</button>
-      <button class="j-chip" type="button" data-p="Resumo da minha semana: o que tenho nos próximos 7 dias?">📅 Semana</button>
-      <button class="j-chip" type="button" data-p="Analise minhas tarefas pendentes e sugira uma ordem de prioridade.">💡 Organizar</button>
+      <button class="j-chip" type="button" data-p="Me dê um briefing do meu dia: tarefas de hoje e o que priorizar."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 10h6M9 14h4"/></svg>Meu dia</button>
+      <button class="j-chip" type="button" data-p="Resumo da minha semana: o que tenho nos próximos 7 dias?"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>Semana</button>
+      <button class="j-chip" type="button" data-p="Analise minhas tarefas pendentes e sugira uma ordem de prioridade."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.4c.6.6 1 1.4 1 2.6h6c0-1.2.4-2 1-2.6A6 6 0 0 0 12 3z"/></svg>Organizar</button>
     </div>
     <div id="jarvis-form">
       <button id="jarvis-mic" type="button" aria-label="Falar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="21.5"/><line x1="8.5" y1="21.5" x2="15.5" y2="21.5"/></svg></button>
@@ -555,7 +563,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
         const semChave=/no_key/.test(emsg);
         const cota=/quota|resource_exhausted|exhausted|rate.?limit|exceeded|credit|deplet|billing|prepay|\b429\b/.test(emsg);
         const reply=semChave
-          ?'Preciso de uma chave de API para pensar, Senhor. Toque no ícone de chave 🔑 aqui em cima e cole a sua — fica salva só neste aparelho.'
+          ?'Preciso de uma chave de API para pensar, Senhor. Toque no ícone de chave aqui em cima e cole a sua — fica salva só neste aparelho.'
           :cota
           ?'Senhor, meu núcleo de inteligência ficou sem créditos de uso no momento. Enquanto isso, sigo cuidando da sua agenda normalmente — pode adicionar, concluir e apagar tarefas à vontade.'
           :'Falha de conexão com meus servidores, Senhor. Verifique a internet e tente novamente.';
