@@ -107,6 +107,29 @@
   };
   const animFor = mov => (ANIM[mov] || ANIM.press)();
 
+  /* --- fotos reais (dominio publico: free-exercise-db) por exercicio ----
+     2 quadros (inicio/fim) alternados como um GIF; o SVG fica por baixo
+     como fallback quando estiver offline ou a imagem nao carregar.        */
+  const DEMO_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises';
+  const DEMOS = {
+    a1: 'Dumbbell_Bench_Press', a2: 'Barbell_Incline_Bench_Press_-_Medium_Grip', a3: 'Butterfly',
+    a4: 'Dumbbell_Shoulder_Press', a5: 'Side_Lateral_Raise', a6: 'Triceps_Pushdown_-_Rope_Attachment', a7: 'Lying_Triceps_Press',
+    b1: 'Wide-Grip_Lat_Pulldown', b2: 'Seated_Cable_Rows', b3: 'Bent_Over_Two-Dumbbell_Row', b4: 'Full_Range-Of-Motion_Lat_Pulldown',
+    b5: 'Barbell_Curl', b6: 'Alternate_Incline_Dumbbell_Curl', b7: 'Hammer_Curls',
+    c1: 'Barbell_Full_Squat', c2: 'Leg_Press', c3: 'Leg_Extensions', c4: 'Lying_Leg_Curls', c5: 'Standing_Calf_Raises', c6: 'Crunches'
+  };
+  function demoHtml(ex) {
+    const svg = animFor(ex.mov);
+    const dir = DEMOS[ex.k];
+    if (!dir) return `<div class="tr-demo">${svg}</div>`;
+    const base = DEMO_BASE + '/' + encodeURIComponent(dir);
+    return `<div class="tr-demo">` +
+      `<div class="tr-demo-svg">${svg}</div>` +
+      `<img class="tr-demo-img" src="${base}/0.jpg" alt="" loading="lazy" onerror="this.style.display='none'">` +
+      `<img class="tr-demo-img flip" src="${base}/1.jpg" alt="" loading="lazy" onerror="this.style.display='none'">` +
+      `</div>`;
+  }
+
   /* --------------------------- planos A / B / C -------------------------- */
   const WORKOUTS = {
     A: {
@@ -266,7 +289,11 @@
       .tr-tip strong{color:var(--text)}
       .tr-ex{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px;padding:13px 0;border-top:1px solid var(--line)}
       .tr-ex:first-of-type{border-top:0}
-      .tr-demo{width:72px;height:72px;border:1px solid var(--line);border-radius:16px;background:var(--soft);overflow:hidden}
+      .tr-demo{position:relative;width:72px;height:72px;border:1px solid var(--line);border-radius:16px;background:var(--soft);overflow:hidden}
+      .tr-demo-svg{position:absolute;inset:0}
+      .tr-demo-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:var(--soft)}
+      .tr-demo-img.flip{animation:tr-flip 1.6s steps(1,end) infinite}
+      @keyframes tr-flip{0%,49.9%{opacity:0}50%,100%{opacity:1}}
       .tr-ex-name{font-size:14px;font-weight:750;line-height:1.25}
       .tr-ex-meta{margin-top:3px;color:var(--muted);font-size:11px;font-weight:700}
       .tr-ex-meta b{color:var(--accent)}
@@ -438,7 +465,7 @@
     const rVal = last && last.reps ? esc(String(last.reps)) : ex.reps;
     return `
       <div class="tr-ex" data-k="${ex.k}">
-        <div class="tr-demo">${animFor(ex.mov)}</div>
+        ${demoHtml(ex)}
         <div>
           <div class="tr-ex-name">${esc(ex.name)}</div>
           <div class="tr-ex-meta">${esc(ex.muscle)} · <b>${ex.sets} × ${esc(ex.reps)}</b></div>
