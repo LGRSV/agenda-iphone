@@ -40,6 +40,12 @@
       added++;
     }
     localStorage.setItem(TASK_KEY, JSON.stringify(current));
+    if (payload.notas && typeof payload.notas === 'object') {
+      let notas = {};
+      try { notas = JSON.parse(localStorage.getItem('agenda_notas_v1') || '{}') || {}; } catch (_) {}
+      Object.assign(notas, payload.notas);
+      localStorage.setItem('agenda_notas_v1', JSON.stringify(notas));
+    }
     title.textContent = added ? `${added} tarefa${added > 1 ? 's' : ''} adicionada${added > 1 ? 's' : ''}` : 'As tarefas já estavam na agenda';
     message.textContent = 'Voltando para sua agenda…';
     history.replaceState({}, '', location.pathname);
