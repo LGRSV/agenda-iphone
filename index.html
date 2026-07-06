@@ -188,7 +188,7 @@
     @media(min-width:480px){#jarvis-panel{left:max(18px,env(safe-area-inset-left));right:auto;width:400px}}
   </style>
 
-  <div id="app-ver">v52</div>
+  <div id="app-ver">v53</div>
   <button id="jarvis-btn" class="pulse" type="button" aria-label="Abrir Jarvis">
     <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="16" cy="16" r="15" stroke="#75cbff" stroke-width="1.5" opacity=".4"/>
@@ -311,12 +311,21 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
     let jCtx=null,jSrc=null,jVoiceInit=false;
     function makeIR(ctx,seconds,decay){const rate=ctx.sampleRate,len=Math.max(1,Math.floor(rate*seconds)),buf=ctx.createBuffer(2,len,rate);for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay);}return buf;}
     function buildJarvisVoice(){
-      // A voz Charon toca DIRETO no elemento de audio, sem modulador Web Audio.
-      // No iOS o createMediaElementSource prendia o som num AudioContext suspenso
-      // (resultado: silencio), e o reverb/eco deixava o timbre robotico.
-      // Tocar direto = audivel no iPhone e mais natural/menos intenso.
+      // Modulador LEVE (menos robotico): so um EQ suave + compressao para dar
+      // corpo e clareza, SEM reverb/eco metalico. Reproducao via Web Audio,
+      // que e a que comprovadamente toca no iPhone. Se falhar, liga o Src direto.
       if(jVoiceInit)return;jVoiceInit=true;
-      try{jAudio.volume=1;jAudio.muted=false;}catch(_){}
+      const AC=window.AudioContext||window.webkitAudioContext;
+      if(!AC){try{jAudio.volume=1;jAudio.muted=false;}catch(_){}return;}
+      try{
+        jCtx=new AC();
+        jSrc=jCtx.createMediaElementSource(jAudio);
+        const body=jCtx.createBiquadFilter();body.type='lowshelf';body.frequency.value=180;body.gain.value=2;
+        const pres=jCtx.createBiquadFilter();pres.type='peaking';pres.frequency.value=2600;pres.Q.value=0.9;pres.gain.value=3;
+        const comp=jCtx.createDynamicsCompressor();comp.threshold.value=-24;comp.ratio.value=3;comp.attack.value=0.004;comp.release.value=0.2;
+        const master=jCtx.createGain();master.gain.value=1;
+        jSrc.connect(body);body.connect(pres);pres.connect(comp);comp.connect(master);master.connect(jCtx.destination);
+      }catch(_){try{if(jSrc)jSrc.connect(jCtx.destination);}catch(__){}}
     }
     function resumeVoice(){if(jCtx&&jCtx.state==='suspended'){try{jCtx.resume();}catch(_){}}}
     function animOn(){avatarEl.classList.add('speaking');eq.classList.add('on');statusEl.textContent='FALANDO\u2026';}
@@ -335,20 +344,35 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
     }
     function nativeMale(){return voicesCache.find(v=>/pt[-_]BR/i.test(v.lang)&&/felipe|daniel|ricardo|male|masc/i.test(v.name))||null;}
     async function ttsFetch(t){
-      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${jarvisKeys()[0]||''}`,{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          contents:[{parts:[{text:'Fale em portugues brasileiro neutro, com tom calmo, grave, claro e sofisticado, como um assistente de IA: '+t}]}],
-          generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:'Charon'}}}}
-        })});
-      const d=await r.json();
-      const p=d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0];
-      const b64=p&&p.inlineData&&p.inlineData.data;
-      if(!b64){const em=(d&&d.error&&(((d.error.code||'')+' '+(d.error.status||'')+' '+(d.error.message||'')).trim()))||('http '+r.status);throw new Error('TTS '+String(em).slice(0,90));}
-      const rm=/rate=(\d+)/.exec(p.inlineData.mimeType||'');
-      const bin=atob(b64),pcm=new Uint8Array(bin.length);
-      for(let i=0;i<bin.length;i++)pcm[i]=bin.charCodeAt(i);
-      return URL.createObjectURL(pcmToWav(pcm,rm?+rm[1]:24000));
+      const keys=jarvisKeys();
+      if(!keys.length)throw new Error('TTS sem chave');
+      const QUOTA=/quota|resource_exhausted|exhausted|rate.?limit|exceeded|credit|deplet|billing|prepay|\b429\b/;
+      let lastErr='';
+      // rodizio entre as chaves: a voz tem cota propria (e menor), entao se a
+      // primeira chave esgota so na voz, tenta a proxima
+      for(const apiKey of keys){
+        try{
+          const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+              contents:[{parts:[{text:'Fale em portugues brasileiro neutro, com tom calmo, grave, claro e sofisticado, como um assistente de IA: '+t}]}],
+              generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:'Charon'}}}}
+            })});
+          const d=await r.json();
+          const p=d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0];
+          const b64=p&&p.inlineData&&p.inlineData.data;
+          if(b64){
+            const rm=/rate=(\d+)/.exec(p.inlineData.mimeType||'');
+            const bin=atob(b64),pcm=new Uint8Array(bin.length);
+            for(let i=0;i<bin.length;i++)pcm[i]=bin.charCodeAt(i);
+            return URL.createObjectURL(pcmToWav(pcm,rm?+rm[1]:24000));
+          }
+          const em=(d&&d.error&&(((d.error.code||'')+' '+(d.error.status||'')+' '+(d.error.message||'')).trim()))||('http '+r.status);
+          lastErr='TTS '+String(em).slice(0,90);
+          if(!QUOTA.test(lastErr.toLowerCase()))break;
+        }catch(e){lastErr=String((e&&e.message)||e||'');}
+      }
+      throw new Error(lastErr||'TTS falhou');
     }
     function playUrl(url){
       return new Promise(res=>{
