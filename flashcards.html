@@ -264,6 +264,14 @@ body>*{animation:fadeUp .55s var(--ease) both}
 .buscabar input{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line,rgba(255,255,255,.25));background:var(--surface2,rgba(255,255,255,.1));color:var(--text,#fff);font-size:14px;font-family:inherit;-webkit-appearance:none}
 .buscabar input::placeholder{color:var(--muted,#b0bec5)}
 .buscabar input:focus{outline:none;border-color:var(--accent,#7EC8E3)}
+.buscabar select{width:100%;margin-top:7px;padding:10px 12px;border-radius:12px;border:1px solid var(--line,rgba(255,255,255,.25));background:var(--surface2,rgba(255,255,255,.1));color:var(--text,#fff);font-size:13px;font-family:inherit;-webkit-appearance:none;appearance:none}
+.buscabar select:focus{outline:none;border-color:var(--accent,#7EC8E3)}
+.donor-box{background:#E0F2F1;border:1px solid #b2dfdb;border-radius:10px;padding:10px 11px;margin:2px 0 10px}
+.donor-box .donor-t{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#00695c;font-weight:800;margin-bottom:6px}
+.donor-i{display:flex;justify-content:space-between;gap:8px;padding:6px 0;font-size:12px;color:#37474f;text-decoration:none;border-top:1px solid #cfe8e5}
+.donor-i:first-of-type{border-top:none}
+.donor-i b{color:#00695c;font-family:monospace}
+.donor-i span{color:#00897b;font-weight:700;text-align:right}
 .dash-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
 .dash-tile{background:#f2f7fc;border:1px solid #dbe7f3;border-radius:10px;padding:10px 8px;text-align:center}
 .dash-tile .dt-n{font-size:24px;font-weight:800;color:#1F3864;line-height:1}
@@ -303,6 +311,7 @@ body>*{animation:fadeUp .55s var(--ease) both}
 
 <div class="buscabar">
 <input id="busca" type="search" inputmode="numeric" autocomplete="off" placeholder="Buscar por nº do ativo, patrimônio, cidade…" oninput="onBusca(this.value)">
+<select id="cidadeFiltro" onchange="onCidade(this.value)"><option value="">Todas as cidades</option></select>
 </div>
 
 <div class="ctrl" id="filtros">
@@ -312,6 +321,7 @@ body>*{animation:fadeUp .55s var(--ease) both}
 <div class="chip" data-f="dmsl">Travados no DMSL</div>
 <div class="chip" data-f="compra">Compra necessária</div>
 <div class="chip" data-f="concl">Concluídos</div>
+<div class="chip" data-f="pecas">Peças compatíveis</div>
 </div>
 <div class="ctrl" id="filtros-cat">
 <div class="chip" data-f="cat-aprovar">Aprovados <b class="cnt" data-c="aprovar">0</b></div>
@@ -551,6 +561,30 @@ function exportBackup(){
 }
 function csvCell(v){v=(v==null?'':String(v)).replace(/\r?\n/g,' ').trim();return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
 function diasFora(iso){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(iso||'');if(!m)return '';const st=new Date(+m[1],+m[2]-1,+m[3]).getTime();return Math.max(0,Math.floor((Date.now()-st)/86400000));}
+/* ===== Sugestão de peças compatíveis (doador -> receptor) ===== */
+function partKeys(txt){
+  txt=(txt||'').toLowerCase();const out=[];
+  const M={'tanque':/tanque|parte ativa/,'célula':/c[eé]lula/,'controle':/controle|placa|controlador/,'relé':/rel[eé]/,'rádio/comunicação':/r[aá]dio|comunica|antena/,'isolador':/isolador|bucha/,'trafo':/trafo|transformador/,'cabo':/cabo|umbilical|cord[aã]o/,'bateria':/bateria/};
+  for(const k in M){if(M[k].test(txt))out.push(k);}
+  return out;
+}
+function neededKeys(c){const s=new Set();(c.pecas||[]).forEach(p=>partKeys(p.peca).forEach(k=>s.add(k)));return s;}
+function badKeys(c){const s=neededKeys(c);partKeys(c.defeito).forEach(k=>s.add(k));return s;}
+// doador: >365 dias, criticidade Baixa; encontra receptores de mesmo modelo+tensao que
+// precisam de pecas que NAO sao defeito no doador
+function donorInfo(c){
+  if(!c||c.concl||c.crit!=='Baixa')return null;
+  const dd=diasFora(c.dtocor);if(!(dd&&dd>365))return null;
+  const modelo=(c.modelo||'').trim();if(!modelo)return null;
+  const bad=badKeys(c),sup=[];
+  effectiveCards().forEach(n=>{
+    if(n.id===c.id||n.concl||(n.modelo||'').trim()!==modelo||(n.kv||'')!==(c.kv||''))return;
+    const parts=[...neededKeys(n)].filter(k=>!bad.has(k));
+    if(parts.length)sup.push({id:n.id,serie:n.serie,local:n.local,parts});
+  });
+  return sup.length?{supplies:sup}:null;
+}
+function isDonor(c){return !!donorInfo(c);}
 function exportExcel(){
   const base=filtered();
   if(!base.length){alert('Nada para exportar neste filtro.');return;}
@@ -580,31 +614,43 @@ function importBackup(ev){
 }
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
 document.getElementById('eeModal').addEventListener('click',e=>{if(e.target.id==='eeModal')closeEE();});
-let filtro='all', busca='', idx=0, flipped=false;
+let filtro='all', busca='', cidade='', idx=0, flipped=false;
 function filtered(){
   const q=(busca||'').trim().toLowerCase();
-  if(q){                                   // busca global por ativo/patrimonio/cidade/modelo (ignora o chip)
+  let base=effectiveCards();
+  if(cidade)base=base.filter(c=>String(c.local||'')===cidade);  // filtro por cidade (combina com tudo)
+  if(q){                                   // busca por ativo/patrimonio/cidade/modelo (ignora o chip)
     const qd=q.replace(/\D/g,'');
-    return effectiveCards().filter(c=>{
+    return base.filter(c=>{
       const serie=String(c.serie||'').toLowerCase(),patr=String(c.patr||'').toLowerCase();
       const local=String(c.local||'').toLowerCase(),modelo=String(c.modelo||'').toLowerCase();
       if(qd&&(serie.replace(/\D/g,'').includes(qd)||patr.replace(/\D/g,'').includes(qd)))return true;
       return serie.includes(q)||patr.includes(q)||local.includes(q)||modelo.includes(q);
     });
   }
-  return effectiveCards().filter(c=>{
+  return base.filter(c=>{
     if(filtro==='all')return true;
     if(filtro==='RL')return c.tipo==='RL';
     if(filtro==='RT')return c.tipo==='RT';
     if(filtro==='dmsl')return c.st.includes('DMSL');
     if(filtro==='compra')return c.dec==='Compra necessária';
     if(filtro==='concl')return !!c.concl;
+    if(filtro==='pecas')return isDonor(c);
     if(filtro==='cat-none')return !c.cat;
     if(filtro.slice(0,4)==='cat-')return c.cat===filtro.slice(4);
     return true;
   });
 }
 function onBusca(v){busca=v;idx=0;render();}
+function onCidade(v){cidade=v;idx=0;render();}
+function fillCidades(){
+  const sel=document.getElementById('cidadeFiltro');if(!sel)return;
+  const cont={};effectiveCards().forEach(c=>{const l=String(c.local||'').trim();if(l)cont[l]=(cont[l]||0)+1;});
+  const nomes=Object.keys(cont).sort((a,b)=>a.localeCompare(b));
+  const atual=sel.value;
+  sel.innerHTML='<option value="">Todas as cidades</option>'+nomes.map(n=>`<option value="${n.replace(/"/g,'&quot;')}">${n} (${cont[n]})</option>`).join('');
+  if(atual&&cont[atual])sel.value=atual;
+}
 function limparBusca(){const el=document.getElementById('busca');if(el)el.value='';busca='';idx=0;render();}
 const CAT_LABELS={aprovar:'Aprovado para compra',execucao:'Em execução',analise:'Voltar para análise',ncon:'Não conformidade'};
 function catBadge(c){return c.cat?`<div class="cat-badge ${c.cat}">${CAT_LABELS[c.cat]||esc(c.cat)}</div>`:'';}
@@ -725,6 +771,7 @@ function render(){
       <div class="hero-kv ${c.kv==='34,5'?'kv345':''}"><span class="kl">Faixa de tensão</span>${c.kv==='ND'?'ND':esc(c.kv)+' kV'}</div>
     </div>
     ${c.concl?'<div class="cat-badge" style="background:#E6F4EA;color:#1e7e34;border:1px solid #b7dfc3">CONCLUÍDO</div>':catBadge(c)}
+    ${isDonor(c)?'<div class="cat-badge" style="background:#E0F2F1;color:#00695c;border:1px solid #b2dfdb">PEÇAS COMPATÍVEIS</div>':''}
     <div class="row1"><span class="tp tp-${c.tipo}">${c.tipo}</span><span class="idc">${esc(c.id)}${isEdited(c.id)?'<span class="edited-badge">editado</span>':''}</span></div>
     <div class="serie">${esc(c.serie)}</div>
     <div class="patr">Patrim.: ${esc(c.patr)} · SS ${esc(c.ss)}</div>
@@ -746,6 +793,7 @@ function render(){
     ${c.parecer?`<div class="lbl">Parecer João / COEP</div><div class="def">${esc(c.parecer)}</div>`:''}
     <div class="lbl">Descrição completa (Parecer COEP)</div>
     <div class="desc">${esc(c.desc)||'—'}</div>
+    ${(()=>{const d=donorInfo(c);return d?`<div class="donor-box"><div class="donor-t">Peças compatíveis — pode doar para (mesmo modelo e tensão)</div>${d.supplies.map(su=>`<a href="#" onclick="dashGoTo('${su.id}');return false;" class="donor-i"><b>${esc(su.serie)}</b> · ${esc(su.local)}<span>${su.parts.join(', ')}</span></a>`).join('')}</div>`:'';})()}
     <div class="lbl">Peça(s) a comprar</div>
     ${pecasH}
     <div class="grid2">
@@ -834,7 +882,8 @@ function renderDash(){
   ];
   const CC={'Muito Alta':'#C00000','Alta':'#ED7D31','Média':'#FFC000','Baixa':'#A9D08E'};
   const crits=['Muito Alta','Alta','Média','Baixa'].map(cr=>({key:'cr-'+cr,label:cr,color:CC[cr],cards:all.filter(c=>c.crit===cr)}));
-  const tiles=[['Total',total],['Reguladores',rt],['Religadores',rl],['Indisponíveis',total-concl],['Concluídos',concl],['Compra',compra]];
+  const doadores=all.filter(isDonor).length;
+  const tiles=[['Total',total],['Reguladores',rt],['Religadores',rl],['Indisponíveis',total-concl],['Concluídos',concl],['Compra',compra],['Peças compat.',doadores]];
   el.innerHTML=`<div class="dash-tiles">${tiles.map(([l,n])=>`<div class="dash-tile"><div class="dt-n">${n}</div><div class="dt-l">${l}</div></div>`).join('')}</div>`
     +dashGroup('Por categoria',cats)+dashGroup('Por criticidade',crits);
 }
@@ -862,6 +911,7 @@ function mapGoTo(id){
 }
 document.querySelectorAll('.chip').forEach(ch=>ch.onclick=(e)=>{e.stopPropagation();document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));ch.classList.add('on');filtro=ch.dataset.f;idx=0;render();});
 document.addEventListener('keydown',e=>{if(document.getElementById('modal').classList.contains('open')||document.getElementById('eeModal').classList.contains('open')||/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;if(e.key==='ArrowRight')go(1);if(e.key==='ArrowLeft')go(-1);if(e.key===' '){e.preventDefault();flip();}});
+fillCidades();
 render();
 /* ===== Fluidez: deslizar entre cards + animacao de entrada ===== */
 (function(){
