@@ -97,6 +97,24 @@
     if (f.truncated && f.raw_url) content = await (await fetch(f.raw_url, { cache: 'no-store' })).text();
     return JSON.parse(content);
   }
+  // lista as revisões (histórico) do gist — o GitHub guarda todas as versões
+  async function gistHistory(c) {
+    if (!c.gistId) return [];
+    const r = await fetch('https://api.github.com/gists/' + c.gistId, { headers: headers(c), cache: 'no-store' });
+    if (!r.ok) return [];
+    const g = await r.json();
+    return Array.isArray(g.history) ? g.history : [];
+  }
+  async function gistReadRevision(c, version) {
+    const r = await fetch('https://api.github.com/gists/' + c.gistId + '/' + version, { headers: headers(c), cache: 'no-store' });
+    if (!r.ok) return null;
+    const g = await r.json();
+    const f = g.files && g.files[FILE];
+    if (!f) return null;
+    let content = f.content;
+    if (f.truncated && f.raw_url) content = await (await fetch(f.raw_url, { cache: 'no-store' })).text();
+    try { return JSON.parse(content); } catch (_) { return null; }
+  }
 
   function snapshot(c) {
     return { tarefas: json(TASKS, []), notas: json(NOTES, {}), treinoLogs: json(TLOGS, {}), treinoMeta: json(TMETA, {}), config: json(APP, {}), regras: json(RULES, []), jarvisChaves: localStorage.getItem(JKEYS) || '', atualizadoEm: new Date().toISOString(), aparelho: c.aparelho };
@@ -212,6 +230,13 @@
       .sy-btn.solid{border:1px solid var(--accent);background:var(--accent);color:var(--accentInk)}
       .sy-btn.wide{grid-column:1/-1}
       .sy-close{margin-top:12px;width:100%;min-height:42px;border:1px solid var(--line);border-radius:13px;background:transparent;color:var(--muted);font-size:13px;font-weight:750}
+      .sy-reclist{display:grid;gap:7px;margin-top:10px}
+      .sy-reclist:empty{margin:0}
+      .sy-recmsg{color:var(--muted);font-size:12px;line-height:1.5;padding:2px 0}
+      .sy-rev{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:44px;padding:9px 13px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--text);text-align:left}
+      .sy-rev:active{transform:scale(.98)}
+      .sy-rev b{font-size:14px;font-weight:800}
+      .sy-rev span{color:var(--muted);font-size:12px;font-weight:650}
     `;
     document.head.appendChild(s);
   }
@@ -259,7 +284,9 @@
           <button class="sy-btn ghost" id="sySave" type="button">Salvar acesso</button>
           <button class="sy-btn solid" id="sySend" type="button">Enviar este aparelho</button>
           <button class="sy-btn ghost wide" id="syGet" type="button">Baixar da nuvem</button>
+          <button class="sy-btn ghost wide" id="syRecover" type="button">Recuperar versão anterior…</button>
         </div>
+        <div id="syRecList" class="sy-reclist"></div>
         <button class="sy-close" id="syClose" type="button">Fechar</button>
       </section>`;
     document.body.appendChild(dialogEl);
@@ -268,7 +295,58 @@
     dialogEl.querySelector('#sySave').addEventListener('click', salvarAcesso);
     dialogEl.querySelector('#sySend').addEventListener('click', () => enviar(true));
     dialogEl.querySelector('#syGet').addEventListener('click', baixar);
+    dialogEl.querySelector('#syRecover').addEventListener('click', recuperar);
+    dialogEl.querySelector('#syRecList').addEventListener('click', e => {
+      const it = e.target.closest('[data-rev]');
+      if (it) aplicarRevisao(it.dataset.rev);
+    });
     return dialogEl;
+  }
+
+  // ---- recuperação por histórico de versões ----------------------------
+  let revCache = {}; // version -> dados decifrados
+  async function recuperar() {
+    const c = cfg();
+    if (!pronto(c)) { status('Preencha token e senha primeiro.', 'erro'); return; }
+    const box = dialogEl.querySelector('#syRecList');
+    box.innerHTML = '<div class="sy-recmsg">Procurando versões salvas…</div>';
+    try {
+      let cc = c;
+      if (!cc.gistId) { const id = await gistFind(cc); if (id) cc = setCfg({ gistId: id }); }
+      if (!cc.gistId) { box.innerHTML = '<div class="sy-recmsg">Nenhum backup encontrado nesta conta.</div>'; return; }
+      const hist = await gistHistory(cc);
+      if (!hist.length) { box.innerHTML = '<div class="sy-recmsg">Sem histórico de versões.</div>'; return; }
+      const lim = hist.slice(0, 20);
+      revCache = {};
+      let ok = 0, rows = '';
+      for (const h of lim) {
+        const ver = h.version; if (!ver) continue;
+        const pacote = await gistReadRevision(cc, ver);
+        let n = -1;
+        if (pacote && pacote.protegido) {
+          const dados = await abrir(pacote.protegido, cc.senha).catch(() => null);
+          if (dados && Array.isArray(dados.tarefas)) {
+            revCache[ver] = dados; ok++;
+            n = dados.tarefas.filter(t => t && t.text && !/^🏋/.test(t.text)).length;
+          }
+        }
+        const quando = h.committed_at ? new Date(h.committed_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ver.slice(0, 7);
+        if (n >= 0) rows += `<button class="sy-rev" type="button" data-rev="${ver}"><b>${n} tarefa${n === 1 ? '' : 's'}</b><span>${quando}</span></button>`;
+      }
+      if (!ok) { box.innerHTML = '<div class="sy-recmsg">Não consegui abrir as versões — confira se a senha é a mesma de quando ativou o backup.</div>'; return; }
+      box.innerHTML = `<div class="sy-recmsg">Toque na versão que tiver suas tarefas:</div>${rows}`;
+    } catch (e) {
+      box.innerHTML = '<div class="sy-recmsg">Falha ao ler o histórico. Verifique o token e a internet.</div>';
+    }
+  }
+  function aplicarRevisao(ver) {
+    const dados = revCache[ver];
+    if (!dados) return;
+    aplicar(dados);
+    const c = cfg();
+    setCfg({ remotoEm: String(dados.atualizadoEm || new Date().toISOString()), remotoPendente: false, pronto: true });
+    toast('Versão restaurada. Atualizando…', 'ok');
+    setTimeout(() => location.reload(), 500);
   }
 
   function salvarAcesso() {
