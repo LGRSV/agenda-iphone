@@ -308,25 +308,35 @@
   }
 
   // ---- recuperação a partir das chaves locais deste aparelho -----------
+  // varredura COMPLETA: examina todas as chaves do armazenamento em busca de
+  // qualquer coisa com cara de tarefa (útil se os dados estiverem sob um nome
+  // inesperado, de alguma versão antiga do app)
   let devCache = {};
   function recuperarAparelho() {
     const box = dialogEl.querySelector('#syRecList');
-    const reais = a => (Array.isArray(a) ? a : []).filter(t => t && t.text && !/^🏋/.test(t.text)).length;
-    const pre = json('agenda_lagares_backup_pre_sync_v1', null);
-    const fontes = [
-      ['cur', 'Lista atual', json(TASKS, [])],
-      ['p1', 'Versão anterior (profissional)', json('agenda_profissional_iphone_v1', [])],
-      ['p2', 'Versão anterior (agenda_tasks)', json('agenda_tasks', [])],
-      ['pre', 'Backup local pré-sincronismo', pre && Array.isArray(pre.tarefas) ? pre.tarefas : []]
-    ];
+    const esc = s => { const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; };
+    const taskLike = o => o && typeof o === 'object' && o.text && (o.date || o.day);
+    const extract = v => Array.isArray(v) ? v : (v && Array.isArray(v.tarefas)) ? v.tarefas : (v && Array.isArray(v.tasks)) ? v.tasks : null;
+    const reais = a => (a || []).filter(t => taskLike(t) && !/^🏋/.test(t.text)).length;
     devCache = {};
-    let rows = '', achou = 0;
-    fontes.forEach(([id, nome, arr]) => {
-      const n = reais(arr); devCache[id] = Array.isArray(arr) ? arr : [];
-      if (n) achou++;
-      rows += `<button class="sy-rev" type="button" data-dev="${id}"${n ? '' : ' disabled'}><b>${n} tarefa${n === 1 ? '' : 's'}</b><span>${nome}</span></button>`;
-    });
-    box.innerHTML = `<div class="sy-recmsg">${achou ? 'Fontes neste aparelho — toque numa que tenha suas tarefas:' : 'Nenhuma fonte deste aparelho tem tarefas guardadas.'}</div>${rows}`;
+    const found = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      let v; try { v = JSON.parse(localStorage.getItem(key)); } catch (_) { continue; }
+      const arr = extract(v);
+      if (!arr) continue;
+      const n = reais(arr);
+      if (n > 0) found.push({ key, n, arr });
+    }
+    found.sort((a, b) => b.n - a.n);
+    if (!found.length) {
+      box.innerHTML = '<div class="sy-recmsg">Fiz uma varredura completa e <b>nenhuma</b> parte deste aparelho tem tarefas guardadas (fora a academia). Infelizmente elas não ficaram salvas aqui.</div>';
+      return;
+    }
+    let rows = '';
+    found.forEach((f, idx) => { devCache[idx] = f.arr; rows += `<button class="sy-rev" type="button" data-dev="${idx}"><b>${f.n} tarefa${f.n === 1 ? '' : 's'}</b><span>${esc(f.key)}</span></button>`; });
+    box.innerHTML = `<div class="sy-recmsg">Varredura completa — toque na fonte que tiver suas tarefas:</div>${rows}`;
   }
   function aplicarAparelho(id) {
     const arr = devCache[id];
