@@ -73,6 +73,18 @@
     if (!r.ok) throw new Error('gravar gist ' + r.status);
     return true;
   }
+  // reencontra o gist do backup pelo nome do arquivo (usado quando o
+  // gistId foi perdido, ex.: o iOS limpou o armazenamento do app)
+  async function gistFind(c) {
+    try {
+      const r = await fetch('https://api.github.com/gists?per_page=100', { headers: headers(c), cache: 'no-store' });
+      if (!r.ok) return '';
+      const list = await r.json();
+      if (!Array.isArray(list)) return '';
+      const hit = list.find(g => g && g.files && g.files[FILE]);
+      return hit ? hit.id : '';
+    } catch (_) { return ''; }
+  }
   async function gistRead(c) {
     if (!c.gistId) return null;
     const r = await fetch('https://api.github.com/gists/' + c.gistId, { headers: headers(c), cache: 'no-store' });
@@ -101,10 +113,11 @@
 
   /* ------------------------------ ações --------------------------------- */
   async function enviar(forcar) {
-    const c = cfg();
+    let c = cfg();
     if (!pronto(c)) { openDialog(); return; }
     if (enviando) return; enviando = true; status('Criptografando e enviando…', '');
     try {
+      if (!c.gistId) { const id = await gistFind(c); if (id) c = setCfg({ gistId: id }); }
       if (c.gistId) {
         const remoto = await gistRead(c).catch(() => null);
         const dr = remoto && remoto.atualizadoEm || '';
@@ -125,10 +138,11 @@
   }
 
   async function baixar() {
-    const c = cfg();
+    let c = cfg();
     if (!pronto(c)) { openDialog(); return; }
     status('Baixando da nuvem…', '');
     try {
+      if (!c.gistId) { const id = await gistFind(c); if (id) c = setCfg({ gistId: id }); }
       const remoto = await gistRead(c);
       if (!remoto) { status('Nenhuma cópia na nuvem ainda. Envie este aparelho primeiro.', 'erro'); return; }
       const dados = await abrir(remoto.protegido, c.senha);
@@ -152,8 +166,9 @@
 
   // ao abrir: recupera se a nuvem tem algo mais novo (ou se o local foi limpo)
   async function conferir() {
-    const c = cfg();
-    if (!pronto(c) || !c.gistId || enviando) return;
+    let c = cfg();
+    if (!pronto(c) || enviando) return;
+    if (!c.gistId) { const id = await gistFind(c); if (!id) return; c = setCfg({ gistId: id }); }
     try {
       const remoto = await gistRead(c);
       const dr = remoto && remoto.atualizadoEm || '';
