@@ -572,10 +572,14 @@
 
     document.addEventListener('click', e => {
       const b = e.target.closest('.tr-open');
-      if (!b) return;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      openModal(b.dataset.treinoId);
+      if (b) { e.preventDefault(); e.stopImmediatePropagation(); openModal(b.dataset.treinoId); return; }
+      // clicar no título de um card de treino também abre o painel do treino
+      const title = e.target.closest('.task-title');
+      if (title) {
+        const check = title.closest('.task-card') && title.closest('.task-card').querySelector('.check[data-id]');
+        const id = check && check.dataset.id;
+        if (id && String(id).startsWith('treino-')) { e.preventDefault(); e.stopImmediatePropagation(); openModal(id); }
+      }
     }, true);
   }
 

@@ -157,7 +157,7 @@
     const note = getNote(id);
     const has = !!(note.prio || note.valor || note.durationMin || note.detail.trim() || note.subs.length);
     btn.classList.toggle('has', has);
-    let label = '🗒️';
+    let label = has ? '🗒️' : '🗒️ Detalhes';
     if (note.valor) label += ' R$ ' + note.valor;
     else if (note.durationMin) label += ' ' + fmtDur(note.durationMin);
     else if (note.subs.length) { const d = note.subs.filter(s => s.done).length; label += ` ${d}/${note.subs.length}`; }
@@ -198,6 +198,13 @@
   document.addEventListener('click', e => {
     const tog = e.target.closest('.notas-toggle');
     if (tog) { e.preventDefault(); e.stopPropagation(); toggle(tog.dataset.nid); return; }
+    // clicar no título da tarefa também abre a caixinha (descrição + sub-tarefas)
+    const title = e.target.closest('.task-title');
+    if (title) {
+      const card = title.closest('.task-card');
+      const id = card && cardId(card);
+      if (id && !String(id).startsWith('treino-')) { e.preventDefault(); e.stopPropagation(); toggle(id); return; }
+    }
     const panel = e.target.closest('.notas-panel');
     if (!panel) return;
     const dur = e.target.closest('[data-dur]');
