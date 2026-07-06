@@ -746,13 +746,41 @@ render();
   function setStatus(on,mode){if(stEl)stEl.textContent=on?(mode==='gen'?'gerando voz…':'falando…'):'';if(bar)bar.classList.toggle('speaking',!!on);}
   function unlockTTS(){if(ttsUnlocked)return;ttsUnlocked=true;try{jAudio.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';jAudio.play().catch(()=>{});}catch(_){}if('speechSynthesis'in window){try{const u0=new SpeechSynthesisUtterance(' ');u0.volume=0;speechSynthesis.speak(u0);}catch(_){}}}
   function stopSpeech(){try{jAudio.pause();jAudio.currentTime=0;}catch(_){}if(jUrl){URL.revokeObjectURL(jUrl);jUrl=null;}if('speechSynthesis'in window)speechSynthesis.cancel();}
+  function pickPtVoice(){
+    const vs=voices||[];
+    const ptBR=vs.filter(v=>/pt[-_]?BR/i.test(v.lang));
+    const pt=ptBR.length?ptBR:vs.filter(v=>/^pt/i.test(v.lang));
+    const enh=v=>/enhanced|premium|siri|neural|melhorad|aprimorad/i.test((v.name||'')+' '+(v.voiceURI||''));
+    const male=v=>/felipe|daniel|ricardo|male|masc/i.test(v.name||'');
+    return pt.find(v=>/felipe/i.test(v.name)&&enh(v))||pt.find(v=>/felipe/i.test(v.name))||pt.find(v=>male(v)&&enh(v))||pt.find(male)||pt.find(enh)||pt[0]||null;
+  }
+  function ptChunks(t){
+    const sents=t.match(/[^.!?\n]+[.!?…]*\s*/g)||[t];
+    const out=[];let cur='';
+    for(const s of sents){
+      if((cur+s).length>180 && cur.trim()){out.push(cur.trim());cur=s;}
+      else cur+=s;
+      while(cur.length>180){let cut=cur.lastIndexOf(' ',180);if(cut<80)cut=180;out.push(cur.slice(0,cut).trim());cur=cur.slice(cut);}
+    }
+    if(cur.trim())out.push(cur.trim());
+    return out.length?out:[t];
+  }
   function browserSpeak(t){
     if(!('speechSynthesis'in window))return;
-    const u=new SpeechSynthesisUtterance(t);u.lang='pt-BR';u.pitch=0.7;u.rate=0.95;
-    const v=voices.find(v=>/pt[-_]BR/i.test(v.lang)&&/male|masc|felipe|daniel|ricardo/i.test(v.name))||voices.find(v=>/pt[-_]BR/i.test(v.lang))||voices.find(v=>/^pt/i.test(v.lang));
-    if(v)u.voice=v;
-    u.onstart=()=>{played=true;setStatus(true);};u.onend=()=>setStatus(false);u.onerror=()=>setStatus(false);
-    speechSynthesis.speak(u);
+    try{loadVoices();}catch(_){}                      // iOS as vezes vem com o cache de vozes vazio
+    const synth=window.speechSynthesis;
+    try{synth.cancel();}catch(_){}
+    const voice=pickPtVoice();
+    const parts=ptChunks(t);                          // frases curtas: evita o corte de fala longa no iOS
+    parts.forEach((p,i)=>{
+      const u=new SpeechSynthesisUtterance(p);
+      u.lang='pt-BR';u.pitch=0.82;u.rate=0.95;u.volume=1;  // tom mais grave e calmo (Felipe)
+      if(voice)u.voice=voice;
+      if(i===0)u.onstart=()=>{played=true;setStatus(true);};
+      if(i===parts.length-1)u.onend=()=>setStatus(false);
+      u.onerror=()=>setStatus(false);
+      try{synth.speak(u);}catch(_){}
+    });
   }
   function pcmToWav(pcm,rate){const n=pcm.length,buf=new ArrayBuffer(44+n),v=new DataView(buf);const ws=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};ws(0,'RIFF');v.setUint32(4,36+n,true);ws(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);ws(36,'data');v.setUint32(40,n,true);new Uint8Array(buf,44).set(pcm);return new Blob([buf],{type:'audio/wav'});}
   async function gttsFetch(t){
@@ -783,8 +811,11 @@ render();
     if(!voiceOn)return;stopSpeech();
     const t=(text||'').replace(/J\.?A\.?R\.?V\.?I\.?S\.?/gi,'Jarvis').replace(/\*/g,'').trim();if(!t)return;
     setStatus(true,'gen');
-    try{const url=await gttsFetch(t);const ok=await playUrl(url);if(ok)return;}catch(e){}
-    browserSpeak(t);
+    let noKey=false;
+    try{const url=await gttsFetch(t);const ok=await playUrl(url);if(ok)return;}
+    catch(e){noKey=/sem chave/.test(String((e&&e.message)||''));}
+    browserSpeak(t);                                  // reserva: voz nativa do aparelho (Felipe)
+    if(stEl&&noKey)stEl.textContent='voz do aparelho (adicione chave p/ voz do Jarvis)';
   }
   function briefing(){
     const all=(typeof effectiveCards==='function')?effectiveCards():[];
