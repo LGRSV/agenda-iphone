@@ -291,10 +291,10 @@
       .tr-cardio-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px}
       .tr-cpreset{padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);font-size:12px;font-weight:800;line-height:1}
       .tr-cpreset.on{border-color:var(--accent);background:var(--accent);color:var(--accentInk)}
-      .tr-ccustom{display:inline-flex;align-items:center;gap:5px;cursor:text}
-      .tr-ccustom input{width:40px;border:0;background:transparent;color:inherit;font:inherit;font-weight:800;text-align:center;outline:0;padding:0;-moz-appearance:textfield}
-      .tr-ccustom input::-webkit-outer-spin-button,.tr-ccustom input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-      .tr-ccustom input::placeholder{color:var(--muted)}
+      .tr-cardio-custom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 9px;padding:9px 13px;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer}
+      .tr-cc-label{font-size:12px;font-weight:800;color:var(--muted)}
+      .tr-cc-input{border:0;background:transparent;color:var(--accent);font:inherit;font-size:17px;font-weight:850;outline:0;text-align:right;min-width:0}
+      .tr-cc-input::-webkit-date-and-time-value{text-align:right}
       .tr-cardio-ctrl{display:flex;gap:8px}
       .tr-cbtn{min-height:40px;border-radius:12px;font-size:13px;font-weight:800;border:1px solid var(--line);background:var(--soft);color:var(--text);padding:0 14px}
       .tr-cbtn.play{flex:1;border-color:var(--accent);background:var(--accent);color:var(--accentInk)}
@@ -395,7 +395,8 @@
   function cardioSection() {
     return `<div class="tr-cardio">` +
       `<div class="tr-cardio-top"><span class="tr-cardio-label">Cardio (aquecimento)</span><span class="tr-cardio-time" id="trCardioTime">${fmtTime(cardioLeft)}</span></div>` +
-      `<div class="tr-cardio-presets" id="trCardioPresets">${[5, 10, 15, 20, 30, 45, 60].map(m => `<button class="tr-cpreset ${cardioTotal === m * 60 ? 'on' : ''}" type="button" data-cardio="${m}">${m} min</button>`).join('')}<label class="tr-cpreset tr-ccustom">custom<input type="number" id="trCardioCustom" min="1" max="180" inputmode="numeric" placeholder="—"></label></div>` +
+      `<div class="tr-cardio-presets" id="trCardioPresets">${[5, 10, 15, 20, 30, 45, 60].map(m => `<button class="tr-cpreset ${cardioTotal === m * 60 ? 'on' : ''}" type="button" data-cardio="${m}">${m} min</button>`).join('')}</div>` +
+      `<label class="tr-cardio-custom"><span class="tr-cc-label">Personalizado (h:min)</span><input type="time" id="trCardioCustom" class="tr-cc-input" aria-label="Duração personalizada do cardio"></label>` +
       `<div class="tr-cardio-ctrl"><button class="tr-cbtn play" id="trCardioToggle" type="button">${cardioInt ? '⏸ Pausar' : '▶ Iniciar'}</button><button class="tr-cbtn" id="trCardioReset" type="button" aria-label="Zerar">↺</button></div>` +
       `</div>`;
   }
@@ -469,8 +470,10 @@
     });
     dialogEl.addEventListener('change', e => {
       if (e.target && e.target.id === 'trCardioCustom') {
-        const m = Math.max(1, Math.min(180, Math.round(Number(e.target.value) || 0)));
-        if (m) setCardio(m);
+        const parts = String(e.target.value || '').split(':');
+        const h = Number(parts[0]) || 0, mm = Number(parts[1]) || 0;
+        const total = Math.min(300, h * 60 + mm);
+        if (total > 0) setCardio(total);
       }
     });
     dialogEl.querySelector('#trSave').addEventListener('click', () => saveSession(false));
