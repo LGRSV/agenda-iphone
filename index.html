@@ -57,7 +57,7 @@
     function id(){return `${Date.now()}-${Math.random().toString(36).slice(2,9)}`}
     function tagKey(value){const v=String(value||'').trim().toLowerCase();if(TAGS[v])return v;if(/work|trabalho|energisa/.test(v))return'trabalho';if(/casa|home/.test(v))return'casa';if(/faculdade|college|estudo/.test(v))return'faculdade';if(/saúde|saude|health/.test(v))return'saude';if(/finance|dinheiro/.test(v))return'financeiro';if(/pessoal|personal/.test(v))return'pessoal';return'outros'}
     function normalise(item,index){if(!item||!item.text)return null;let date=item.date;if(!date&&item.day){const [d,m]=String(item.day).split('/').map(Number);if(d&&m)date=`2026-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}if(!/^\d{4}-\d{2}-\d{2}$/.test(String(date||'')))return null;const reminder=Number.isFinite(Number(item.reminder))?Number(item.reminder):Number.isFinite(Number(item.alert))?Number(item.alert):-1;return{id:String(item.id||`task-${index}-${id()}`),text:String(item.text),date:String(date),time:/^\d{2}:\d{2}$/.test(String(item.time||''))?String(item.time):'',tag:tagKey(item.tag||item.category||item.calendar),reminder,done:Boolean(item.done)}}
-    function loadTasks(){const saved=json(localStorage.getItem(TASK_KEY));if(Array.isArray(saved))return saved.map(normalise).filter(Boolean);for(const key of['agenda_profissional_iphone_v1','agenda_tasks']){const old=json(localStorage.getItem(key));if(Array.isArray(old)){const converted=old.map(normalise).filter(Boolean);if(converted.length){localStorage.setItem(TASK_KEY,JSON.stringify(converted));return converted;}}}return seed}
+    function loadTasks(){const hasReal=a=>Array.isArray(a)&&a.some(t=>t&&t.text&&!/^🏋/.test(t.text));const saved=json(localStorage.getItem(TASK_KEY));const savedArr=Array.isArray(saved)?saved.map(normalise).filter(Boolean):null;if(hasReal(savedArr))return savedArr;const treino=(savedArr||[]).filter(t=>/^🏋/.test(t.text||''));const merge=arr=>{const conv=arr.map(normalise).filter(Boolean);if(!conv.some(t=>!/^🏋/.test(t.text)))return null;const m=conv.concat(treino.filter(tt=>!conv.some(c=>c.id===tt.id)));localStorage.setItem(TASK_KEY,JSON.stringify(m));return m;};for(const key of['agenda_profissional_iphone_v1','agenda_tasks']){const old=json(localStorage.getItem(key));if(Array.isArray(old)){const r=merge(old);if(r)return r;}}const pre=json(localStorage.getItem('agenda_lagares_backup_pre_sync_v1'));if(pre&&Array.isArray(pre.tarefas)){const r=merge(pre.tarefas);if(r)return r;}return savedArr||seed}
     function save(){localStorage.setItem(TASK_KEY,JSON.stringify(tasks))}
     const RULES_KEY='agenda_lagares_rules_v1',RECUR_HORIZON=120,RECUR_REGEN=75;
     function loadRules(){const v=json(localStorage.getItem(RULES_KEY));return Array.isArray(v)?v:[]}
@@ -180,7 +180,7 @@
     @media(min-width:480px){#jarvis-panel{left:max(18px,env(safe-area-inset-left));right:auto;width:400px}}
   </style>
 
-  <div id="app-ver">v44</div>
+  <div id="app-ver">v45</div>
   <button id="jarvis-btn" class="pulse" type="button" aria-label="Abrir Jarvis">
     <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="16" cy="16" r="15" stroke="#75cbff" stroke-width="1.5" opacity=".4"/>

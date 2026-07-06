@@ -255,7 +255,7 @@
   function refresh() {
     const c = cfg();
     const btn = document.getElementById('syncBtn');
-    if (btn) { btn.classList.toggle('sync-pend', c.remotoPendente); btn.title = c.remotoPendente ? 'Há dados novos na nuvem — toque' : (c.pronto ? 'Sincronização ativa' : 'Backup na nuvem'); }
+    if (btn) { btn.classList.toggle('sync-pend', c.remotoPendente); btn.title = c.remotoPendente ? 'Há dados novos na nuvem — toque' : (c.pronto ? 'Sincronização ativa' : 'Sincronismo'); }
     if (!dialogEl) return;
     const t = dialogEl.querySelector('#syToken'), s = dialogEl.querySelector('#syPass');
     if (t && document.activeElement !== t) t.value = c.token ? '••••••••••••' : '';
@@ -272,7 +272,7 @@
     dialogEl.id = DIALOG_ID;
     dialogEl.innerHTML = `
       <section class="sy-modal">
-        <h3>Backup na nuvem</h3>
+        <h3>Sincronismo</h3>
         <p>Salva sua agenda criptografada num Gist secreto do GitHub, para não perder nada se o iPhone limpar o app.</p>
         <div class="sy-note"><b>Token do GitHub</b> — crie em <a href="https://github.com/settings/tokens/new?scopes=gist&description=Agenda%20Lagares" target="_blank" rel="noopener">github.com/settings/tokens</a> marcando só o escopo <b>gist</b>. Cole abaixo (fica só neste aparelho).</div>
         <label class="sy-label" for="syToken">Token do GitHub (escopo gist)</label>
@@ -285,6 +285,7 @@
           <button class="sy-btn solid" id="sySend" type="button">Enviar este aparelho</button>
           <button class="sy-btn ghost wide" id="syGet" type="button">Baixar da nuvem</button>
           <button class="sy-btn ghost wide" id="syRecover" type="button">Recuperar versão anterior…</button>
+          <button class="sy-btn ghost wide" id="syDevice" type="button">Recuperar deste aparelho</button>
         </div>
         <div id="syRecList" class="sy-reclist"></div>
         <button class="sy-close" id="syClose" type="button">Fechar</button>
@@ -296,11 +297,46 @@
     dialogEl.querySelector('#sySend').addEventListener('click', () => enviar(true));
     dialogEl.querySelector('#syGet').addEventListener('click', baixar);
     dialogEl.querySelector('#syRecover').addEventListener('click', recuperar);
+    dialogEl.querySelector('#syDevice').addEventListener('click', recuperarAparelho);
     dialogEl.querySelector('#syRecList').addEventListener('click', e => {
-      const it = e.target.closest('[data-rev]');
-      if (it) aplicarRevisao(it.dataset.rev);
+      const rev = e.target.closest('[data-rev]');
+      if (rev) { aplicarRevisao(rev.dataset.rev); return; }
+      const dev = e.target.closest('[data-dev]');
+      if (dev) aplicarAparelho(dev.dataset.dev);
     });
     return dialogEl;
+  }
+
+  // ---- recuperação a partir das chaves locais deste aparelho -----------
+  let devCache = {};
+  function recuperarAparelho() {
+    const box = dialogEl.querySelector('#syRecList');
+    const reais = a => (Array.isArray(a) ? a : []).filter(t => t && t.text && !/^🏋/.test(t.text)).length;
+    const pre = json('agenda_lagares_backup_pre_sync_v1', null);
+    const fontes = [
+      ['cur', 'Lista atual', json(TASKS, [])],
+      ['p1', 'Versão anterior (profissional)', json('agenda_profissional_iphone_v1', [])],
+      ['p2', 'Versão anterior (agenda_tasks)', json('agenda_tasks', [])],
+      ['pre', 'Backup local pré-sincronismo', pre && Array.isArray(pre.tarefas) ? pre.tarefas : []]
+    ];
+    devCache = {};
+    let rows = '', achou = 0;
+    fontes.forEach(([id, nome, arr]) => {
+      const n = reais(arr); devCache[id] = Array.isArray(arr) ? arr : [];
+      if (n) achou++;
+      rows += `<button class="sy-rev" type="button" data-dev="${id}"${n ? '' : ' disabled'}><b>${n} tarefa${n === 1 ? '' : 's'}</b><span>${nome}</span></button>`;
+    });
+    box.innerHTML = `<div class="sy-recmsg">${achou ? 'Fontes neste aparelho — toque numa que tenha suas tarefas:' : 'Nenhuma fonte deste aparelho tem tarefas guardadas.'}</div>${rows}`;
+  }
+  function aplicarAparelho(id) {
+    const arr = devCache[id];
+    if (!arr || !arr.length) return;
+    const atual = json(TASKS, []);
+    const treino = (Array.isArray(atual) ? atual : []).filter(t => t && /^🏋/.test(t.text || ''));
+    const merged = arr.concat(treino.filter(tt => !arr.some(c => c && c.id === tt.id)));
+    salvar(TASKS, merged);
+    toast('Tarefas recuperadas deste aparelho. Atualizando…', 'ok');
+    setTimeout(() => location.reload(), 500);
   }
 
   // ---- recuperação por histórico de versões ----------------------------
@@ -369,7 +405,7 @@
     if (!actions || document.getElementById('syncBtn')) return;
     const b = document.createElement('button');
     b.id = 'syncBtn'; b.className = 'icon-btn'; b.type = 'button';
-    b.title = 'Backup na nuvem'; b.setAttribute('aria-label', 'Backup e sincronização na nuvem');
+    b.title = 'Sincronismo'; b.setAttribute('aria-label', 'Sincronismo na nuvem');
     b.textContent = '☁️';
     actions.insertBefore(b, actions.firstChild);
     b.addEventListener('click', openDialog);
