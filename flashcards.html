@@ -529,6 +529,12 @@ function updateCatCounts(){
 function kvClass(kv){return kv==='13,8'?'kv138':kv==='34,5'?'kv345':'kvnd';}
 function critClass(c){return {'Muito Alta':'cr-ma','Alta':'cr-a','Média':'cr-m','Baixa':'cr-b'}[c]||'cr-p';}
 function stClass(s){return s.includes('DMSL')?'st-dmsl':s.includes('Obra')?'st-obra':'st-comp';}
+// tipo (prefixo) da SS: "ETO-COEP 00050/2026" -> "ETO-COEP"; "CONCLUÍDA" -> "CONCLUÍDA"
+function ssType(s){s=(s||'').trim();if(!s)return '';const m=s.match(/^([^\d]+?)\s*\d/);return (m?m[1]:s).trim();}
+function ssColor(s){const t=ssType(s).toUpperCase();
+  const map=[[/COEP/,'#1565c0','#DDEBF7'],[/RD-PO/,'#6a1b9a','#EDE7F6'],[/RD-PA/,'#00695c','#E0F2F1'],[/RD-PS/,'#ad1457','#FCE4EC'],[/RD-AG/,'#2e7d32','#E8F5E9'],[/TELE/,'#c15e1a','#FCE4D6'],[/CONCL/,'#1e7e34','#E6F4EA'],[/RD/,'#455a64','#ECEFF1']];
+  for(const [re,fg,bg] of map){if(re.test(t))return [fg,bg];}
+  return ['#455a64','#ECEFF1'];}
 function decClass(d){return d==='Compra necessária'?'dec-compra':d.includes('Falha')?'dec-falha':d.includes('iniciada')?'dec-inic':'dec-pend';}
 function esc(s){const d=document.createElement('div');d.textContent=s==null?'':s;return d.innerHTML;}
 
@@ -615,7 +621,7 @@ function render(){
     <div class="patr">Patrim.: ${esc(c.patr)} · SS ${esc(c.ss)}</div>
     <div class="local">${esc(c.local)}</div>
     ${(c.polo||(c.regional&&c.regional!=='—'))?`<div class="patr">Polo: ${esc(c.polo)||'—'} · Regional: ${esc(c.regional)||'—'}</div>`:''}
-    <div class="tags"><span class="tag ${critClass(c.crit)}">${esc(c.crit)}</span>${c.prior?`<span class="tag" style="background:#E8F0FA;color:#1565c0">Prioriz.: ${esc(c.prior)}</span>`:''}${c.imped.includes('⚖')?'<span class="tag" style="background:#FFF2CC;color:#7f6000">Judicial</span>':''}</div>
+    <div class="tags">${c.ss?(()=>{const[fg,bg]=ssColor(c.ss);return `<span class="tag" style="background:${bg};color:${fg}">${esc(ssType(c.ss))}</span>`;})():''}<span class="tag ${critClass(c.crit)}">${esc(c.crit)}</span>${c.prior?`<span class="tag" style="background:#E8F0FA;color:#1565c0">Prioriz.: ${esc(c.prior)}</span>`:''}${c.imped.includes('⚖')?'<span class="tag" style="background:#FFF2CC;color:#7f6000">Judicial</span>':''}</div>
     <div class="lbl">Defeito</div>
     <div class="def">${esc(c.defeito)}</div>
     <div class="stbox ${stClass(c.st)}">Status: ${esc(c.st)}</div>
