@@ -327,6 +327,7 @@ body>*{animation:fadeUp .55s var(--ease) both}
 <button onclick="openMap()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"></path><circle cx="12" cy="11" r="2.2"></circle></svg>Mapa</button>
 <button class="obr" onclick="openEE()">Obras / Equip. Especiais</button>
 <button onclick="newCard()">Novo card</button>
+<button class="prim" onclick="exportExcel()">Exportar Excel</button>
 <button onclick="exportBackup()">Salvar backup</button>
 <button onclick="document.getElementById('importFile').click()">Restaurar</button>
 <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importBackup(event)">
@@ -517,6 +518,26 @@ function exportBackup(){
   const blob=new Blob([JSON.stringify(overrides,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');
   a.href=url;a.download='flashcards-avaliacao-backup.json';document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},120);
+}
+function csvCell(v){v=(v==null?'':String(v)).replace(/\r?\n/g,' ').trim();return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function diasFora(iso){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(iso||'');if(!m)return '';const st=new Date(+m[1],+m[2]-1,+m[3]).getTime();return Math.max(0,Math.floor((Date.now()-st)/86400000));}
+function exportExcel(){
+  const base=filtered();
+  if(!base.length){alert('Nada para exportar neste filtro.');return;}
+  const list=base.slice().sort((a,b)=>((CAT_LABELS[a.cat]||'ZZ Sem categoria').localeCompare(CAT_LABELS[b.cat]||'ZZ Sem categoria'))||String(a.serie).localeCompare(String(b.serie)));
+  const cols=['Ativo','Tipo','Localidade','Polo','Regional','SS atual','Criticidade','Priorização','Categoria','Decisão suprimento','Situação','Dias fora de operação','Data abertura SS','Parecer João/COEP','Defeito'];
+  const rows=[cols.join(';')];
+  list.forEach(c=>{
+    const cat=CAT_LABELS[c.cat]||'Sem categoria';
+    const data=c.dtocor?c.dtocor.split('-').reverse().join('/'):'';
+    rows.push([c.serie,c.tipo,c.local,c.polo,c.regional,c.ss,c.crit,c.prior,cat,c.dec,(c.concl?'Concluído':'Indisponível'),(c.concl?'':diasFora(c.dtocor)),data,c.parecer,c.defeito].map(csvCell).join(';'));
+  });
+  const csv='\uFEFF'+rows.join('\r\n');         // BOM p/ acentos abrirem certo no Excel
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='equipamentos'+(busca?'-busca':(filtro!=='all'?'-'+filtro:''))+'.csv';
+  document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},120);
 }
 function importBackup(ev){
