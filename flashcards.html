@@ -264,6 +264,26 @@ body>*{animation:fadeUp .55s var(--ease) both}
 .buscabar input{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line,rgba(255,255,255,.25));background:var(--surface2,rgba(255,255,255,.1));color:var(--text,#fff);font-size:14px;font-family:inherit;-webkit-appearance:none}
 .buscabar input::placeholder{color:var(--muted,#b0bec5)}
 .buscabar input:focus{outline:none;border-color:var(--accent,#7EC8E3)}
+.dash-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.dash-tile{background:#f2f7fc;border:1px solid #dbe7f3;border-radius:10px;padding:10px 8px;text-align:center}
+.dash-tile .dt-n{font-size:24px;font-weight:800;color:#1F3864;line-height:1}
+.dash-tile .dt-l{font-size:10px;color:#607d8b;font-weight:700;margin-top:3px;text-transform:uppercase;letter-spacing:.3px}
+.dash-sec{margin-bottom:14px}
+.dash-sec-t{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#90a4ae;font-weight:800;margin-bottom:6px}
+.dash-row{display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 2px}
+.dash-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.dash-lbl{flex:1;font-size:13px;color:#37474f;font-weight:600}
+.dash-n{font-size:15px;font-weight:800;color:#263238}
+.dash-chev{font-size:11px;color:#90a4ae;width:14px;text-align:center}
+.dash-bar{height:7px;background:#eceff1;border-radius:4px;overflow:hidden;margin:0 0 2px}
+.dash-bar i{display:block;height:100%;border-radius:4px;transition:width .3s}
+.dash-det{background:#f7fafc;border:1px solid #eceff1;border-radius:8px;margin:4px 0 8px;overflow:hidden}
+.dash-det a{display:flex;justify-content:space-between;gap:8px;padding:8px 11px;font-size:12px;color:#455a64;text-decoration:none;border-bottom:1px solid #eceff1}
+.dash-det a:last-child{border-bottom:none}
+.dash-det a:active{background:#e8f0fa}
+.dash-det a b{color:#1F3864;font-family:monospace}
+.dash-det a span{color:#90a4ae;font-weight:700;white-space:nowrap}
+.dash-empty{padding:8px 11px;font-size:12px;color:#b0bec5}
 .opbox{background:#FCE8E6;border:1px solid #f3c2bd;border-radius:10px;padding:9px 12px;margin:10px 0;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .opbox .opl{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:#b3261e;font-weight:800}
 .opbox .opl b{display:block;font-size:13px;color:#9C0006;margin-top:1px;letter-spacing:0}
@@ -325,8 +345,10 @@ body>*{animation:fadeUp .55s var(--ease) both}
 <div class="toolbar">
 <button class="prim" onclick="openEditCurrent()">Editar card</button>
 <button onclick="openMap()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"></path><circle cx="12" cy="11" r="2.2"></circle></svg>Mapa</button>
+<button onclick="openDash()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>Painel</button>
 <button class="obr" onclick="openEE()">Obras / Equip. Especiais</button>
 <button onclick="newCard()">Novo card</button>
+<button class="prim" onclick="exportExcel()">Exportar Excel</button>
 <button onclick="exportBackup()">Salvar backup</button>
 <button onclick="document.getElementById('importFile').click()">Restaurar</button>
 <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importBackup(event)">
@@ -349,6 +371,14 @@ body>*{animation:fadeUp .55s var(--ease) both}
 <div class="map-top"><b>Mapa dos equipamentos</b><button onclick="closeMap()">Fechar</button></div>
 <div id="mapCanvas"></div>
 <div class="map-legend" id="mapLegend"></div>
+</div>
+</div>
+
+<div class="modal-bg" id="dashModal">
+<div class="modal-card" style="max-width:600px">
+<h2 style="display:flex;justify-content:space-between;align-items:center">Painel<span style="font-size:11px;color:#90a4ae;font-weight:600">toque numa linha p/ ver o detalhamento</span></h2>
+<div id="dashBody"></div>
+<div class="modal-actions"><button class="btn-cancel" onclick="closeDash()">Fechar</button></div>
 </div>
 </div>
 
@@ -519,6 +549,26 @@ function exportBackup(){
   a.href=url;a.download='flashcards-avaliacao-backup.json';document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},120);
 }
+function csvCell(v){v=(v==null?'':String(v)).replace(/\r?\n/g,' ').trim();return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function diasFora(iso){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(iso||'');if(!m)return '';const st=new Date(+m[1],+m[2]-1,+m[3]).getTime();return Math.max(0,Math.floor((Date.now()-st)/86400000));}
+function exportExcel(){
+  const base=filtered();
+  if(!base.length){alert('Nada para exportar neste filtro.');return;}
+  const list=base.slice().sort((a,b)=>((CAT_LABELS[a.cat]||'ZZ Sem categoria').localeCompare(CAT_LABELS[b.cat]||'ZZ Sem categoria'))||String(a.serie).localeCompare(String(b.serie)));
+  const cols=['Ativo','Tipo','Localidade','Polo','Regional','SS atual','Criticidade','Priorização','Categoria','Decisão suprimento','Situação','Dias fora de operação','Data abertura SS','Parecer João/COEP','Defeito'];
+  const rows=[cols.join(';')];
+  list.forEach(c=>{
+    const cat=CAT_LABELS[c.cat]||'Sem categoria';
+    const data=c.dtocor?c.dtocor.split('-').reverse().join('/'):'';
+    rows.push([c.serie,c.tipo,c.local,c.polo,c.regional,c.ss,c.crit,c.prior,cat,c.dec,(c.concl?'Concluído':'Indisponível'),(c.concl?'':diasFora(c.dtocor)),data,c.parecer,c.defeito].map(csvCell).join(';'));
+  });
+  const csv='\uFEFF'+rows.join('\r\n');         // BOM p/ acentos abrirem certo no Excel
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='equipamentos'+(busca?'-busca':(filtro!=='all'?'-'+filtro:''))+'.csv';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},120);
+}
 function importBackup(ev){
   const file=ev.target.files&&ev.target.files[0];if(!file){return;}
   const r=new FileReader();
@@ -564,6 +614,7 @@ function setCat(k){
   if(isNew(id)){const it=(overrides.__new__||[]).find(c=>c.id===id);if(it)it.cat=nv;}
   else{overrides[id]=Object.assign({},overrides[id]||{},{cat:nv});}
   saveOverrides();render();
+  const dm=document.getElementById('dashModal');if(dm&&dm.classList.contains('open'))renderDash();
 }
 function updateCatCounts(){
   const cnt={aprovar:0,execucao:0,analise:0,ncon:0,none:0};
@@ -759,6 +810,46 @@ async function openMap(){
     .map(([l,cor])=>`<span><i style="background:${cor}"></i>${l}</span>`).join('')+`<span style="opacity:.85">${pts.length} equipamentos</span>`;
 }
 function closeMap(){document.getElementById('mapModal').classList.remove('open');}
+/* ===== Painel (dashboard) — atualiza ao categorizar; detalhamento sob demanda ===== */
+let _dashOpen=new Set();
+function dashGroup(title,items){
+  const total=items.reduce((s,it)=>s+it.cards.length,0)||1;
+  return `<div class="dash-sec"><div class="dash-sec-t">${title}</div>`+items.map(it=>{
+    const n=it.cards.length,pct=Math.round(n/total*100),open=_dashOpen.has(it.key);
+    const det=open?`<div class="dash-det">${n?it.cards.slice().sort((a,b)=>String(a.serie).localeCompare(String(b.serie))).map(c=>`<a href="#" onclick="dashGoTo('${c.id}');return false;"><b>${esc(c.serie)}</b> · ${esc(c.local)}<span>${c.concl?'Concluído':(c.dtocor?diasFora(c.dtocor)+'d':'')}</span></a>`).join(''):'<div class="dash-empty">Nenhum equipamento</div>'}</div>`:'';
+    return `<div class="dash-row" onclick="dashToggle('${it.key}')"><span class="dash-dot" style="background:${it.color}"></span><span class="dash-lbl">${it.label}</span><span class="dash-n">${n}</span><span class="dash-chev">${open?'▴':'▾'}</span></div><div class="dash-bar"><i style="width:${pct}%;background:${it.color}"></i></div>${det}`;
+  }).join('')+`</div>`;
+}
+function renderDash(){
+  const el=document.getElementById('dashBody');if(!el)return;
+  const all=effectiveCards();
+  const total=all.length,rl=all.filter(c=>c.tipo==='RL').length,rt=all.filter(c=>c.tipo==='RT').length;
+  const concl=all.filter(c=>c.concl).length,compra=all.filter(c=>c.dec==='Compra necessária').length;
+  const cats=[
+    {key:'aprovar',label:'Aprovado para compra',color:'#1e7e34',cards:all.filter(c=>c.cat==='aprovar')},
+    {key:'execucao',label:'Em execução',color:'#1565c0',cards:all.filter(c=>c.cat==='execucao')},
+    {key:'analise',label:'Voltar para análise',color:'#8a6100',cards:all.filter(c=>c.cat==='analise')},
+    {key:'ncon',label:'Não conformidade',color:'#b3261e',cards:all.filter(c=>c.cat==='ncon')},
+    {key:'none',label:'Sem categoria',color:'#78909c',cards:all.filter(c=>!c.cat)},
+  ];
+  const CC={'Muito Alta':'#C00000','Alta':'#ED7D31','Média':'#FFC000','Baixa':'#A9D08E'};
+  const crits=['Muito Alta','Alta','Média','Baixa'].map(cr=>({key:'cr-'+cr,label:cr,color:CC[cr],cards:all.filter(c=>c.crit===cr)}));
+  const tiles=[['Total',total],['Reguladores',rt],['Religadores',rl],['Indisponíveis',total-concl],['Concluídos',concl],['Compra',compra]];
+  el.innerHTML=`<div class="dash-tiles">${tiles.map(([l,n])=>`<div class="dash-tile"><div class="dt-n">${n}</div><div class="dt-l">${l}</div></div>`).join('')}</div>`
+    +dashGroup('Por categoria',cats)+dashGroup('Por criticidade',crits);
+}
+function dashToggle(k){if(_dashOpen.has(k))_dashOpen.delete(k);else _dashOpen.add(k);renderDash();}
+function openDash(){document.getElementById('dashModal').classList.add('open');renderDash();}
+function closeDash(){document.getElementById('dashModal').classList.remove('open');}
+function dashGoTo(id){
+  closeDash();
+  let list=filtered();let i=list.findIndex(c=>c.id===id);
+  if(i<0){filtro='all';busca='';const b=document.getElementById('busca');if(b)b.value='';
+    document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+    const a=document.querySelector('.chip[data-f="all"]');if(a)a.classList.add('on');
+    list=filtered();i=list.findIndex(c=>c.id===id);}
+  if(i>=0){idx=i;render();}
+}
 function mapGoTo(id){
   closeMap();
   let list=filtered();let i=list.findIndex(c=>c.id===id);
