@@ -236,7 +236,7 @@
     function addMsg(cls,text){const d=document.createElement('div');d.className='j-msg '+cls;d.textContent=text;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d;}
 
     let ttsUnlocked=false;
-    function unlockTTS(){if(ttsUnlocked)return;ttsUnlocked=true;try{jAudio.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';jAudio.play().catch(()=>{});}catch(_){}if('speechSynthesis'in window){try{const u0=new SpeechSynthesisUtterance(' ');u0.volume=0;window.speechSynthesis.speak(u0);}catch(_){}}}
+    function unlockTTS(){if(ttsUnlocked)return;ttsUnlocked=true;buildJarvisVoice();resumeVoice();try{jAudio.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';jAudio.play().catch(()=>{});}catch(_){}if('speechSynthesis'in window){try{const u0=new SpeechSynthesisUtterance(' ');u0.volume=0;window.speechSynthesis.speak(u0);}catch(_){}}}
     function togglePanel(){
       unlockTTS();
       isOpen=!isOpen;panel.classList.toggle('open',isOpen);btn.classList.toggle('pulse',!isOpen);
@@ -280,7 +280,32 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
     let voicesCache=[];
     function loadVoices(){voicesCache=window.speechSynthesis?window.speechSynthesis.getVoices():[];}
     if('speechSynthesis'in window){loadVoices();window.speechSynthesis.onvoiceschanged=loadVoices;}
-    const jAudio=new Audio();let jUrl=null;let speakGen=0;
+    const jAudio=new Audio();jAudio.crossOrigin='anonymous';let jUrl=null;let speakGen=0;
+    // ---- Modulador de voz "Jarvis" (Web Audio) sobre o audio do Charon ----
+    let jCtx=null,jSrc=null,jVoiceInit=false;
+    function makeIR(ctx,seconds,decay){const rate=ctx.sampleRate,len=Math.max(1,Math.floor(rate*seconds)),buf=ctx.createBuffer(2,len,rate);for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay);}return buf;}
+    function buildJarvisVoice(){
+      if(jVoiceInit)return;jVoiceInit=true;
+      const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+      try{
+        jCtx=new AC();
+        jSrc=jCtx.createMediaElementSource(jAudio);
+        const hp=jCtx.createBiquadFilter();hp.type='highpass';hp.frequency.value=95;
+        const body=jCtx.createBiquadFilter();body.type='lowshelf';body.frequency.value=180;body.gain.value=3;
+        const pres=jCtx.createBiquadFilter();pres.type='peaking';pres.frequency.value=2600;pres.Q.value=1;pres.gain.value=4;
+        const soft=jCtx.createBiquadFilter();soft.type='highshelf';soft.frequency.value=7200;soft.gain.value=-3;
+        const comp=jCtx.createDynamicsCompressor();comp.threshold.value=-24;comp.ratio.value=4;comp.attack.value=0.004;comp.release.value=0.18;
+        const conv=jCtx.createConvolver();conv.buffer=makeIR(jCtx,0.5,2.4);
+        const wet=jCtx.createGain();wet.gain.value=0.16;
+        const dry=jCtx.createGain();dry.gain.value=0.92;
+        const master=jCtx.createGain();master.gain.value=1;
+        jSrc.connect(hp);hp.connect(body);body.connect(pres);pres.connect(soft);soft.connect(comp);
+        comp.connect(dry);dry.connect(master);
+        comp.connect(conv);conv.connect(wet);wet.connect(master);
+        master.connect(jCtx.destination);
+      }catch(_){try{if(jSrc)jSrc.connect(jCtx.destination);}catch(__){}}
+    }
+    function resumeVoice(){if(jCtx&&jCtx.state==='suspended'){try{jCtx.resume();}catch(_){}}}
     function animOn(){avatarEl.classList.add('speaking');eq.classList.add('on');statusEl.textContent='FALANDO\u2026';}
     function animOff(){avatarEl.classList.remove('speaking');eq.classList.remove('on');statusEl.textContent='ASSISTENTE PESSOAL \u00B7 ONLINE';}
     function stopSpeech(){speakGen++;try{jAudio.pause();jAudio.currentTime=0;}catch(_){}if(jUrl){URL.revokeObjectURL(jUrl);jUrl=null;}if('speechSynthesis'in window)window.speechSynthesis.cancel();animOff();}
@@ -300,7 +325,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${KEY}`,{
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
-          contents:[{parts:[{text:'Fale em portugues brasileiro com tom calmo, grave e sofisticado de assistente de IA britanico: '+t}]}],
+          contents:[{parts:[{text:'Fale em portugues brasileiro neutro, com tom calmo, grave, claro e sofisticado, como um assistente de IA: '+t}]}],
           generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:'Charon'}}}}
         })});
       const d=await r.json();
@@ -314,7 +339,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
     }
     function playUrl(url){
       return new Promise(res=>{
-        jUrl=url;jAudio.src=url;
+        jUrl=url;jAudio.src=url;resumeVoice();
         jAudio.onended=()=>{URL.revokeObjectURL(url);jUrl=null;res(true);};
         jAudio.onerror=()=>{URL.revokeObjectURL(url);jUrl=null;res(false);};
         jAudio.play().catch(()=>res(false));
@@ -364,17 +389,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
         return;
       }catch(e2){}
       if(gen!==speakGen)return;
-      // Camada 2: ElevenLabs (reserva)
-      try{
-        const url=await elFetch(t);
-        if(gen!==speakGen){URL.revokeObjectURL(url);return;}
-        animOn();
-        await playUrl(url);
-        if(gen===speakGen)animOff();
-        return;
-      }catch(e){}
-      if(gen!==speakGen)return;
-      // Camada 3: voz nativa
+      // Reserva: voz nativa do aparelho
       animOff();
       browserSpeak(t);
     }
