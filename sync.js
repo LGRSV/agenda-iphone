@@ -207,7 +207,7 @@
             setTimeout(() => location.reload(), 600); return;
           }
         }
-        if (c.remotoEm && dr > c.remotoEm) { setCfg({ remotoPendente: true }); refresh(); toast('Atualização de outro aparelho — abra ☁️ para baixar.', ''); }
+        if (c.remotoEm && dr > c.remotoEm) { setCfg({ remotoPendente: true }); refresh(); toast('Atualização de outro aparelho — abra a Sincronização para baixar.', ''); }
       }
     } catch (_) {}
   }
@@ -369,21 +369,39 @@
       token += '='.repeat((4 - token.length % 4) % 4);
       const bytes = Uint8Array.from(atob(token), ch => ch.charCodeAt(0));
       const payload = JSON.parse(new TextDecoder().decode(bytes));
-      if (!payload || !Array.isArray(payload.tasks) || !payload.tasks.length) throw new Error('sem tarefas');
+      const temTasks = payload && Array.isArray(payload.tasks) && payload.tasks.length;
+      const temRegras = payload && Array.isArray(payload.rules) && payload.rules.length;
+      if (!temTasks && !temRegras) throw new Error('sem tarefas');
       const cur = json(TASKS, []) || [];
       const ids = new Set(cur.map(t => String(t && t.id)));
       let added = 0;
-      for (const t of payload.tasks) {
+      for (const t of (payload.tasks || [])) {
         if (!t || !t.id || !t.text || ids.has(String(t.id))) continue;
         cur.push(t); ids.add(String(t.id)); added++;
       }
       localStorage.setItem(TASKS, JSON.stringify(cur));
+      // regras de recorrência (ex.: Energisa nos dias úteis) — o app gera as
+      // ocorrências sozinho no próximo carregamento (topUpRecurring)
+      let addedRules = 0;
+      if (temRegras) {
+        const rk = 'agenda_lagares_rules_v1';
+        let rules = []; try { const rv = JSON.parse(localStorage.getItem(rk) || '[]'); if (Array.isArray(rv)) rules = rv; } catch (_) {}
+        const rids = new Set(rules.map(r => String(r && r.id)));
+        for (const r of payload.rules) {
+          if (!r || !r.id || !r.text || !r.freq || !r.start || rids.has(String(r.id))) continue;
+          rules.push(r); rids.add(String(r.id)); addedRules++;
+        }
+        localStorage.setItem(rk, JSON.stringify(rules));
+      }
       if (payload.notas && typeof payload.notas === 'object') {
         let n = {}; try { n = json(NOTES, {}) || {}; } catch (_) {}
         Object.assign(n, payload.notas);
         localStorage.setItem(NOTES, JSON.stringify(n));
       }
-      toast(added ? `${added} tarefa${added > 1 ? 's' : ''} importada${added > 1 ? 's' : ''}. Atualizando…` : 'As tarefas já estavam na agenda.', 'ok');
+      const partes = [];
+      if (added) partes.push(`${added} tarefa${added > 1 ? 's' : ''}`);
+      if (addedRules) partes.push(`${addedRules} recorrência${addedRules > 1 ? 's' : ''}`);
+      toast(partes.length ? `${partes.join(' + ')} importada(s). Atualizando…` : 'Já estava tudo na agenda.', 'ok');
       setTimeout(() => location.reload(), 800);
     } catch (e) {
       toast('Código inválido. Cole o código completo que o assistente enviou.', 'erro');
@@ -457,7 +475,7 @@
     const b = document.createElement('button');
     b.id = 'syncBtn'; b.className = 'icon-btn'; b.type = 'button';
     b.title = 'Sincronismo'; b.setAttribute('aria-label', 'Sincronismo na nuvem');
-    b.textContent = '☁️';
+    b.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4 4 0 0 1-.5-7.97 5.5 5.5 0 0 1 10.6-1.03A3.75 3.75 0 0 1 17.5 18H7z"/><path d="M12 21v-6M9.5 17.5 12 15l2.5 2.5"/></svg>';
     actions.insertBefore(b, actions.firstChild);
     b.addEventListener('click', openDialog);
     refresh();

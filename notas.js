@@ -19,7 +19,8 @@
   const load = () => { try { const v = JSON.parse(localStorage.getItem(NOTES_KEY)); return v && typeof v === 'object' ? v : {}; } catch (_) { return {}; } };
   const saveAll = a => localStorage.setItem(NOTES_KEY, JSON.stringify(a));
   const getNote = id => { const n = load()[id]; return { prio: n && n.prio || '', durationMin: n && n.durationMin || null, detail: n && n.detail || '', valor: n && n.valor || '', subs: n && Array.isArray(n.subs) ? n.subs : [] }; };
-  const PRIOS = { alta: { label: '🚩 Alta', color: '#ffb74d' }, urgente: { label: '🔴 Urgente', color: '#ff7f91' } };
+  const PRIOS = { alta: { label: 'Alta', color: '#ffb74d' }, urgente: { label: 'Urgente', color: '#ff7f91' } };
+  const NOTE_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>';
   function taskTag(id){try{const a=JSON.parse(localStorage.getItem('agenda_lagares_v3')||'[]');const t=Array.isArray(a)?a.find(x=>String(x.id)===String(id)):null;return t&&t.tag||'';}catch(_){return '';}}
   function setNote(id, note) {
     const all = load();
@@ -157,18 +158,19 @@
     const note = getNote(id);
     const has = !!(note.prio || note.valor || note.durationMin || note.detail.trim() || note.subs.length);
     btn.classList.toggle('has', has);
-    let label = has ? '🗒️' : '🗒️ Detalhes';
+    let label = has ? '' : 'Detalhes';
     if (note.valor) label += ' R$ ' + note.valor;
     else if (note.durationMin) label += ' ' + fmtDur(note.durationMin);
     else if (note.subs.length) { const d = note.subs.filter(s => s.done).length; label += ` ${d}/${note.subs.length}`; }
     else if (note.detail.trim()) label += ' •';
-    btn.textContent = label;
+    btn.innerHTML = NOTE_SVG;
+    btn.appendChild(document.createTextNode(label.trim() ? label.replace(/^ /, '') : ''));
     // bandeira de prioridade no card
     const footer = card.querySelector('.task-footer');
     let flag = card.querySelector('.notas-flag');
     if (note.prio && PRIOS[note.prio]) {
       if (!flag && footer) { flag = document.createElement('span'); flag.className = 'notas-flag'; footer.insertBefore(flag, footer.firstChild); }
-      if (flag) { flag.textContent = PRIOS[note.prio].label; flag.style.setProperty('--pc', PRIOS[note.prio].color); }
+      if (flag) { flag.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>'; flag.appendChild(document.createTextNode(PRIOS[note.prio].label)); flag.style.setProperty('--pc', PRIOS[note.prio].color); }
     } else if (flag) { flag.remove(); }
   }
 
@@ -187,7 +189,7 @@
       b.type = 'button';
       b.className = 'notas-toggle';
       b.dataset.nid = id;
-      b.textContent = '🗒️';
+      b.innerHTML = NOTE_SVG;
       footer.appendChild(b);
       updateToggle(id);
       if (expanded.has(id)) buildPanel(card, id).hidden = false;

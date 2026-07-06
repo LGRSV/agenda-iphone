@@ -142,7 +142,7 @@
       const late = !t.done && t.date && t.date < t0;
       return `<div class="pg-item ${t.done ? 'done' : ''}"><div class="pg-item-t">${esc(t.text)}</div>` +
         `<div class="pg-item-d ${late ? 'late' : ''}">${t.date ? shortDate(t.date) : '—'}</div></div>`;
-    }).join('') : `<div class="pg-empty">${filter === 'concluidas' ? 'Nenhuma tarefa concluída ainda.' : 'Nenhuma tarefa pendente. 🎉'}</div>`;
+    }).join('') : `<div class="pg-empty">${filter === 'concluidas' ? 'Nenhuma tarefa concluída ainda.' : 'Nenhuma tarefa pendente.'}</div>`;
     const more = sorted.length > shown.length ? `<div class="pg-more">+ ${sorted.length - shown.length} não exibida(s)</div>` : '';
 
     dlg.querySelector('#pgBody').innerHTML =
@@ -172,7 +172,7 @@
     b.type = 'button';
     b.title = 'Visão geral';
     b.setAttribute('aria-label', 'Visão geral das tarefas');
-    b.textContent = '📊';
+    b.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20h17"/><path d="M6 20v-7M12 20V5M18 20v-10"/></svg>';
     actions.insertBefore(b, actions.firstChild);
     b.addEventListener('click', open);
   }
