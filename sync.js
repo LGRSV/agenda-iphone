@@ -142,6 +142,11 @@
         if (!forcar && dr && (!c.remotoEm || dr > c.remotoEm)) { setCfg({ remotoPendente: true }); refresh(); toast('Há uma cópia mais nova na nuvem — baixe antes.', 'erro'); return; }
       }
       const snap = snapshot(c);
+      // blindagem: o backup automático NUNCA envia uma lista sem tarefas reais
+      // (evita que uma limpeza do iOS sobrescreva a cópia boa com vazio).
+      // Para enviar mesmo assim (apagou tudo de propósito), use "Enviar este aparelho".
+      const reais = (Array.isArray(snap.tarefas) ? snap.tarefas : []).filter(t => t && t.text && !/^🏋/.test(t.text)).length;
+      if (!forcar && reais === 0) { status('Backup automático em espera: nenhuma tarefa para salvar. Se apagou tudo de propósito, toque em “Enviar este aparelho”.', ''); return; }
       const pacote = { atualizadoEm: snap.atualizadoEm, aparelho: c.aparelho, protegido: await proteger(snap, c.senha) };
       const content = JSON.stringify(pacote);
       let gistId = c.gistId;
