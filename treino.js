@@ -17,75 +17,93 @@
   const REGEN = 60;     // regera quando a cobertura cair abaixo de 60 dias
   const META_VERSION = 2; // sobe quando a regra de geração muda (seg–sex)
 
-  /* ---------- animações dos exercícios (SVG + SMIL, tudo offline) -------- */
+  /* ---------- animações dos exercícios (SVG + SMIL, tudo offline) --------
+     Bonequinho articulado: os membros dobram no cotovelo/joelho e o
+     movimento tem easing (ease-in-out) para ficar fluido e natural.       */
   const STROKE = 'var(--accent)';
+  const EASE = '0.42 0 0.58 1';
+  const n1 = v => Math.round(v * 10) / 10;
   const svg = inner =>
-    `<svg viewBox="0 0 64 64" width="100%" height="100%" fill="none" stroke="${STROKE}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+    `<svg viewBox="0 0 64 64" width="100%" height="100%" fill="none" stroke="${STROKE}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
   const dot = (cx, cy, r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${STROKE}" stroke="none"/>`;
-  const frontBase = () =>
-    dot(32, 10, 5.5) +
-    `<line x1="32" y1="15" x2="32" y2="40"/><line x1="32" y1="40" x2="25" y2="58"/><line x1="32" y1="40" x2="39" y2="58"/>`;
 
-  // braço de segmento único (ombro -> mão) com mão animada
-  function armPair(l, r, dur) {
-    const seg = (sx, sy, ps) => {
-      const xs = ps.map(p => p[0]).join(';'), ys = ps.map(p => p[1]).join(';');
-      return `<line x1="${sx}" y1="${sy}" x2="${ps[0][0]}" y2="${ps[0][1]}">` +
-        `<animate attributeName="x2" values="${xs}" dur="${dur}s" repeatCount="indefinite"/>` +
-        `<animate attributeName="y2" values="${ys}" dur="${dur}s" repeatCount="indefinite"/></line>`;
-    };
-    return seg(26, 23, l) + seg(38, 23, r);
+  // <animate> com quadros suavizados (spline) e retorno ao início
+  function tween(attr, frames, dur, loop = true) {
+    const seq = loop ? frames.concat([frames[0]]) : frames;
+    const n = seq.length - 1;
+    const kt = seq.map((_, i) => n1(i / n)).join(';');
+    const ks = Array(n).fill(EASE).join(';');
+    return `<animate attributeName="${attr}" values="${seq.join(';')}" keyTimes="${kt}" calcMode="spline" keySplines="${ks}" dur="${dur}s" repeatCount="indefinite"/>`;
   }
-  // braço de dois segmentos: superior fixo + antebraço animado (rosca, tríceps)
-  function foreArm(elL, elR, hL, hR, dur) {
-    const fa = (ex, ey, ps) => {
-      const xs = ps.map(p => p[0]).join(';'), ys = ps.map(p => p[1]).join(';');
-      return `<line x1="${ex}" y1="${ey}" x2="${ps[0][0]}" y2="${ps[0][1]}">` +
-        `<animate attributeName="x2" values="${xs}" dur="${dur}s" repeatCount="indefinite"/>` +
-        `<animate attributeName="y2" values="${ys}" dur="${dur}s" repeatCount="indefinite"/></line>`;
-    };
-    return `<line x1="26" y1="23" x2="${elL[0]}" y2="${elL[1]}"/><line x1="38" y1="23" x2="${elR[0]}" y2="${elR[1]}"/>` +
-      fa(elL[0], elL[1], hL) + fa(elR[0], elR[1], hR);
+
+  // corpo frontal (cabeça + tronco + pernas); os braços entram por cima
+  const frontBase = () =>
+    dot(32, 10, 5.4) +
+    `<line x1="32" y1="15" x2="32" y2="40"/><line x1="32" y1="40" x2="26" y2="58"/><line x1="32" y1="40" x2="38" y2="58"/>`;
+
+  // membro articulado (raiz→junta→ponta) a partir de ângulos (graus, 0 = para baixo)
+  function poseStr(sx, sy, a1, a2, l1, l2) {
+    const r1 = a1 * Math.PI / 180, r2 = a2 * Math.PI / 180;
+    const ex = sx + l1 * Math.sin(r1), ey = sy + l1 * Math.cos(r1);
+    const hx = ex + l2 * Math.sin(r2), hy = ey + l2 * Math.cos(r2);
+    return `${n1(sx)},${n1(sy)} ${n1(ex)},${n1(ey)} ${n1(hx)},${n1(hy)}`;
   }
+  function limb(sx, sy, poses, l1, l2, dur) {
+    const frames = poses.map(p => poseStr(sx, sy, p[0], p[1], l1, l2));
+    return `<polyline points="${frames[0]}">${tween('points', frames, dur)}</polyline>`;
+  }
+  // dois braços simétricos: direito usa (a1,a2); esquerdo espelha (-a1,-a2)
+  function arms(poses, dur) {
+    const L1 = 11, L2 = 10;
+    return limb(25.5, 22, poses.map(p => [-p[0], -p[1]]), L1, L2, dur) +
+      limb(38.5, 22, poses, L1, L2, dur);
+  }
+  const upper = (poses, dur) => svg(frontBase() + arms(poses, dur));
+  const floor = (x1, x2, y) => `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke-width="2" opacity=".4"/>`;
 
   const ANIM = {
-    press: () => svg(frontBase() + armPair([[18, 30], [20, 6], [18, 30]], [[46, 30], [44, 6], [46, 30]], 1.5)),
-    fly: () => svg(frontBase() + armPair([[10, 24], [28, 30], [10, 24]], [[54, 24], [36, 30], [54, 24]], 1.6)),
-    lateral: () => svg(frontBase() + armPair([[22, 40], [10, 20], [22, 40]], [[42, 40], [54, 20], [42, 40]], 1.6)),
-    pulldown: () => svg(frontBase() + armPair([[20, 4], [24, 22], [20, 4]], [[44, 4], [40, 22], [44, 4]], 1.5)),
-    row: () => svg(frontBase() + armPair([[16, 36], [28, 28], [16, 36]], [[48, 36], [36, 28], [48, 36]], 1.4)),
-    pushdown: () => svg(frontBase() + foreArm([24, 36], [40, 36], [[28, 30], [24, 48], [28, 30]], [[36, 30], [40, 48], [36, 30]], 1.2)),
-    curl: () => svg(frontBase() + foreArm([24, 38], [40, 38], [[26, 52], [30, 28], [26, 52]], [[38, 52], [34, 28], [38, 52]], 1.4)),
+    // membros superiores (frontal, articulados)
+    press:    () => upper([[70, 148], [162, 172]], 1.8),
+    fly:      () => upper([[94, 112], [40, 20]], 1.8),
+    lateral:  () => upper([[8, 12], [90, 94]], 1.8),
+    pulldown: () => upper([[158, 168], [118, 150]], 1.7),
+    row:      () => upper([[34, 20], [56, 126]], 1.6),
+    pushdown: () => upper([[16, 128], [16, 6]], 1.4),
+    curl:     () => upper([[12, 18], [12, 150]], 1.5),
+    // agachamento (lateral): corpo desce e os joelhos dobram, pés fixos
     squat: () => svg(
-      `<circle cx="30" cy="10" r="5" fill="${STROKE}" stroke="none"><animate attributeName="cy" values="10;18;10" dur="1.6s" repeatCount="indefinite"/></circle>` +
-      `<line x1="30" y1="15" x2="30" y2="40"><animate attributeName="y1" values="15;23;15" dur="1.6s" repeatCount="indefinite"/><animate attributeName="y2" values="40;47;40" dur="1.6s" repeatCount="indefinite"/></line>` +
-      `<line x1="30" y1="22" x2="42" y2="26"><animate attributeName="y1" values="22;30;22" dur="1.6s" repeatCount="indefinite"/><animate attributeName="y2" values="26;22;26" dur="1.6s" repeatCount="indefinite"/></line>` +
-      `<polyline points="30,40 27,49 27,58"><animate attributeName="points" values="30,40 27,49 27,58; 30,47 22,50 27,58; 30,40 27,49 27,58" dur="1.6s" repeatCount="indefinite"/></polyline>` +
-      `<polyline points="30,40 33,49 33,58"><animate attributeName="points" values="30,40 33,49 33,58; 30,47 38,50 33,58; 30,40 33,49 33,58" dur="1.6s" repeatCount="indefinite"/></polyline>`),
+      `<circle cx="32" cy="12" r="5" fill="${STROKE}" stroke="none">${tween('cy', ['12', '20'], 1.8)}</circle>` +
+      `<line x1="32" y1="17" x2="32" y2="40">${tween('y1', ['17', '25'], 1.8)}${tween('y2', ['40', '48'], 1.8)}</line>` +
+      `<polyline points="32,40 28,49 27,58">${tween('points', ['32,40 28,49 27,58', '32,48 24,51 27,58'], 1.8)}</polyline>` +
+      `<polyline points="32,40 36,49 37,58">${tween('points', ['32,40 36,49 37,58', '32,48 40,51 37,58'], 1.8)}</polyline>` +
+      floor(24, 40, 58)),
+    // leg press (lateral, reclinado): pernas estendem empurrando a plataforma
     legpress: () => svg(
-      dot(16, 24, 5) +
-      `<line x1="16" y1="28" x2="28" y2="40"/>` +
-      `<line x1="12" y1="22" x2="24" y2="42" stroke-width="2" opacity=".45"/>` +
-      `<polyline points="28,40 36,34 32,26"><animate attributeName="points" values="28,40 36,34 32,26; 28,40 46,33 54,28; 28,40 36,34 32,26" dur="1.5s" repeatCount="indefinite"/></polyline>` +
-      `<polyline points="28,42 36,38 32,30"><animate attributeName="points" values="28,42 36,38 32,30; 28,42 46,37 54,32; 28,42 36,38 32,30" dur="1.5s" repeatCount="indefinite"/></polyline>` +
-      `<line x1="34" y1="20" x2="34" y2="34" stroke-width="3"><animate attributeName="x1" values="34;56;34" dur="1.5s" repeatCount="indefinite"/><animate attributeName="x2" values="34;56;34" dur="1.5s" repeatCount="indefinite"/></line>`),
+      dot(15, 25, 5) +
+      `<line x1="15" y1="29" x2="27" y2="41"/>` +
+      `<line x1="10" y1="23" x2="24" y2="43" stroke-width="2" opacity=".4"/>` +
+      `<polyline points="27,41 35,34 31,26">${tween('points', ['27,41 35,34 31,26', '27,41 45,33 53,28'], 1.6)}</polyline>` +
+      `<line x1="33" y1="20" x2="33" y2="34" stroke-width="3">${tween('x1', ['33', '55'], 1.6)}${tween('x2', ['33', '55'], 1.6)}</line>`),
+    // cadeira extensora (sentado): a canela sobe pivotando no joelho
     legext: () => svg(
-      dot(26, 12, 5) +
-      `<line x1="26" y1="17" x2="26" y2="38"/>` +
-      `<line x1="26" y1="38" x2="40" y2="38"/>` +
-      `<line x1="40" y1="38" x2="40" y2="52"><animate attributeName="x2" values="40;54;40" dur="1.5s" repeatCount="indefinite"/><animate attributeName="y2" values="52;38;52" dur="1.5s" repeatCount="indefinite"/></line>` +
-      `<line x1="18" y1="40" x2="30" y2="40" stroke-width="2" opacity=".45"/>` +
-      `<line x1="26" y1="23" x2="34" y2="30"/>`),
+      dot(25, 13, 5) +
+      `<line x1="25" y1="18" x2="25" y2="38"/>` +
+      `<line x1="25" y1="38" x2="40" y2="38"/>` +
+      `<line x1="40" y1="38" x2="40" y2="52">${tween('x2', ['40', '53'], 1.6)}${tween('y2', ['52', '37'], 1.6)}</line>` +
+      `<line x1="25" y1="23" x2="33" y2="30"/>` +
+      floor(17, 31, 41)),
+    // panturrilha (frontal): sobe na ponta dos pés
     calf: () => svg(
-      `<g><animateTransform attributeName="transform" type="translate" values="0 4; 0 -3; 0 4" dur="1s" repeatCount="indefinite"/>` +
+      `<g><animateTransform attributeName="transform" type="translate" values="0 4;0 -3;0 4" keyTimes="0;0.5;1" calcMode="spline" keySplines="${EASE};${EASE}" dur="1.1s" repeatCount="indefinite"/>` +
       frontBase() +
-      `<line x1="26" y1="23" x2="22" y2="40"/><line x1="38" y1="23" x2="42" y2="40"/></g>` +
-      `<line x1="22" y1="60" x2="42" y2="60" stroke-width="2" opacity=".45"/>`),
+      `<line x1="25.5" y1="22" x2="22" y2="40"/><line x1="38.5" y1="22" x2="42" y2="40"/></g>` +
+      floor(22, 42, 60)),
+    // abdominal (lateral): o tronco enrola para cima
     abs: () => svg(
-      `<polyline points="22,46 30,40 26,52"/>` +
-      `<polyline points="22,46 34,46 44,46"><animate attributeName="points" values="22,46 34,46 44,46; 22,46 30,40 36,32; 22,46 34,46 44,46" dur="1.5s" repeatCount="indefinite"/></polyline>` +
-      `<circle cx="48" cy="46" r="4.5" fill="${STROKE}" stroke="none"><animate attributeName="cx" values="48;39;48" dur="1.5s" repeatCount="indefinite"/><animate attributeName="cy" values="46;29;46" dur="1.5s" repeatCount="indefinite"/></circle>` +
-      `<line x1="18" y1="52" x2="52" y2="52" stroke-width="2" opacity=".45"/>`)
+      `<polyline points="22,46 31,40 27,52"/>` +
+      `<polyline points="22,46 34,46 44,46">${tween('points', ['22,46 34,46 44,46', '22,46 30,39 36,31'], 1.7)}</polyline>` +
+      `<circle cx="48" cy="46" r="4.4" fill="${STROKE}" stroke="none">${tween('cx', ['48', '38'], 1.7)}${tween('cy', ['46', '28'], 1.7)}</circle>` +
+      floor(18, 52, 52))
   };
   const animFor = mov => (ANIM[mov] || ANIM.press)();
 

@@ -241,15 +241,14 @@
       unlockTTS();
       isOpen=!isOpen;panel.classList.toggle('open',isOpen);btn.classList.toggle('pulse',!isOpen);
       if(isOpen&&!msgs.children.length){
-        const h=new Date().getHours(),g=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
-        let extra='';
-        try{
-          const n=new Date(),iso=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
-          const ts=(window.AgendaAPI?window.AgendaAPI.getTasks():[]).filter(t=>!t.done);
-          const hoje=ts.filter(t=>t.date===iso).length;
-          extra=hoje>0?` O senhor tem ${hoje} tarefa${hoje>1?'s':''} para hoje.`:(ts.length>0?` ${ts.length} pendência${ts.length>1?'s':''} na agenda.`:' Agenda em dia.');
-        }catch(_){}
-        addMsg('bot',g+', Lagares. J.A.R.V.I.S online.'+extra+' Como posso ajudar?');
+        if(jarvisBriefed){
+          // Já cumprimentou por voz ao abrir a Agenda — não repete a saudação.
+          addMsg('bot','Pois não, Lagares. Em que posso ajudar?');
+        }else{
+          jarvisBriefed=true;
+          const h=new Date().getHours(),g=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
+          addMsg('bot',`${g}, Lagares. J.A.R.V.I.S online. ${todayPhrase()} Como posso ajudar?`);
+        }
       }
     }
     btn.addEventListener('click',togglePanel);
@@ -381,19 +380,26 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
     }
 
     let jarvisBriefed=false;
+    function isTreino(t){return /^🏋/.test(t.text||'');} // ignora os cards de treino no briefing
+    function todayPhrase(){
+      const n=new Date(),iso=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+      let ts=[];try{ts=(window.AgendaAPI?window.AgendaAPI.getTasks():[]).filter(t=>!t.done&&!isTreino(t));}catch(_){}
+      const hoje=ts.filter(t=>t.date===iso),atras=ts.filter(t=>t.date&&t.date<iso).length;
+      if(hoje.length){
+        let s='Para hoje: '+hoje.slice(0,5).map(t=>t.text+(t.time?` às ${t.time}`:'')).join('; ')+'.';
+        if(hoje.length>5)s+=` E mais ${hoje.length-5}.`;
+        if(atras>0)s+=` Além de ${atras} em atraso.`;
+        return s;
+      }
+      if(atras>0)return `Nada agendado para hoje, mas ${atras} tarefa${atras>1?'s':''} em atraso.`;
+      if(ts.length>0)return `Nada para hoje. ${ts.length} pendência${ts.length>1?'s':''} adiante.`;
+      return 'Sua agenda está em dia, senhor.';
+    }
     function agendaBriefing(){
       const h=new Date().getHours(),g=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
-      const n=new Date(),iso=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
-      let ts=[];try{ts=(window.AgendaAPI?window.AgendaAPI.getTasks():[]).filter(t=>!t.done);}catch(_){}
-      const hoje=ts.filter(t=>t.date===iso).length,atras=ts.filter(t=>t.date&&t.date<iso).length;
-      let s=`${g}, Lagares. J.A.R.V.I.S online. `;
-      if(hoje>0)s+=`O senhor tem ${hoje} tarefa${hoje>1?'s':''} para hoje`+(atras>0?`, e ${atras} em atraso`:'')+'. ';
-      else if(atras>0)s+=`${atras} tarefa${atras>1?'s':''} em atraso. `;
-      else if(ts.length>0)s+=`${ts.length} pendência${ts.length>1?'s':''} na agenda. `;
-      else s+='Agenda em dia, senhor. ';
-      return s;
+      return `${g}, Lagares. J.A.R.V.I.S online. ${todayPhrase()} `;
     }
-    function fireBriefing(){if(jarvisBriefed)return;jarvisBriefed=true;unlockTTS();if(voiceOn)speak(agendaBriefing());}
+    function fireBriefing(){if(jarvisBriefed||!voiceOn)return;jarvisBriefed=true;unlockTTS();speak(agendaBriefing());}
     document.addEventListener('pointerdown',fireBriefing,{once:true});
     document.addEventListener('touchend',fireBriefing,{once:true});
 
