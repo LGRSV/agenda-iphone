@@ -188,7 +188,7 @@
     @media(min-width:480px){#jarvis-panel{left:max(18px,env(safe-area-inset-left));right:auto;width:400px}}
   </style>
 
-  <div id="app-ver">v55</div>
+  <div id="app-ver">v56</div>
   <button id="jarvis-btn" class="pulse" type="button" aria-label="Abrir Jarvis">
     <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="16" cy="16" r="15" stroke="#75cbff" stroke-width="1.5" opacity=".4"/>
@@ -454,8 +454,8 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       let ts=[];try{ts=(window.AgendaAPI?window.AgendaAPI.getTasks():[]).filter(t=>!t.done&&!isTreino(t));}catch(_){}
       const hoje=ts.filter(t=>t.date===iso),atras=ts.filter(t=>t.date&&t.date<iso).length;
       if(hoje.length){
-        let s='Para hoje: '+hoje.slice(0,5).map(t=>t.text+(t.time?` às ${t.time}`:'')).join('; ')+'.';
-        if(hoje.length>5)s+=` E mais ${hoje.length-5}.`;
+        const ord=hoje.slice().sort((a,b)=>String(a.time||'99:99').localeCompare(String(b.time||'99:99')));
+        let s='Para hoje: '+ord.map(t=>t.text+(t.time?` às ${t.time}`:'')).join('; ')+'.';
         if(atras>0)s+=` Além de ${atras} em atraso.`;
         return s;
       }
