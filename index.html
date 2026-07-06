@@ -524,8 +524,14 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
         if(actionNote)addMsg('action','\u2713 '+actionNote);
         speak(reply);
       }catch(e){
-        typing.textContent='Falha de conexao com meus servidores, Senhor. Tente novamente.';
+        const emsg=String((e&&e.message)||e||'').toLowerCase();
+        const cota=/quota|resource_exhausted|exhausted|rate.?limit|exceeded|\b429\b/.test(emsg);
+        const reply=cota
+          ?'Senhor, atingi o limite de uso gratuito do meu núcleo de inteligência por enquanto. Ele se renova em algumas horas. Enquanto isso, sigo cuidando da sua agenda normalmente — pode adicionar e concluir tarefas à vontade.'
+          :'Falha de conexão com meus servidores, Senhor. Verifique a internet e tente novamente.';
+        typing.textContent=reply;
         typing.classList.remove('typing');
+        if(voiceOn)browserSpeak(reply);
       }
       busy=false;send.disabled=false;
       if(statusEl.textContent==='PROCESSANDO\u2026')statusEl.textContent='ASSISTENTE PESSOAL \u00B7 ONLINE';
