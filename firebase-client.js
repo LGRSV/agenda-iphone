@@ -14,6 +14,12 @@
 (() => {
   'use strict';
 
+  // Interruptor geral: só ativa o Firebase quando explicitamente ligado.
+  if (window.FIREBASE_ENABLED !== true) {
+    console.info('[Agenda] Firebase desligado — modo local (GitHub).');
+    return;
+  }
+
   const cfg = window.FIREBASE_CONFIG;
   const configured = cfg && typeof cfg.apiKey === 'string' && !/^SUA_|^SEU_/.test(cfg.apiKey);
   if (!configured) {

@@ -2,6 +2,12 @@
    Configuração do Firebase — projeto agenda-lagares.
    Estes valores são PÚBLICOS por natureza (podem ficar no repositório).
    ========================================================================= */
+
+// Liga/desliga a integração com o Firebase. Enquanto estiver `false`, o app
+// roda 100% no modo local (GitHub), sem login e sem nuvem. Trocamos para
+// `true` quando o deploy do Firebase estiver pronto.
+window.FIREBASE_ENABLED = false;
+
 window.FIREBASE_CONFIG = {
   apiKey: "AIzaSyAY3qKB85g2VZvOMDAPqLNagHANMUcnMwk",
   authDomain: "agenda-lagares.firebaseapp.com",
