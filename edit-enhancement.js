@@ -11,7 +11,7 @@
     pessoal: 'Pessoal',
     casa: 'Casa',
     faculdade: 'Faculdade',
-    saude: 'Saúde',
+    saude: 'Academia',
     financeiro: 'Financeiro',
     outros: 'Outros'
   };
@@ -82,7 +82,7 @@
           <option value="pessoal">Pessoal</option>
           <option value="casa">Casa</option>
           <option value="faculdade">Faculdade</option>
-          <option value="saude">Saúde</option>
+          <option value="saude">Academia</option>
           <option value="financeiro">Financeiro</option>
           <option value="outros">Outros</option>
         </select>

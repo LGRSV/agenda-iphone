@@ -18,10 +18,11 @@
 
   const load = () => { try { const v = JSON.parse(localStorage.getItem(NOTES_KEY)); return v && typeof v === 'object' ? v : {}; } catch (_) { return {}; } };
   const saveAll = a => localStorage.setItem(NOTES_KEY, JSON.stringify(a));
-  const getNote = id => { const n = load()[id]; return { durationMin: n && n.durationMin || null, detail: n && n.detail || '', subs: n && Array.isArray(n.subs) ? n.subs : [] }; };
+  const getNote = id => { const n = load()[id]; return { durationMin: n && n.durationMin || null, detail: n && n.detail || '', valor: n && n.valor || '', subs: n && Array.isArray(n.subs) ? n.subs : [] }; };
+  function taskTag(id){try{const a=JSON.parse(localStorage.getItem('agenda_lagares_v3')||'[]');const t=Array.isArray(a)?a.find(x=>String(x.id)===String(id)):null;return t&&t.tag||'';}catch(_){return '';}}
   function setNote(id, note) {
     const all = load();
-    const empty = !note.durationMin && !note.detail.trim() && (!note.subs || !note.subs.length);
+    const empty = !note.durationMin && !note.detail.trim() && !note.valor && (!note.subs || !note.subs.length);
     if (empty) delete all[id]; else all[id] = note;
     saveAll(all);
   }
@@ -65,6 +66,10 @@
       .notas-add{display:grid;grid-template-columns:1fr auto;gap:8px;margin:8px 0 2px}
       .notas-add input{min-height:36px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px}
       .notas-add button{padding:0 13px;border:1px solid var(--accent);border-radius:10px;background:var(--accent);color:var(--accentInk);font-size:18px;font-weight:800}
+      .notas-valor-row{display:flex;align-items:center;gap:9px;margin-bottom:2px}
+      .notas-valor-row span{font-size:15px;font-weight:800;color:var(--accent)}
+      .notas-valor{flex:1;min-height:42px;padding:9px 11px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font-size:16px;font-weight:700}
+      .notas-valor:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(117,203,255,.2)}
       .notas-detail{width:100%;min-height:72px;padding:9px 11px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--text);font-size:14px;line-height:1.45;resize:vertical;font-family:inherit;outline:0}
       .notas-detail:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(117,203,255,.2)}
       .notas-detail-row{display:flex;justify-content:flex-end;margin-top:7px}
@@ -94,7 +99,9 @@
     panel.hidden = true;
     panel.dataset.nid = id;
     panel.dataset.durmin = note.durationMin ? String(note.durationMin) : '';
+    const isFin = taskTag(id) === 'financeiro';
     panel.innerHTML =
+      (isFin ? `<p class="notas-label">Valor (R$)</p><div class="notas-valor-row"><span>R$</span><input class="notas-valor" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00" value="${escAttr(note.valor || '')}"></div><div class="notas-sep"></div>` : '') +
       `<p class="notas-label">Duração</p>` +
       `<div class="notas-durs">` +
       DURS.map(m => `<button class="notas-dur ${note.durationMin === m ? 'on' : ''}" type="button" data-dur="${m}">${fmtDur(m)}</button>`).join('') +
@@ -123,7 +130,9 @@
     })).filter(s => s.text.trim() !== '' || s.done);
     const detail = panel.querySelector('.notas-detail').value;
     const durationMin = panel.dataset.durmin ? Number(panel.dataset.durmin) : null;
-    setNote(id, { durationMin, detail, subs });
+    const vEl = panel.querySelector('.notas-valor');
+    const valor = vEl ? vEl.value.trim() : (getNote(id).valor || '');
+    setNote(id, { durationMin, detail, valor, subs });
     updateToggle(id);
   }
   const debouncedSave = panel => { clearTimeout(saveTimer); saveTimer = setTimeout(() => saveFromPanel(panel), 400); };
@@ -134,10 +143,11 @@
     const btn = card.querySelector('.notas-toggle');
     if (!btn) return;
     const note = getNote(id);
-    const has = !!(note.durationMin || note.detail.trim() || note.subs.length);
+    const has = !!(note.valor || note.durationMin || note.detail.trim() || note.subs.length);
     btn.classList.toggle('has', has);
     let label = '🗒️';
-    if (note.durationMin) label += ' ' + fmtDur(note.durationMin);
+    if (note.valor) label += ' R$ ' + note.valor;
+    else if (note.durationMin) label += ' ' + fmtDur(note.durationMin);
     else if (note.subs.length) { const d = note.subs.filter(s => s.done).length; label += ` ${d}/${note.subs.length}`; }
     else if (note.detail.trim()) label += ' •';
     btn.textContent = label;
@@ -213,7 +223,7 @@
   document.addEventListener('input', e => {
     const panel = e.target.closest('.notas-panel');
     if (!panel) return;
-    if (e.target.matches('.notas-detail') || e.target.matches('.notas-sub input[type=text]')) debouncedSave(panel);
+    if (e.target.matches('.notas-detail') || e.target.matches('.notas-valor') || e.target.matches('.notas-sub input[type=text]')) debouncedSave(panel);
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.target.matches('.notas-add input')) {
