@@ -843,7 +843,7 @@ function kvView(c){
 function descFonte(c){
   const tipoSS=ssType(c.ss)||'SS';
   const d=(c.desc||c.parecer||'').replace(/\s+/g,' ').trim();
-  return d?('['+tipoSS+'] '+d.slice(0,400)):'';
+  return d?('['+tipoSS+'] '+d.slice(0,3000)):'';   // descrição completa no Excel (limite alto só p/ segurança)
 }
 async function exportExcel(){
   try{await ensureXLSX();}catch(e){alert(e.message);return;}
