@@ -309,6 +309,11 @@ body{padding-top:calc(14px + env(safe-area-inset-top));padding-left:max(16px,env
 #mapModal{align-items:stretch;padding:0}
 #mapModal .map-wrap{display:flex;flex-direction:column;width:100%;min-height:100vh;height:100%;background:#0f1c33}
 .map-top{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;color:#fff;background:#1F3864;flex-shrink:0}
+.map-search{display:flex;gap:6px;padding:8px 10px;background:#16233f;flex-shrink:0}
+.map-search input{flex:1;min-width:0;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:10px;padding:9px 12px;font-size:14px}
+.map-search input::placeholder{color:rgba(255,255,255,.45)}
+.map-search input:focus{outline:none;border-color:#7EC8E3}
+.map-search button{background:#7EC8E3;color:#0f1c33;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer}
 .map-top b{font-size:15px}
 .map-top button{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);color:#fff;padding:8px 15px;border-radius:9px;font-weight:700;cursor:pointer;font-size:13px}
 .map-top button:hover{background:rgba(255,255,255,.26)}
@@ -504,6 +509,7 @@ body{padding-top:calc(14px + env(safe-area-inset-top));padding-left:max(16px,env
 <div class="modal-bg" id="mapModal">
 <div class="map-wrap">
 <div class="map-top"><b>Mapa dos equipamentos</b><button onclick="closeMap()">Fechar</button></div>
+<div class="map-search"><input id="mapQ" type="search" autocomplete="off" placeholder="Buscar ativo, cidade ou lugar…" onkeydown="if(event.key==='Enter'){event.preventDefault();mapSearch();}"><button onclick="mapSearch()">Buscar</button></div>
 <div id="mapCanvas"></div>
 <div class="map-legend" id="mapLegend"></div>
 </div>
@@ -1066,7 +1072,7 @@ async function openMap(){
     _map=L.map('mapCanvas',{zoomControl:true});
     const sat=L.layerGroup([
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'© Esri · Maxar'}),
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:19})
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd',attribution:'© CARTO · OSM'})
     ]);
     const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
     sat.addTo(_map);
@@ -1079,6 +1085,7 @@ async function openMap(){
   }
   if(_mapLayer)_mapLayer.remove();
   _mapLayer=L.layerGroup().addTo(_map);
+  _mapMarkers={};
   const bounds=[];
   pts.forEach(c=>{
     const m=L.circleMarker([c.mlat,c.mlng],{radius:8,color:'#fff',weight:2,fillColor:critMapColor(c.crit),fillOpacity:.9});
@@ -1087,7 +1094,7 @@ async function openMap(){
       +`<br>Criticidade: ${esc(c.crit)}${c.prior?' · Prioriz. '+esc(c.prior):''}`
       +`<br><a href="https://www.google.com/maps?q=${c.mlat.toFixed(6)},${c.mlng.toFixed(6)}&t=k&z=18" target="_blank" rel="noopener">Localização exata (Google satélite) ↗</a>`
       +`<br><a href="#" onclick="mapGoTo('${c.id}');return false;">Abrir card ›</a>`;
-    m.bindPopup(pop);m.addTo(_mapLayer);bounds.push([c.mlat,c.mlng]);
+    m.bindPopup(pop);m.addTo(_mapLayer);_mapMarkers[c.id]=m;bounds.push([c.mlat,c.mlng]);
   });
   if(bounds.length)_map.fitBounds(bounds,{padding:[30,30]});
   setTimeout(()=>{try{_map.invalidateSize();}catch(_){}},250); // corrige o render dentro do modal
@@ -1095,6 +1102,35 @@ async function openMap(){
     .map(([l,cor])=>`<span><i style="background:${cor}"></i>${l}</span>`).join('')+`<span style="opacity:.85">${pts.length} equipamentos</span>`;
 }
 function closeMap(){document.getElementById('mapModal').classList.remove('open');}
+let _mapMarkers={},_searchPin=null;
+async function mapSearch(){
+  const inp=document.getElementById('mapQ');const q=(inp.value||'').trim();
+  if(!q||!_map)return;
+  const ql=q.toLowerCase();
+  const pts=effectiveCards().filter(c=>typeof c.mlat==='number'&&typeof c.mlng==='number');
+  // 1) por ativo (serie/patrimonio/ID) ou cidade dos cards
+  let hit=pts.find(c=>String(c.serie).indexOf(q)>=0||String(c.patr||'').replace(/\./g,'').indexOf(q.replace(/\./g,''))>=0||c.id.toLowerCase()===ql);
+  if(!hit)hit=pts.find(c=>String(c.local||'').toLowerCase().indexOf(ql)>=0);
+  if(hit){
+    _map.setView([hit.mlat,hit.mlng],15);
+    const mk=_mapMarkers[hit.id];if(mk)setTimeout(()=>mk.openPopup(),300);
+    return;
+  }
+  // 2) qualquer lugar (municipio, povoado, endereco) via OpenStreetMap
+  try{
+    const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q='+encodeURIComponent(q));
+    const d=await r.json();
+    if(d&&d[0]){
+      const la=+d[0].lat,lo=+d[0].lon;
+      if(_searchPin)_searchPin.remove();
+      _searchPin=L.marker([la,lo]).addTo(_map).bindPopup(esc((d[0].display_name||q).split(',').slice(0,3).join(', ')));
+      _map.setView([la,lo],13);
+      setTimeout(()=>{if(_searchPin)_searchPin.openPopup();},300);
+      return;
+    }
+  }catch(_){}
+  alert('Não encontrei "'+q+'". Tente o nº do ativo, o patrimônio, a cidade ou um endereço.');
+}
 /* ===== Painel (dashboard) — atualiza ao categorizar; detalhamento sob demanda ===== */
 let _dashOpen=new Set();
 function dashGroup(title,items){
