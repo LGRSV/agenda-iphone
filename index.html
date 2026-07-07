@@ -100,6 +100,7 @@
     function moveDay(amount){const d=dateAtNoon(selectedDate);d.setDate(d.getDate()+amount);selectedDate=iso(d);monthCursor=dateAtNoon(selectedDate);render()}
     function moveMonth(amount){monthCursor=new Date(monthCursor.getFullYear(),monthCursor.getMonth()+amount,1,12);render()}
     async function registerWorker(){if(!('serviceWorker'in navigator))throw new Error('sem suporte');return navigator.serviceWorker.register('./sw.js')}
+    (async function syncVerBadge(){try{const t=await (await fetch('./sw.js',{cache:'no-store'})).text();const m=/agenda-lagares-v(\d+)/.exec(t);if(m){const el=document.getElementById('app-ver-num');if(el)el.textContent='v'+m[1];}}catch(_){}})();
     async function appForceUpdate(){
       const btn=document.getElementById('app-update');
       try{if(btn){btn.classList.add('spin');btn.disabled=true;}}catch(_){}
@@ -203,7 +204,7 @@
     @media(min-width:480px){#jarvis-panel{left:max(18px,env(safe-area-inset-left));right:auto;width:400px}}
   </style>
 
-  <div id="app-ver"><button id="app-update" type="button" title="Atualizar o app" aria-label="Atualizar o app"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></button><span id="app-ver-num">v60</span></div>
+  <div id="app-ver"><button id="app-update" type="button" title="Atualizar o app" aria-label="Atualizar o app"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></button><span id="app-ver-num">v63</span></div>
   <button id="jarvis-btn" class="pulse" type="button" aria-label="Abrir Jarvis">
     <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="16" cy="16" r="15" stroke="#75cbff" stroke-width="1.5" opacity=".4"/>
