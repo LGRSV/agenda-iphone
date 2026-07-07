@@ -1076,12 +1076,12 @@ async function openMap(){
     ]);
     const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
     sat.addTo(_map);
-    const fdt=new Date(Date.now()-864e5),fd=fdt.getFullYear()+'-'+String(fdt.getMonth()+1).padStart(2,'0')+'-'+String(fdt.getDate()).padStart(2,'0');
-    const fogo=L.layerGroup([
-      L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_Thermal_Anomalies_375m_All/default/'+fd+'/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png',{maxNativeZoom:9,maxZoom:19,opacity:.9}),
-      L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_NOAA20_Thermal_Anomalies_375m_All/default/'+fd+'/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png',{maxNativeZoom:9,maxZoom:19,opacity:.9})
-    ]);
-    L.control.layers({'Satélite':sat,'Mapa (ruas)':osm},{'Focos de queimada (NASA, 24-48h)':fogo},{position:'topright'}).addTo(_map);
+    const fogo=L.tileLayer.wms('https://terrabrasilis.dpi.inpe.br/queimadas/geoserver/wms',{
+      layers:'dados_abertos:focos_48h_br_todosats',format:'image/png',transparent:true,
+      version:'1.1.1',opacity:.95,attribution:'Focos: INPE/BDQueimadas'
+    });
+    fogo.addTo(_map);
+    L.control.layers({'Satélite':sat,'Mapa (ruas)':osm},{'Focos de queimada (INPE, 48h)':fogo},{position:'topright'}).addTo(_map);
   }
   if(_mapLayer)_mapLayer.remove();
   _mapLayer=L.layerGroup().addTo(_map);
@@ -1099,7 +1099,8 @@ async function openMap(){
   if(bounds.length)_map.fitBounds(bounds,{padding:[30,30]});
   setTimeout(()=>{try{_map.invalidateSize();}catch(_){}},250); // corrige o render dentro do modal
   leg.innerHTML=[['Muito Alta','#C00000'],['Alta','#ED7D31'],['Média','#FFC000'],['Baixa','#A9D08E'],['—','#90a4ae']]
-    .map(([l,cor])=>`<span><i style="background:${cor}"></i>${l}</span>`).join('')+`<span style="opacity:.85">${pts.length} equipamentos</span>`;
+    .map(([l,cor])=>`<span><i style="background:${cor}"></i>${l}</span>`).join('')+`<span style="opacity:.85">${pts.length} equipamentos</span>`
+    +`<span style="opacity:.75">Queimadas: INPE, últimas 48h (atualiza a cada passagem de satélite, ~minutos a 3h de atraso)</span>`;
 }
 function closeMap(){document.getElementById('mapModal').classList.remove('open');}
 let _mapMarkers={},_searchPin=null;
