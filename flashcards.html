@@ -408,9 +408,9 @@ body{padding-top:calc(14px + env(safe-area-inset-top));padding-left:max(16px,env
 <div class="chip" data-f="concl">Concluídos</div>
 </div>
 <div class="ctrl" id="filtros-cat">
-<div class="chip" data-f="cat-aprovar">Aprovados <b class="cnt" data-c="aprovar">0</b></div>
-<div class="chip" data-f="cat-execucao">Em execução <b class="cnt" data-c="execucao">0</b></div>
-<div class="chip" data-f="cat-analise">Em análise <b class="cnt" data-c="analise">0</b></div>
+<div class="chip" data-f="cat-aprovar">Tratativa N1 <b class="cnt" data-c="aprovar">0</b></div>
+<div class="chip" data-f="cat-execucao">Tratativa N3 <b class="cnt" data-c="execucao">0</b></div>
+<div class="chip" data-f="cat-analise">Para avançar <b class="cnt" data-c="analise">0</b></div>
 <div class="chip" data-f="cat-ncon">Não conf. <b class="cnt" data-c="ncon">0</b></div>
 <div class="chip" data-f="cat-none">Sem categoria <b class="cnt" data-c="none">0</b></div>
 </div>
@@ -431,9 +431,9 @@ body{padding-top:calc(14px + env(safe-area-inset-top));padding-left:max(16px,env
 <button id="next" onclick="go(1)">Próximo →</button>
 </div>
 <div class="catbar">
-<button class="cb-aprovar" data-cat="aprovar" onclick="setCat('aprovar')">Aprovar p/ compra</button>
-<button class="cb-execucao" data-cat="execucao" onclick="setCat('execucao')">Em execução</button>
-<button class="cb-analise" data-cat="analise" onclick="setCat('analise')">Voltar p/ análise</button>
+<button class="cb-aprovar" data-cat="aprovar" onclick="setCat('aprovar')">Tratativa N1 (pendente)</button>
+<button class="cb-execucao" data-cat="execucao" onclick="setCat('execucao')">Tratativa N3 (concluída)</button>
+<button class="cb-analise" data-cat="analise" onclick="setCat('analise')">Para avançar</button>
 <button class="cb-ncon" data-cat="ncon" onclick="setCat('ncon')">Não conformidade</button>
 </div>
 <div class="toolbar">
@@ -460,7 +460,7 @@ body{padding-top:calc(14px + env(safe-area-inset-top));padding-left:max(16px,env
 </div>
 <div class="orc-actions">
 <button onclick="orcIncludeAll('compra')">Incluir compra necessária</button>
-<button onclick="orcIncludeAll('aprovar')">Incluir aprovados</button>
+<button onclick="orcIncludeAll('aprovar')">Incluir tratativa N1</button>
 <button onclick="orcClear()">Limpar seleção</button>
 <button class="add" onclick="openLineModal()">+ Adicionar código</button>
 </div>
@@ -982,7 +982,7 @@ function fillCidades(){
   if(atual&&cont[atual])sel.value=atual;
 }
 function limparBusca(){const el=document.getElementById('busca');if(el)el.value='';busca='';idx=0;render();}
-const CAT_LABELS={aprovar:'Aprovado para compra',execucao:'Em execução',analise:'Voltar para análise',ncon:'Não conformidade'};
+const CAT_LABELS={aprovar:'Em tratativa - N1 (pendente)',execucao:'Em tratativa - N3 (concluída)',analise:'Para avançar',ncon:'Não conformidade'};
 function catBadge(c){return c.cat?`<div class="cat-badge ${c.cat}">${CAT_LABELS[c.cat]||esc(c.cat)}</div>`:'';}
 function setCat(k){
   const list=filtered();if(!list.length){alert('Nenhum card no filtro atual.');return;}
@@ -1246,9 +1246,9 @@ function renderDash(){
   const total=all.length,rl=all.filter(c=>c.tipo==='RL').length,rt=all.filter(c=>c.tipo==='RT').length;
   const concl=all.filter(c=>c.concl).length,compra=all.filter(c=>c.dec==='Compra necessária').length;
   const cats=[
-    {key:'aprovar',label:'Aprovado para compra',color:'#1e7e34',cards:all.filter(c=>c.cat==='aprovar')},
-    {key:'execucao',label:'Em execução',color:'#1565c0',cards:all.filter(c=>c.cat==='execucao')},
-    {key:'analise',label:'Voltar para análise',color:'#8a6100',cards:all.filter(c=>c.cat==='analise')},
+    {key:'aprovar',label:'Em tratativa - N1 (pendente)',color:'#1e7e34',cards:all.filter(c=>c.cat==='aprovar')},
+    {key:'execucao',label:'Em tratativa - N3 (concluída)',color:'#1565c0',cards:all.filter(c=>c.cat==='execucao')},
+    {key:'analise',label:'Para avançar',color:'#8a6100',cards:all.filter(c=>c.cat==='analise')},
     {key:'ncon',label:'Não conformidade',color:'#b3261e',cards:all.filter(c=>c.cat==='ncon')},
     {key:'none',label:'Sem categoria',color:'#78909c',cards:all.filter(c=>!c.cat)},
   ];
