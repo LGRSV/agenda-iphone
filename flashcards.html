@@ -67,12 +67,14 @@ body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:lin
 .cb-aprovar{background:#E6F4EA;color:#1e7e34}
 .cb-execucao{background:#E8F0FA;color:#1565c0}
 .cb-analise{background:#FFF3CD;color:#8a6100}
+.cb-n1{background:rgba(167,139,250,.12);color:#c4b5fd}
 .cb-ncon{background:#FCE8E6;color:#b3261e}
 .catbar button.on{box-shadow:inset 0 0 0 3px currentColor}
 .cat-badge{display:inline-block;padding:5px 13px;border-radius:20px;font-size:12.5px;font-weight:800;margin-bottom:9px}
 .cat-badge.aprovar{background:#E6F4EA;color:#1e7e34;border:1px solid #b7dfc3}
 .cat-badge.execucao{background:#E8F0FA;color:#1565c0;border:1px solid #bcd6f2}
 .cat-badge.analise{background:#FFF3CD;color:#8a6100;border:1px solid #ffe08a}
+.cat-badge.n1{background:rgba(167,139,250,.14);color:#c4b5fd;border:1px solid rgba(167,139,250,.3)}
 .cat-badge.ncon{background:#FCE8E6;color:#b3261e;border:1px solid #f3c2bd}
 .chip .cnt{font-size:10px;opacity:.8;font-weight:800}
 .jbar{width:100%;max-width:720px;margin:0 auto 10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:11px 14px;display:flex;flex-direction:column;gap:7px}
@@ -196,6 +198,7 @@ body>*{animation:fadeUp .55s var(--ease) both}
 .cat-badge.aprovar{background:rgba(52,211,153,.14);color:#6ee7b7;border:1px solid rgba(52,211,153,.3)}
 .cat-badge.execucao{background:rgba(96,165,250,.14);color:#93c5fd;border:1px solid rgba(96,165,250,.3)}
 .cat-badge.analise{background:rgba(251,191,36,.14);color:#fcd34d;border:1px solid rgba(251,191,36,.3)}
+.cat-badge.n1{background:rgba(167,139,250,.14);color:#c4b5fd;border:1px solid rgba(167,139,250,.3)}
 .cat-badge.ncon{background:rgba(251,113,133,.14);color:#fda4af;border:1px solid rgba(251,113,133,.3)}
 .edited-badge{background:var(--surface3);color:var(--muted);border-radius:6px;font-weight:600}
 .nav button,.toolbar button,.jbar-btn{background:var(--surface2);border:1px solid var(--line);color:var(--text);border-radius:14px;font-weight:600;transition:transform .18s var(--spring),background .2s}
@@ -208,7 +211,8 @@ body>*{animation:fadeUp .55s var(--ease) both}
 .toolbar button.obr{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#2a1e00;border-color:transparent;font-weight:700}
 .foot{color:var(--faint);opacity:1}
 .catbar button{border-radius:14px;transition:transform .18s var(--spring),box-shadow .2s,background .2s}
-.cb-aprovar{background:rgba(52,211,153,.12);color:#6ee7b7}.cb-execucao{background:rgba(96,165,250,.12);color:#93c5fd}.cb-analise{background:rgba(251,191,36,.12);color:#fcd34d}.cb-ncon{background:rgba(251,113,133,.12);color:#fda4af}
+.cb-aprovar{background:rgba(52,211,153,.12);color:#6ee7b7}.cb-execucao{background:rgba(96,165,250,.12);color:#93c5fd}.cb-analise{background:rgba(251,191,36,.12);color:#fcd34d}.cb-n1{background:rgba(167,139,250,.12);color:#c4b5fd}
+.cb-ncon{background:rgba(251,113,133,.12);color:#fda4af}
 .catbar button.on{box-shadow:inset 0 0 0 1.5px currentColor;background:color-mix(in srgb,currentColor 20%,transparent)}
 .jbar{background:linear-gradient(135deg,rgba(109,139,255,.1),rgba(138,123,255,.05));border:1px solid var(--line2);border-radius:18px;backdrop-filter:blur(8px)}
 .jbar.speaking{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 0 26px -8px var(--accent)}
@@ -408,9 +412,10 @@ body{padding-top:calc(14px + env(safe-area-inset-top));padding-left:max(16px,env
 <div class="chip" data-f="concl">Concluídos</div>
 </div>
 <div class="ctrl" id="filtros-cat">
-<div class="chip" data-f="cat-aprovar">Tratativa N1 <b class="cnt" data-c="aprovar">0</b></div>
+<div class="chip" data-f="cat-aprovar">Para avançar <b class="cnt" data-c="aprovar">0</b></div>
+<div class="chip" data-f="cat-n1">Tratativa N1 <b class="cnt" data-c="n1">0</b></div>
 <div class="chip" data-f="cat-execucao">Tratativa N3 <b class="cnt" data-c="execucao">0</b></div>
-<div class="chip" data-f="cat-analise">Para avançar <b class="cnt" data-c="analise">0</b></div>
+<div class="chip" data-f="cat-analise">Aguard. DMSL <b class="cnt" data-c="analise">0</b></div>
 <div class="chip" data-f="cat-ncon">Não conf. <b class="cnt" data-c="ncon">0</b></div>
 <div class="chip" data-f="cat-none">Sem categoria <b class="cnt" data-c="none">0</b></div>
 </div>
@@ -431,9 +436,10 @@ body{padding-top:calc(14px + env(safe-area-inset-top));padding-left:max(16px,env
 <button id="next" onclick="go(1)">Próximo →</button>
 </div>
 <div class="catbar">
-<button class="cb-aprovar" data-cat="aprovar" onclick="setCat('aprovar')">Tratativa N1 (pendente)</button>
+<button class="cb-aprovar" data-cat="aprovar" onclick="setCat('aprovar')">Para avançar</button>
+<button class="cb-n1" data-cat="n1" onclick="setCat('n1')">Tratativa N1 (pendente EMD)</button>
 <button class="cb-execucao" data-cat="execucao" onclick="setCat('execucao')">Tratativa N3 (concluída)</button>
-<button class="cb-analise" data-cat="analise" onclick="setCat('analise')">Para avançar</button>
+<button class="cb-analise" data-cat="analise" onclick="setCat('analise')">Aguardando análise DMSL</button>
 <button class="cb-ncon" data-cat="ncon" onclick="setCat('ncon')">Não conformidade</button>
 </div>
 <div class="toolbar">
@@ -460,7 +466,7 @@ body{padding-top:calc(14px + env(safe-area-inset-top));padding-left:max(16px,env
 </div>
 <div class="orc-actions">
 <button onclick="orcIncludeAll('compra')">Incluir compra necessária</button>
-<button onclick="orcIncludeAll('aprovar')">Incluir tratativa N1</button>
+<button onclick="orcIncludeAll('aprovar')">Incluir "Para avançar"</button>
 <button onclick="orcClear()">Limpar seleção</button>
 <button class="add" onclick="openLineModal()">+ Adicionar código</button>
 </div>
@@ -505,6 +511,7 @@ body{padding-top:calc(14px + env(safe-area-inset-top));padding-left:max(16px,env
 <div class="up-log" id="upLog"></div>
 <div class="up-meta" id="upMeta" style="display:none"></div>
 <button class="up-reset" onclick="resetSheets()">Voltar aos dados originais embutidos</button>
+<button class="up-reset" onclick="removeSheetCards()">Remover cards criados por planilha</button>
 </div>
 <div class="up-card">
 <div class="up-t">Backup da avaliação</div>
@@ -982,7 +989,7 @@ function fillCidades(){
   if(atual&&cont[atual])sel.value=atual;
 }
 function limparBusca(){const el=document.getElementById('busca');if(el)el.value='';busca='';idx=0;render();}
-const CAT_LABELS={aprovar:'Em tratativa - N1 (pendente)',execucao:'Em tratativa - N3 (concluída)',analise:'Para avançar',ncon:'Não conformidade'};
+const CAT_LABELS={aprovar:'Para avançar',n1:'Em tratativa - N1 (pendente EMD)',execucao:'Em tratativa - N3 (concluída)',analise:'Aguardando análise DMSL',ncon:'Não conformidade'};
 function catBadge(c){return c.cat?`<div class="cat-badge ${c.cat}">${CAT_LABELS[c.cat]||esc(c.cat)}</div>`:'';}
 function setCat(k){
   const list=filtered();if(!list.length){alert('Nenhum card no filtro atual.');return;}
@@ -993,7 +1000,7 @@ function setCat(k){
   const dm=document.getElementById('dashModal');if(dm&&dm.classList.contains('open'))renderDash();
 }
 function updateCatCounts(){
-  const cnt={aprovar:0,execucao:0,analise:0,ncon:0,none:0};
+  const cnt={aprovar:0,n1:0,execucao:0,analise:0,ncon:0,none:0};
   effectiveCards().forEach(c=>{cnt[c.cat||'none']=(cnt[c.cat||'none']||0)+1;});
   document.querySelectorAll('.cnt').forEach(el=>{el.textContent=cnt[el.dataset.c]||0;});
 }
@@ -1246,9 +1253,10 @@ function renderDash(){
   const total=all.length,rl=all.filter(c=>c.tipo==='RL').length,rt=all.filter(c=>c.tipo==='RT').length;
   const concl=all.filter(c=>c.concl).length,compra=all.filter(c=>c.dec==='Compra necessária').length;
   const cats=[
-    {key:'aprovar',label:'Em tratativa - N1 (pendente)',color:'#1e7e34',cards:all.filter(c=>c.cat==='aprovar')},
+    {key:'aprovar',label:'Para avançar',color:'#1e7e34',cards:all.filter(c=>c.cat==='aprovar')},
+    {key:'n1',label:'Em tratativa - N1 (pendente EMD)',color:'#7c5cd6',cards:all.filter(c=>c.cat==='n1')},
     {key:'execucao',label:'Em tratativa - N3 (concluída)',color:'#1565c0',cards:all.filter(c=>c.cat==='execucao')},
-    {key:'analise',label:'Para avançar',color:'#8a6100',cards:all.filter(c=>c.cat==='analise')},
+    {key:'analise',label:'Aguardando análise DMSL',color:'#8a6100',cards:all.filter(c=>c.cat==='analise')},
     {key:'ncon',label:'Não conformidade',color:'#b3261e',cards:all.filter(c=>c.cat==='ncon')},
     {key:'none',label:'Sem categoria',color:'#78909c',cards:all.filter(c=>!c.cat)},
   ];
@@ -1464,6 +1472,7 @@ function toISO(d){
   return '';
 }
 function processIndispWb(wb,known){
+  if(wb.SheetNames.some(n=>/Premissas e Pre|Dinâmica|Realizado - AIC/i.test(n)))return null;   // arquivo de orçamento, não relação
   for(const name of wb.SheetNames){
     const rows=rowsOf(wb,name);if(!rows||rows.length<2)continue;
     const colCount={};let firstDataRow=-1;
@@ -1603,6 +1612,15 @@ function renderUpMeta(){
   set('upSt_rl',m.rl,true);set('upSt_rt',m.rt,true);set('upSt_obras',m.obras,false);
   const ei=document.getElementById('upSt_ind');
   if(ei)ei.textContent=m.ind?('atualizado em '+m.ind.when+' · '+m.ind.n+' equip. · '+m.ind.file):'não enviada — cria flashcards para equipamentos novos';
+}
+function removeSheetCards(){
+  const alvo=(overrides.__new__||[]).filter(c=>/^Novo — veio da/.test(c.st||''));
+  if(!alvo.length){alert('Nenhum card criado por planilha para remover.');return;}
+  if(!confirm('Remover '+alvo.length+' card(s) criados por planilha? Cards manuais e edições não são afetados.'))return;
+  overrides.__new__=(overrides.__new__||[]).filter(c=>!/^Novo — veio da/.test(c.st||''));
+  saveOverrides();idx=0;render();
+  document.getElementById('upLog').innerHTML='';
+  upLog(alvo.length+' card(s) criados por planilha foram removidos.','ok');
 }
 function resetSheets(){
   if(!confirm('Descartar as planilhas enviadas e voltar aos dados embutidos originais?'))return;
