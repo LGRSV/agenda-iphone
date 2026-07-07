@@ -498,6 +498,8 @@ body{padding-top:calc(14px + env(safe-area-inset-top));padding-left:max(16px,env
 <input type="file" id="sfRt" accept=".xlsx,.xls" style="display:none" onchange="importSheetsTyped(event,'rt')">
 <div class="up-item"><div class="up-item-tx"><b>Obras Eq. Especial</b><span id="upSt_obras">usando dados embutidos</span></div><button class="up-mini" onclick="document.getElementById('sfOb').click()">Enviar</button></div>
 <input type="file" id="sfOb" accept=".xlsx,.xls" style="display:none" onchange="importSheetsTyped(event,'obras')">
+<div class="up-item"><div class="up-item-tx"><b>Relação de Indisponibilidade</b><span id="upSt_ind">não enviada — cria flashcards para equipamentos novos</span></div><button class="up-mini" onclick="document.getElementById('sfInd').click()">Enviar</button></div>
+<input type="file" id="sfInd" accept=".xlsx,.xls" style="display:none" onchange="importSheetsTyped(event,'ind')">
 <button class="up-btn sec" style="margin-top:12px" onclick="document.getElementById('sheetFile').click()">Enviar todas de uma vez</button>
 <input type="file" id="sheetFile" accept=".xlsx,.xls" multiple style="display:none" onchange="importSheets(event)">
 <div class="up-log" id="upLog"></div>
@@ -601,6 +603,7 @@ function computeSheetPatch(c){
     p.ee=ee;
   }
   if(sheetData.has.obras)p.obra=sheetData.obras[se]||[];
+  if(sheetData.has.ind){const iv=sheetData.ind&&sheetData.ind[se];if(iv&&iv.data)p.dtocor=iv.data;}
   return p;
 }
 function effectiveCards(){
@@ -1379,6 +1382,44 @@ function processRTWb(wb,known){
   const conf=[];scanSerials(rowsOf(wb,'Planilha2'),known,conf);
   return {rtaj,rteto,conf,n,ne};
 }
+function toISO(d){
+  d=xnorm(d);
+  if(/^\d{4}-\d{2}-\d{2}/.test(d))return d.slice(0,10);
+  const m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(d);
+  if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+  return '';
+}
+function processIndispWb(wb,known){
+  for(const name of wb.SheetNames){
+    const rows=rowsOf(wb,name);if(!rows||rows.length<2)continue;
+    const colCount={};let firstDataRow=-1;
+    rows.forEach((r,ri)=>{(r||[]).forEach((v,ci)=>{if(/^\d{9,}$/.test(xnorm(v))){colCount[ci]=(colCount[ci]||0)+1;if(firstDataRow<0)firstDataRow=ri;}});});
+    const serColKey=Object.keys(colCount).sort((a,b)=>colCount[b]-colCount[a])[0];
+    if(serColKey===undefined||colCount[serColKey]<3)continue;
+    const sc=+serColKey;
+    let hri=-1;
+    for(let i=firstDataRow-1;i>=0;i--){const r=rows[i]||[];if(r.filter(v=>xnorm(v)).length>=2){hri=i;break;}}
+    const hdr=(hri>=0?rows[hri]:[]).map(xnorm);
+    const findCol=re=>{for(let i=0;i<hdr.length;i++){if(re.test(hdr[i]))return i;}return -1;};
+    let tipoC=findCol(/tipo/i);
+    const localC=findCol(/local|munic|cidade/i),dataC=findCol(/data/i),ssC=findCol(/^ss\b|ss |solicita/i),defC=findCol(/defeito|motivo|descri|problema|causa/i),tenC=findCol(/tens/i);
+    if(tipoC<0){
+      const width=Math.max(...rows.slice(firstDataRow,firstDataRow+5).map(r=>(r||[]).length));
+      for(let ci=0;ci<width;ci++){const sample=rows.slice(firstDataRow,firstDataRow+15).map(r=>xnorm((r||[])[ci])).join(' ').toLowerCase();if(/religador|regulador/.test(sample)){tipoC=ci;break;}}
+    }
+    const map={};const news=[];let n=0;
+    rows.slice(Math.max(hri+1,0)).forEach(r=>{
+      const k=xnorm((r||[])[sc]);if(!/^\d{9,}$/.test(k))return;
+      const g=ci=>ci>=0?xnorm((r||[])[ci]):'';
+      const tipoTx=g(tipoC).toLowerCase();
+      const e={tipo:(/regulador|\brt\b/.test(tipoTx)?'RT':'RL'),local:g(localC),data:toISO(g(dataC)),ss:g(ssC),defeito:g(defC),ten:g(tenC)};
+      map[k]=e;n++;
+      if(!known.has(k))news.push({serie:k,tipo:e.tipo,ten:e.ten,local:e.local,ss:e.ss,defeito:e.defeito,data:e.data,pairs:null});
+    });
+    if(n>=3)return {ind:map,n,news,sheet:name};
+  }
+  return null;
+}
 const OBRAS_KEEP=[[0,'Tipo (planilha)'],[2,'Tensão'],[3,'Potência'],[4,'Localidade'],[5,'SS aberta'],[6,'OS associada'],[8,'Defeito identificado'],[9,'Necessário COEP requisitar material'],[10,'Cód. material p/ requisitar'],[11,'Técnico responsável'],[12,'Previsão de regularização (COCM)'],[13,'Status da substituição'],[14,'Equipamento entregue?'],[15,'Data da substituição'],[16,'OBRA'],[17,'Depósito'],[18,'EMD'],[19,'Status entrega'],[20,'Previsão de entrega'],[21,'Data entrega'],[22,'Observação'],[24,'Posto COEP'],[25,'EL NINO']];
 function processObrasWb(wb,known){
   for(const name of wb.SheetNames){
@@ -1423,29 +1464,36 @@ async function processOneFile(f,known){
     upLog(f.name+' → Obras Eq. Especial: '+r.n+' equipamentos casados.','ok');
     return 'obras';
   }
-  upLog(f.name+' → não reconheci o formato (esperava Ajustes RL Poste, Ajustes Reguladores ou a planilha de Obras).','warn');
+  if((r=processIndispWb(wb,known))){
+    sheetData.ind=r.ind;sheetData.has.ind=true;sheetData.meta.ind={when:stampNow(),file:f.name,n:r.n};
+    upLog(f.name+' → Relação de Indisponibilidade (aba "'+r.sheet+'"): '+r.n+' equipamentos lidos · '+(r.n-r.news.length)+' já têm card · '+r.news.length+' novos.','ok');
+    _pendingNews=r.news||[];_pendingSrc='Relação de Indisponibilidade';
+    return 'ind';
+  }
+  upLog(f.name+' → não reconheci o formato (esperava Ajustes Religadores/Reguladores, Obras ou Relação de Indisponibilidade).','warn');
   return null;
 }
-let _pendingNews=[];
+let _pendingNews=[],_pendingSrc='';
 function kvFromTen(t){t=String(t||'');if(t.indexOf('34')===0)return'34,5';if(t.indexOf('13')===0)return'13,8';return'ND';}
 function offerNewCards(){
   if(!_pendingNews.length)return;
-  const list=_pendingNews;_pendingNews=[];
-  const resumo=list.slice(0,6).map(x=>x.serie+' ('+x.local+')').join(', ')+(list.length>6?'…':'');
-  if(!confirm('A planilha de Obras tem '+list.length+' equipamento(s) que ainda não têm flashcard:\n'+resumo+'\n\nCriar os flashcards automaticamente?'))
-    {upLog(list.length+' equipamento(s) novo(s) ignorado(s) — você pode reenviar a planilha para criar depois.','warn');return;}
+  const list=_pendingNews,src=_pendingSrc||'planilha';_pendingNews=[];_pendingSrc='';
+  const resumo=list.slice(0,6).map(x=>x.serie+(x.local?' ('+x.local+')':'')).join(', ')+(list.length>6?'…':'');
+  if(!confirm('A '+src+' tem '+list.length+' equipamento(s) que ainda não têm flashcard:\n'+resumo+'\n\nCriar os flashcards automaticamente?'))
+    {upLog(list.length+' equipamento(s) novo(s) ignorado(s) — reenvie a planilha para criar depois.','warn');return;}
   let seq=1;
   list.forEach(x=>{
     const c=blankCard();
     c.id=x.tipo+'-N'+String(Date.now()).slice(-4)+String(seq++);
     c.tipo=x.tipo;c.serie=x.serie;c.local=x.local;c.kv=kvFromTen(x.ten);
-    c.ss=x.ss;c.defeito=x.defeito||'Ver planilha de Obras';
-    c.st='Novo — veio da planilha de Obras';c.parecer='';
+    c.ss=x.ss;c.defeito=x.defeito||('Ver '+src);
+    if(x.data)c.dtocor=x.data;
+    c.st='Novo — veio da '+src;c.parecer='';
     overrides.__new__.push(c);
-    sheetData.obras[xnorm(x.serie)]=x.pairs;
+    if(x.pairs)sheetData.obras[xnorm(x.serie)]=x.pairs;
   });
   saveOverrides();saveSheets();
-  upLog(list.length+' flashcard(s) criado(s) a partir da planilha de Obras. Estão no filtro "Todos" e podem ser editados normalmente.','ok');
+  upLog(list.length+' flashcard(s) criado(s) a partir da '+src+'. Estão no filtro "Todos" e podem ser editados normalmente.','ok');
 }
 function finishImport(){
   sheetData.conf=(sheetData.confRl||[]).concat(sheetData.confRt||[]);
@@ -1462,7 +1510,7 @@ async function importSheets(ev){
   for(const f of files){try{await processOneFile(f,known);}catch(e){upLog(f.name+' → erro ao ler: '+(e.message||e),'err');}}
   finishImport();
 }
-const TIPO_NOME={rl:'Ajustes Religadores',rt:'Ajustes Reguladores',obras:'Obras Eq. Especial'};
+const TIPO_NOME={rl:'Ajustes Religadores',rt:'Ajustes Reguladores',obras:'Obras Eq. Especial',ind:'Relação de Indisponibilidade'};
 async function importSheetsTyped(ev,tipo){
   const f=(ev.target.files||[])[0];ev.target.value='';
   if(!f)return;
@@ -1479,13 +1527,15 @@ function renderUpMeta(){
   const m=sheetData.meta||{};
   const set=(id,x,extra)=>{const el=document.getElementById(id);if(el)el.textContent=x?('atualizado em '+x.when+' · '+x.n+' equip.'+(extra&&x.ne!==undefined?' · '+x.ne+' ETO':'')+' · '+x.file):'usando dados embutidos';};
   set('upSt_rl',m.rl,true);set('upSt_rt',m.rt,true);set('upSt_obras',m.obras,false);
+  const ei=document.getElementById('upSt_ind');
+  if(ei)ei.textContent=m.ind?('atualizado em '+m.ind.when+' · '+m.ind.n+' equip. · '+m.ind.file):'não enviada — cria flashcards para equipamentos novos';
 }
 function resetSheets(){
   if(!confirm('Descartar as planilhas enviadas e voltar aos dados embutidos originais?'))return;
   try{localStorage.removeItem(SKEY);}catch(_){}
-  sheetData={has:{},rlaj:{},rleto:{},rtaj:{},rteto:{},obras:{},conf:[],meta:{}};
+  sheetData={has:{},rlaj:{},rleto:{},rtaj:{},rteto:{},obras:{},ind:{},conf:[],meta:{}};
   render();renderUpMeta();document.getElementById('upLog').innerHTML='';
-  upLog('Dados originais restaurados.','ok');
+  upLog('Dados originais restaurados. (Cards criados por planilha não são apagados — exclua pelo Editar, se quiser.)','ok');
 }
 
 /* ===== selo de versao (sincronizado com o sw.js) + atualizar app ===== */
