@@ -514,6 +514,8 @@ body{padding-top:calc(14px + env(safe-area-inset-top));padding-left:max(16px,env
 <button class="up-btn sec" onclick="document.getElementById('importFile').click()">Restaurar</button>
 </div>
 <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importBackup(event)">
+<div class="up-d" style="margin-top:14px">Problema de armazenamento? Baixe todas as fotos dos equipamentos num único <b>.zip</b> para guardar no Drive/PC e liberar o aparelho.</div>
+<button class="up-btn sec" onclick="exportPhotosZip()">Exportar fotos (.zip)</button>
 </div>
 <div class="modal-actions"><button class="btn-cancel" onclick="closeUp()">Fechar</button></div>
 </div>
@@ -794,6 +796,73 @@ function exportBackup(){
   const url=URL.createObjectURL(blob);const a=document.createElement('a');
   a.href=url;a.download='flashcards-avaliacao-backup.json';document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},120);
+}
+/* ===== Exportar todas as fotos reais num .zip (sem dependencias, offline) =====
+   As fotos ficam salvas como dataURL base64 dentro do localStorage e pesam muito.
+   Aqui juntamos todas num unico .zip para o usuario guardar no Drive/PC e liberar
+   o aparelho. Usamos ZIP "store" (sem compressao) porque JPEG/PNG ja sao comprimidos. */
+var _crcTable=null;
+function crc32(bytes){
+  if(!_crcTable){_crcTable=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);_crcTable[n]=c>>>0;}}
+  let crc=0xFFFFFFFF;
+  for(let i=0;i<bytes.length;i++)crc=(crc>>>8)^_crcTable[(crc^bytes[i])&0xFF];
+  return (crc^0xFFFFFFFF)>>>0;
+}
+function dataURLtoBytes(dataURL){
+  const i=dataURL.indexOf(',');if(i<0)return null;
+  const meta=dataURL.slice(0,i),b64=dataURL.slice(i+1);
+  let bin;try{bin=atob(b64);}catch(e){return null;}
+  const bytes=new Uint8Array(bin.length);
+  for(let j=0;j<bin.length;j++)bytes[j]=bin.charCodeAt(j);
+  const mime=(meta.match(/data:([^;]+)/)||[])[1]||'image/jpeg';
+  return {bytes:bytes,mime:mime};
+}
+function mimeExt(mime){return ({'image/jpeg':'jpg','image/jpg':'jpg','image/png':'png','image/webp':'webp','image/gif':'gif','image/heic':'heic'})[mime]||'jpg';}
+function buildZip(files){
+  const enc=new TextEncoder(),parts=[],central=[];let offset=0;
+  files.forEach(f=>{
+    const nameBytes=enc.encode(f.name),crc=crc32(f.bytes),size=f.bytes.length,localOffset=offset;
+    const lh=new Uint8Array(30+nameBytes.length),dv=new DataView(lh.buffer);
+    dv.setUint32(0,0x04034b50,true);dv.setUint16(4,20,true);dv.setUint16(6,0x0800,true);
+    dv.setUint16(8,0,true);dv.setUint16(10,0,true);dv.setUint16(12,0x21,true);
+    dv.setUint32(14,crc,true);dv.setUint32(18,size,true);dv.setUint32(22,size,true);
+    dv.setUint16(26,nameBytes.length,true);dv.setUint16(28,0,true);lh.set(nameBytes,30);
+    parts.push(lh,f.bytes);
+    const ch=new Uint8Array(46+nameBytes.length),cv=new DataView(ch.buffer);
+    cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);
+    cv.setUint16(8,0x0800,true);cv.setUint16(10,0,true);cv.setUint16(12,0,true);cv.setUint16(14,0x21,true);
+    cv.setUint32(16,crc,true);cv.setUint32(20,size,true);cv.setUint32(24,size,true);
+    cv.setUint16(28,nameBytes.length,true);cv.setUint16(30,0,true);cv.setUint16(32,0,true);
+    cv.setUint16(34,0,true);cv.setUint16(36,0,true);cv.setUint32(38,0,true);cv.setUint32(42,localOffset,true);
+    ch.set(nameBytes,46);central.push(ch);
+    offset+=lh.length+size;
+  });
+  let centralSize=0;central.forEach(c=>centralSize+=c.length);
+  const eocd=new Uint8Array(22),ev=new DataView(eocd.buffer);
+  ev.setUint32(0,0x06054b50,true);ev.setUint16(4,0,true);ev.setUint16(6,0,true);
+  ev.setUint16(8,files.length,true);ev.setUint16(10,files.length,true);
+  ev.setUint32(12,centralSize,true);ev.setUint32(16,offset,true);ev.setUint16(20,0,true);
+  return new Blob(parts.concat(central,[eocd]),{type:'application/zip'});
+}
+function exportPhotosZip(){
+  const list=effectiveCards().filter(c=>c.foto&&/^data:/.test(c.foto));
+  if(!list.length){alert('Nenhuma foto real salva ainda.\nAdicione fotos nos equipamentos em Editar > Foto.');return;}
+  const used={},files=[];
+  list.forEach(c=>{
+    const d=dataURLtoBytes(c.foto);if(!d)return;
+    const ext=mimeExt(d.mime);
+    const safe=s=>String(s||'').replace(/[^\w.\-]+/g,'_').replace(/^_+|_+$/g,'');
+    let stem=[safe(c.serie||c.id),safe(c.local)].filter(Boolean).join('_')||'foto';
+    let name=stem+'.'+ext;
+    if(used[name]){used[name]++;name=stem+'_'+used[name]+'.'+ext;}else used[name]=1;
+    files.push({name:name,bytes:d.bytes});
+  });
+  if(!files.length){alert('Nao consegui ler as fotos salvas.');return;}
+  const blob=buildZip(files);
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='fotos-equipamentos-'+files.length+'.zip';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},200);
 }
 function csvCell(v){v=(v==null?'':String(v)).replace(/\r?\n/g,' ').trim();return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
 function diasFora(iso){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(iso||'');if(!m)return '';const st=new Date(+m[1],+m[2]-1,+m[3]).getTime();return Math.max(0,Math.floor((Date.now()-st)/86400000));}
