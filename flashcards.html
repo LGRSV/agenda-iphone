@@ -249,10 +249,15 @@ body>*{animation:fadeUp .55s var(--ease) both}
 .appswitch a{flex:1;text-align:center;padding:10px 6px;border-radius:10px;color:var(--muted);text-decoration:none;font-weight:600;font-size:13px;transition:transform .18s var(--spring),background .2s,color .2s}
 .appswitch a.on{background:var(--surface3);color:var(--text)}
 .appswitch a:active{transform:scale(.96)}
+.quickbar{display:flex;gap:6px;width:100%;max-width:640px;margin:0 auto 10px}
+.quickbar button{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;background:var(--surface2);border:1px solid var(--line);color:var(--text);border-radius:13px;padding:12px 8px;font-size:13px;font-weight:700;cursor:pointer;transition:transform .18s var(--spring),background .2s}
+.quickbar button:hover{background:var(--surface3)}
+.quickbar button:active{transform:scale(.95)}
+.quickbar svg{color:var(--accent)}
 /* ===== responsivo: iPhone (safe areas) e desktop ===== */
 body{padding-top:calc(14px + env(safe-area-inset-top));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));padding-bottom:calc(30px + env(safe-area-inset-bottom))}
 @media(min-width:1024px){
-  .appswitch,.hd,.buscabar,.ctrl,.stage,.nav,.catbar,.toolbar,.progress{max-width:780px}
+  .appswitch,.hd,.buscabar,.ctrl,.stage,.nav,.catbar,.toolbar,.progress,.quickbar{max-width:780px}
   .card{min-height:520px}
   .hero-img{height:240px}
   .hero-ph{height:230px}
@@ -301,6 +306,13 @@ body{padding-top:calc(14px + env(safe-area-inset-top));padding-left:max(16px,env
 .up-log .ok{color:#6ee7b7}.up-log .warn{color:#fcd34d}.up-log .err{color:#fda4af}
 .up-meta{font-size:10.5px;color:var(--faint);margin-top:7px;line-height:1.6}
 .up-reset{background:none;border:none;color:var(--faint);font-size:11px;font-weight:600;cursor:pointer;margin-top:8px;text-decoration:underline;text-underline-offset:3px}
+.up-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line)}
+.up-item:first-of-type{border-top:none}
+.up-item-tx{flex:1;min-width:0}
+.up-item-tx b{display:block;font-size:13px;font-weight:700}
+.up-item-tx span{display:block;font-size:10.5px;color:var(--faint);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.up-mini{background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;padding:9px 16px;font-size:12.5px;font-weight:700;cursor:pointer;flex:0 0 auto}
+.up-mini:active{transform:scale(.95)}
 #app-ver{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:calc(6px + env(safe-area-inset-bottom));z-index:99;display:flex;align-items:center;gap:7px;font-size:10px;font-weight:700;color:var(--faint);letter-spacing:.06em;pointer-events:none}
 #app-update{pointer-events:auto;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border:1.5px solid rgba(109,139,255,.55);border-radius:50%;background:rgba(109,139,255,.12);color:var(--accent);cursor:pointer;transition:background .15s}
 #app-update:active{transform:scale(.92)}
@@ -376,6 +388,12 @@ body{padding-top:calc(14px + env(safe-area-inset-top));padding-left:max(16px,env
 <div class="corte">Data de corte: 04/07/2026 (elaboração) · Cruzamento por série (col. Localização) · Sem dados inventados</div>
 </div>
 
+<div class="quickbar">
+<button onclick="openMap()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"></path><circle cx="12" cy="11" r="2.2"></circle></svg>Mapa</button>
+<button onclick="openDash()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>Painel</button>
+<button onclick="openOrc()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>Orçamento</button>
+</div>
+
 <div class="buscabar">
 <input id="busca" type="search" inputmode="numeric" autocomplete="off" placeholder="Buscar por nº do ativo, patrimônio, cidade…" oninput="onBusca(this.value)">
 <select id="cidadeFiltro" onchange="onCidade(this.value)"><option value="">Todas as cidades</option></select>
@@ -420,12 +438,9 @@ body{padding-top:calc(14px + env(safe-area-inset-top));padding-left:max(16px,env
 </div>
 <div class="toolbar">
 <button class="prim" onclick="openEditCurrent()">Editar card</button>
-<button onclick="openMap()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"></path><circle cx="12" cy="11" r="2.2"></circle></svg>Mapa</button>
-<button onclick="openDash()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>Painel</button>
 <button class="obr" onclick="openEE()">Obras / Equip. Especiais</button>
 <button onclick="newCard()">Novo card</button>
 <button class="prim" onclick="exportExcel()">Exportar Excel</button>
-<button onclick="openOrc()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><line x1="12" y1="2" x2="12" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>Orçamento</button>
 <button onclick="openUp()">Atualizar dados</button>
 </div>
 <div class="foot">Teclado: ← → navega · Espaço vira · Filtros no topo · Suas edições ficam salvas neste aparelho</div>
@@ -458,7 +473,7 @@ body{padding-top:calc(14px + env(safe-area-inset-top));padding-left:max(16px,env
 <div class="modal-bg" id="lineModal">
 <div class="modal-card">
 <h2>Adicionar código para substituição</h2>
-<div class="fld"><label>Código do material</label><input id="lm_cod" type="text" inputmode="numeric" placeholder="Ex.: 690005"></div>
+<div class="fld"><label>Código do material</label><input id="lm_cod" type="text" inputmode="numeric" placeholder="Ex.: 690005" list="codList" oninput="lmAutoFill(this.value)"><datalist id="codList"></datalist><div class="hlp" id="lm_hint">Digite ou escolha um código já usado nos pareceres — descrição, material e mão de obra preenchem sozinhos.</div></div>
 <div class="fld"><label>Descrição</label><input id="lm_desc" type="text" placeholder="Ex.: Tanque (parte ativa) + cordão umbilical"></div>
 <div class="fld"><label>Equipamento (opcional)</label><input id="lm_eq" type="text" placeholder="Série ou ID do card"></div>
 <div class="fld"><label>Quantidade</label><input id="lm_qtd" type="text" inputmode="numeric" value="1"></div>
@@ -475,12 +490,18 @@ body{padding-top:calc(14px + env(safe-area-inset-top));padding-left:max(16px,env
 <div class="modal-card">
 <h2>Atualizar dados</h2>
 <div class="up-card">
-<div class="up-t">Planilhas (.xlsx)</div>
-<div class="up-d">Envie as três planilhas, juntas ou separadas: <b>Ajustes Religadores</b>, <b>Ajustes Reguladores</b> e <b>Obras Eq. Especial</b>. O app reconhece cada uma sozinho e atualiza modelo, ajustes, cadastro ETO e obras. Suas edições manuais têm prioridade e nunca são apagadas.</div>
-<button class="up-btn" onclick="document.getElementById('sheetFile').click()">Enviar planilhas</button>
+<div class="up-t">Planilhas de atualização (.xlsx)</div>
+<div class="up-d">Envie cada planilha no seu botão — ou todas de uma vez no final. Suas edições manuais têm prioridade e nunca são apagadas.</div>
+<div class="up-item"><div class="up-item-tx"><b>Ajustes Religadores</b><span id="upSt_rl">usando dados embutidos</span></div><button class="up-mini" onclick="document.getElementById('sfRl').click()">Enviar</button></div>
+<input type="file" id="sfRl" accept=".xlsx,.xls" style="display:none" onchange="importSheetsTyped(event,'rl')">
+<div class="up-item"><div class="up-item-tx"><b>Ajustes Reguladores</b><span id="upSt_rt">usando dados embutidos</span></div><button class="up-mini" onclick="document.getElementById('sfRt').click()">Enviar</button></div>
+<input type="file" id="sfRt" accept=".xlsx,.xls" style="display:none" onchange="importSheetsTyped(event,'rt')">
+<div class="up-item"><div class="up-item-tx"><b>Obras Eq. Especial</b><span id="upSt_obras">usando dados embutidos</span></div><button class="up-mini" onclick="document.getElementById('sfOb').click()">Enviar</button></div>
+<input type="file" id="sfOb" accept=".xlsx,.xls" style="display:none" onchange="importSheetsTyped(event,'obras')">
+<button class="up-btn sec" style="margin-top:12px" onclick="document.getElementById('sheetFile').click()">Enviar todas de uma vez</button>
 <input type="file" id="sheetFile" accept=".xlsx,.xls" multiple style="display:none" onchange="importSheets(event)">
 <div class="up-log" id="upLog"></div>
-<div class="up-meta" id="upMeta"></div>
+<div class="up-meta" id="upMeta" style="display:none"></div>
 <button class="up-reset" onclick="resetSheets()">Voltar aos dados originais embutidos</button>
 </div>
 <div class="up-card">
@@ -1278,7 +1299,33 @@ function renderOrc(){
 }
 function openOrc(){document.getElementById('orcModal').classList.add('open');renderOrc();}
 function closeOrc(){document.getElementById('orcModal').classList.remove('open');}
-function openLineModal(){['lm_cod','lm_desc','lm_eq','lm_mat','lm_mo'].forEach(id=>document.getElementById(id).value='');document.getElementById('lm_qtd').value='1';document.getElementById('lineModal').classList.add('open');}
+function pecaCatalog(){
+  const cat={};
+  effectiveCards().forEach(c=>(c.pecas||[]).forEach(p=>{
+    const cod=String(p.cod||'').trim();if(!cod)return;
+    const mat=parseBRL(p.mat),mo=parseBRL(p.mo),tot=parseBRL(p.tot);
+    const entry={desc:p.peca||'',mat:mat||(mo?0:tot),mo:mo,score:(mat>0)+(mo>0)};
+    if(!cat[cod]||entry.score>cat[cod].score)cat[cod]=entry;
+  }));
+  return cat;
+}
+function lmAutoFill(v){
+  const cod=String(v||'').trim();const cat=pecaCatalog();const e=cat[cod];
+  const hint=document.getElementById('lm_hint');
+  if(!e){if(hint)hint.textContent='Digite ou escolha um código já usado nos pareceres — descrição, material e mão de obra preenchem sozinhos.';return;}
+  const f=(id,val)=>{const el=document.getElementById(id);if(el&&(!el.value||el.dataset.auto==='1')){el.value=val;el.dataset.auto='1';}};
+  f('lm_desc',e.desc);
+  f('lm_mat',e.mat?e.mat.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'');
+  f('lm_mo',e.mo?e.mo.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'');
+  if(hint)hint.textContent='Preenchido do catálogo: '+e.desc+(e.mo?' · MO '+fmtBRL(e.mo):' · sem MO conhecida para este código — informe se souber');
+}
+function openLineModal(){
+  ['lm_cod','lm_desc','lm_eq','lm_mat','lm_mo'].forEach(id=>{const el=document.getElementById(id);el.value='';delete el.dataset.auto;});
+  document.getElementById('lm_qtd').value='1';
+  const dl=document.getElementById('codList');
+  if(dl){const cat=pecaCatalog();dl.innerHTML=Object.keys(cat).sort().map(cod=>`<option value="${escAttr(cod)}">${escAttr(cat[cod].desc.slice(0,50))}</option>`).join('');}
+  document.getElementById('lineModal').classList.add('open');
+}
 function closeLineModal(){document.getElementById('lineModal').classList.remove('open');}
 function saveLineModal(){
   const cod=document.getElementById('lm_cod').value.trim(),desc=document.getElementById('lm_desc').value.trim();
@@ -1350,6 +1397,36 @@ function processObrasWb(wb,known){
   return null;
 }
 function stampNow(){return new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+async function processOneFile(f,known){
+  const buf=await f.arrayBuffer();
+  const wb=XLSX.read(buf,{cellDates:true});
+  let r;
+  if((r=processRLWb(wb,known))){
+    sheetData.rlaj=r.rlaj;sheetData.rleto=r.rleto;sheetData.confRl=r.conf;
+    sheetData.has.rl=true;sheetData.meta.rl={when:stampNow(),file:f.name,n:r.n,ne:r.ne};
+    upLog(f.name+' → Ajustes de Religadores: '+r.n+' equipamentos casados, '+r.ne+' no cadastro ETO.','ok');
+    return 'rl';
+  }
+  if((r=processRTWb(wb,known))){
+    sheetData.rtaj=r.rtaj;sheetData.rteto=r.rteto;sheetData.confRt=r.conf;
+    sheetData.has.rt=true;sheetData.meta.rt={when:stampNow(),file:f.name,n:r.n,ne:r.ne};
+    upLog(f.name+' → Ajustes de Reguladores: '+r.n+' equipamentos casados, '+r.ne+' no cadastro ETO.','ok');
+    return 'rt';
+  }
+  if((r=processObrasWb(wb,known))){
+    sheetData.obras=r.obras;
+    sheetData.has.obras=true;sheetData.meta.obras={when:stampNow(),file:f.name,n:r.n};
+    upLog(f.name+' → Obras Eq. Especial: '+r.n+' equipamentos casados.','ok');
+    return 'obras';
+  }
+  upLog(f.name+' → não reconheci o formato (esperava Ajustes RL Poste, Ajustes Reguladores ou a planilha de Obras).','warn');
+  return null;
+}
+function finishImport(){
+  sheetData.conf=(sheetData.confRl||[]).concat(sheetData.confRt||[]);
+  saveSheets();render();renderUpMeta();
+  upLog('Cards atualizados. Suas edições manuais foram preservadas.','ok');
+}
 async function importSheets(ev){
   const files=Array.from(ev.target.files||[]);ev.target.value='';
   if(!files.length)return;
@@ -1357,36 +1434,26 @@ async function importSheets(ev){
   upLog('Lendo '+files.length+' arquivo(s)…');
   try{await ensureXLSX();}catch(e){upLog(e.message,'err');return;}
   const known=knownSeries();
-  for(const f of files){
-    try{
-      const buf=await f.arrayBuffer();
-      const wb=XLSX.read(buf,{cellDates:true});
-      let r;
-      if((r=processRLWb(wb,known))){
-        sheetData.rlaj=r.rlaj;sheetData.rleto=r.rleto;sheetData.confRl=r.conf;
-        sheetData.has.rl=true;sheetData.meta.rl={when:stampNow(),file:f.name,n:r.n,ne:r.ne};
-        upLog(f.name+' → Ajustes de Religadores: '+r.n+' equipamentos casados, '+r.ne+' no cadastro ETO.','ok');
-      }else if((r=processRTWb(wb,known))){
-        sheetData.rtaj=r.rtaj;sheetData.rteto=r.rteto;sheetData.confRt=r.conf;
-        sheetData.has.rt=true;sheetData.meta.rt={when:stampNow(),file:f.name,n:r.n,ne:r.ne};
-        upLog(f.name+' → Ajustes de Reguladores: '+r.n+' equipamentos casados, '+r.ne+' no cadastro ETO.','ok');
-      }else if((r=processObrasWb(wb,known))){
-        sheetData.obras=r.obras;
-        sheetData.has.obras=true;sheetData.meta.obras={when:stampNow(),file:f.name,n:r.n};
-        upLog(f.name+' → Obras Eq. Especial: '+r.n+' equipamentos casados.','ok');
-      }else{
-        upLog(f.name+' → não reconheci o formato (esperava Ajustes RL Poste, Ajustes Reguladores ou a planilha de Obras).','warn');
-      }
-    }catch(e){upLog(f.name+' → erro ao ler: '+(e.message||e),'err');}
-  }
-  sheetData.conf=(sheetData.confRl||[]).concat(sheetData.confRt||[]);
-  saveSheets();render();renderUpMeta();
-  upLog('Cards atualizados. Suas edições manuais foram preservadas.','ok');
+  for(const f of files){try{await processOneFile(f,known);}catch(e){upLog(f.name+' → erro ao ler: '+(e.message||e),'err');}}
+  finishImport();
+}
+const TIPO_NOME={rl:'Ajustes Religadores',rt:'Ajustes Reguladores',obras:'Obras Eq. Especial'};
+async function importSheetsTyped(ev,tipo){
+  const f=(ev.target.files||[])[0];ev.target.value='';
+  if(!f)return;
+  document.getElementById('upLog').innerHTML='';
+  upLog('Lendo '+f.name+'…');
+  try{await ensureXLSX();}catch(e){upLog(e.message,'err');return;}
+  try{
+    const got=await processOneFile(f,knownSeries());
+    if(got&&got!==tipo)upLog('Atenção: você usou o botão de "'+TIPO_NOME[tipo]+'", mas este arquivo é de "'+TIPO_NOME[got]+'". Apliquei como '+TIPO_NOME[got]+'.','warn');
+    if(got)finishImport();
+  }catch(e){upLog(f.name+' → erro ao ler: '+(e.message||e),'err');}
 }
 function renderUpMeta(){
-  const m=sheetData.meta||{};const el=document.getElementById('upMeta');if(!el)return;
-  const line=(lab,x)=>lab+': '+(x?('atualizado em '+x.when+' — '+x.file):'usando dados embutidos');
-  el.innerHTML=[line('Religadores',m.rl),line('Reguladores',m.rt),line('Obras Eq. Especial',m.obras)].map(esc).join('<br>');
+  const m=sheetData.meta||{};
+  const set=(id,x,extra)=>{const el=document.getElementById(id);if(el)el.textContent=x?('atualizado em '+x.when+' · '+x.n+' equip.'+(extra&&x.ne!==undefined?' · '+x.ne+' ETO':'')+' · '+x.file):'usando dados embutidos';};
+  set('upSt_rl',m.rl,true);set('upSt_rt',m.rt,true);set('upSt_obras',m.obras,false);
 }
 function resetSheets(){
   if(!confirm('Descartar as planilhas enviadas e voltar aos dados embutidos originais?'))return;
