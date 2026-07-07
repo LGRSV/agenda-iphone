@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Flashcards — Equipamentos Especiais DCMD</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -241,13 +241,27 @@ body>*{animation:fadeUp .55s var(--ease) both}
 .card.enter{animation:cardIn .44s var(--spring)}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.06s!important}}
 /* rodada 1: topo mais enxuto — filtros em rolagem horizontal */
-.ctrl{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:8px 0;padding:1px 2px;-webkit-mask:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 14px),transparent);mask:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 14px),transparent)}
+.ctrl{width:100%;max-width:640px;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:8px 0;padding:1px 2px;-webkit-mask:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 14px),transparent);mask:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 14px),transparent)}
 .ctrl::-webkit-scrollbar{display:none}
 .ctrl .chip{flex:0 0 auto}
 .jbar{margin-bottom:8px}
-.backbar{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:12.5px;font-weight:600;padding:8px 14px;margin-bottom:8px;background:var(--surface2);border:1px solid var(--line);border-radius:100px;transition:transform .18s var(--spring),background .2s}
-.backbar:hover{background:var(--surface3)}
-.backbar:active{transform:scale(.95)}
+.appswitch{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:4px;width:100%;max-width:640px;margin:0 auto 14px}
+.appswitch a{flex:1;text-align:center;padding:10px 6px;border-radius:10px;color:var(--muted);text-decoration:none;font-weight:600;font-size:13px;transition:transform .18s var(--spring),background .2s,color .2s}
+.appswitch a.on{background:var(--surface3);color:var(--text)}
+.appswitch a:active{transform:scale(.96)}
+/* ===== responsivo: iPhone (safe areas) e desktop ===== */
+body{padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));padding-bottom:calc(30px + env(safe-area-inset-bottom))}
+@media(min-width:1024px){
+  .appswitch,.hd,.buscabar,.ctrl,.stage,.nav,.catbar,.toolbar,.progress{max-width:780px}
+  .card{min-height:520px}
+  .hero-img{height:240px}
+  .hero-ph{height:230px}
+  .hd h1{font-size:25px}
+  .serie{font-size:34px}
+  .face{padding:28px 26px}
+  .modal-card{max-width:660px}
+  .nav button{padding:15px;font-size:15px}
+}
 #mapModal{align-items:stretch;padding:0}
 #mapModal .map-wrap{display:flex;flex-direction:column;width:100%;min-height:100vh;height:100%;background:#0f1c33}
 .map-top{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;color:#fff;background:#1F3864;flex-shrink:0}
@@ -302,7 +316,10 @@ body>*{animation:fadeUp .55s var(--ease) both}
 .opbox .opv .opclock{display:block;font-size:13px;font-weight:700;color:#c15e1a;font-family:'SF Mono',monospace;margin-top:1px}
 </style></head><body>
 
-<a class="backbar" href="./">← Agenda Lagares</a>
+<div class="appswitch">
+<a href="./">Agenda</a>
+<a class="on" href="flashcards.html">Equipamentos Especiais</a>
+</div>
 
 <div class="hd">
 <h1>Flashcards · Equipamentos Especiais DCMD</h1>
@@ -847,7 +864,12 @@ async function openMap(){
     ]);
     const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
     sat.addTo(_map);
-    L.control.layers({'Satélite':sat,'Mapa (ruas)':osm},null,{position:'topright'}).addTo(_map);
+    const fdt=new Date(Date.now()-864e5),fd=fdt.getFullYear()+'-'+String(fdt.getMonth()+1).padStart(2,'0')+'-'+String(fdt.getDate()).padStart(2,'0');
+    const fogo=L.layerGroup([
+      L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_Thermal_Anomalies_375m_All/default/'+fd+'/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png',{maxNativeZoom:9,maxZoom:19,opacity:.9}),
+      L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_NOAA20_Thermal_Anomalies_375m_All/default/'+fd+'/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png',{maxNativeZoom:9,maxZoom:19,opacity:.9})
+    ]);
+    L.control.layers({'Satélite':sat,'Mapa (ruas)':osm},{'Focos de queimada (NASA, 24-48h)':fogo},{position:'topright'}).addTo(_map);
   }
   if(_mapLayer)_mapLayer.remove();
   _mapLayer=L.layerGroup().addTo(_map);
