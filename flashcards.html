@@ -825,23 +825,97 @@ function donorInfo(c){
   return sup.length?{supplies:sup}:null;
 }
 function isDonor(c){return !!donorInfo(c);}
-function exportExcel(){
-  const base=filtered();
-  if(!base.length){alert('Nada para exportar neste filtro.');return;}
-  const list=base.slice().sort((a,b)=>((CAT_LABELS[a.cat]||'ZZ Sem categoria').localeCompare(CAT_LABELS[b.cat]||'ZZ Sem categoria'))||String(a.serie).localeCompare(String(b.serie)));
-  const cols=['Ativo','Tipo','Localidade','Polo','Regional','SS atual','Criticidade','Priorização','Categoria','Decisão suprimento','Situação','Dias fora de operação','Data abertura SS','Parecer João/COEP','Defeito'];
-  const rows=[cols.join(';')];
-  list.forEach(c=>{
-    const cat=CAT_LABELS[c.cat]||'Sem categoria';
-    const data=c.dtocor?c.dtocor.split('-').reverse().join('/'):'';
-    rows.push([c.serie,c.tipo,c.local,c.polo,c.regional,c.ss,c.crit,c.prior,cat,c.dec,(c.concl?'Concluído':'Indisponível'),(c.concl?'':diasFora(c.dtocor)),data,c.parecer,c.defeito].map(csvCell).join(';'));
+function tcLoc(s){return String(s||'').toLowerCase().replace(/(^|\s)\S/g,m=>m.toUpperCase());}
+function catCompra(nome){
+  const n=(nome||'').toLowerCase();
+  if(/tanque|parte ativa/.test(n))return 'Parte ativa (Tanque)';
+  if(/c[eé]lula/.test(n))return 'Célula de regulador';
+  if(/controle/.test(n))return 'Controle completo';
+  if(/completo/.test(n))return 'Equipamento completo';
+  return 'Componentes/Acessórios';
+}
+function obraDe(c){const p=(c.obra||[]).find(x=>x[0]==='OBRA');return p?p[1]:'';}
+function kvView(c){
+  const t=(c.ee&&c.ee.ten)?String(c.ee.ten):'';           // tensão SEMPRE da planilha de Ajustes quando existir
+  if(t){const k=kvFromTen(t);if(k!=='ND')return k;}
+  return c.kv==='ND'?'':c.kv;
+}
+function descFonte(c){
+  const tipoSS=ssType(c.ss)||'SS';
+  const d=(c.desc||c.parecer||'').replace(/\s+/g,' ').trim();
+  return d?('['+tipoSS+'] '+d.slice(0,400)):'';
+}
+async function exportExcel(){
+  try{await ensureXLSX();}catch(e){alert(e.message);return;}
+  const all=effectiveCards();
+  if(!all.length){alert('Nada para exportar.');return;}
+  const lines=budgetLines();
+  const linesBy={};lines.forEach(l=>{if(!l.custom){(linesBy[l.cardId]=linesBy[l.cardId]||[]).push(l);}});
+  const stTrat=c=>(c.concl?'Concluído':(CAT_LABELS[c.cat]||'Sem categoria'));
+  const r2=n=>Math.round((n||0)*100)/100;
+
+  function detalheRows(tipo){
+    const rows=[];
+    all.filter(c=>c.tipo===tipo).sort((a,b)=>catCompra((linesBy[a.id]||[{nome:''}])[0].nome).localeCompare(catCompra((linesBy[b.id]||[{nome:''}])[0].nome))||String(a.serie).localeCompare(String(b.serie)))
+      .forEach(c=>{
+        const ls=linesBy[c.id];
+        const base=[c.ss||'',String(c.serie),c.modelo||'',tcLoc(c.local),tcLoc(c.polo||''),c.crit||'',kvView(c)];
+        if(ls&&ls.length){
+          ls.forEach(l=>{
+            const vu=r2(l.mat), cm=r2(l.mat*l.qtd), mo=r2(l.mo*l.qtd);
+            rows.push(base.concat([catCompra(l.nome),l.nome,l.qtd,l.cod||'(ver Premissas)',vu,cm,mo,r2(cm+mo),stTrat(c),obraDe(c),descFonte(c)]));
+          });
+        }else{
+          rows.push(base.concat(['(sem peça definida)','Ver descrição da SS','','','','','','',stTrat(c),obraDe(c),descFonte(c)]));
+        }
+      });
+    return rows;
+  }
+  const HEAD=['SS','Cód. Equipamento','Modelo (Ajustes)','Localidade','Polo','Criticidade','Tensão (kV)','Categoria de Compra','Item a Comprar','Qtd','Cód. Material','Valor Unitário','Custo Material','Custo Mão de Obra','Custo Total (Mat + MO)','Status Tratativa','OBRA','Descrição (fonte: SS)'];
+
+  // ---- Dinâmica (resumo) ----
+  let tm=0,tmo=0;const nSS=new Set();
+  lines.forEach(l=>{if(!l.custom){tm+=l.mat*l.qtd;tmo+=l.mo*l.qtd;nSS.add(l.cardId);}});
+  const grupos={};
+  all.forEach(c=>{const g=stTrat(c);grupos[g]=grupos[g]||{n:0,m:0,mo:0};grupos[g].n++;
+    (linesBy[c.id]||[]).forEach(l=>{grupos[g].m+=l.mat*l.qtd;grupos[g].mo+=l.mo*l.qtd;});});
+  const bt=budgetTotals();
+  const din=[
+    ['DINÂMICA — ORÇAMENTO EQUIPAMENTOS ESPECIAIS DCMD'],
+    ['Gerado pelo app em '+stampNow()+' · Modelos e tensões: planilhas de Ajustes · Descrições: SS (ETO-COEP/ETO-TELE)'],
+    [],
+    ['RESUMO GERAL'],
+    ['','Material (R$)','Mão de Obra (R$)','Custo Total (R$)','Nº de equipamentos','Nº de SS c/ peça'],
+    ['Total geral',r2(tm),r2(tmo),r2(tm+tmo),all.length,nSS.size],
+    ['Selecionado no orçamento do app',r2(bt.mat),r2(bt.mo),r2(bt.total),bt.eq,bt.itens],
+    [],
+    ['POR STATUS DE TRATATIVA (triagem do app)'],
+    ['','Nº equip.','Material (R$)','Mão de Obra (R$)','Custo Total (R$)'],
+  ];
+  Object.keys(grupos).forEach(g=>din.push([g,grupos[g].n,r2(grupos[g].m),r2(grupos[g].mo),r2(grupos[g].m+grupos[g].mo)]));
+  din.push(['TOTAL',all.length,r2(tm),r2(tmo),r2(tm+tmo)]);
+
+  // ---- Em Análise ----
+  const ean=[['EM ANÁLISE — AGUARDANDO DEFINIÇÃO'],['Descrições vindas da SS (ETO-COEP / ETO-TELE)'],[],
+    ['SS','Cód. Equip.','Localidade','Polo','Criticidade','Item/Observação','Descrição (fonte: SS)']];
+  all.filter(c=>c.cat==='analise'||/an[aá]lise/i.test(c.st||'')).forEach(c=>{
+    ean.push([c.ss||'',String(c.serie),tcLoc(c.local),tcLoc(c.polo||''),c.crit||'',c.defeito||'',descFonte(c)]);
   });
-  const csv='\uFEFF'+rows.join('\r\n');         // BOM p/ acentos abrirem certo no Excel
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
-  const url=URL.createObjectURL(blob),a=document.createElement('a');
-  a.href=url;a.download='equipamentos'+(busca?'-busca':(filtro!=='all'?'-'+filtro:''))+'.csv';
-  document.body.appendChild(a);a.click();
-  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},120);
+
+  // ---- Premissas e Preços ----
+  const cat=pecaCatalog();
+  const pre=[['PREMISSAS E PREÇOS UNITÁRIOS'],['Fonte: peças dos pareceres COEP + valores editados no app'],[],
+    ['Cód. Material','Descrição','Material (R$)','Mão de Obra (R$)','Total (R$)']];
+  Object.keys(cat).sort().forEach(cod=>{const e=cat[cod];pre.push([cod,e.desc,r2(e.mat),r2(e.mo),r2(e.mat+e.mo)]);});
+
+  const wb=XLSX.utils.book_new();
+  const add=(nome,aoa,widths)=>{const ws=XLSX.utils.aoa_to_sheet(aoa);if(widths)ws['!cols']=widths.map(w=>({wch:w}));XLSX.utils.book_append_sheet(wb,ws,nome);};
+  add('Dinâmica',din,[34,14,16,16,16,14]);
+  add('Detalhe Religadores',[['DETALHE — RELIGADORES'],['Modelos e tensões: planilha de Ajustes de Religadores'],[],HEAD].concat(detalheRows('RL')),[19,13,18,22,20,12,10,20,30,5,14,12,13,14,15,20,12,60]);
+  add('Reguladores',[['DETALHE — REGULADORES DE TENSÃO'],['Modelos e tensões: planilha de Ajustes de Reguladores'],[],HEAD].concat(detalheRows('RT')),[19,13,18,22,20,12,10,20,30,5,14,12,13,14,15,20,12,60]);
+  add('Em Análise',ean,[19,13,20,20,12,30,60]);
+  add('Premissas e Preços',pre,[14,42,13,14,13]);
+  XLSX.writeFile(wb,'Orcamento_Equipamentos_DCMD.xlsx');
 }
 function importBackup(ev){
   const file=ev.target.files&&ev.target.files[0];if(!file){return;}
