@@ -841,7 +841,13 @@ async function openMap(){
   const pts=effectiveCards().filter(c=>typeof c.mlat==='number'&&typeof c.mlng==='number');
   if(!_map){
     _map=L.map('mapCanvas',{zoomControl:true});
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(_map);
+    const sat=L.layerGroup([
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'© Esri · Maxar'}),
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:19})
+    ]);
+    const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
+    sat.addTo(_map);
+    L.control.layers({'Satélite':sat,'Mapa (ruas)':osm},null,{position:'topright'}).addTo(_map);
   }
   if(_mapLayer)_mapLayer.remove();
   _mapLayer=L.layerGroup().addTo(_map);
@@ -851,6 +857,7 @@ async function openMap(){
     const pop=`<b>${esc(c.serie)}</b> · ${esc(c.tipo)}<br>${esc(c.local)}${c.maprox?' <i>(aprox.)</i>':''}`
       +(c.ss?`<br>SS: ${esc(ssType(c.ss))}`:'')
       +`<br>Criticidade: ${esc(c.crit)}${c.prior?' · Prioriz. '+esc(c.prior):''}`
+      +`<br><a href="https://www.google.com/maps?q=${c.mlat.toFixed(6)},${c.mlng.toFixed(6)}&t=k&z=18" target="_blank" rel="noopener">Localização exata (Google satélite) ↗</a>`
       +`<br><a href="#" onclick="mapGoTo('${c.id}');return false;">Abrir card ›</a>`;
     m.bindPopup(pop);m.addTo(_mapLayer);bounds.push([c.mlat,c.mlng]);
   });
