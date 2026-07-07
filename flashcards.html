@@ -1385,13 +1385,17 @@ function processObrasWb(wb,known){
     const rows=rowsOf(wb,name);if(!rows||rows.length<3)continue;
     const hdr2=(rows[1]||[]).map(xnorm);
     if(hdr2.indexOf('OBRA')>=0&&hdr2.indexOf('EMD')>=0){
-      const obras={};let n=0;
+      const obras={};let n=0;const news=[];
       rows.slice(2).forEach(r=>{
-        const k=xnorm(r[1]);if(!k||!known.has(k))return;
+        const k=xnorm(r[1]);if(!k||!/^\d{9,}$/.test(k))return;
         const pairs=OBRAS_KEEP.map(([i,lab])=>[lab,xnorm(r[i])]).filter(p=>p[1]!=='');
-        obras[k]=pairs;n++;
+        if(known.has(k)){obras[k]=pairs;n++;}
+        else{
+          const tipoTx=xnorm(r[0]).toLowerCase();
+          news.push({serie:k,tipo:/regulador/.test(tipoTx)?'RT':'RL',ten:xnorm(r[2]),local:xnorm(r[4]),ss:xnorm(r[5]),defeito:xnorm(r[8]),pairs:pairs});
+        }
       });
-      return {obras,n};
+      return {obras,n,news};
     }
   }
   return null;
@@ -1417,14 +1421,36 @@ async function processOneFile(f,known){
     sheetData.obras=r.obras;
     sheetData.has.obras=true;sheetData.meta.obras={when:stampNow(),file:f.name,n:r.n};
     upLog(f.name+' → Obras Eq. Especial: '+r.n+' equipamentos casados.','ok');
+    _pendingNews=(r.news||[]);
     return 'obras';
   }
   upLog(f.name+' → não reconheci o formato (esperava Ajustes RL Poste, Ajustes Reguladores ou a planilha de Obras).','warn');
   return null;
 }
+let _pendingNews=[];
+function kvFromTen(t){t=String(t||'');if(t.indexOf('34')===0)return'34,5';if(t.indexOf('13')===0)return'13,8';return'ND';}
+function offerNewCards(){
+  if(!_pendingNews.length)return;
+  const list=_pendingNews;_pendingNews=[];
+  const resumo=list.slice(0,6).map(x=>x.serie+' ('+x.local+')').join(', ')+(list.length>6?'…':'');
+  if(!confirm('A planilha de Obras tem '+list.length+' equipamento(s) que ainda não têm flashcard:\n'+resumo+'\n\nCriar os flashcards automaticamente?'))
+    {upLog(list.length+' equipamento(s) novo(s) ignorado(s) — você pode reenviar a planilha para criar depois.','warn');return;}
+  let seq=1;
+  list.forEach(x=>{
+    const c=blankCard();
+    c.id=x.tipo+'-N'+String(Date.now()).slice(-4)+String(seq++);
+    c.tipo=x.tipo;c.serie=x.serie;c.local=x.local;c.kv=kvFromTen(x.ten);
+    c.ss=x.ss;c.defeito=x.defeito||'Ver planilha de Obras';
+    c.st='Novo — veio da planilha de Obras';c.parecer='';
+    overrides.__new__.push(c);
+    sheetData.obras[xnorm(x.serie)]=x.pairs;
+  });
+  saveOverrides();saveSheets();
+  upLog(list.length+' flashcard(s) criado(s) a partir da planilha de Obras. Estão no filtro "Todos" e podem ser editados normalmente.','ok');
+}
 function finishImport(){
   sheetData.conf=(sheetData.confRl||[]).concat(sheetData.confRt||[]);
-  saveSheets();render();renderUpMeta();
+  saveSheets();offerNewCards();render();renderUpMeta();
   upLog('Cards atualizados. Suas edições manuais foram preservadas.','ok');
 }
 async function importSheets(ev){
