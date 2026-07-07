@@ -1421,7 +1421,6 @@ async function processOneFile(f,known){
     sheetData.obras=r.obras;
     sheetData.has.obras=true;sheetData.meta.obras={when:stampNow(),file:f.name,n:r.n};
     upLog(f.name+' → Obras Eq. Especial: '+r.n+' equipamentos casados.','ok');
-    _pendingNews=(r.news||[]);
     return 'obras';
   }
   upLog(f.name+' → não reconheci o formato (esperava Ajustes RL Poste, Ajustes Reguladores ou a planilha de Obras).','warn');
