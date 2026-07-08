@@ -87,11 +87,12 @@
       .notas-cond-branch{margin-bottom:10px}
       .notas-cond-cap{display:block;font-size:11px;font-weight:800;color:var(--text);margin-bottom:6px}
       .notas-cond-cap b{color:var(--accent);font-weight:800}
-      .notas-cond-fields{display:grid;grid-template-columns:1fr 132px;gap:7px}
+      .notas-cond-fields{display:grid;grid-template-columns:1fr 128px 92px;gap:7px}
       .notas-cond-fields input{min-height:40px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px}
       .notas-cond-fields input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(117,203,255,.2)}
+      .notas-cond-fields .notas-cond-txt{grid-column:1/-1}
       .notas-cond-hint{margin:2px 0 0;color:var(--faint);font-size:10.5px;line-height:1.4}
-      @media(max-width:390px){.notas-cond-fields{grid-template-columns:1fr}}
+      @media(max-width:430px){.notas-cond-fields{grid-template-columns:1fr 1fr}.notas-cond-fields .notas-cond-txt{grid-column:1/-1}}
       .notas-detail{width:100%;min-height:72px;padding:9px 11px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--text);font-size:14px;line-height:1.45;resize:vertical;font-family:inherit;outline:0}
       .notas-detail:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(117,203,255,.2)}
       .notas-detail-row{display:flex;justify-content:flex-end;margin-top:7px}
@@ -140,9 +141,9 @@
       `<div class="notas-sep"></div>` +
       `<p class="notas-label">Condicional (opcional)</p>` +
       (function(){const cond=note.cond||{};return `<div class="notas-cond">` +
-        `<div class="notas-cond-branch"><span class="notas-cond-cap">Se eu <b>concluir</b> esta tarefa, criar:</span><div class="notas-cond-fields"><input class="notas-cond-then" type="text" maxlength="200" placeholder="Nova tarefa" value="${escAttr(cond.thenText || '')}"><input class="notas-cond-then-date" type="date" value="${escAttr(cond.thenDate || '')}"></div></div>` +
-        `<div class="notas-cond-branch"><span class="notas-cond-cap">Se <b>não acontecer</b> (passar da data), criar:</span><div class="notas-cond-fields"><input class="notas-cond-else" type="text" maxlength="200" placeholder="Nova tarefa" value="${escAttr(cond.elseText || '')}"><input class="notas-cond-else-date" type="date" value="${escAttr(cond.elseDate || '')}"></div></div>` +
-        `<p class="notas-cond-hint">A nova tarefa é criada sozinha ao concluir (ramo "concluir") ou quando a data passar sem concluir (ramo "não acontecer"). Sem data preenchida, usa a data desta tarefa.</p>` +
+        `<div class="notas-cond-branch"><span class="notas-cond-cap">Se eu <b>concluir</b> esta tarefa, criar:</span><div class="notas-cond-fields"><input class="notas-cond-then notas-cond-txt" type="text" maxlength="200" placeholder="Nova tarefa" value="${escAttr(cond.thenText || '')}"><input class="notas-cond-then-date" type="date" value="${escAttr(cond.thenDate || '')}"><input class="notas-cond-then-time" type="time" value="${escAttr(cond.thenTime || '')}"></div></div>` +
+        `<div class="notas-cond-branch"><span class="notas-cond-cap">Se <b>não acontecer</b> (passar da data), criar:</span><div class="notas-cond-fields"><input class="notas-cond-else notas-cond-txt" type="text" maxlength="200" placeholder="Nova tarefa" value="${escAttr(cond.elseText || '')}"><input class="notas-cond-else-date" type="date" value="${escAttr(cond.elseDate || '')}"><input class="notas-cond-else-time" type="time" value="${escAttr(cond.elseTime || '')}"></div></div>` +
+        `<p class="notas-cond-hint">A nova tarefa é criada sozinha ao concluir (ramo "concluir") ou quando a data passar sem concluir (ramo "não acontecer"). Sem data preenchida, usa a data desta tarefa; o horário é opcional.</p>` +
         `</div>`;})() +
       `<div class="notas-sep"></div>` +
       `<p class="notas-label">Detalhes</p>` +
@@ -173,14 +174,14 @@
     const parcRest = rEl ? rEl.value.trim() : (prev.parcRest || '');
     const prio = panel.dataset.priolevel || '';
     const gv = sel => { const el = panel.querySelector(sel); return el ? el.value.trim() : ''; };
-    const thenText = gv('.notas-cond-then'), thenDate = gv('.notas-cond-then-date');
-    const elseText = gv('.notas-cond-else'), elseDate = gv('.notas-cond-else-date');
+    const thenText = gv('.notas-cond-then'), thenDate = gv('.notas-cond-then-date'), thenTime = gv('.notas-cond-then-time');
+    const elseText = gv('.notas-cond-else'), elseDate = gv('.notas-cond-else-date'), elseTime = gv('.notas-cond-else-time');
     const prevCond = prev.cond || {};
     let cond = null;
     if (thenText || elseText) {
       cond = {
-        thenText, thenDate, thenFired: prevCond.thenText === thenText ? !!prevCond.thenFired : false,
-        elseText, elseDate, elseFired: prevCond.elseText === elseText ? !!prevCond.elseFired : false
+        thenText, thenDate, thenTime, thenFired: prevCond.thenText === thenText ? !!prevCond.thenFired : false,
+        elseText, elseDate, elseTime, elseFired: prevCond.elseText === elseText ? !!prevCond.elseFired : false
       };
     }
     setNote(id, { prio, durationMin, detail, valor, parcPagas, parcRest, cond, subs });
@@ -300,7 +301,7 @@
   document.addEventListener('input', e => {
     const panel = e.target.closest('.notas-panel');
     if (!panel) return;
-    if (e.target.matches('.notas-detail') || e.target.matches('.notas-valor') || e.target.matches('.notas-parc-pagas') || e.target.matches('.notas-parc-rest') || e.target.matches('.notas-cond-then') || e.target.matches('.notas-cond-then-date') || e.target.matches('.notas-cond-else') || e.target.matches('.notas-cond-else-date') || e.target.matches('.notas-sub input[type=text]')) debouncedSave(panel);
+    if (e.target.matches('.notas-detail') || e.target.matches('.notas-valor') || e.target.matches('.notas-parc-pagas') || e.target.matches('.notas-parc-rest') || e.target.matches('.notas-cond-then') || e.target.matches('.notas-cond-then-date') || e.target.matches('.notas-cond-then-time') || e.target.matches('.notas-cond-else') || e.target.matches('.notas-cond-else-date') || e.target.matches('.notas-cond-else-time') || e.target.matches('.notas-sub input[type=text]')) debouncedSave(panel);
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.target.matches('.notas-add input')) {

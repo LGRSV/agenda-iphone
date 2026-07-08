@@ -436,7 +436,7 @@
         const NK='agenda_notas_v1';
         const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
         if(!tasks.some(t=>t.id==='sd17-orcpessoal'||(/or[çc]amento pessoal/i.test(t.text)||(/planilhar/i.test(t.text)&&/gasto/i.test(t.text))))){
-          tasks.push({id:'sd17-orcpessoal',text:'Começar a planilhar orçamento pessoal (gastos e ganhos)',date:'2026-07-09',time:'21:30',tag:'financeiro',reminder:0,done:false});
+          tasks.push({id:'sd17-orcpessoal',text:'Começar a planilhar orçamento pessoal (gastos e ganhos)',date:'2026-07-09',time:'20:00',tag:'financeiro',reminder:0,done:false});
           notas['sd17-orcpessoal']={prio:'',durationMin:null,detail:'Iniciar o controle de orçamento pessoal: montar a planilha de gastos e ganhos e começar o fluxo. (Sem estresse — se estiver cansado, só deixar a estrutura pronta já vale.)',valor:'',parcPagas:'',parcRest:'',subs:[{text:'Listar ganhos fixos',done:false},{text:'Listar gastos fixos',done:false},{text:'Criar categorias',done:false}]};
         }
         localStorage.setItem(NK,JSON.stringify(notas));
@@ -466,6 +466,43 @@
         localStorage.setItem(NK,JSON.stringify(notas));
         save();
         localStorage.setItem('agenda_seed_pessoal_v19','1');
+      }catch(_){}
+    })();
+    (function seedPessoal20(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v20'))return;
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        // 1) Corte de cabelo vira condicional na mensagem pro Allan (sd5-allan)
+        const allan=notas['sd5-allan']||{prio:'',durationMin:null,detail:'',valor:'',subs:[]};
+        allan.cond={
+          thenText:'Cortar o cabelo',thenDate:'2026-07-09',thenTime:'11:30',thenFired:false,
+          elseText:'Remarcar corte de cabelo (Allan)',elseDate:'2026-07-09',elseTime:'18:30',elseFired:false
+        };
+        notas['sd5-allan']=allan;
+        // remove o card antigo "Cortar o cabelo (se o Allan confirmar)" — agora nasce do condicional
+        tasks=tasks.filter(t=>t.id!=='sd7-corte');
+        if(notas['sd7-corte'])delete notas['sd7-corte'];
+        // 2) Orçamento pessoal: 20:00, subtarefa de cobrar o pai e case p/ o dia seguinte na academia
+        const orc=notas['sd17-orcpessoal'];
+        tasks.forEach(t=>{if(t.id==='sd17-orcpessoal'&&!t.done)t.time='20:00';});
+        if(orc){
+          orc.cond={thenText:'',thenDate:'',thenTime:'',thenFired:false,elseText:'Orçamento pessoal — fazer pelo menos o rascunho',elseDate:'2026-07-10',elseTime:'05:30',elseFired:false};
+          orc.subs=Array.isArray(orc.subs)?orc.subs:[];
+          if(!orc.subs.some(s=>/cobrar/i.test(s.text)&&/pai/i.test(s.text))){
+            orc.subs.push({text:'Cobrar do pai: Vale Alimentação usado + Ubers do mês passado (carro da mãe no conserto) + valor restante sem a peça (atrelado à venda do iPhone 13, ainda não anunciado)',done:false});
+          }
+          notas['sd17-orcpessoal']=orc;
+        }
+        // 3) Mensagem pronta para o Paulo
+        const paulo=notas['sd19-paulo'];
+        if(paulo&&paulo.detail&&!/Mensagem para enviar/i.test(paulo.detail)){
+          paulo.detail=paulo.detail+'\n\nMensagem para enviar:\n"Fala Paulo, beleza? Você tem Testosterona da Landerland em estoque? Se tiver, consigo pegar no fim do dia (17:30) ou você consegue entregar aqui na Energisa? E aproveitando: ainda tem interesse no iPhone 16 Pro Max pra compra? Abraço!"';
+          notas['sd19-paulo']=paulo;
+        }
+        localStorage.setItem(NK,JSON.stringify(notas));
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v20','1');
       }catch(_){}
     })();
     el.currentDate.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'}).format(new Date());applyTheme(localStorage.getItem(THEME_KEY)==='light'?'light':'dark');topUpRecurring();render();if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{if(sessionStorage.getItem('sw_reloaded'))return;sessionStorage.setItem('sw_reloaded','1');}catch(_){}location.reload();});registerWorker().then(function(r){try{if(r&&r.update)r.update();}catch(_){}}).catch(()=>{});}setInterval(checkAlerts,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAlerts()});
@@ -1087,8 +1124,8 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
 
   <script src="./treino.js?v=7"></script>
   <script src="./painel.js?v=1"></script>
-  <script src="./notas.js?v=4"></script>
-  <script src="./condicional.js?v=1"></script>
+  <script src="./notas.js?v=5"></script>
+  <script src="./condicional.js?v=2"></script>
   <script src="./sync.js?v=1"></script>
 </body>
 </html>

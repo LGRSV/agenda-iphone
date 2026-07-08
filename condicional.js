@@ -29,14 +29,16 @@
     const t0 = todayStr();
     let notesChanged = false;
 
+    const isTime = s => /^\d{2}:\d{2}$/.test(String(s || ''));
     const alreadyOpen = (text, date) => tasks.some(t => !t.done && t.text === text && t.date === date);
-    function createFollow(text, date, tag) {
+    function createFollow(text, date, tag, time) {
       const d = isDate(date) ? date : t0;
+      const hm = isTime(time) ? time : '';
       if (alreadyOpen(text, d)) return; // evita duplicar
       if (api && typeof api.addTask === 'function') {
-        api.addTask({ text, date: d, time: '', tag: tag || 'pessoal' });
+        api.addTask({ text, date: d, time: hm, tag: tag || 'pessoal' });
       } else {
-        tasks.push({ id: 'cond-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), text, date: d, time: '', tag: tag || 'pessoal', reminder: -1, done: false });
+        tasks.push({ id: 'cond-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), text, date: d, time: hm, tag: tag || 'pessoal', reminder: hm ? 0 : -1, done: false });
         localStorage.setItem(TASK_KEY, JSON.stringify(tasks));
       }
     }
@@ -50,12 +52,12 @@
 
       // Ramo "concluir": origem marcada como feita.
       if (task.done && String(cond.thenText || '').trim() && !cond.thenFired) {
-        createFollow(cond.thenText.trim(), cond.thenDate || task.date, task.tag);
+        createFollow(cond.thenText.trim(), cond.thenDate || task.date, task.tag, cond.thenTime);
         cond.thenFired = true; notesChanged = true;
       }
       // Ramo "não acontecer": não concluída e a data já passou.
       if (!task.done && String(cond.elseText || '').trim() && !cond.elseFired && isDate(task.date) && task.date < t0) {
-        createFollow(cond.elseText.trim(), cond.elseDate || t0, task.tag);
+        createFollow(cond.elseText.trim(), cond.elseDate || t0, task.tag, cond.elseTime);
         cond.elseFired = true; notesChanged = true;
       }
     });
