@@ -161,7 +161,7 @@
         const novas=[
           {id:'sd2-janta',text:'Janta',date:'2026-07-08',time:'21:00',tag:'pessoal',reminder:-1,done:false},
           {id:'sd2-lavar',text:'Lavar roupa',date:'2026-07-08',time:'20:40',tag:'casa',reminder:0,done:false},
-          {id:'sd2-secar',text:'Secar roupa',date:'2026-07-08',time:'23:40',tag:'casa',reminder:0,done:false},
+          {id:'sd2-secar',text:'Secar roupa',date:'2026-07-08',time:'23:40',tag:'casa',reminder:0,done:true},
           {id:'sd2-medvet',text:'Renomear hospital no repositório de estoque',date:'2026-07-08',time:'',tag:'pessoal',reminder:-1,done:false},
           {id:'sd2-radios',text:'Entregar rádios no DMSL',date:'2026-07-09',time:'07:30',tag:'trabalho',reminder:15,done:false},
           {id:'sd2-kml',text:'Simular KML T1/T2 (COEP 2025)',date:'2026-07-11',time:'',tag:'trabalho',reminder:-1,done:false},
@@ -420,6 +420,14 @@
           localStorage.setItem(NK,JSON.stringify(notas));
         }
         localStorage.setItem('agenda_seed_pessoal_v15','1');
+      }catch(_){}
+    })();
+    (function seedPessoal16(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v16'))return;
+        tasks.forEach(t=>{if(t.id==='sd2-secar'&&!t.done)t.done=true;});
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v16','1');
       }catch(_){}
     })();
     el.currentDate.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'}).format(new Date());applyTheme(localStorage.getItem(THEME_KEY)==='light'?'light':'dark');topUpRecurring();render();if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{if(sessionStorage.getItem('sw_reloaded'))return;sessionStorage.setItem('sw_reloaded','1');}catch(_){}location.reload();});registerWorker().then(function(r){try{if(r&&r.update)r.update();}catch(_){}}).catch(()=>{});}setInterval(checkAlerts,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAlerts()});
