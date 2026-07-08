@@ -1,6 +1,6 @@
-const CACHE = 'agenda-lagares-v99';
+const CACHE = 'agenda-lagares-v100';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
-const TREINO_SCRIPT = '<script src="./treino.js?v=7"><\/script>';
+const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
 const NOTAS_SCRIPT = '<script src="./notas.js?v=5"><\/script>';
 const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3"><\/script>';
@@ -77,4 +77,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v99-voz-jarvis-menos-picada
+// redeploy trigger v100-recupera-treinos
