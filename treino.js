@@ -616,10 +616,76 @@
     });
   }
 
+  /* ---------------- registrar cardio avulso (fora do treino) ------------- */
+  const CARDIO_DIALOG_ID = 'cardioDialog';
+  function isoDay(d) { const p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+  function ensureCardioUI() {
+    if (document.getElementById('cardioFab')) return;
+    const st = document.createElement('style');
+    st.textContent = `
+      #cardioFab{position:fixed;z-index:5;right:max(18px,env(safe-area-inset-right));bottom:calc(88px + env(safe-area-inset-bottom));width:48px;height:48px;display:grid;place-items:center;border:1px solid var(--line);border-radius:15px;background:var(--surface);color:var(--accent);box-shadow:0 10px 24px rgba(0,0,0,.25);transition:transform .14s ease}
+      #cardioFab:active{transform:scale(.94)}
+      @media(min-width:600px){#cardioFab{right:calc((100vw - min(100vw,760px))/2 + 22px)}}
+      #${CARDIO_DIALOG_ID} .two-fields{margin-top:0}`;
+    document.head.appendChild(st);
+    const b = document.createElement('button');
+    b.id = 'cardioFab'; b.type = 'button'; b.title = 'Registrar cardio'; b.setAttribute('aria-label', 'Registrar cardio');
+    b.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 8.6a5.5 5.5 0 0 0-9.3-3.9L12 5l.5-.3a5.5 5.5 0 0 0-9.3 3.9c0 5 8.8 10.5 8.8 10.5S20.8 13.6 20.8 8.6z"/><path d="M3.5 12h4l1.5-2.5 2 4 1.5-2.5h4"/></svg>';
+    document.body.appendChild(b);
+    const dlg = document.createElement('dialog');
+    dlg.id = CARDIO_DIALOG_ID;
+    dlg.innerHTML = `<form class="modal" id="cardioForm" method="dialog">
+      <h3>Registrar cardio</h3>
+      <p>Registra um cardio feito fora do treino — vale para dias anteriores.</p>
+      <label class="field-label" for="cdAtiv">Atividade</label>
+      <select id="cdAtiv"><option>Caminhada</option><option>Corrida</option><option>Bicicleta</option><option>Esteira</option><option>Elíptico</option><option>Natação</option><option selected>Cardio</option></select>
+      <div class="two-fields">
+        <div><label class="field-label" for="cdData">Data</label><input id="cdData" type="date" required></div>
+        <div><label class="field-label" for="cdDur">Duração (h:min)</label><input id="cdDur" type="time" value="01:00" required></div>
+      </div>
+      <label class="field-label" for="cdObs">Observação (opcional)</label>
+      <input id="cdObs" type="text" maxlength="120" autocomplete="off" placeholder="Ex.: trilha no parque">
+      <div class="actions"><button class="secondary" type="button" id="cdCancel">Cancelar</button><button class="primary" type="submit">Salvar</button></div>
+    </form>`;
+    document.body.appendChild(dlg);
+    b.addEventListener('click', () => {
+      const ontem = new Date(); ontem.setDate(ontem.getDate() - 1);
+      dlg.querySelector('#cdData').value = isoDay(ontem);
+      dlg.querySelector('#cdDur').value = '01:00';
+      dlg.querySelector('#cdObs').value = '';
+      dlg.showModal();
+    });
+    dlg.querySelector('#cdCancel').addEventListener('click', () => dlg.close());
+    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+    dlg.querySelector('#cardioForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const ativ = dlg.querySelector('#cdAtiv').value;
+      const date = dlg.querySelector('#cdData').value;
+      const dur = dlg.querySelector('#cdDur').value;
+      const obs = dlg.querySelector('#cdObs').value.trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(dur)) return;
+      const [h, m] = dur.split(':').map(Number);
+      if (h === 0 && m === 0) { toast('Duração não pode ser zero.'); return; }
+      const durTx = h > 0 ? (h + 'h' + String(m).padStart(2, '0')) : (m + 'min');
+      const tasks = readTasks();
+      tasks.push({
+        id: 'cardio-' + Date.now(),
+        text: 'Cardio — ' + ativ + ' ' + durTx + (obs ? ' · ' + obs : ''),
+        date, time: '', tag: 'saude', reminder: -1,   // 'saude' = tag Academia da agenda
+        done: date <= isoDay(new Date())            // dia passado/hoje entra como concluído
+      });
+      writeTasks(tasks);
+      dlg.close();
+      toast('Cardio de ' + durTx + ' registrado' + (date < isoDay(new Date()) ? ' (retroativo)' : '') + '.');
+      setTimeout(() => window.location.reload(), 450);
+    });
+  }
+
   /* -------------------------------- init --------------------------------- */
   function init() {
     if (ensureTasks()) { window.location.reload(); return; }
     ensureStyles();
+    ensureCardioUI();
     installButtons();
 
     let frame = 0;
