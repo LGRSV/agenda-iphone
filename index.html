@@ -385,6 +385,26 @@
         localStorage.setItem('agenda_seed_pessoal_v13','1');
       }catch(_){}
     })();
+    (function seedPessoal14(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v14'))return;
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        // Cardio de hoje (08/07) concluído — 1h01
+        if(!tasks.some(t=>t.date==='2026-07-08'&&/cardio/i.test(t.text))){
+          tasks.push({id:'sd14-cardio-0807',text:'Cardio — 1h01',date:'2026-07-08',time:'',tag:'saude',reminder:-1,done:true});
+          notas['sd14-cardio-0807']={prio:'',durationMin:61,detail:'',valor:'',parcPagas:'',parcRest:'',subs:[]};
+        }
+        // Cobrar parcela do Pitágoras — PS5 vendido (R$ 350) — 06/10
+        if(!tasks.some(t=>t.id==='sd14-pitagoras'||/pit[aá]goras/i.test(t.text))){
+          tasks.push({id:'sd14-pitagoras',text:'Cobrar parcela do Pitágoras — PS5',date:'2026-10-06',time:'',tag:'financeiro',reminder:-1,done:false});
+          notas['sd14-pitagoras']={prio:'',durationMin:null,detail:'Cobrar a parcela do Pitágoras referente à venda do PlayStation 5 (R$ 350). Preencher parcelas pagas/restantes conforme for recebendo.',valor:'350',parcPagas:'',parcRest:'',subs:[]};
+        }
+        localStorage.setItem(NK,JSON.stringify(notas));
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v14','1');
+      }catch(_){}
+    })();
     el.currentDate.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'}).format(new Date());applyTheme(localStorage.getItem(THEME_KEY)==='light'?'light':'dark');topUpRecurring();render();if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{if(sessionStorage.getItem('sw_reloaded'))return;sessionStorage.setItem('sw_reloaded','1');}catch(_){}location.reload();});registerWorker().then(function(r){try{if(r&&r.update)r.update();}catch(_){}}).catch(()=>{});}setInterval(checkAlerts,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAlerts()});
     (function(){function wire(){const b=document.getElementById('app-update');if(b&&!b.dataset.wired){b.dataset.wired='1';b.addEventListener('click',appForceUpdate);}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();})();
     el.themeToggle.addEventListener('click',()=>applyTheme(el.root.dataset.theme==='dark'?'light':'dark'));el.alertsBtn.addEventListener('click',()=>{updateAlertsStatus();el.alertsDialog.showModal()});$('#closeAlertsDialog').addEventListener('click',()=>el.alertsDialog.close());$('#activateAlerts').addEventListener('click',activateAlerts);$('#exportCalendar').addEventListener('click',exportCalendar);$('#openDialog').addEventListener('click',openTaskForm);$('#closeTaskDialog').addEventListener('click',()=>el.taskDialog.close());
@@ -1002,9 +1022,9 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
   </script>
   <!-- ========== /JARVIS v2 ========== -->
 
-  <script src="./treino.js?v=5"></script>
+  <script src="./treino.js?v=6"></script>
   <script src="./painel.js?v=1"></script>
-  <script src="./notas.js?v=1"></script>
+  <script src="./notas.js?v=3"></script>
   <script src="./sync.js?v=1"></script>
 </body>
 </html>

@@ -16,6 +16,8 @@
   const HORIZON = 90;   // gera treinos para os próximos 90 dias
   const REGEN = 60;     // regera quando a cobertura cair abaixo de 60 dias
   const META_VERSION = 3; // sobe quando a regra de geração muda (seg–sex, 05:30)
+  const TIME_KEY = 'agenda_treino_time_v1'; // horário do treino, ajustável pelo editor ("aplicar a todos os próximos")
+  const treinoTime = () => { try { const t = localStorage.getItem(TIME_KEY); return /^\d{2}:\d{2}$/.test(t || '') ? t : '05:30'; } catch (_) { return '05:30'; } };
 
   /* ---------- animações dos exercícios (SVG + SMIL, tudo offline) --------
      Bonequinho articulado: os membros dobram no cotovelo/joelho e o
@@ -233,7 +235,7 @@
       if (!tk.done) {
         const text = workoutText(workoutForDate(tk.date));
         if (tk.text !== text) { tk.text = text; changed = true; }
-        if (tk.time !== '05:30') { tk.time = '05:30'; changed = true; }
+        if (tk.time !== treinoTime()) { tk.time = treinoTime(); changed = true; }
       }
     }
 
@@ -242,7 +244,7 @@
     for (let d = t0; d <= target; d = addDays(d, 1)) {
       if (isWeekend(d) || have.has(d)) continue;
       const w = workoutForDate(d);
-      tasks.push({ id: 'treino-' + d, text: workoutText(w), date: d, time: '05:30', tag: 'saude', reminder: 0, done: false });
+      tasks.push({ id: 'treino-' + d, text: workoutText(w), date: d, time: treinoTime(), tag: 'saude', reminder: 0, done: false });
       changed = true;
     }
 

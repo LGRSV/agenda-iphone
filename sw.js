@@ -1,8 +1,8 @@
-const CACHE = 'agenda-lagares-v91';
-const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=2"><\/script>';
-const TREINO_SCRIPT = '<script src="./treino.js?v=5"><\/script>';
+const CACHE = 'agenda-lagares-v92';
+const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
+const TREINO_SCRIPT = '<script src="./treino.js?v=6"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
-const NOTAS_SCRIPT = '<script src="./notas.js?v=2"><\/script>';
+const NOTAS_SCRIPT = '<script src="./notas.js?v=3"><\/script>';
 const SYNC_SCRIPT = '<script src="./sync.js?v=9"><\/script>';
 const UNDO_SCRIPT = '<script src="./undo.js?v=1"><\/script>';
 const LIXEIRA_SCRIPT = '<script src="./lixeira.js?v=1"><\/script>';
@@ -75,4 +75,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v91-academia-0530
+// redeploy trigger v92-parcelas-aplicar-futuro
