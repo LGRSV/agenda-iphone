@@ -32,7 +32,8 @@
     const isTime = s => /^\d{2}:\d{2}$/.test(String(s || ''));
     const alreadyOpen = (text, date) => tasks.some(t => !t.done && t.text === text && t.date === date);
     function createFollow(text, date, tag, time) {
-      const d = isDate(date) ? date : t0;
+      const base = isDate(date) ? date : t0;
+      const d = base < t0 ? t0 : base; // se a data já passou, agenda para hoje (dia da detecção)
       const hm = isTime(time) ? time : '';
       if (alreadyOpen(text, d)) return; // evita duplicar
       if (api && typeof api.addTask === 'function') {
