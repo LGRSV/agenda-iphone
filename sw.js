@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v88';
+const CACHE = 'agenda-lagares-v89';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=2"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=4"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -75,4 +75,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v88-capo-corolla
+// redeploy trigger v89-cobrancas-11-07
