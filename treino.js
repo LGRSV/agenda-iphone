@@ -1,6 +1,6 @@
 /* =========================================================================
    Treino A/B/C — módulo de academia para a Agenda Lagares
-   - Injeta um card de treino todo dia às 06:00 (rotação A -> B -> C)
+   - Injeta um card de treino todo dia às 05:30 (rotação A -> B -> C)
    - Abre um painel com os exercícios, campo de peso/reps e evolução
    - Cada exercício traz uma animação (SVG) mostrando o movimento
    Segue o mesmo padrão de enhancement do edit-enhancement.js
@@ -15,7 +15,7 @@
   const STYLE_ID = 'treinoStyles';
   const HORIZON = 90;   // gera treinos para os próximos 90 dias
   const REGEN = 60;     // regera quando a cobertura cair abaixo de 60 dias
-  const META_VERSION = 2; // sobe quando a regra de geração muda (seg–sex)
+  const META_VERSION = 3; // sobe quando a regra de geração muda (seg–sex, 05:30)
 
   /* ---------- animações dos exercícios (SVG + SMIL, tudo offline) --------
      Bonequinho articulado: os membros dobram no cotovelo/joelho e o
@@ -233,7 +233,7 @@
       if (!tk.done) {
         const text = workoutText(workoutForDate(tk.date));
         if (tk.text !== text) { tk.text = text; changed = true; }
-        if (tk.time !== '06:00') { tk.time = '06:00'; changed = true; }
+        if (tk.time !== '05:30') { tk.time = '05:30'; changed = true; }
       }
     }
 
@@ -242,7 +242,7 @@
     for (let d = t0; d <= target; d = addDays(d, 1)) {
       if (isWeekend(d) || have.has(d)) continue;
       const w = workoutForDate(d);
-      tasks.push({ id: 'treino-' + d, text: workoutText(w), date: d, time: '06:00', tag: 'saude', reminder: 0, done: false });
+      tasks.push({ id: 'treino-' + d, text: workoutText(w), date: d, time: '05:30', tag: 'saude', reminder: 0, done: false });
       changed = true;
     }
 
