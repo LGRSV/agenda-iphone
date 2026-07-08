@@ -724,17 +724,10 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
         const pres=jCtx.createBiquadFilter();pres.type='peaking';pres.frequency.value=2600;pres.Q.value=1;pres.gain.value=6;
         const soft=jCtx.createBiquadFilter();soft.type='highshelf';soft.frequency.value=7600;soft.gain.value=-2;
         const comp=jCtx.createDynamicsCompressor();comp.threshold.value=-26;comp.ratio.value=6;comp.attack.value=0.003;comp.release.value=0.16;
-        const conv=jCtx.createConvolver();conv.buffer=makeIR(jCtx,0.9,2);
-        const wet=jCtx.createGain();wet.gain.value=0.32;
-        const dry=jCtx.createGain();dry.gain.value=0.82;
-        const delay=jCtx.createDelay();delay.delayTime.value=0.026;
-        const fb=jCtx.createGain();fb.gain.value=0.34;
-        const comb=jCtx.createGain();comb.gain.value=0.22;
+        // Sem eco/reverb: voz limpa (apenas EQ + compressao) para nao ficar picada
         const master=jCtx.createGain();master.gain.value=1;
         jSrc.connect(hp);hp.connect(body);body.connect(pres);pres.connect(soft);soft.connect(comp);
-        comp.connect(dry);dry.connect(master);
-        comp.connect(conv);conv.connect(wet);wet.connect(master);
-        comp.connect(delay);delay.connect(fb);fb.connect(delay);delay.connect(comb);comb.connect(master);
+        comp.connect(master);
         master.connect(jCtx.destination);
       }catch(_){try{if(jSrc)jSrc.connect(jCtx.destination);}catch(__){}}
     }
@@ -830,15 +823,15 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       });
     }
     function chunkText(t){
+      // Acumula frases num unico trecho ate ~600 chars, sem isolar a 1a frase
+      // (evita a pausa/"picado" logo apos a primeira frase). So divide textos longos.
       const sents=t.match(/[^.!?\n]+[.!?\u2026]*\s*/g)||[t];
-      const chunks=[sents[0].trim()];
-      let cur='';
-      for(let i=1;i<sents.length;i++){
-        if((cur+sents[i]).length>220&&cur){chunks.push(cur.trim());cur=sents[i];}
+      const chunks=[];let cur='';
+      for(let i=0;i<sents.length;i++){
+        if((cur+sents[i]).length>600&&cur){chunks.push(cur.trim());cur=sents[i];}
         else cur+=sents[i];
       }
       if(cur.trim())chunks.push(cur.trim());
-      if(chunks.length>3){chunks[2]=chunks.slice(2).join(' ');chunks.length=3;}
       return chunks.filter(Boolean);
     }
     async function elFetch(t){
