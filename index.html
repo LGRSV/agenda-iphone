@@ -121,6 +121,30 @@
     function endDateTime(date,time){const start=new Date(`${date}T${time}:00`);start.setMinutes(start.getMinutes()+30);return icsDateTime(iso(start),`${String(start.getHours()).padStart(2,'0')}:${String(start.getMinutes()).padStart(2,'0')}`)}
     function exportCalendar(){const items=tasks.filter(task=>!task.done&&task.time&&task.reminder>=0);if(!items.length){showToast('Defina horário e lembrete em pelo menos uma tarefa.');return}const t0=today();const seq=Math.floor(Date.now()/60000);const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Agenda Lagares//Alertas iPhone//PT','CALSCALE:GREGORIAN','METHOD:PUBLISH'];let moved=0;items.forEach(task=>{const evDate=task.date<t0?t0:task.date;if(evDate!==task.date)moved++;const trigger=task.reminder===0?'PT0M':`-PT${task.reminder}M`;const meta=tagMeta(task.tag);lines.push('BEGIN:VEVENT',`UID:${icsEscape(task.id)}@agenda-lagares`,`DTSTAMP:${stamp}`,`SEQUENCE:${seq}`,`DTSTART:${icsDateTime(evDate,task.time)}`,`DTEND:${endDateTime(evDate,task.time)}`,`SUMMARY:${icsEscape(task.text)}`,`DESCRIPTION:${icsEscape(`Tag: ${meta.label}`)}`,'BEGIN:VALARM',`TRIGGER:${trigger}`,'ACTION:DISPLAY',`DESCRIPTION:${icsEscape(task.text)}`,'END:VALARM','END:VEVENT')});lines.push('END:VCALENDAR');const blob=new Blob([lines.join('\r\n')],{type:'text/calendar;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='agenda-lembretes.ics';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast(moved?`Arquivo criado. ${moved} pendente(s) atrasada(s) reagendada(s) para hoje.`:'Arquivo criado. Abra-o e adicione ao Calendário.')}
 
+    /* seed pessoal v1: cardio de ontem (07/07) + expediente Energisa + compra Venvanse — roda 1x por aparelho, sem duplicar */
+    (function seedPessoal(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v1'))return;
+        let mudou=false;
+        // 1) cardio feito em 07/07 (1h) que nao deu para marcar
+        if(!tasks.some(t=>t.date==='2026-07-07'&&/cardio/i.test(t.text))){
+          tasks.push({id:id(),text:'Cardio — 1h00',date:'2026-07-07',time:'',tag:'saude',reminder:-1,done:true});mudou=true;
+        }
+        // 2) expediente Energisa (seg–sex, manha e tarde) como recorrencia
+        const rules=loadRules();
+        if(!rules.some(r=>/energisa/i.test(r.text))&&!tasks.some(t=>/Trabalho — Energisa/i.test(t.text))){
+          rules.push({id:id(),text:'Trabalho — Energisa (manhã 07:30–11:30)',time:'07:30',tag:'trabalho',reminder:-1,freq:'weekdays',start:'2026-07-08',until:''});
+          rules.push({id:id(),text:'Trabalho — Energisa (tarde 13:30–17:30)',time:'13:30',tag:'trabalho',reminder:-1,freq:'weekdays',start:'2026-07-08',until:''});
+          saveRules(rules);mudou=true;
+        }
+        // 3) compra do Venvanse 30 mg (2 caixas) — hoje 19:30, se nao houver parecida
+        if(!tasks.some(t=>/venva[nsz]|venvase/i.test(t.text))){
+          tasks.push({id:id(),text:'Compra — Venvanse 30 mg (2 caixas)',date:'2026-07-08',time:'19:30',tag:'pessoal',reminder:-1,done:true});mudou=true;
+        }
+        if(mudou)save();
+        localStorage.setItem('agenda_seed_pessoal_v1','1');
+      }catch(_){}
+    })();
     el.currentDate.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'}).format(new Date());applyTheme(localStorage.getItem(THEME_KEY)==='light'?'light':'dark');topUpRecurring();render();if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{if(sessionStorage.getItem('sw_reloaded'))return;sessionStorage.setItem('sw_reloaded','1');}catch(_){}location.reload();});registerWorker().then(function(r){try{if(r&&r.update)r.update();}catch(_){}}).catch(()=>{});}setInterval(checkAlerts,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAlerts()});
     (function(){function wire(){const b=document.getElementById('app-update');if(b&&!b.dataset.wired){b.dataset.wired='1';b.addEventListener('click',appForceUpdate);}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();})();
     el.themeToggle.addEventListener('click',()=>applyTheme(el.root.dataset.theme==='dark'?'light':'dark'));el.alertsBtn.addEventListener('click',()=>{updateAlertsStatus();el.alertsDialog.showModal()});$('#closeAlertsDialog').addEventListener('click',()=>el.alertsDialog.close());$('#activateAlerts').addEventListener('click',activateAlerts);$('#exportCalendar').addEventListener('click',exportCalendar);$('#openDialog').addEventListener('click',openTaskForm);$('#closeTaskDialog').addEventListener('click',()=>el.taskDialog.close());
