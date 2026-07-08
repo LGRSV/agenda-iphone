@@ -254,6 +254,24 @@
         localStorage.setItem('agenda_seed_pessoal_v5','1');
       }catch(_){}
     })();
+    (function seedPessoal6(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v6'))return;
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        if(!tasks.some(t=>/vaper|gaspar|blvk|spearmint/i.test(t.text))){
+          tasks.push({id:'sd6-vaper',text:'Cobrar retorno — Vaper Clube e Gaspar',date:'2026-07-09',time:'12:00',tag:'pessoal',reminder:0,done:false});
+          notas['sd6-vaper']={prio:'',durationMin:null,detail:'Pedir uma posição para a Vaper Clube e para a Gaspar.\n\nMensagem para enviar:\n"Olá, tudo bem? Estou aguardando o BLVK Salts Spearmint 50mg. Vocês já têm uma previsão de chegada? Se puderem me passar um prazo estimado, agradeço bastante. Obrigado!"',valor:'',subs:[{text:'Vaper Clube',done:false},{text:'Gaspar',done:false}]};
+        }
+        if(!tasks.some(t=>/chat\s*gpt|chatgpt/i.test(t.text))){
+          tasks.push({id:'sd6-chatgpt',text:'Cobrar o pessoal do ChatGPT',date:'2026-07-09',time:'',tag:'pessoal',reminder:-1,done:false});
+          notas['sd6-chatgpt']={prio:'',durationMin:null,detail:'Ainda não cobrei — pendente. Cobrar o pessoal do ChatGPT (rateio/valor da assinatura).',valor:'',subs:[]};
+        }
+        localStorage.setItem(NK,JSON.stringify(notas));
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v6','1');
+      }catch(_){}
+    })();
     el.currentDate.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'}).format(new Date());applyTheme(localStorage.getItem(THEME_KEY)==='light'?'light':'dark');topUpRecurring();render();if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{if(sessionStorage.getItem('sw_reloaded'))return;sessionStorage.setItem('sw_reloaded','1');}catch(_){}location.reload();});registerWorker().then(function(r){try{if(r&&r.update)r.update();}catch(_){}}).catch(()=>{});}setInterval(checkAlerts,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAlerts()});
     (function(){function wire(){const b=document.getElementById('app-update');if(b&&!b.dataset.wired){b.dataset.wired='1';b.addEventListener('click',appForceUpdate);}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();})();
     el.themeToggle.addEventListener('click',()=>applyTheme(el.root.dataset.theme==='dark'?'light':'dark'));el.alertsBtn.addEventListener('click',()=>{updateAlertsStatus();el.alertsDialog.showModal()});$('#closeAlertsDialog').addEventListener('click',()=>el.alertsDialog.close());$('#activateAlerts').addEventListener('click',activateAlerts);$('#exportCalendar').addEventListener('click',exportCalendar);$('#openDialog').addEventListener('click',openTaskForm);$('#closeTaskDialog').addEventListener('click',()=>el.taskDialog.close());
