@@ -324,6 +324,24 @@
         localStorage.setItem('agenda_seed_pessoal_v9','1');
       }catch(_){}
     })();
+    (function seedPessoal10(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v10'))return;
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        if(!tasks.some(t=>t.id==='sd10-vanish'||/vanish/i.test(t.text))){
+          tasks.push({id:'sd10-vanish',text:'Comprar Vanish + energético',date:'2026-07-09',time:'13:05',tag:'pessoal',reminder:15,done:false});
+          notas['sd10-vanish']={prio:'',durationMin:null,detail:'Na hora do almoço:\n• Vanish (a namorada pediu)\n• Energético',valor:'',subs:[{text:'Vanish',done:false},{text:'Energético',done:false}]};
+        }
+        if(!tasks.some(t=>t.id==='sd10-camisas'||(/entregar/i.test(t.text)&&/camisa/i.test(t.text)))){
+          tasks.push({id:'sd10-camisas',text:'Entregar 2 camisas brancas para a namorada',date:'2026-07-09',time:'13:20',tag:'pessoal',reminder:0,done:false});
+          notas['sd10-camisas']={prio:'',durationMin:null,detail:'Entregar as 2 camisas brancas que estão no carro para ela. Fazer logo após comprar o Vanish, antes de voltar para o trabalho (13:30).',valor:'',subs:[]};
+        }
+        localStorage.setItem(NK,JSON.stringify(notas));
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v10','1');
+      }catch(_){}
+    })();
     el.currentDate.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'}).format(new Date());applyTheme(localStorage.getItem(THEME_KEY)==='light'?'light':'dark');topUpRecurring();render();if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{if(sessionStorage.getItem('sw_reloaded'))return;sessionStorage.setItem('sw_reloaded','1');}catch(_){}location.reload();});registerWorker().then(function(r){try{if(r&&r.update)r.update();}catch(_){}}).catch(()=>{});}setInterval(checkAlerts,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAlerts()});
     (function(){function wire(){const b=document.getElementById('app-update');if(b&&!b.dataset.wired){b.dataset.wired='1';b.addEventListener('click',appForceUpdate);}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();})();
     el.themeToggle.addEventListener('click',()=>applyTheme(el.root.dataset.theme==='dark'?'light':'dark'));el.alertsBtn.addEventListener('click',()=>{updateAlertsStatus();el.alertsDialog.showModal()});$('#closeAlertsDialog').addEventListener('click',()=>el.alertsDialog.close());$('#activateAlerts').addEventListener('click',activateAlerts);$('#exportCalendar').addEventListener('click',exportCalendar);$('#openDialog').addEventListener('click',openTaskForm);$('#closeTaskDialog').addEventListener('click',()=>el.taskDialog.close());
