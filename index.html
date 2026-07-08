@@ -362,16 +362,27 @@
         const NK='agenda_notas_v1';
         const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
         if(!tasks.some(t=>t.id==='sd12-lustosa'||/lustosa/i.test(t.text))){
-          tasks.push({id:'sd12-lustosa',text:'Cobrar Lustosa — R$ 150',date:'2026-07-11',time:'06:00',tag:'pessoal',reminder:0,done:false});
-          notas['sd12-lustosa']={prio:'',durationMin:null,detail:'Cobrar o Lustosa — R$ 150.',valor:'150',subs:[]};
+          tasks.push({id:'sd12-lustosa',text:'Cobrar Lustosa — R$ 150',date:'2026-07-10',time:'08:00',tag:'pessoal',reminder:0,done:false});
+          notas['sd12-lustosa']={prio:'',durationMin:null,detail:'Cobrar o Lustosa — R$ 150. (Não é da Energisa, mas cai no horário de trabalho.)',valor:'150',subs:[]};
         }
         if(!tasks.some(t=>t.id==='sd12-fernanda'||/fernanda/i.test(t.text)||/red\s*magic/i.test(t.text))){
-          tasks.push({id:'sd12-fernanda',text:'Cobrar Fernanda — Red Magic (R$ 4.800)',date:'2026-07-11',time:'06:00',tag:'pessoal',reminder:0,done:false});
+          tasks.push({id:'sd12-fernanda',text:'Cobrar Fernanda — Red Magic (R$ 4.800)',date:'2026-07-10',time:'08:00',tag:'pessoal',reminder:0,done:false});
           notas['sd12-fernanda']={prio:'',durationMin:null,detail:'Cobrar a Fernanda referente à venda do celular Red Magic — R$ 4.800.',valor:'4800',subs:[]};
         }
         localStorage.setItem(NK,JSON.stringify(notas));
         save();
         localStorage.setItem('agenda_seed_pessoal_v12','1');
+      }catch(_){}
+    })();
+    (function seedPessoal13(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v13'))return;
+        // Move as cobranças Lustosa/Fernanda de 11/07 06:00 -> sexta 10/07 08:00
+        tasks.forEach(t=>{
+          if((t.id==='sd12-lustosa'||t.id==='sd12-fernanda')&&!t.done&&t.date==='2026-07-11'){t.date='2026-07-10';t.time='08:00';}
+        });
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v13','1');
       }catch(_){}
     })();
     el.currentDate.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'}).format(new Date());applyTheme(localStorage.getItem(THEME_KEY)==='light'?'light':'dark');topUpRecurring();render();if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{if(sessionStorage.getItem('sw_reloaded'))return;sessionStorage.setItem('sw_reloaded','1');}catch(_){}location.reload();});registerWorker().then(function(r){try{if(r&&r.update)r.update();}catch(_){}}).catch(()=>{});}setInterval(checkAlerts,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAlerts()});
