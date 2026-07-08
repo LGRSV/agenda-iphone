@@ -29,6 +29,44 @@
     localStorage.setItem(TASK_KEY, JSON.stringify(tasks));
   }
 
+  const TREINO_TIME_KEY = 'agenda_treino_time_v1';
+  const RULES_KEY = 'agenda_lagares_rules_v1';
+
+  // Identifica se a tarefa faz parte de uma série recorrente e devolve o prefixo da série.
+  function seriesInfo(task) {
+    const id = String(task && task.id || '');
+    if (id.startsWith('treino-')) return { recurring: true, kind: 'treino', prefix: 'treino-', label: 'os treinos' };
+    if (id.startsWith('rec-')) {
+      const ruleId = id.slice(4).replace(/-\d{4}-\d{2}-\d{2}$/, '');
+      return { recurring: true, kind: 'rec', prefix: 'rec-' + ruleId + '-', ruleId, label: 'as ocorrências' };
+    }
+    return { recurring: false };
+  }
+
+  // Aplica horário/lembrete desta tarefa para todas as próximas da mesma série (data >= a desta).
+  function applyToFuture(task, info) {
+    const tasks = readTasks();
+    const fromDate = task.date;
+    tasks.forEach(t => {
+      if (String(t.id).startsWith(info.prefix) && !t.done && t.date >= fromDate) {
+        t.time = task.time;
+        t.reminder = task.reminder;
+      }
+    });
+    writeTasks(tasks);
+    if (info.kind === 'treino') {
+      try { if (/^\d{2}:\d{2}$/.test(task.time || '')) localStorage.setItem(TREINO_TIME_KEY, task.time); } catch (_) {}
+    } else if (info.kind === 'rec') {
+      try {
+        const rules = JSON.parse(localStorage.getItem(RULES_KEY) || '[]');
+        if (Array.isArray(rules)) {
+          const r = rules.find(x => String(x.id) === String(info.ruleId));
+          if (r) { r.time = task.time; r.reminder = task.reminder; localStorage.setItem(RULES_KEY, JSON.stringify(rules)); }
+        }
+      } catch (_) {}
+    }
+  }
+
   function ensureStyles() {
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement('style');
@@ -50,6 +88,11 @@
       #${DIALOG_ID} .edit-secondary, #${DIALOG_ID} .edit-primary { padding: 11px 15px; border-radius: 13px; font-size: 14px; font-weight: 750; }
       #${DIALOG_ID} .edit-secondary { border: 1px solid var(--line); background: var(--soft); color: var(--text); }
       #${DIALOG_ID} .edit-primary { border: 1px solid var(--accent); background: var(--accent); color: var(--accentInk); }
+      #${DIALOG_ID} .edit-future { margin-top: 15px; padding: 12px 13px; border: 1px solid var(--line); border-radius: 13px; background: var(--soft); }
+      #${DIALOG_ID} .edit-future[hidden] { display: none; }
+      #${DIALOG_ID} .edit-future-row { display: flex; align-items: center; gap: 11px; margin: 0; text-transform: none; letter-spacing: 0; font-size: 13.5px; font-weight: 700; color: var(--text); cursor: pointer; }
+      #${DIALOG_ID} .edit-future-row input { width: 21px; min-height: 21px; height: 21px; flex: 0 0 auto; margin: 0; padding: 0; accent-color: var(--accent); }
+      #${DIALOG_ID} .edit-future-hint { margin: 8px 0 0; color: var(--muted); font-size: 11.5px; line-height: 1.45; text-transform: none; letter-spacing: 0; font-weight: 500; }
     `;
     document.head.appendChild(style);
   }
@@ -96,6 +139,10 @@
           <option value="30">30 minutos antes</option>
           <option value="60">1 hora antes</option>
         </select>
+        <div class="edit-future" id="agendaEditFutureWrap" hidden>
+          <label class="edit-future-row"><input type="checkbox" id="agendaEditFuture"> <span id="agendaEditFutureLabel">Aplicar a todos os próximos desta série</span></label>
+          <p class="edit-future-hint" id="agendaEditFutureHint"></p>
+        </div>
         <div class="edit-actions">
           <button class="edit-secondary" id="agendaEditCancel" type="button">Cancelar</button>
           <button class="edit-primary" type="submit">Salvar alterações</button>
@@ -129,7 +176,15 @@
       task.tag = Object.prototype.hasOwnProperty.call(TAGS, tag) ? tag : 'outros';
       task.reminder = Number.isFinite(reminder) ? reminder : -1;
       writeTasks(tasks);
-      sessionStorage.setItem('agenda_lagares_edit_message', 'Tarefa atualizada e reagendada.');
+
+      const info = seriesInfo(task);
+      const futureEl = dialog.querySelector('#agendaEditFuture');
+      let msg = 'Tarefa atualizada e reagendada.';
+      if (info.recurring && futureEl && futureEl.checked) {
+        applyToFuture(task, info);
+        msg = 'Horário aplicado a todas as próximas desta série.';
+      }
+      sessionStorage.setItem('agenda_lagares_edit_message', msg);
       dialog.close();
       window.location.reload();
     });
@@ -148,6 +203,19 @@
     dialog.querySelector('#agendaEditTag').value = Object.prototype.hasOwnProperty.call(TAGS, task.tag) ? task.tag : 'outros';
     const reminder = Number(task.reminder);
     dialog.querySelector('#agendaEditReminder').value = [-1, 0, 5, 10, 15, 30, 60].includes(reminder) ? String(reminder) : '-1';
+    const info = seriesInfo(task);
+    const wrap = dialog.querySelector('#agendaEditFutureWrap');
+    const futureEl = dialog.querySelector('#agendaEditFuture');
+    if (futureEl) futureEl.checked = false;
+    if (wrap) {
+      wrap.hidden = !info.recurring;
+      if (info.recurring) {
+        dialog.querySelector('#agendaEditFutureLabel').textContent = info.kind === 'treino'
+          ? 'Aplicar este horário a todos os próximos treinos'
+          : 'Aplicar horário/lembrete a todas as próximas ocorrências';
+        dialog.querySelector('#agendaEditFutureHint').textContent = 'Marque para mudar ' + info.label + ' desta data em diante. Sem marcar, altera só este dia.';
+      }
+    }
     dialog.showModal();
     setTimeout(() => dialog.querySelector('#agendaEditText').focus(), 60);
   }

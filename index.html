@@ -33,13 +33,13 @@
     <section class="summary" aria-label="Resumo da agenda"><div class="summary-top"><span class="summary-label">Progresso geral</span><strong class="summary-number" id="progressText">0<small>/0</small></strong></div><div class="progress" aria-hidden="true"><div id="progressBar"></div></div><p class="summary-message" id="progressMessage">Carregando tarefas…</p></section>
 
     <nav class="view-tabs" id="viewTabs" aria-label="Visualização da agenda"><button class="view-tab" type="button" data-view="day">Dia</button><button class="view-tab active" type="button" data-view="month">Mês</button><button class="view-tab" type="button" data-view="list">Lista</button></nav>
-    <nav class="filters" id="filters" aria-label="Filtros de tarefas"><button class="chip active" type="button" data-filter="all">Todas</button><button class="chip" type="button" data-filter="open">Em aberto</button><button class="chip" type="button" data-filter="done">Concluídas</button></nav>
+    <nav class="filters" id="filters" aria-label="Filtros de tarefas"><button class="chip active" type="button" data-filter="all">Todas</button><button class="chip" type="button" data-filter="open">Em aberto</button><button class="chip" type="button" data-filter="done">Concluídas</button><button class="chip" type="button" data-filter="work">Trabalho</button></nav>
     <section id="viewContent" aria-live="polite"></section>
   </main>
 
   <button class="fab" id="openDialog" type="button"><span class="plus">+</span> Nova tarefa</button>
 
-  <dialog id="taskDialog"><form class="modal" id="taskForm"><h3>Nova tarefa</h3><label class="field-label" for="taskText">O que precisa ser feito?</label><input id="taskText" type="text" maxlength="240" autocomplete="off" placeholder="Ex.: Enviar relatório" required><div class="two-fields"><div><label class="field-label" for="taskDate">Data</label><input id="taskDate" type="date" required></div><div><label class="field-label" for="taskTime">Horário</label><input id="taskTime" type="time"></div></div><label class="field-label" for="taskTag">Tag</label><select id="taskTag"><option value="trabalho">Trabalho</option><option value="pessoal" selected>Pessoal</option><option value="casa">Casa</option><option value="faculdade">Faculdade</option><option value="saude">Academia</option><option value="financeiro">Financeiro</option><option value="outros">Outros</option></select><label class="field-label" for="taskReminder">Lembrete</label><select id="taskReminder"><option value="-1">Sem alerta</option><option value="0">No horário</option><option value="5">5 minutos antes</option><option value="10">10 minutos antes</option><option value="15" selected>15 minutos antes</option><option value="30">30 minutos antes</option><option value="60">1 hora antes</option></select><label class="field-label" for="taskRepeat">Repetir</label><select id="taskRepeat"><option value="none" selected>Não repetir</option><option value="daily">Todos os dias</option><option value="weekdays">Dias úteis (seg–sex)</option><option value="weekly">Toda semana</option></select><div class="actions"><button class="secondary" id="closeTaskDialog" type="button">Cancelar</button><button class="primary" type="submit">Adicionar</button></div></form></dialog>
+  <dialog id="taskDialog"><form class="modal" id="taskForm"><h3>Nova tarefa</h3><label class="field-label" for="taskText">O que precisa ser feito?</label><input id="taskText" type="text" maxlength="240" autocomplete="off" placeholder="Ex.: Enviar relatório" required><div class="two-fields"><div><label class="field-label" for="taskDate">Data</label><input id="taskDate" type="date" required></div><div><label class="field-label" for="taskTime">Horário</label><input id="taskTime" type="time"></div></div><label class="field-label" for="taskTag">Tag</label><select id="taskTag"><option value="trabalho">Trabalho</option><option value="pessoal" selected>Pessoal</option><option value="casa">Casa</option><option value="faculdade">Faculdade</option><option value="saude">Academia</option><option value="financeiro">Financeiro</option><option value="outros">Outros</option></select><label class="field-label" for="taskReminder">Lembrete</label><select id="taskReminder"><option value="-1">Sem alerta</option><option value="0">No horário</option><option value="5">5 minutos antes</option><option value="10">10 minutos antes</option><option value="15" selected>15 minutos antes</option><option value="30">30 minutos antes</option><option value="60">1 hora antes</option></select><label class="field-label" for="taskRepeat">Repetir</label><select id="taskRepeat"><option value="none" selected>Não repetir</option><option value="daily">Todos os dias</option><option value="weekdays">Dias úteis (seg–sex)</option><option value="weekly">Toda semana</option><option value="monthly">Todo mês (mesmo dia)</option></select><div class="actions"><button class="secondary" id="closeTaskDialog" type="button">Cancelar</button><button class="primary" type="submit">Adicionar</button></div></form></dialog>
 
   <dialog id="alertsDialog"><section class="modal"><h3>Alertas</h3><p id="alertsStatus"></p><div class="notice"><strong>Como funciona</strong>Ative os avisos do app para receber lembretes enquanto a agenda estiver aberta. Para alertas mesmo com ela fechada, gere o arquivo do Calendário do iPhone.</div><button class="primary wide" id="activateAlerts" type="button">Ativar avisos no app</button><button class="secondary wide" id="exportCalendar" type="button">Gerar alarmes para o Calendário</button><div class="notice"><strong>Importante</strong>Os alarmes do Calendário são os mais confiáveis no iPhone quando o site não está aberto. Só entram no arquivo tarefas com horário e lembrete definidos. Reexportar não duplica: atualiza os mesmos eventos. Pendentes atrasadas são reagendadas para hoje automaticamente.</div><div class="actions"><button class="secondary" id="closeAlertsDialog" type="button">Fechar</button></div></section></dialog>
   <div class="toast" id="toast" role="status"></div>
@@ -57,14 +57,14 @@
     function id(){return `${Date.now()}-${Math.random().toString(36).slice(2,9)}`}
     function tagKey(value){const v=String(value||'').trim().toLowerCase();if(TAGS[v])return v;if(/work|trabalho|energisa/.test(v))return'trabalho';if(/casa|home/.test(v))return'casa';if(/faculdade|college|estudo/.test(v))return'faculdade';if(/saúde|saude|health/.test(v))return'saude';if(/finance|dinheiro/.test(v))return'financeiro';if(/pessoal|personal/.test(v))return'pessoal';return'outros'}
     function normalise(item,index){if(!item||!item.text)return null;let date=item.date;if(!date&&item.day){const [d,m]=String(item.day).split('/').map(Number);if(d&&m)date=`2026-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}if(!/^\d{4}-\d{2}-\d{2}$/.test(String(date||'')))return null;const reminder=Number.isFinite(Number(item.reminder))?Number(item.reminder):Number.isFinite(Number(item.alert))?Number(item.alert):-1;return{id:String(item.id||`task-${index}-${id()}`),text:String(item.text),date:String(date),time:/^\d{2}:\d{2}$/.test(String(item.time||''))?String(item.time):'',tag:tagKey(item.tag||item.category||item.calendar),reminder,done:Boolean(item.done)}}
-    function loadTasks(){const hasReal=a=>Array.isArray(a)&&a.some(t=>t&&t.text&&!/^🏋/.test(t.text));const saved=json(localStorage.getItem(TASK_KEY));const savedArr=Array.isArray(saved)?saved.map(normalise).filter(Boolean):null;if(hasReal(savedArr))return savedArr;const treino=(savedArr||[]).filter(t=>/^🏋/.test(t.text||''));const merge=arr=>{const conv=arr.map(normalise).filter(Boolean);if(!conv.some(t=>!/^🏋/.test(t.text)))return null;const m=conv.concat(treino.filter(tt=>!conv.some(c=>c.id===tt.id)));localStorage.setItem(TASK_KEY,JSON.stringify(m));return m;};for(const key of['agenda_profissional_iphone_v1','agenda_tasks']){const old=json(localStorage.getItem(key));if(Array.isArray(old)){const r=merge(old);if(r)return r;}}const pre=json(localStorage.getItem('agenda_lagares_backup_pre_sync_v1'));if(pre&&Array.isArray(pre.tarefas)){const r=merge(pre.tarefas);if(r)return r;}return savedArr||seed}
+    function loadTasks(){const hasReal=a=>Array.isArray(a)&&a.some(t=>t&&t.text&&!/^(?:🏋|Treino [ABC])/.test(t.text));const saved=json(localStorage.getItem(TASK_KEY));const savedArr=Array.isArray(saved)?saved.map(normalise).filter(Boolean):null;if(hasReal(savedArr))return savedArr;const treino=(savedArr||[]).filter(t=>/^(?:🏋|Treino [ABC])/.test(t.text||''));const merge=arr=>{const conv=arr.map(normalise).filter(Boolean);if(!conv.some(t=>!/^(?:🏋|Treino [ABC])/.test(t.text)))return null;const m=conv.concat(treino.filter(tt=>!conv.some(c=>c.id===tt.id)));localStorage.setItem(TASK_KEY,JSON.stringify(m));return m;};for(const key of['agenda_profissional_iphone_v1','agenda_tasks']){const old=json(localStorage.getItem(key));if(Array.isArray(old)){const r=merge(old);if(r)return r;}}const pre=json(localStorage.getItem('agenda_lagares_backup_pre_sync_v1'));if(pre&&Array.isArray(pre.tarefas)){const r=merge(pre.tarefas);if(r)return r;}return savedArr||seed}
     function save(){localStorage.setItem(TASK_KEY,JSON.stringify(tasks))}
     const RULES_KEY='agenda_lagares_rules_v1',RECUR_HORIZON=120,RECUR_REGEN=75;
     function loadRules(){const v=json(localStorage.getItem(RULES_KEY));return Array.isArray(v)?v:[]}
     function saveRules(r){localStorage.setItem(RULES_KEY,JSON.stringify(r))}
     function addDaysStr(dstr,n){const d=dateAtNoon(dstr);d.setDate(d.getDate()+n);return iso(d)}
-    function freqMatch(freq,dstr,startStr){const g=dateAtNoon(dstr).getDay();if(freq==='daily')return true;if(freq==='weekdays')return g>=1&&g<=5;if(freq==='weekly')return g===dateAtNoon(startStr).getDay();return false}
-    function topUpRecurring(){const rules=loadRules();if(!rules.length)return false;const t0=today(),target=addDaysStr(t0,RECUR_HORIZON);const have=new Set(tasks.filter(t=>String(t.id).startsWith('rec-')).map(t=>t.id));let changed=false,rulesChanged=false;for(const rule of rules){if(!rule||!rule.freq||!rule.start)continue;if(rule.until&&rule.until>=addDaysStr(t0,RECUR_REGEN))continue;const from=rule.until?addDaysStr(rule.until,1):(rule.start>t0?rule.start:t0);for(let d=from;d<=target;d=addDaysStr(d,1)){if(d<rule.start)continue;if(!freqMatch(rule.freq,d,rule.start))continue;const oid='rec-'+rule.id+'-'+d;if(have.has(oid))continue;tasks.push({id:oid,text:rule.text,date:d,time:rule.time||'',tag:tagKey(rule.tag),reminder:Number.isFinite(Number(rule.reminder))?Number(rule.reminder):-1,done:false});have.add(oid);changed=true}rule.until=target;rulesChanged=true}if(rulesChanged)saveRules(rules);if(changed)save();return changed}
+    function freqMatch(freq,dstr,startStr){const g=dateAtNoon(dstr).getDay();if(freq==='daily')return true;if(freq==='weekdays')return g>=1&&g<=5;if(freq==='weekly')return g===dateAtNoon(startStr).getDay();if(freq==='monthly')return dateAtNoon(dstr).getDate()===dateAtNoon(startStr).getDate();return false}
+    function topUpRecurring(){const rules=loadRules();if(!rules.length)return false;const t0=today(),target=addDaysStr(t0,RECUR_HORIZON);const have=new Set(tasks.filter(t=>String(t.id).startsWith('rec-')).map(t=>t.id));let changed=false,rulesChanged=false;for(const rule of rules){if(!rule||!rule.freq||!rule.start)continue;if(rule.until&&rule.until>=addDaysStr(t0,RECUR_REGEN))continue;const from=rule.until?addDaysStr(rule.until,1):(rule.start>t0?rule.start:t0);for(let d=from;d<=target;d=addDaysStr(d,1)){if(d<rule.start)continue;if(!freqMatch(rule.freq,d,rule.start))continue;const oid='rec-'+rule.id+'-'+d;if(have.has(oid))continue;tasks.push({id:oid,text:rule.text,date:d,time:rule.time||'',tag:tagKey(rule.tag),reminder:Number.isFinite(Number(rule.reminder))?Number(rule.reminder):-1,done:false});if(rule.note){try{const NK='agenda_notas_v1';const nn=JSON.parse(localStorage.getItem(NK)||'{}')||{};if(!nn[oid]){nn[oid]=JSON.parse(JSON.stringify(rule.note));localStorage.setItem(NK,JSON.stringify(nn));}}catch(_){}}have.add(oid);changed=true}rule.until=target;rulesChanged=true}if(rulesChanged)saveRules(rules);if(changed)save();return changed}
     function today(){const n=new Date(),offset=n.getTimezoneOffset();return new Date(n.getTime()-offset*60000).toISOString().slice(0,10)}
     function iso(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
     function dateAtNoon(value){return new Date(`${value}T12:00:00`)}
@@ -83,7 +83,16 @@
     const SUN_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2.5 12H5M19 12h2.5M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>';
     const MOON_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4 7 7 0 1 0 20 14.5z"/></svg>';
     function applyTheme(theme){el.root.dataset.theme=theme;el.themeColor.content=theme==='dark'?'#17181c':'#f4f6fa';el.themeToggle.innerHTML=theme==='dark'?SUN_SVG:MOON_SVG;el.themeToggle.title=theme==='dark'?'Modo claro':'Modo escuro';el.themeToggle.setAttribute('aria-label',theme==='dark'?'Mudar para modo claro':'Mudar para modo escuro');localStorage.setItem(THEME_KEY,theme)}
-    function matches(task){return filter==='all'||(filter==='open'?!task.done:task.done)}
+    function inExpediente(task){ // com hora dentro do horario de servico (seg-sex 07:30-11:30 / 13:30-17:30)
+      if(!task.time||!task.date)return false;
+      const g=dateAtNoon(task.date).getDay();if(g<1||g>5)return false;
+      const t=task.time;
+      return (t>='07:30'&&t<='11:30')||(t>='13:30'&&t<='17:30');
+    }
+    function matches(task){
+      if(filter==='work')return task.tag==='trabalho'||inExpediente(task);
+      return filter==='all'||(filter==='open'?!task.done:task.done);
+    }
     function tasksOn(date){return tasks.filter(task=>task.date===date&&matches(task)).sort(taskSort)}
     function renderSummary(){const total=tasks.length,done=tasks.filter(t=>t.done).length,pct=total?Math.round(done/total*100):0;el.progressText.innerHTML=`${done}<small>/${total}</small>`;el.progressBar.style.width=`${pct}%`;el.progressMessage.textContent=total===0?'Sua agenda está vazia.':done===total?'Tudo concluído. Excelente trabalho!':`${pct}% das tarefas concluídas.`}
     const BELL_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>';
@@ -91,7 +100,7 @@
     function toolbar(title,sub,prev,next,todayButton){return`<header class="toolbar"><button class="nav-btn" type="button" data-shift="${prev}" aria-label="Anterior">‹</button><div class="toolbar-title">${title}${sub?`<small>${sub}</small>`:''}</div>${todayButton?`<button class="today-btn" type="button" data-today="1">Hoje</button>`:`<button class="nav-btn" type="button" data-shift="${next}" aria-label="Próximo">›</button>`}</header>`}
     function renderDay(){const list=tasksOn(selectedDate);const subtitle=selectedDate===today()?'Hoje':dateShort(selectedDate);const header=`<header class="toolbar"><button class="nav-btn" type="button" data-day-shift="-1" aria-label="Dia anterior">‹</button><div class="toolbar-title day-pick"><label>${fullDate(selectedDate)} ▾<small>${subtitle}</small><input type="date" class="day-pick-input" value="${selectedDate}" aria-label="Escolher data"></label></div><button class="nav-btn" type="button" data-day-shift="1" aria-label="Próximo dia">›</button></header>`;const body=list.length?`<div class="day-content">${list.map(taskCard).join('')}</div>`:`<div class="day-empty"><strong>Nenhuma tarefa neste dia</strong><span>Use “Nova tarefa” para preencher sua agenda.</span></div>`;el.viewContent.innerHTML=`<section class="view-shell">${header}${body}</section>`}
     function renderMonth(){const year=monthCursor.getFullYear(),month=monthCursor.getMonth();const first=new Date(year,month,1,12),start=new Date(year,month,1-first.getDay(),12);const cells=[];for(let index=0;index<42;index++){const day=new Date(start);day.setDate(start.getDate()+index);const key=iso(day),items=tasksOn(key),unique=[...new Set(items.map(t=>t.tag))],shown=unique.slice(0,2);const chips=shown.map(tag=>{const meta=tagMeta(tag);return`<span class="calendar-tag" style="--tag:${meta.color}">${meta.label}</span>`}).join('');const more=items.length>shown.length?`<span class="calendar-more">+${items.length-shown.length}</span>`:'';const classes=['calendar-day',day.getMonth()===month?'current':'outside',key===selectedDate?'selected':'',key===today()?'today':''].filter(Boolean).join(' ');cells.push(`<button class="${classes}" type="button" data-calendar-date="${key}" aria-label="Abrir ${key}"><span class="day-number">${day.getDate()}</span><span class="calendar-tags">${chips}${more}</span></button>`)}const legend=Object.entries(TAGS).map(([key,meta])=>`<span class="tag-pill" style="--tag:${meta.color}">${meta.label}</span>`).join('');const header=`<header class="toolbar"><button class="nav-btn" type="button" data-month-shift="-1" aria-label="Mês anterior">‹</button><div class="toolbar-title">${monthName(monthCursor)}<small>Toque em um dia para abrir a agenda diária</small></div><button class="nav-btn" type="button" data-month-shift="1" aria-label="Próximo mês">›</button></header>`;el.viewContent.innerHTML=`<section class="view-shell">${header}<div class="month-grid-wrap"><div class="week-labels"><span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span></div><div class="month-grid">${cells.join('')}</div></div><footer class="calendar-legend">${legend}</footer></section>`}
-    function renderList(){const visible=tasks.filter(matches).sort(taskSort);const heading=`<header class="list-header"><h2>${filter==='all'?'Próximas tarefas':filter==='open'?'Tarefas em aberto':'Tarefas concluídas'}</h2><button class="clear-done" id="clearDone" type="button" ${tasks.some(t=>t.done)?'':'hidden'}>Limpar concluídas</button></header>`;if(!visible.length){const copy=filter==='open'?['Nada pendente','Você concluiu todas as tarefas cadastradas.']:filter==='done'?['Nada concluído ainda','As tarefas finalizadas aparecerão aqui.']:['Nenhuma tarefa agendada','Use o botão “Nova tarefa” para começar.'];el.viewContent.innerHTML=`<section class="view-shell">${heading}<div class="day-empty"><strong>${copy[0]}</strong><span>${copy[1]}</span></div></section>`;return}const groups=visible.reduce((map,task)=>{(map[task.date]??=[]).push(task);return map},{});const body=Object.entries(groups).map(([date,items])=>`<section class="group"><div class="group-title"><strong>${fullDate(date)}</strong><span>${items.filter(t=>t.done).length}/${items.length}</span></div>${items.map(taskCard).join('')}</section>`).join('');el.viewContent.innerHTML=`<section class="view-shell">${heading}<div class="list-body">${body}</div></section>`}
+    function renderList(){const visible=tasks.filter(matches).sort(taskSort);const heading=`<header class="list-header"><h2>${filter==='all'?'Próximas tarefas':filter==='open'?'Tarefas em aberto':filter==='work'?'Trabalho — Energisa':'Tarefas concluídas'}</h2><button class="clear-done" id="clearDone" type="button" ${tasks.some(t=>t.done)?'':'hidden'}>Limpar concluídas</button></header>`;if(!visible.length){const copy=filter==='work'?['Nada de trabalho por aqui','Tarefas com a tag Trabalho ou marcadas no horário de expediente aparecem nesta visão.']:filter==='open'?['Nada pendente','Você concluiu todas as tarefas cadastradas.']:filter==='done'?['Nada concluído ainda','As tarefas finalizadas aparecerão aqui.']:['Nenhuma tarefa agendada','Use o botão “Nova tarefa” para começar.'];el.viewContent.innerHTML=`<section class="view-shell">${heading}<div class="day-empty"><strong>${copy[0]}</strong><span>${copy[1]}</span></div></section>`;return}const groups=visible.reduce((map,task)=>{(map[task.date]??=[]).push(task);return map},{});const body=Object.entries(groups).map(([date,items])=>`<section class="group"><div class="group-title"><strong>${fullDate(date)}</strong><span>${items.filter(t=>t.done).length}/${items.length}</span></div>${items.map(taskCard).join('')}</section>`).join('');el.viewContent.innerHTML=`<section class="view-shell">${heading}<div class="list-body">${body}</div></section>`}
     function render(){renderSummary();document.querySelectorAll('[data-view]').forEach(button=>button.classList.toggle('active',button.dataset.view===view));document.querySelectorAll('[data-filter]').forEach(button=>button.classList.toggle('active',button.dataset.filter===filter));if(view==='day')renderDay();else if(view==='month')renderMonth();else renderList()}
     function toggleTask(taskId){const task=tasks.find(t=>t.id===taskId);if(!task)return;task.done=!task.done;save();render();showToast(task.done?'Tarefa concluída':'Tarefa reaberta')}
     function trashPush(task){try{const k='agenda_lixeira_v1';const arr=JSON.parse(localStorage.getItem(k)||'[]');arr.push({task:task,at:Date.now()});while(arr.length>150)arr.shift();localStorage.setItem(k,JSON.stringify(arr))}catch(_){}}
@@ -121,6 +130,381 @@
     function endDateTime(date,time){const start=new Date(`${date}T${time}:00`);start.setMinutes(start.getMinutes()+30);return icsDateTime(iso(start),`${String(start.getHours()).padStart(2,'0')}:${String(start.getMinutes()).padStart(2,'0')}`)}
     function exportCalendar(){const items=tasks.filter(task=>!task.done&&task.time&&task.reminder>=0);if(!items.length){showToast('Defina horário e lembrete em pelo menos uma tarefa.');return}const t0=today();const seq=Math.floor(Date.now()/60000);const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Agenda Lagares//Alertas iPhone//PT','CALSCALE:GREGORIAN','METHOD:PUBLISH'];let moved=0;items.forEach(task=>{const evDate=task.date<t0?t0:task.date;if(evDate!==task.date)moved++;const trigger=task.reminder===0?'PT0M':`-PT${task.reminder}M`;const meta=tagMeta(task.tag);lines.push('BEGIN:VEVENT',`UID:${icsEscape(task.id)}@agenda-lagares`,`DTSTAMP:${stamp}`,`SEQUENCE:${seq}`,`DTSTART:${icsDateTime(evDate,task.time)}`,`DTEND:${endDateTime(evDate,task.time)}`,`SUMMARY:${icsEscape(task.text)}`,`DESCRIPTION:${icsEscape(`Tag: ${meta.label}`)}`,'BEGIN:VALARM',`TRIGGER:${trigger}`,'ACTION:DISPLAY',`DESCRIPTION:${icsEscape(task.text)}`,'END:VALARM','END:VEVENT')});lines.push('END:VCALENDAR');const blob=new Blob([lines.join('\r\n')],{type:'text/calendar;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='agenda-lembretes.ics';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast(moved?`Arquivo criado. ${moved} pendente(s) atrasada(s) reagendada(s) para hoje.`:'Arquivo criado. Abra-o e adicione ao Calendário.')}
 
+    /* seed pessoal v1: cardio de ontem (07/07) + expediente Energisa + compra Venvanse — roda 1x por aparelho, sem duplicar */
+    (function seedPessoal(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v1'))return;
+        let mudou=false;
+        // 1) cardio feito em 07/07 (1h) que nao deu para marcar
+        if(!tasks.some(t=>t.date==='2026-07-07'&&/cardio/i.test(t.text))){
+          tasks.push({id:id(),text:'Cardio — 1h00',date:'2026-07-07',time:'',tag:'saude',reminder:-1,done:true});mudou=true;
+        }
+        // 2) expediente Energisa (seg–sex, manha e tarde) como recorrencia
+        const rules=loadRules();
+        if(!rules.some(r=>/energisa/i.test(r.text))&&!tasks.some(t=>/Trabalho — Energisa/i.test(t.text))){
+          rules.push({id:id(),text:'Trabalho — Energisa (manhã 07:30–11:30)',time:'07:30',tag:'trabalho',reminder:-1,freq:'weekdays',start:'2026-07-08',until:''});
+          rules.push({id:id(),text:'Trabalho — Energisa (tarde 13:30–17:30)',time:'13:30',tag:'trabalho',reminder:-1,freq:'weekdays',start:'2026-07-08',until:''});
+          saveRules(rules);mudou=true;
+        }
+        // 3) compra do Venvanse 30 mg (2 caixas) — hoje 19:30, se nao houver parecida
+        if(!tasks.some(t=>/venva[nsz]|venvase/i.test(t.text))){
+          tasks.push({id:id(),text:'Compra — Venvanse 30 mg (2 caixas)',date:'2026-07-08',time:'19:30',tag:'pessoal',reminder:-1,done:true});mudou=true;
+        }
+        if(mudou)save();
+        localStorage.setItem('agenda_seed_pessoal_v1','1');
+      }catch(_){}
+    })();
+    /* seed pessoal v2: rotina de 08/07 + pendencias (titulo curto, detalhe na caixinha) */
+    (function seedPessoal2(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v2'))return;
+        const novas=[
+          {id:'sd2-janta',text:'Janta',date:'2026-07-08',time:'21:00',tag:'pessoal',reminder:-1,done:false},
+          {id:'sd2-lavar',text:'Lavar roupa',date:'2026-07-08',time:'20:40',tag:'casa',reminder:0,done:false},
+          {id:'sd2-secar',text:'Secar roupa',date:'2026-07-08',time:'23:40',tag:'casa',reminder:0,done:true},
+          {id:'sd2-medvet',text:'Renomear hospital no repositório de estoque',date:'2026-07-08',time:'',tag:'pessoal',reminder:-1,done:false},
+          {id:'sd2-radios',text:'Entregar rádios no DMSL',date:'2026-07-09',time:'07:30',tag:'trabalho',reminder:15,done:false},
+          {id:'sd2-kml',text:'Simular KML T1/T2 (COEP 2025)',date:'2026-07-11',time:'',tag:'trabalho',reminder:-1,done:false},
+          {id:'sd2-radios-cobrar',text:'Cobrar parecer dos rádios (DMSL)',date:'2026-07-14',time:'',tag:'trabalho',reminder:-1,done:false},
+        ];
+        let mudou=false;
+        novas.forEach(n=>{
+          if(tasks.some(t=>String(t.id)===n.id||t.text===n.text))return;
+          tasks.push(n);mudou=true;
+        });
+        if(mudou)save();
+        // detalhamento na caixinha de notas
+        try{
+          const NK='agenda_notas_v1';
+          const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+          const det={
+            'sd2-medvet':'Pendência pessoal: no repositório de controle de estoque, mudar o nome do hospital que está lá para "Medical Vet".',
+            'sd2-radios':'Levar os rádios ao DMSL para avaliação em detalhes. Importante: são itens FORA DE ESTOQUE.',
+            'sd2-kml':'Simular o KML de T1 e T2 de todos os trechos da pasta de 2025 do COEP.',
+            'sd2-radios-cobrar':'Cobrar do DMSL se já existe algum parecer da avaliação dos rádios entregues em 09/07 (itens fora de estoque).',
+            'sd2-secar':'Colocar a roupa da máquina para secar (lavagem começou às 20:40).'
+          };
+          Object.keys(det).forEach(k=>{if(!notas[k])notas[k]={prio:'',durationMin:null,detail:det[k],valor:'',subs:[]};});
+          localStorage.setItem(NK,JSON.stringify(notas));
+        }catch(_){}
+        localStorage.setItem('agenda_seed_pessoal_v2','1');
+      }catch(_){}
+    })();
+    /* seed pessoal v3: anunciar iPhone 13 amanha (09/07) entre trabalho e academia; reagenda se ja estiver pendente em dia anterior */
+    (function seedPessoal3(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v3'))return;
+        let alvo=tasks.find(t=>!t.done&&/iphone/i.test(t.text)&&/anunc|vender|venda/i.test(t.text));
+        if(alvo){ alvo.date='2026-07-09'; alvo.time='17:45'; }             // reagenda a pendente para amanha
+        else{
+          alvo={id:'sd3-iphone',text:'Anunciar iPhone 13 (PM)',date:'2026-07-09',time:'17:45',tag:'pessoal',reminder:15,done:false};
+          tasks.push(alvo);
+        }
+        save();
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        const n=notas[alvo.id]||{prio:'',durationMin:null,detail:'',valor:'',subs:[]};
+        n.detail='ANÚNCIO PRONTO (copiar e colar):\n\n📱 iPhone 13 — 128 GB\n\n✅ Bateria com 100% de saúde (bateria trocada recentemente)\n✅ 128 GB de armazenamento\n✅ Funcionando perfeitamente\n\nAparelho em Palmas–TO. Entrego em mãos.\nAceito propostas — chama no chat!';
+        n.subs=Array.isArray(n.subs)?n.subs:[];
+        if(!n.subs.some(s=>/facebook/i.test(s.text)))n.subs.push({id:'sd3-fb',text:'Anunciar no Facebook',done:false});
+        if(!n.subs.some(s=>/olx/i.test(s.text)))n.subs.push({id:'sd3-olx',text:'Anunciar na OLX',done:false});
+        notas[alvo.id]=n;
+        localStorage.setItem(NK,JSON.stringify(notas));
+        localStorage.setItem('agenda_seed_pessoal_v3','1');
+      }catch(_){}
+    })();
+    /* seed pessoal v4: conclui janta+lavagem; move renomear-repositorio p/ 09/07 06:00 (junto da academia); fechar orcamento 09:30-11:30 */
+    (function seedPessoal4(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v4'))return;
+        tasks.forEach(t=>{
+          if(t.done)return;
+          if(String(t.id)==='sd2-lavar'||t.text==='Lavar roupa')t.done=true;
+          if(String(t.id)==='sd2-janta'||t.text==='Janta')t.done=true;
+          if(String(t.id)==='sd2-medvet'||/renomear hospital/i.test(t.text)){t.date='2026-07-09';t.time='06:00';}
+        });
+        if(!tasks.some(t=>/fechar orçamento/i.test(t.text))){
+          tasks.push({id:'sd4-orcamento',text:'Fechar orçamento — Equip. Especiais',date:'2026-07-09',time:'09:30',tag:'trabalho',reminder:15,done:false});
+          try{
+            const NK='agenda_notas_v1';
+            const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+            notas['sd4-orcamento']={prio:'alta',durationMin:120,detail:'Das 09:30 às 11:30 (dentro do expediente Energisa): fechar o orçamento de Equipamentos Especiais.\nBase: app Equipamentos Especiais → Orçamento (58 do DCMD) e o Excel exportado (Dinâmica / Detalhe / Premissas).',valor:'',subs:[]};
+            localStorage.setItem(NK,JSON.stringify(notas));
+          }catch(_){}
+        }
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v4','1');
+      }catch(_){}
+    })();
+    /* seed pessoal v5: lembrete Allan cabeleireiro (09/07 10:00) + conclui 'Secar e dobrar roupas' de 28/06 */
+    (function seedPessoal5(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v5'))return;
+        tasks.forEach(t=>{if(!t.done&&t.date==='2026-06-28'&&/secar e dobrar/i.test(t.text))t.done=true;});
+        if(!tasks.some(t=>/allan/i.test(t.text)&&/cabele/i.test(t.text))){
+          tasks.push({id:'sd5-allan',text:'Mandar mensagem — Allan cabeleireiro',date:'2026-07-09',time:'10:00',tag:'pessoal',reminder:0,done:false});
+          try{
+            const NK='agenda_notas_v1';
+            const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+            notas['sd5-allan']={prio:'',durationMin:null,detail:'Perguntar ao Allan (cabeleireiro) se ele vai estar trabalhando na hora do almoço, entre 11:30 e 13:30.',valor:'',subs:[]};
+            localStorage.setItem(NK,JSON.stringify(notas));
+          }catch(_){}
+        }
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v5','1');
+      }catch(_){}
+    })();
+    (function seedPessoal6(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v6'))return;
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        if(!tasks.some(t=>/vaper|gaspar|blvk|spearmint/i.test(t.text))){
+          tasks.push({id:'sd6-vaper',text:'Cobrar retorno — Vaper Clube e Gaspar',date:'2026-07-09',time:'12:00',tag:'pessoal',reminder:0,done:false});
+          notas['sd6-vaper']={prio:'',durationMin:null,detail:'Pedir uma posição para a Vaper Clube e para a Gaspar.\n\nMensagem para enviar:\n"Olá, tudo bem? Estou aguardando o BLVK Salts Spearmint 50mg. Vocês já têm uma previsão de chegada? Se puderem me passar um prazo estimado, agradeço bastante. Obrigado!"',valor:'',subs:[{text:'Vaper Clube',done:false},{text:'Gaspar',done:false}]};
+        }
+        if(!tasks.some(t=>/chat\s*gpt|chatgpt/i.test(t.text))){
+          tasks.push({id:'sd6-chatgpt',text:'Cobrar o pessoal do ChatGPT',date:'2026-07-09',time:'',tag:'pessoal',reminder:-1,done:false});
+          notas['sd6-chatgpt']={prio:'',durationMin:null,detail:'Ainda não cobrei — pendente. Cobrar o pessoal do ChatGPT (rateio/valor da assinatura).',valor:'',subs:[]};
+        }
+        localStorage.setItem(NK,JSON.stringify(notas));
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v6','1');
+      }catch(_){}
+    })();
+    (function seedPessoal7(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v7'))return;
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        if(!tasks.some(t=>/cortar o cabelo|corte de cabelo/i.test(t.text))){
+          tasks.push({id:'sd7-corte',text:'Cortar o cabelo (se o Allan confirmar)',date:'2026-07-09',time:'11:30',tag:'pessoal',reminder:0,done:false});
+          notas['sd7-corte']={prio:'',durationMin:null,detail:'Condicional: só vale se o Allan confirmar que estará trabalhando no almoço (11:30–13:30). Ver a tarefa das 10:00 "Mandar mensagem — Allan cabeleireiro". Se ele aceitar, ir cortar o cabelo às 11:30; caso contrário, remarcar.',valor:'',subs:[]};
+        }
+        localStorage.setItem(NK,JSON.stringify(notas));
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v7','1');
+      }catch(_){}
+    })();
+    (function seedPessoal8(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v8'))return;
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        if(!tasks.some(t=>t.id==='sd8-cobrar'||(/cobrar/i.test(t.text)&&/lu[ií]s|juan|tiago/i.test(t.text)))){
+          tasks.push({id:'sd8-cobrar',text:'Cobrar — Luís, Juan e Tiago',date:'2026-07-09',time:'06:00',tag:'pessoal',reminder:0,done:false});
+          notas['sd8-cobrar']={prio:'',durationMin:null,detail:'Cobrar no horário da academia:\n• Luís — R$ 25\n• Juan — R$ 30\n• Tiago — R$ 25\n\nTotal: R$ 80',valor:'80',subs:[{text:'Luís — R$ 25',done:false},{text:'Juan — R$ 30',done:false},{text:'Tiago — R$ 25',done:false}]};
+        }
+        localStorage.setItem(NK,JSON.stringify(notas));
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v8','1');
+      }catch(_){}
+    })();
+    (function seedPessoal9(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v9'))return;
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        const noteTpl=()=>({prio:'',durationMin:null,detail:'Cobrar o pessoal do ChatGPT (assinatura):\n• Luís — R$ 25\n• Juan — R$ 30\n• Tiago — R$ 25\n\nTotal: R$ 80',valor:'80',subs:[{text:'Luís — R$ 25',done:false},{text:'Juan — R$ 30',done:false},{text:'Tiago — R$ 25',done:false}]});
+        // ChatGPT é a mesma cobrança do Luís/Juan/Tiago: remove o placeholder e usa a de 06:00 com subtarefas
+        tasks=tasks.filter(t=>t.id!=='sd6-chatgpt');
+        if(notas['sd6-chatgpt'])delete notas['sd6-chatgpt'];
+        const cur=tasks.find(t=>t.id==='sd8-cobrar');
+        if(cur){cur.text='Cobrar ChatGPT — Luís, Juan e Tiago';cur.time='06:00';}
+        notas['sd8-cobrar']=noteTpl();
+        // Recorrência mensal: todo dia 01 (a partir de 01/08), no horário da academia
+        const rules=loadRules();
+        if(!rules.some(r=>r&&r.freq==='monthly'&&/chatgpt/i.test(r.text||''))){
+          rules.push({id:'chatgpt-mensal',text:'Cobrar ChatGPT — Luís, Juan e Tiago',time:'06:00',tag:'pessoal',reminder:0,freq:'monthly',start:'2026-08-01',until:'',note:noteTpl()});
+          saveRules(rules);
+        }
+        localStorage.setItem(NK,JSON.stringify(notas));
+        save();
+        topUpRecurring();
+        localStorage.setItem('agenda_seed_pessoal_v9','1');
+      }catch(_){}
+    })();
+    (function seedPessoal10(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v10'))return;
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        if(!tasks.some(t=>t.id==='sd10-vanish'||/vanish/i.test(t.text))){
+          tasks.push({id:'sd10-vanish',text:'Comprar Vanish + energético',date:'2026-07-09',time:'13:05',tag:'pessoal',reminder:15,done:false});
+          notas['sd10-vanish']={prio:'',durationMin:null,detail:'Na hora do almoço:\n• Vanish (a namorada pediu)\n• Energético',valor:'',subs:[{text:'Vanish',done:false},{text:'Energético',done:false}]};
+        }
+        if(!tasks.some(t=>t.id==='sd10-camisas'||(/entregar/i.test(t.text)&&/camisa/i.test(t.text)))){
+          tasks.push({id:'sd10-camisas',text:'Entregar 2 camisas brancas para a namorada',date:'2026-07-09',time:'13:20',tag:'pessoal',reminder:0,done:false});
+          notas['sd10-camisas']={prio:'',durationMin:null,detail:'Entregar as 2 camisas brancas que estão no carro para ela. Fazer logo após comprar o Vanish, antes de voltar para o trabalho (13:30).',valor:'',subs:[]};
+        }
+        localStorage.setItem(NK,JSON.stringify(notas));
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v10','1');
+      }catch(_){}
+    })();
+    (function seedPessoal11(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v11'))return;
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        if(!tasks.some(t=>t.id==='sd11-capo'||(/pintura/i.test(t.text)&&/cap[oô]|corolla/i.test(t.text)))){
+          tasks.push({id:'sd11-capo',text:'Pesquisar pintura do capô do Corolla',date:'2026-07-09',time:'06:00',tag:'pessoal',reminder:0,done:false});
+          notas['sd11-capo']={prio:'',durationMin:null,detail:'Pintura do capô — Corolla XEi 2019, branco.\n\nBuscar e validar pelo menos 5 orçamentos para achar o melhor custo-benefício. Comparar: preço, tipo de tinta/verniz, garantia, prazo e reputação da oficina.',valor:'',subs:[{text:'Orçamento 1',done:false},{text:'Orçamento 2',done:false},{text:'Orçamento 3',done:false},{text:'Orçamento 4',done:false},{text:'Orçamento 5',done:false}]};
+        }
+        localStorage.setItem(NK,JSON.stringify(notas));
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v11','1');
+      }catch(_){}
+    })();
+    (function seedPessoal12(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v12'))return;
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        if(!tasks.some(t=>t.id==='sd12-lustosa'||/lustosa/i.test(t.text))){
+          tasks.push({id:'sd12-lustosa',text:'Cobrar Lustosa — R$ 150',date:'2026-07-10',time:'08:00',tag:'pessoal',reminder:0,done:false});
+          notas['sd12-lustosa']={prio:'',durationMin:null,detail:'Cobrar o Lustosa — R$ 150. (Não é da Energisa, mas cai no horário de trabalho.)',valor:'150',subs:[]};
+        }
+        if(!tasks.some(t=>t.id==='sd12-fernanda'||/fernanda/i.test(t.text)||/red\s*magic/i.test(t.text))){
+          tasks.push({id:'sd12-fernanda',text:'Cobrar Fernanda — Red Magic (R$ 4.800)',date:'2026-07-10',time:'08:00',tag:'pessoal',reminder:0,done:false});
+          notas['sd12-fernanda']={prio:'',durationMin:null,detail:'Cobrar a Fernanda referente à venda do celular Red Magic — R$ 4.800.',valor:'4800',subs:[]};
+        }
+        localStorage.setItem(NK,JSON.stringify(notas));
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v12','1');
+      }catch(_){}
+    })();
+    (function seedPessoal13(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v13'))return;
+        // Move as cobranças Lustosa/Fernanda de 11/07 06:00 -> sexta 10/07 08:00
+        tasks.forEach(t=>{
+          if((t.id==='sd12-lustosa'||t.id==='sd12-fernanda')&&!t.done&&t.date==='2026-07-11'){t.date='2026-07-10';t.time='08:00';}
+        });
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v13','1');
+      }catch(_){}
+    })();
+    (function seedPessoal14(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v14'))return;
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        // Cardio de hoje (08/07) concluído — 1h01
+        if(!tasks.some(t=>t.date==='2026-07-08'&&/cardio/i.test(t.text))){
+          tasks.push({id:'sd14-cardio-0807',text:'Cardio — 1h01',date:'2026-07-08',time:'',tag:'saude',reminder:-1,done:true});
+          notas['sd14-cardio-0807']={prio:'',durationMin:61,detail:'',valor:'',parcPagas:'',parcRest:'',subs:[]};
+        }
+        // Cobrar parcela do Pitágoras — PS5 vendido (R$ 350) — 06/10
+        if(!tasks.some(t=>t.id==='sd14-pitagoras'||/pit[aá]goras/i.test(t.text))){
+          tasks.push({id:'sd14-pitagoras',text:'Cobrar parcela do Pitágoras — PS5',date:'2026-10-06',time:'',tag:'financeiro',reminder:-1,done:false});
+          notas['sd14-pitagoras']={prio:'',durationMin:null,detail:'Cobrar a parcela do Pitágoras referente à venda do PlayStation 5 (R$ 350). Parcela 6 de 10 (5 pagas, 5 restantes).',valor:'350',parcPagas:'5',parcRest:'5',subs:[]};
+        }
+        localStorage.setItem(NK,JSON.stringify(notas));
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v14','1');
+      }catch(_){}
+    })();
+    (function seedPessoal15(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v15'))return;
+        // Pitágoras: parcela 6 de 10 (5 pagas, 5 restantes)
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        const n=notas['sd14-pitagoras'];
+        if(n){
+          if(!n.parcPagas)n.parcPagas='5';
+          if(!n.parcRest)n.parcRest='5';
+          if(n.detail&&!/parcela 6/i.test(n.detail))n.detail='Cobrar a parcela do Pitágoras referente à venda do PlayStation 5 (R$ 350). Parcela 6 de 10 (5 pagas, 5 restantes).';
+          notas['sd14-pitagoras']=n;
+          localStorage.setItem(NK,JSON.stringify(notas));
+        }
+        localStorage.setItem('agenda_seed_pessoal_v15','1');
+      }catch(_){}
+    })();
+    (function seedPessoal16(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v16'))return;
+        tasks.forEach(t=>{if(t.id==='sd2-secar'&&!t.done)t.done=true;});
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v16','1');
+      }catch(_){}
+    })();
+    (function seedPessoal17(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v17'))return;
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        if(!tasks.some(t=>t.id==='sd17-orcpessoal'||(/or[çc]amento pessoal/i.test(t.text)||(/planilhar/i.test(t.text)&&/gasto/i.test(t.text))))){
+          tasks.push({id:'sd17-orcpessoal',text:'Começar a planilhar orçamento pessoal (gastos e ganhos)',date:'2026-07-09',time:'20:00',tag:'financeiro',reminder:0,done:false});
+          notas['sd17-orcpessoal']={prio:'',durationMin:null,detail:'Iniciar o controle de orçamento pessoal: montar a planilha de gastos e ganhos e começar o fluxo. (Sem estresse — se estiver cansado, só deixar a estrutura pronta já vale.)',valor:'',parcPagas:'',parcRest:'',subs:[{text:'Listar ganhos fixos',done:false},{text:'Listar gastos fixos',done:false},{text:'Criar categorias',done:false}]};
+        }
+        localStorage.setItem(NK,JSON.stringify(notas));
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v17','1');
+      }catch(_){}
+    })();
+    (function seedPessoal18(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v18'))return;
+        if(!tasks.some(t=>t.id==='sd18-tenis'||(/lavar/i.test(t.text)&&/t[êe]nis/i.test(t.text)))){
+          tasks.push({id:'sd18-tenis',text:'Lavar os tênis',date:'2026-07-11',time:'15:00',tag:'casa',reminder:0,done:false});
+        }
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v18','1');
+      }catch(_){}
+    })();
+    (function seedPessoal19(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v19'))return;
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        if(!tasks.some(t=>t.id==='sd19-paulo'||(/paulo/i.test(t.text)&&/testosterona|landerland/i.test(t.text)))){
+          tasks.push({id:'sd19-paulo',text:'Falar com o Paulo — Testosterona Landerland',date:'2026-07-09',time:'13:00',tag:'pessoal',reminder:0,done:false});
+          notas['sd19-paulo']={prio:'',durationMin:null,detail:'Ver com o Paulo no almoço:\n1. Se ele tem a Testosterona da Landerland em estoque.\n2. Se tiver: se posso pegar no final do dia (17:30) ou se ele consegue entregar na Energisa.\n3. Se ele ainda tem interesse no iPhone 16 Pro Max para venda.',valor:'',parcPagas:'',parcRest:'',subs:[{text:'Testosterona Landerland em estoque?',done:false},{text:'Pegar 17:30 ou entrega na Energisa?',done:false},{text:'Ainda quer o iPhone 16 Pro Max?',done:false}]};
+        }
+        localStorage.setItem(NK,JSON.stringify(notas));
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v19','1');
+      }catch(_){}
+    })();
+    (function seedPessoal20(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v20'))return;
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        // 1) Corte de cabelo vira condicional na mensagem pro Allan (sd5-allan)
+        const allan=notas['sd5-allan']||{prio:'',durationMin:null,detail:'',valor:'',subs:[]};
+        allan.cond={
+          thenText:'Cortar o cabelo',thenDate:'2026-07-09',thenTime:'11:30',thenFired:false,
+          elseText:'Remarcar corte de cabelo (Allan)',elseDate:'2026-07-09',elseTime:'18:30',elseFired:false
+        };
+        notas['sd5-allan']=allan;
+        // remove o card antigo "Cortar o cabelo (se o Allan confirmar)" — agora nasce do condicional
+        tasks=tasks.filter(t=>t.id!=='sd7-corte');
+        if(notas['sd7-corte'])delete notas['sd7-corte'];
+        // 2) Orçamento pessoal: 20:00, subtarefa de cobrar o pai e case p/ o dia seguinte na academia
+        const orc=notas['sd17-orcpessoal'];
+        tasks.forEach(t=>{if(t.id==='sd17-orcpessoal'&&!t.done)t.time='20:00';});
+        if(orc){
+          orc.cond={thenText:'',thenDate:'',thenTime:'',thenFired:false,elseText:'Orçamento pessoal — fazer pelo menos o rascunho',elseDate:'2026-07-10',elseTime:'05:30',elseFired:false};
+          orc.subs=Array.isArray(orc.subs)?orc.subs:[];
+          if(!orc.subs.some(s=>/cobrar/i.test(s.text)&&/pai/i.test(s.text))){
+            orc.subs.push({text:'Cobrar do pai: Vale Alimentação usado + Ubers do mês passado (carro da mãe no conserto) + valor restante sem a peça (atrelado à venda do iPhone 13, ainda não anunciado)',done:false});
+          }
+          notas['sd17-orcpessoal']=orc;
+        }
+        // 3) Mensagem pronta para o Paulo
+        const paulo=notas['sd19-paulo'];
+        if(paulo&&paulo.detail&&!/Mensagem para enviar/i.test(paulo.detail)){
+          paulo.detail=paulo.detail+'\n\nMensagem para enviar:\n"Fala Paulo, beleza? Você tem Testosterona da Landerland em estoque? Se tiver, consigo pegar no fim do dia (17:30) ou você consegue entregar aqui na Energisa? E aproveitando: ainda tem interesse no iPhone 16 Pro Max pra compra? Abraço!"';
+          notas['sd19-paulo']=paulo;
+        }
+        localStorage.setItem(NK,JSON.stringify(notas));
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v20','1');
+      }catch(_){}
+    })();
     el.currentDate.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'}).format(new Date());applyTheme(localStorage.getItem(THEME_KEY)==='light'?'light':'dark');topUpRecurring();render();if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{if(sessionStorage.getItem('sw_reloaded'))return;sessionStorage.setItem('sw_reloaded','1');}catch(_){}location.reload();});registerWorker().then(function(r){try{if(r&&r.update)r.update();}catch(_){}}).catch(()=>{});}setInterval(checkAlerts,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAlerts()});
     (function(){function wire(){const b=document.getElementById('app-update');if(b&&!b.dataset.wired){b.dataset.wired='1';b.addEventListener('click',appForceUpdate);}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();})();
     el.themeToggle.addEventListener('click',()=>applyTheme(el.root.dataset.theme==='dark'?'light':'dark'));el.alertsBtn.addEventListener('click',()=>{updateAlertsStatus();el.alertsDialog.showModal()});$('#closeAlertsDialog').addEventListener('click',()=>el.alertsDialog.close());$('#activateAlerts').addEventListener('click',activateAlerts);$('#exportCalendar').addEventListener('click',exportCalendar);$('#openDialog').addEventListener('click',openTaskForm);$('#closeTaskDialog').addEventListener('click',()=>el.taskDialog.close());
@@ -340,17 +724,10 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
         const pres=jCtx.createBiquadFilter();pres.type='peaking';pres.frequency.value=2600;pres.Q.value=1;pres.gain.value=6;
         const soft=jCtx.createBiquadFilter();soft.type='highshelf';soft.frequency.value=7600;soft.gain.value=-2;
         const comp=jCtx.createDynamicsCompressor();comp.threshold.value=-26;comp.ratio.value=6;comp.attack.value=0.003;comp.release.value=0.16;
-        const conv=jCtx.createConvolver();conv.buffer=makeIR(jCtx,0.9,2);
-        const wet=jCtx.createGain();wet.gain.value=0.32;
-        const dry=jCtx.createGain();dry.gain.value=0.82;
-        const delay=jCtx.createDelay();delay.delayTime.value=0.026;
-        const fb=jCtx.createGain();fb.gain.value=0.34;
-        const comb=jCtx.createGain();comb.gain.value=0.22;
+        // Sem eco/reverb: voz limpa (apenas EQ + compressao) para nao ficar picada
         const master=jCtx.createGain();master.gain.value=1;
         jSrc.connect(hp);hp.connect(body);body.connect(pres);pres.connect(soft);soft.connect(comp);
-        comp.connect(dry);dry.connect(master);
-        comp.connect(conv);conv.connect(wet);wet.connect(master);
-        comp.connect(delay);delay.connect(fb);fb.connect(delay);delay.connect(comb);comb.connect(master);
+        comp.connect(master);
         master.connect(jCtx.destination);
       }catch(_){try{if(jSrc)jSrc.connect(jCtx.destination);}catch(__){}}
     }
@@ -446,15 +823,15 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       });
     }
     function chunkText(t){
+      // Acumula frases num unico trecho ate ~600 chars, sem isolar a 1a frase
+      // (evita a pausa/"picado" logo apos a primeira frase). So divide textos longos.
       const sents=t.match(/[^.!?\n]+[.!?\u2026]*\s*/g)||[t];
-      const chunks=[sents[0].trim()];
-      let cur='';
-      for(let i=1;i<sents.length;i++){
-        if((cur+sents[i]).length>220&&cur){chunks.push(cur.trim());cur=sents[i];}
+      const chunks=[];let cur='';
+      for(let i=0;i<sents.length;i++){
+        if((cur+sents[i]).length>600&&cur){chunks.push(cur.trim());cur=sents[i];}
         else cur+=sents[i];
       }
       if(cur.trim())chunks.push(cur.trim());
-      if(chunks.length>3){chunks[2]=chunks.slice(2).join(' ');chunks.length=3;}
       return chunks.filter(Boolean);
     }
     async function elFetch(t){
@@ -518,7 +895,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
     }
 
     let jarvisBriefed=false;
-    function isTreino(t){return /^🏋/.test(t.text||'');} // ignora os cards de treino no briefing
+    function isTreino(t){const x=t.text||'';return /^(?:🏋|Treino [ABC])/.test(x)||/^Treino [ABC]\b/.test(x);} // ignora os cards de treino no briefing
     function todayPhrase(){
       const n=new Date(),iso=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
       let ts=[];try{ts=(window.AgendaAPI?window.AgendaAPI.getTasks():[]).filter(t=>!t.done&&!isTreino(t));}catch(_){}
@@ -738,9 +1115,10 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
   </script>
   <!-- ========== /JARVIS v2 ========== -->
 
-  <script src="./treino.js?v=1"></script>
+  <script src="./treino.js?v=8"></script>
   <script src="./painel.js?v=1"></script>
-  <script src="./notas.js?v=1"></script>
+  <script src="./notas.js?v=5"></script>
+  <script src="./condicional.js?v=3"></script>
   <script src="./sync.js?v=1"></script>
 </body>
 </html>

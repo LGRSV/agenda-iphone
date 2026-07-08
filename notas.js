@@ -18,13 +18,14 @@
 
   const load = () => { try { const v = JSON.parse(localStorage.getItem(NOTES_KEY)); return v && typeof v === 'object' ? v : {}; } catch (_) { return {}; } };
   const saveAll = a => localStorage.setItem(NOTES_KEY, JSON.stringify(a));
-  const getNote = id => { const n = load()[id]; return { prio: n && n.prio || '', durationMin: n && n.durationMin || null, detail: n && n.detail || '', valor: n && n.valor || '', subs: n && Array.isArray(n.subs) ? n.subs : [] }; };
+  const getNote = id => { const n = load()[id]; return { prio: n && n.prio || '', durationMin: n && n.durationMin || null, detail: n && n.detail || '', valor: n && n.valor || '', parcPagas: n && n.parcPagas || '', parcRest: n && n.parcRest || '', cond: n && n.cond || null, subs: n && Array.isArray(n.subs) ? n.subs : [] }; };
+  const hasCond = c => !!(c && (String(c.thenText || '').trim() || String(c.elseText || '').trim()));
   const PRIOS = { alta: { label: 'Alta', color: '#ffb74d' }, urgente: { label: 'Urgente', color: '#ff7f91' } };
   const NOTE_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>';
   function taskTag(id){try{const a=JSON.parse(localStorage.getItem('agenda_lagares_v3')||'[]');const t=Array.isArray(a)?a.find(x=>String(x.id)===String(id)):null;return t&&t.tag||'';}catch(_){return '';}}
   function setNote(id, note) {
     const all = load();
-    const empty = !note.prio && !note.durationMin && !note.detail.trim() && !note.valor && (!note.subs || !note.subs.length);
+    const empty = !note.prio && !note.durationMin && !note.detail.trim() && !note.valor && !note.parcPagas && !note.parcRest && !hasCond(note.cond) && (!note.subs || !note.subs.length);
     if (empty) delete all[id]; else all[id] = note;
     saveAll(all);
   }
@@ -78,6 +79,20 @@
       .notas-valor-row span{font-size:15px;font-weight:800;color:var(--accent)}
       .notas-valor{flex:1;min-height:42px;padding:9px 11px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font-size:16px;font-weight:700}
       .notas-valor:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(117,203,255,.2)}
+      .notas-parc-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:2px}
+      .notas-parc{display:flex;flex-direction:column;gap:5px;margin:0}
+      .notas-parc>span{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+      .notas-parc input{min-height:42px;padding:9px 11px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font-size:16px;font-weight:700}
+      .notas-parc input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(117,203,255,.2)}
+      .notas-cond-branch{margin-bottom:10px}
+      .notas-cond-cap{display:block;font-size:11px;font-weight:800;color:var(--text);margin-bottom:6px}
+      .notas-cond-cap b{color:var(--accent);font-weight:800}
+      .notas-cond-fields{display:grid;grid-template-columns:1fr 128px 92px;gap:7px}
+      .notas-cond-fields input{min-height:40px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px}
+      .notas-cond-fields input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(117,203,255,.2)}
+      .notas-cond-fields .notas-cond-txt{grid-column:1/-1}
+      .notas-cond-hint{margin:2px 0 0;color:var(--faint);font-size:10.5px;line-height:1.4}
+      @media(max-width:430px){.notas-cond-fields{grid-template-columns:1fr 1fr}.notas-cond-fields .notas-cond-txt{grid-column:1/-1}}
       .notas-detail{width:100%;min-height:72px;padding:9px 11px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--text);font-size:14px;line-height:1.45;resize:vertical;font-family:inherit;outline:0}
       .notas-detail:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(117,203,255,.2)}
       .notas-detail-row{display:flex;justify-content:flex-end;margin-top:7px}
@@ -113,7 +128,8 @@
       Object.keys(PRIOS).map(k => `<button class="notas-prio p-${k} ${note.prio === k ? 'on' : ''}" type="button" data-prio="${k}">${PRIOS[k].label}</button>`).join('');
     panel.innerHTML =
       `<p class="notas-label">Prioridade</p><div class="notas-prios">${prioChips}</div><div class="notas-sep"></div>` +
-      (isFin ? `<p class="notas-label">Valor (R$)</p><div class="notas-valor-row"><span>R$</span><input class="notas-valor" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00" value="${escAttr(note.valor || '')}"></div><div class="notas-sep"></div>` : '') +
+      (isFin ? `<p class="notas-label">Valor (R$)</p><div class="notas-valor-row"><span>R$</span><input class="notas-valor" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00" value="${escAttr(note.valor || '')}"></div>` +
+        `<p class="notas-label">Parcelas (opcional)</p><div class="notas-parc-row"><label class="notas-parc"><span>Pagas</span><input class="notas-parc-pagas" type="number" inputmode="numeric" min="0" step="1" placeholder="0" value="${escAttr(note.parcPagas || '')}"></label><label class="notas-parc"><span>Restantes</span><input class="notas-parc-rest" type="number" inputmode="numeric" min="0" step="1" placeholder="0" value="${escAttr(note.parcRest || '')}"></label></div><div class="notas-sep"></div>` : '') +
       `<p class="notas-label">Duração</p>` +
       `<div class="notas-durs">` +
       DURS.map(m => `<button class="notas-dur ${note.durationMin === m ? 'on' : ''}" type="button" data-dur="${m}">${fmtDur(m)}</button>`).join('') +
@@ -122,6 +138,13 @@
       `<p class="notas-label">Sub-tarefas</p>` +
       `<div class="notas-subs">${note.subs.map(subRow).join('')}</div>` +
       `<div class="notas-add"><input type="text" placeholder="Nova sub-tarefa" maxlength="200"><button type="button" data-add aria-label="Adicionar">＋</button></div>` +
+      `<div class="notas-sep"></div>` +
+      `<p class="notas-label">Condicional (opcional)</p>` +
+      (function(){const cond=note.cond||{};return `<div class="notas-cond">` +
+        `<div class="notas-cond-branch"><span class="notas-cond-cap">Se eu <b>concluir</b> esta tarefa, criar:</span><div class="notas-cond-fields"><input class="notas-cond-then notas-cond-txt" type="text" maxlength="200" placeholder="Nova tarefa" value="${escAttr(cond.thenText || '')}"><input class="notas-cond-then-date" type="date" value="${escAttr(cond.thenDate || '')}"><input class="notas-cond-then-time" type="time" value="${escAttr(cond.thenTime || '')}"></div></div>` +
+        `<div class="notas-cond-branch"><span class="notas-cond-cap">Se <b>não acontecer</b> (passar da data), criar:</span><div class="notas-cond-fields"><input class="notas-cond-else notas-cond-txt" type="text" maxlength="200" placeholder="Nova tarefa" value="${escAttr(cond.elseText || '')}"><input class="notas-cond-else-date" type="date" value="${escAttr(cond.elseDate || '')}"><input class="notas-cond-else-time" type="time" value="${escAttr(cond.elseTime || '')}"></div></div>` +
+        `<p class="notas-cond-hint">A nova tarefa é criada sozinha ao concluir (ramo "concluir") ou quando a data passar sem concluir (ramo "não acontecer"). Sem data preenchida, usa a data desta tarefa; o horário é opcional.</p>` +
+        `</div>`;})() +
       `<div class="notas-sep"></div>` +
       `<p class="notas-label">Detalhes</p>` +
       `<textarea class="notas-detail" placeholder="Anotações, recados, cupons…" maxlength="4000"></textarea>` +
@@ -144,8 +167,24 @@
     const durationMin = panel.dataset.durmin ? Number(panel.dataset.durmin) : null;
     const vEl = panel.querySelector('.notas-valor');
     const valor = vEl ? vEl.value.trim() : (getNote(id).valor || '');
+    const pEl = panel.querySelector('.notas-parc-pagas');
+    const rEl = panel.querySelector('.notas-parc-rest');
+    const prev = getNote(id);
+    const parcPagas = pEl ? pEl.value.trim() : (prev.parcPagas || '');
+    const parcRest = rEl ? rEl.value.trim() : (prev.parcRest || '');
     const prio = panel.dataset.priolevel || '';
-    setNote(id, { prio, durationMin, detail, valor, subs });
+    const gv = sel => { const el = panel.querySelector(sel); return el ? el.value.trim() : ''; };
+    const thenText = gv('.notas-cond-then'), thenDate = gv('.notas-cond-then-date'), thenTime = gv('.notas-cond-then-time');
+    const elseText = gv('.notas-cond-else'), elseDate = gv('.notas-cond-else-date'), elseTime = gv('.notas-cond-else-time');
+    const prevCond = prev.cond || {};
+    let cond = null;
+    if (thenText || elseText) {
+      cond = {
+        thenText, thenDate, thenTime, thenFired: prevCond.thenText === thenText ? !!prevCond.thenFired : false,
+        elseText, elseDate, elseTime, elseFired: prevCond.elseText === elseText ? !!prevCond.elseFired : false
+      };
+    }
+    setNote(id, { prio, durationMin, detail, valor, parcPagas, parcRest, cond, subs });
     updateToggle(id);
   }
   const debouncedSave = panel => { clearTimeout(saveTimer); saveTimer = setTimeout(() => saveFromPanel(panel), 400); };
@@ -156,12 +195,16 @@
     const btn = card.querySelector('.notas-toggle');
     if (!btn) return;
     const note = getNote(id);
-    const has = !!(note.prio || note.valor || note.durationMin || note.detail.trim() || note.subs.length);
+    const has = !!(note.prio || note.valor || note.parcPagas || note.parcRest || hasCond(note.cond) || note.durationMin || note.detail.trim() || note.subs.length);
     btn.classList.toggle('has', has);
     let label = has ? '' : 'Detalhes';
-    if (note.valor) label += ' R$ ' + note.valor;
+    if (note.valor || note.parcPagas || note.parcRest) {
+      if (note.valor) label += ' R$ ' + note.valor;
+      if (note.parcPagas || note.parcRest) { const p = Number(note.parcPagas || 0), r = Number(note.parcRest || 0); label += ` · ${p}/${p + r} parc`; }
+    }
     else if (note.durationMin) label += ' ' + fmtDur(note.durationMin);
     else if (note.subs.length) { const d = note.subs.filter(s => s.done).length; label += ` ${d}/${note.subs.length}`; }
+    else if (hasCond(note.cond)) label += ' condicional';
     else if (note.detail.trim()) label += ' •';
     btn.innerHTML = NOTE_SVG;
     btn.appendChild(document.createTextNode(label.trim() ? label.replace(/^ /, '') : ''));
@@ -258,7 +301,7 @@
   document.addEventListener('input', e => {
     const panel = e.target.closest('.notas-panel');
     if (!panel) return;
-    if (e.target.matches('.notas-detail') || e.target.matches('.notas-valor') || e.target.matches('.notas-sub input[type=text]')) debouncedSave(panel);
+    if (e.target.matches('.notas-detail') || e.target.matches('.notas-valor') || e.target.matches('.notas-parc-pagas') || e.target.matches('.notas-parc-rest') || e.target.matches('.notas-cond-then') || e.target.matches('.notas-cond-then-date') || e.target.matches('.notas-cond-then-time') || e.target.matches('.notas-cond-else') || e.target.matches('.notas-cond-else-date') || e.target.matches('.notas-cond-else-time') || e.target.matches('.notas-sub input[type=text]')) debouncedSave(panel);
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.target.matches('.notas-add input')) {
