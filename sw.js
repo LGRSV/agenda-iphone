@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v92';
+const CACHE = 'agenda-lagares-v93';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=6"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -75,4 +75,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v92-parcelas-aplicar-futuro
+// redeploy trigger v93-pitagoras-6de10

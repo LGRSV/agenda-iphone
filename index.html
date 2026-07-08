@@ -398,11 +398,28 @@
         // Cobrar parcela do Pitágoras — PS5 vendido (R$ 350) — 06/10
         if(!tasks.some(t=>t.id==='sd14-pitagoras'||/pit[aá]goras/i.test(t.text))){
           tasks.push({id:'sd14-pitagoras',text:'Cobrar parcela do Pitágoras — PS5',date:'2026-10-06',time:'',tag:'financeiro',reminder:-1,done:false});
-          notas['sd14-pitagoras']={prio:'',durationMin:null,detail:'Cobrar a parcela do Pitágoras referente à venda do PlayStation 5 (R$ 350). Preencher parcelas pagas/restantes conforme for recebendo.',valor:'350',parcPagas:'',parcRest:'',subs:[]};
+          notas['sd14-pitagoras']={prio:'',durationMin:null,detail:'Cobrar a parcela do Pitágoras referente à venda do PlayStation 5 (R$ 350). Parcela 6 de 10 (5 pagas, 5 restantes).',valor:'350',parcPagas:'5',parcRest:'5',subs:[]};
         }
         localStorage.setItem(NK,JSON.stringify(notas));
         save();
         localStorage.setItem('agenda_seed_pessoal_v14','1');
+      }catch(_){}
+    })();
+    (function seedPessoal15(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v15'))return;
+        // Pitágoras: parcela 6 de 10 (5 pagas, 5 restantes)
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        const n=notas['sd14-pitagoras'];
+        if(n){
+          if(!n.parcPagas)n.parcPagas='5';
+          if(!n.parcRest)n.parcRest='5';
+          if(n.detail&&!/parcela 6/i.test(n.detail))n.detail='Cobrar a parcela do Pitágoras referente à venda do PlayStation 5 (R$ 350). Parcela 6 de 10 (5 pagas, 5 restantes).';
+          notas['sd14-pitagoras']=n;
+          localStorage.setItem(NK,JSON.stringify(notas));
+        }
+        localStorage.setItem('agenda_seed_pessoal_v15','1');
       }catch(_){}
     })();
     el.currentDate.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'}).format(new Date());applyTheme(localStorage.getItem(THEME_KEY)==='light'?'light':'dark');topUpRecurring();render();if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{if(sessionStorage.getItem('sw_reloaded'))return;sessionStorage.setItem('sw_reloaded','1');}catch(_){}location.reload();});registerWorker().then(function(r){try{if(r&&r.update)r.update();}catch(_){}}).catch(()=>{});}setInterval(checkAlerts,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAlerts()});
