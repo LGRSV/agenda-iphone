@@ -33,7 +33,7 @@
     <section class="summary" aria-label="Resumo da agenda"><div class="summary-top"><span class="summary-label">Progresso geral</span><strong class="summary-number" id="progressText">0<small>/0</small></strong></div><div class="progress" aria-hidden="true"><div id="progressBar"></div></div><p class="summary-message" id="progressMessage">Carregando tarefas…</p></section>
 
     <nav class="view-tabs" id="viewTabs" aria-label="Visualização da agenda"><button class="view-tab" type="button" data-view="day">Dia</button><button class="view-tab active" type="button" data-view="month">Mês</button><button class="view-tab" type="button" data-view="list">Lista</button></nav>
-    <nav class="filters" id="filters" aria-label="Filtros de tarefas"><button class="chip active" type="button" data-filter="all">Todas</button><button class="chip" type="button" data-filter="open">Em aberto</button><button class="chip" type="button" data-filter="done">Concluídas</button></nav>
+    <nav class="filters" id="filters" aria-label="Filtros de tarefas"><button class="chip active" type="button" data-filter="all">Todas</button><button class="chip" type="button" data-filter="open">Em aberto</button><button class="chip" type="button" data-filter="done">Concluídas</button><button class="chip" type="button" data-filter="work">Trabalho</button></nav>
     <section id="viewContent" aria-live="polite"></section>
   </main>
 
@@ -83,7 +83,16 @@
     const SUN_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2.5 12H5M19 12h2.5M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>';
     const MOON_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4 7 7 0 1 0 20 14.5z"/></svg>';
     function applyTheme(theme){el.root.dataset.theme=theme;el.themeColor.content=theme==='dark'?'#17181c':'#f4f6fa';el.themeToggle.innerHTML=theme==='dark'?SUN_SVG:MOON_SVG;el.themeToggle.title=theme==='dark'?'Modo claro':'Modo escuro';el.themeToggle.setAttribute('aria-label',theme==='dark'?'Mudar para modo claro':'Mudar para modo escuro');localStorage.setItem(THEME_KEY,theme)}
-    function matches(task){return filter==='all'||(filter==='open'?!task.done:task.done)}
+    function inExpediente(task){ // com hora dentro do horario de servico (seg-sex 07:30-11:30 / 13:30-17:30)
+      if(!task.time||!task.date)return false;
+      const g=dateAtNoon(task.date).getDay();if(g<1||g>5)return false;
+      const t=task.time;
+      return (t>='07:30'&&t<='11:30')||(t>='13:30'&&t<='17:30');
+    }
+    function matches(task){
+      if(filter==='work')return task.tag==='trabalho'||inExpediente(task);
+      return filter==='all'||(filter==='open'?!task.done:task.done);
+    }
     function tasksOn(date){return tasks.filter(task=>task.date===date&&matches(task)).sort(taskSort)}
     function renderSummary(){const total=tasks.length,done=tasks.filter(t=>t.done).length,pct=total?Math.round(done/total*100):0;el.progressText.innerHTML=`${done}<small>/${total}</small>`;el.progressBar.style.width=`${pct}%`;el.progressMessage.textContent=total===0?'Sua agenda está vazia.':done===total?'Tudo concluído. Excelente trabalho!':`${pct}% das tarefas concluídas.`}
     const BELL_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>';
@@ -91,7 +100,7 @@
     function toolbar(title,sub,prev,next,todayButton){return`<header class="toolbar"><button class="nav-btn" type="button" data-shift="${prev}" aria-label="Anterior">‹</button><div class="toolbar-title">${title}${sub?`<small>${sub}</small>`:''}</div>${todayButton?`<button class="today-btn" type="button" data-today="1">Hoje</button>`:`<button class="nav-btn" type="button" data-shift="${next}" aria-label="Próximo">›</button>`}</header>`}
     function renderDay(){const list=tasksOn(selectedDate);const subtitle=selectedDate===today()?'Hoje':dateShort(selectedDate);const header=`<header class="toolbar"><button class="nav-btn" type="button" data-day-shift="-1" aria-label="Dia anterior">‹</button><div class="toolbar-title day-pick"><label>${fullDate(selectedDate)} ▾<small>${subtitle}</small><input type="date" class="day-pick-input" value="${selectedDate}" aria-label="Escolher data"></label></div><button class="nav-btn" type="button" data-day-shift="1" aria-label="Próximo dia">›</button></header>`;const body=list.length?`<div class="day-content">${list.map(taskCard).join('')}</div>`:`<div class="day-empty"><strong>Nenhuma tarefa neste dia</strong><span>Use “Nova tarefa” para preencher sua agenda.</span></div>`;el.viewContent.innerHTML=`<section class="view-shell">${header}${body}</section>`}
     function renderMonth(){const year=monthCursor.getFullYear(),month=monthCursor.getMonth();const first=new Date(year,month,1,12),start=new Date(year,month,1-first.getDay(),12);const cells=[];for(let index=0;index<42;index++){const day=new Date(start);day.setDate(start.getDate()+index);const key=iso(day),items=tasksOn(key),unique=[...new Set(items.map(t=>t.tag))],shown=unique.slice(0,2);const chips=shown.map(tag=>{const meta=tagMeta(tag);return`<span class="calendar-tag" style="--tag:${meta.color}">${meta.label}</span>`}).join('');const more=items.length>shown.length?`<span class="calendar-more">+${items.length-shown.length}</span>`:'';const classes=['calendar-day',day.getMonth()===month?'current':'outside',key===selectedDate?'selected':'',key===today()?'today':''].filter(Boolean).join(' ');cells.push(`<button class="${classes}" type="button" data-calendar-date="${key}" aria-label="Abrir ${key}"><span class="day-number">${day.getDate()}</span><span class="calendar-tags">${chips}${more}</span></button>`)}const legend=Object.entries(TAGS).map(([key,meta])=>`<span class="tag-pill" style="--tag:${meta.color}">${meta.label}</span>`).join('');const header=`<header class="toolbar"><button class="nav-btn" type="button" data-month-shift="-1" aria-label="Mês anterior">‹</button><div class="toolbar-title">${monthName(monthCursor)}<small>Toque em um dia para abrir a agenda diária</small></div><button class="nav-btn" type="button" data-month-shift="1" aria-label="Próximo mês">›</button></header>`;el.viewContent.innerHTML=`<section class="view-shell">${header}<div class="month-grid-wrap"><div class="week-labels"><span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span></div><div class="month-grid">${cells.join('')}</div></div><footer class="calendar-legend">${legend}</footer></section>`}
-    function renderList(){const visible=tasks.filter(matches).sort(taskSort);const heading=`<header class="list-header"><h2>${filter==='all'?'Próximas tarefas':filter==='open'?'Tarefas em aberto':'Tarefas concluídas'}</h2><button class="clear-done" id="clearDone" type="button" ${tasks.some(t=>t.done)?'':'hidden'}>Limpar concluídas</button></header>`;if(!visible.length){const copy=filter==='open'?['Nada pendente','Você concluiu todas as tarefas cadastradas.']:filter==='done'?['Nada concluído ainda','As tarefas finalizadas aparecerão aqui.']:['Nenhuma tarefa agendada','Use o botão “Nova tarefa” para começar.'];el.viewContent.innerHTML=`<section class="view-shell">${heading}<div class="day-empty"><strong>${copy[0]}</strong><span>${copy[1]}</span></div></section>`;return}const groups=visible.reduce((map,task)=>{(map[task.date]??=[]).push(task);return map},{});const body=Object.entries(groups).map(([date,items])=>`<section class="group"><div class="group-title"><strong>${fullDate(date)}</strong><span>${items.filter(t=>t.done).length}/${items.length}</span></div>${items.map(taskCard).join('')}</section>`).join('');el.viewContent.innerHTML=`<section class="view-shell">${heading}<div class="list-body">${body}</div></section>`}
+    function renderList(){const visible=tasks.filter(matches).sort(taskSort);const heading=`<header class="list-header"><h2>${filter==='all'?'Próximas tarefas':filter==='open'?'Tarefas em aberto':filter==='work'?'Trabalho — Energisa':'Tarefas concluídas'}</h2><button class="clear-done" id="clearDone" type="button" ${tasks.some(t=>t.done)?'':'hidden'}>Limpar concluídas</button></header>`;if(!visible.length){const copy=filter==='work'?['Nada de trabalho por aqui','Tarefas com a tag Trabalho ou marcadas no horário de expediente aparecem nesta visão.']:filter==='open'?['Nada pendente','Você concluiu todas as tarefas cadastradas.']:filter==='done'?['Nada concluído ainda','As tarefas finalizadas aparecerão aqui.']:['Nenhuma tarefa agendada','Use o botão “Nova tarefa” para começar.'];el.viewContent.innerHTML=`<section class="view-shell">${heading}<div class="day-empty"><strong>${copy[0]}</strong><span>${copy[1]}</span></div></section>`;return}const groups=visible.reduce((map,task)=>{(map[task.date]??=[]).push(task);return map},{});const body=Object.entries(groups).map(([date,items])=>`<section class="group"><div class="group-title"><strong>${fullDate(date)}</strong><span>${items.filter(t=>t.done).length}/${items.length}</span></div>${items.map(taskCard).join('')}</section>`).join('');el.viewContent.innerHTML=`<section class="view-shell">${heading}<div class="list-body">${body}</div></section>`}
     function render(){renderSummary();document.querySelectorAll('[data-view]').forEach(button=>button.classList.toggle('active',button.dataset.view===view));document.querySelectorAll('[data-filter]').forEach(button=>button.classList.toggle('active',button.dataset.filter===filter));if(view==='day')renderDay();else if(view==='month')renderMonth();else renderList()}
     function toggleTask(taskId){const task=tasks.find(t=>t.id===taskId);if(!task)return;task.done=!task.done;save();render();showToast(task.done?'Tarefa concluída':'Tarefa reaberta')}
     function trashPush(task){try{const k='agenda_lixeira_v1';const arr=JSON.parse(localStorage.getItem(k)||'[]');arr.push({task:task,at:Date.now()});while(arr.length>150)arr.shift();localStorage.setItem(k,JSON.stringify(arr))}catch(_){}}
@@ -225,6 +234,24 @@
         }
         save();
         localStorage.setItem('agenda_seed_pessoal_v4','1');
+      }catch(_){}
+    })();
+    /* seed pessoal v5: lembrete Allan cabeleireiro (09/07 10:00) + conclui 'Secar e dobrar roupas' de 28/06 */
+    (function seedPessoal5(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v5'))return;
+        tasks.forEach(t=>{if(!t.done&&t.date==='2026-06-28'&&/secar e dobrar/i.test(t.text))t.done=true;});
+        if(!tasks.some(t=>/allan/i.test(t.text)&&/cabele/i.test(t.text))){
+          tasks.push({id:'sd5-allan',text:'Mandar mensagem — Allan cabeleireiro',date:'2026-07-09',time:'10:00',tag:'pessoal',reminder:0,done:false});
+          try{
+            const NK='agenda_notas_v1';
+            const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+            notas['sd5-allan']={prio:'',durationMin:null,detail:'Perguntar ao Allan (cabeleireiro) se ele vai estar trabalhando na hora do almoço, entre 11:30 e 13:30.',valor:'',subs:[]};
+            localStorage.setItem(NK,JSON.stringify(notas));
+          }catch(_){}
+        }
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v5','1');
       }catch(_){}
     })();
     el.currentDate.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'}).format(new Date());applyTheme(localStorage.getItem(THEME_KEY)==='light'?'light':'dark');topUpRecurring();render();if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{if(sessionStorage.getItem('sw_reloaded'))return;sessionStorage.setItem('sw_reloaded','1');}catch(_){}location.reload();});registerWorker().then(function(r){try{if(r&&r.update)r.update();}catch(_){}}).catch(()=>{});}setInterval(checkAlerts,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAlerts()});
