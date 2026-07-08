@@ -204,6 +204,29 @@
         localStorage.setItem('agenda_seed_pessoal_v3','1');
       }catch(_){}
     })();
+    /* seed pessoal v4: conclui janta+lavagem; move renomear-repositorio p/ 09/07 06:00 (junto da academia); fechar orcamento 09:30-11:30 */
+    (function seedPessoal4(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v4'))return;
+        tasks.forEach(t=>{
+          if(t.done)return;
+          if(String(t.id)==='sd2-lavar'||t.text==='Lavar roupa')t.done=true;
+          if(String(t.id)==='sd2-janta'||t.text==='Janta')t.done=true;
+          if(String(t.id)==='sd2-medvet'||/renomear hospital/i.test(t.text)){t.date='2026-07-09';t.time='06:00';}
+        });
+        if(!tasks.some(t=>/fechar orçamento/i.test(t.text))){
+          tasks.push({id:'sd4-orcamento',text:'Fechar orçamento — Equip. Especiais',date:'2026-07-09',time:'09:30',tag:'trabalho',reminder:15,done:false});
+          try{
+            const NK='agenda_notas_v1';
+            const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+            notas['sd4-orcamento']={prio:'alta',durationMin:120,detail:'Das 09:30 às 11:30 (dentro do expediente Energisa): fechar o orçamento de Equipamentos Especiais.\nBase: app Equipamentos Especiais → Orçamento (58 do DCMD) e o Excel exportado (Dinâmica / Detalhe / Premissas).',valor:'',subs:[]};
+            localStorage.setItem(NK,JSON.stringify(notas));
+          }catch(_){}
+        }
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v4','1');
+      }catch(_){}
+    })();
     el.currentDate.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'}).format(new Date());applyTheme(localStorage.getItem(THEME_KEY)==='light'?'light':'dark');topUpRecurring();render();if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{if(sessionStorage.getItem('sw_reloaded'))return;sessionStorage.setItem('sw_reloaded','1');}catch(_){}location.reload();});registerWorker().then(function(r){try{if(r&&r.update)r.update();}catch(_){}}).catch(()=>{});}setInterval(checkAlerts,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAlerts()});
     (function(){function wire(){const b=document.getElementById('app-update');if(b&&!b.dataset.wired){b.dataset.wired='1';b.addEventListener('click',appForceUpdate);}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();})();
     el.themeToggle.addEventListener('click',()=>applyTheme(el.root.dataset.theme==='dark'?'light':'dark'));el.alertsBtn.addEventListener('click',()=>{updateAlertsStatus();el.alertsDialog.showModal()});$('#closeAlertsDialog').addEventListener('click',()=>el.alertsDialog.close());$('#activateAlerts').addEventListener('click',activateAlerts);$('#exportCalendar').addEventListener('click',exportCalendar);$('#openDialog').addEventListener('click',openTaskForm);$('#closeTaskDialog').addEventListener('click',()=>el.taskDialog.close());
