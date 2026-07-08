@@ -454,6 +454,20 @@
         localStorage.setItem('agenda_seed_pessoal_v18','1');
       }catch(_){}
     })();
+    (function seedPessoal19(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v19'))return;
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        if(!tasks.some(t=>t.id==='sd19-paulo'||(/paulo/i.test(t.text)&&/testosterona|landerland/i.test(t.text)))){
+          tasks.push({id:'sd19-paulo',text:'Falar com o Paulo — Testosterona Landerland',date:'2026-07-09',time:'13:00',tag:'pessoal',reminder:0,done:false});
+          notas['sd19-paulo']={prio:'',durationMin:null,detail:'Ver com o Paulo no almoço:\n1. Se ele tem a Testosterona da Landerland em estoque.\n2. Se tiver: se posso pegar no final do dia (17:30) ou se ele consegue entregar na Energisa.\n3. Se ele ainda tem interesse no iPhone 16 Pro Max para venda.',valor:'',parcPagas:'',parcRest:'',subs:[{text:'Testosterona Landerland em estoque?',done:false},{text:'Pegar 17:30 ou entrega na Energisa?',done:false},{text:'Ainda quer o iPhone 16 Pro Max?',done:false}]};
+        }
+        localStorage.setItem(NK,JSON.stringify(notas));
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v19','1');
+      }catch(_){}
+    })();
     el.currentDate.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'}).format(new Date());applyTheme(localStorage.getItem(THEME_KEY)==='light'?'light':'dark');topUpRecurring();render();if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{if(sessionStorage.getItem('sw_reloaded'))return;sessionStorage.setItem('sw_reloaded','1');}catch(_){}location.reload();});registerWorker().then(function(r){try{if(r&&r.update)r.update();}catch(_){}}).catch(()=>{});}setInterval(checkAlerts,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAlerts()});
     (function(){function wire(){const b=document.getElementById('app-update');if(b&&!b.dataset.wired){b.dataset.wired='1';b.addEventListener('click',appForceUpdate);}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();})();
     el.themeToggle.addEventListener('click',()=>applyTheme(el.root.dataset.theme==='dark'?'light':'dark'));el.alertsBtn.addEventListener('click',()=>{updateAlertsStatus();el.alertsDialog.showModal()});$('#closeAlertsDialog').addEventListener('click',()=>el.alertsDialog.close());$('#activateAlerts').addEventListener('click',activateAlerts);$('#exportCalendar').addEventListener('click',exportCalendar);$('#openDialog').addEventListener('click',openTaskForm);$('#closeTaskDialog').addEventListener('click',()=>el.taskDialog.close());

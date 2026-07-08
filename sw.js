@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v95';
+const CACHE = 'agenda-lagares-v96';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=7"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -77,4 +77,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v95-condicional-case-sem-emoji
+// redeploy trigger v96-paulo-testosterona
