@@ -57,7 +57,7 @@
     function id(){return `${Date.now()}-${Math.random().toString(36).slice(2,9)}`}
     function tagKey(value){const v=String(value||'').trim().toLowerCase();if(TAGS[v])return v;if(/work|trabalho|energisa/.test(v))return'trabalho';if(/casa|home/.test(v))return'casa';if(/faculdade|college|estudo/.test(v))return'faculdade';if(/saúde|saude|health/.test(v))return'saude';if(/finance|dinheiro/.test(v))return'financeiro';if(/pessoal|personal/.test(v))return'pessoal';return'outros'}
     function normalise(item,index){if(!item||!item.text)return null;let date=item.date;if(!date&&item.day){const [d,m]=String(item.day).split('/').map(Number);if(d&&m)date=`2026-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}if(!/^\d{4}-\d{2}-\d{2}$/.test(String(date||'')))return null;const reminder=Number.isFinite(Number(item.reminder))?Number(item.reminder):Number.isFinite(Number(item.alert))?Number(item.alert):-1;return{id:String(item.id||`task-${index}-${id()}`),text:String(item.text),date:String(date),time:/^\d{2}:\d{2}$/.test(String(item.time||''))?String(item.time):'',tag:tagKey(item.tag||item.category||item.calendar),reminder,done:Boolean(item.done)}}
-    function loadTasks(){const hasReal=a=>Array.isArray(a)&&a.some(t=>t&&t.text&&!/^🏋/.test(t.text));const saved=json(localStorage.getItem(TASK_KEY));const savedArr=Array.isArray(saved)?saved.map(normalise).filter(Boolean):null;if(hasReal(savedArr))return savedArr;const treino=(savedArr||[]).filter(t=>/^🏋/.test(t.text||''));const merge=arr=>{const conv=arr.map(normalise).filter(Boolean);if(!conv.some(t=>!/^🏋/.test(t.text)))return null;const m=conv.concat(treino.filter(tt=>!conv.some(c=>c.id===tt.id)));localStorage.setItem(TASK_KEY,JSON.stringify(m));return m;};for(const key of['agenda_profissional_iphone_v1','agenda_tasks']){const old=json(localStorage.getItem(key));if(Array.isArray(old)){const r=merge(old);if(r)return r;}}const pre=json(localStorage.getItem('agenda_lagares_backup_pre_sync_v1'));if(pre&&Array.isArray(pre.tarefas)){const r=merge(pre.tarefas);if(r)return r;}return savedArr||seed}
+    function loadTasks(){const hasReal=a=>Array.isArray(a)&&a.some(t=>t&&t.text&&!/^(?:🏋|Treino [ABC])/.test(t.text));const saved=json(localStorage.getItem(TASK_KEY));const savedArr=Array.isArray(saved)?saved.map(normalise).filter(Boolean):null;if(hasReal(savedArr))return savedArr;const treino=(savedArr||[]).filter(t=>/^(?:🏋|Treino [ABC])/.test(t.text||''));const merge=arr=>{const conv=arr.map(normalise).filter(Boolean);if(!conv.some(t=>!/^(?:🏋|Treino [ABC])/.test(t.text)))return null;const m=conv.concat(treino.filter(tt=>!conv.some(c=>c.id===tt.id)));localStorage.setItem(TASK_KEY,JSON.stringify(m));return m;};for(const key of['agenda_profissional_iphone_v1','agenda_tasks']){const old=json(localStorage.getItem(key));if(Array.isArray(old)){const r=merge(old);if(r)return r;}}const pre=json(localStorage.getItem('agenda_lagares_backup_pre_sync_v1'));if(pre&&Array.isArray(pre.tarefas)){const r=merge(pre.tarefas);if(r)return r;}return savedArr||seed}
     function save(){localStorage.setItem(TASK_KEY,JSON.stringify(tasks))}
     const RULES_KEY='agenda_lagares_rules_v1',RECUR_HORIZON=120,RECUR_REGEN=75;
     function loadRules(){const v=json(localStorage.getItem(RULES_KEY));return Array.isArray(v)?v:[]}
@@ -428,6 +428,30 @@
         tasks.forEach(t=>{if(t.id==='sd2-secar'&&!t.done)t.done=true;});
         save();
         localStorage.setItem('agenda_seed_pessoal_v16','1');
+      }catch(_){}
+    })();
+    (function seedPessoal17(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v17'))return;
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        if(!tasks.some(t=>t.id==='sd17-orcpessoal'||(/or[çc]amento pessoal/i.test(t.text)||(/planilhar/i.test(t.text)&&/gasto/i.test(t.text))))){
+          tasks.push({id:'sd17-orcpessoal',text:'Começar a planilhar orçamento pessoal (gastos e ganhos)',date:'2026-07-09',time:'21:30',tag:'financeiro',reminder:0,done:false});
+          notas['sd17-orcpessoal']={prio:'',durationMin:null,detail:'Iniciar o controle de orçamento pessoal: montar a planilha de gastos e ganhos e começar o fluxo. (Sem estresse — se estiver cansado, só deixar a estrutura pronta já vale.)',valor:'',parcPagas:'',parcRest:'',subs:[{text:'Listar ganhos fixos',done:false},{text:'Listar gastos fixos',done:false},{text:'Criar categorias',done:false}]};
+        }
+        localStorage.setItem(NK,JSON.stringify(notas));
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v17','1');
+      }catch(_){}
+    })();
+    (function seedPessoal18(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v18'))return;
+        if(!tasks.some(t=>t.id==='sd18-tenis'||(/lavar/i.test(t.text)&&/t[êe]nis/i.test(t.text)))){
+          tasks.push({id:'sd18-tenis',text:'Lavar os tênis',date:'2026-07-11',time:'15:00',tag:'casa',reminder:0,done:false});
+        }
+        save();
+        localStorage.setItem('agenda_seed_pessoal_v18','1');
       }catch(_){}
     })();
     el.currentDate.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'}).format(new Date());applyTheme(localStorage.getItem(THEME_KEY)==='light'?'light':'dark');topUpRecurring();render();if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{if(sessionStorage.getItem('sw_reloaded'))return;sessionStorage.setItem('sw_reloaded','1');}catch(_){}location.reload();});registerWorker().then(function(r){try{if(r&&r.update)r.update();}catch(_){}}).catch(()=>{});}setInterval(checkAlerts,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAlerts()});
@@ -827,7 +851,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
     }
 
     let jarvisBriefed=false;
-    function isTreino(t){return /^🏋/.test(t.text||'');} // ignora os cards de treino no briefing
+    function isTreino(t){const x=t.text||'';return /^(?:🏋|Treino [ABC])/.test(x)||/^Treino [ABC]\b/.test(x);} // ignora os cards de treino no briefing
     function todayPhrase(){
       const n=new Date(),iso=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
       let ts=[];try{ts=(window.AgendaAPI?window.AgendaAPI.getTasks():[]).filter(t=>!t.done&&!isTreino(t));}catch(_){}
@@ -1047,9 +1071,10 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
   </script>
   <!-- ========== /JARVIS v2 ========== -->
 
-  <script src="./treino.js?v=6"></script>
+  <script src="./treino.js?v=7"></script>
   <script src="./painel.js?v=1"></script>
-  <script src="./notas.js?v=3"></script>
+  <script src="./notas.js?v=4"></script>
+  <script src="./condicional.js?v=1"></script>
   <script src="./sync.js?v=1"></script>
 </body>
 </html>

@@ -1,8 +1,9 @@
-const CACHE = 'agenda-lagares-v94';
+const CACHE = 'agenda-lagares-v95';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
-const TREINO_SCRIPT = '<script src="./treino.js?v=6"><\/script>';
+const TREINO_SCRIPT = '<script src="./treino.js?v=7"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
-const NOTAS_SCRIPT = '<script src="./notas.js?v=3"><\/script>';
+const NOTAS_SCRIPT = '<script src="./notas.js?v=4"><\/script>';
+const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=1"><\/script>';
 const SYNC_SCRIPT = '<script src="./sync.js?v=9"><\/script>';
 const UNDO_SCRIPT = '<script src="./undo.js?v=1"><\/script>';
 const LIXEIRA_SCRIPT = '<script src="./lixeira.js?v=1"><\/script>';
@@ -32,6 +33,7 @@ self.addEventListener('fetch', event => {
     if (!html.includes('treino.js')) html = html.replace('</body>', `${TREINO_SCRIPT}</body>`);
     if (!html.includes('painel.js')) html = html.replace('</body>', `${PAINEL_SCRIPT}</body>`);
     if (!html.includes('notas.js')) html = html.replace('</body>', `${NOTAS_SCRIPT}</body>`);
+    if (!html.includes('condicional.js')) html = html.replace('</body>', `${CONDICIONAL_SCRIPT}</body>`);
     if (!html.includes('sync.js')) html = html.replace('</body>', `${SYNC_SCRIPT}</body>`);
     if (!html.includes('undo.js')) html = html.replace('</body>', `${UNDO_SCRIPT}</body>`);
     if (!html.includes('lixeira.js')) html = html.replace('</body>', `${LIXEIRA_SCRIPT}</body>`);
@@ -75,4 +77,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v94-secar-concluida
+// redeploy trigger v95-condicional-case-sem-emoji

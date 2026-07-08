@@ -18,13 +18,14 @@
 
   const load = () => { try { const v = JSON.parse(localStorage.getItem(NOTES_KEY)); return v && typeof v === 'object' ? v : {}; } catch (_) { return {}; } };
   const saveAll = a => localStorage.setItem(NOTES_KEY, JSON.stringify(a));
-  const getNote = id => { const n = load()[id]; return { prio: n && n.prio || '', durationMin: n && n.durationMin || null, detail: n && n.detail || '', valor: n && n.valor || '', parcPagas: n && n.parcPagas || '', parcRest: n && n.parcRest || '', subs: n && Array.isArray(n.subs) ? n.subs : [] }; };
+  const getNote = id => { const n = load()[id]; return { prio: n && n.prio || '', durationMin: n && n.durationMin || null, detail: n && n.detail || '', valor: n && n.valor || '', parcPagas: n && n.parcPagas || '', parcRest: n && n.parcRest || '', cond: n && n.cond || null, subs: n && Array.isArray(n.subs) ? n.subs : [] }; };
+  const hasCond = c => !!(c && (String(c.thenText || '').trim() || String(c.elseText || '').trim()));
   const PRIOS = { alta: { label: 'Alta', color: '#ffb74d' }, urgente: { label: 'Urgente', color: '#ff7f91' } };
   const NOTE_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>';
   function taskTag(id){try{const a=JSON.parse(localStorage.getItem('agenda_lagares_v3')||'[]');const t=Array.isArray(a)?a.find(x=>String(x.id)===String(id)):null;return t&&t.tag||'';}catch(_){return '';}}
   function setNote(id, note) {
     const all = load();
-    const empty = !note.prio && !note.durationMin && !note.detail.trim() && !note.valor && !note.parcPagas && !note.parcRest && (!note.subs || !note.subs.length);
+    const empty = !note.prio && !note.durationMin && !note.detail.trim() && !note.valor && !note.parcPagas && !note.parcRest && !hasCond(note.cond) && (!note.subs || !note.subs.length);
     if (empty) delete all[id]; else all[id] = note;
     saveAll(all);
   }
@@ -83,6 +84,14 @@
       .notas-parc>span{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
       .notas-parc input{min-height:42px;padding:9px 11px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font-size:16px;font-weight:700}
       .notas-parc input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(117,203,255,.2)}
+      .notas-cond-branch{margin-bottom:10px}
+      .notas-cond-cap{display:block;font-size:11px;font-weight:800;color:var(--text);margin-bottom:6px}
+      .notas-cond-cap b{color:var(--accent);font-weight:800}
+      .notas-cond-fields{display:grid;grid-template-columns:1fr 132px;gap:7px}
+      .notas-cond-fields input{min-height:40px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px}
+      .notas-cond-fields input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(117,203,255,.2)}
+      .notas-cond-hint{margin:2px 0 0;color:var(--faint);font-size:10.5px;line-height:1.4}
+      @media(max-width:390px){.notas-cond-fields{grid-template-columns:1fr}}
       .notas-detail{width:100%;min-height:72px;padding:9px 11px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--text);font-size:14px;line-height:1.45;resize:vertical;font-family:inherit;outline:0}
       .notas-detail:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(117,203,255,.2)}
       .notas-detail-row{display:flex;justify-content:flex-end;margin-top:7px}
@@ -129,6 +138,13 @@
       `<div class="notas-subs">${note.subs.map(subRow).join('')}</div>` +
       `<div class="notas-add"><input type="text" placeholder="Nova sub-tarefa" maxlength="200"><button type="button" data-add aria-label="Adicionar">＋</button></div>` +
       `<div class="notas-sep"></div>` +
+      `<p class="notas-label">Condicional (opcional)</p>` +
+      (function(){const cond=note.cond||{};return `<div class="notas-cond">` +
+        `<div class="notas-cond-branch"><span class="notas-cond-cap">Se eu <b>concluir</b> esta tarefa, criar:</span><div class="notas-cond-fields"><input class="notas-cond-then" type="text" maxlength="200" placeholder="Nova tarefa" value="${escAttr(cond.thenText || '')}"><input class="notas-cond-then-date" type="date" value="${escAttr(cond.thenDate || '')}"></div></div>` +
+        `<div class="notas-cond-branch"><span class="notas-cond-cap">Se <b>não acontecer</b> (passar da data), criar:</span><div class="notas-cond-fields"><input class="notas-cond-else" type="text" maxlength="200" placeholder="Nova tarefa" value="${escAttr(cond.elseText || '')}"><input class="notas-cond-else-date" type="date" value="${escAttr(cond.elseDate || '')}"></div></div>` +
+        `<p class="notas-cond-hint">A nova tarefa é criada sozinha ao concluir (ramo "concluir") ou quando a data passar sem concluir (ramo "não acontecer"). Sem data preenchida, usa a data desta tarefa.</p>` +
+        `</div>`;})() +
+      `<div class="notas-sep"></div>` +
       `<p class="notas-label">Detalhes</p>` +
       `<textarea class="notas-detail" placeholder="Anotações, recados, cupons…" maxlength="4000"></textarea>` +
       `<div class="notas-detail-row"><button class="notas-copy" type="button">Copiar</button></div>`;
@@ -156,7 +172,18 @@
     const parcPagas = pEl ? pEl.value.trim() : (prev.parcPagas || '');
     const parcRest = rEl ? rEl.value.trim() : (prev.parcRest || '');
     const prio = panel.dataset.priolevel || '';
-    setNote(id, { prio, durationMin, detail, valor, parcPagas, parcRest, subs });
+    const gv = sel => { const el = panel.querySelector(sel); return el ? el.value.trim() : ''; };
+    const thenText = gv('.notas-cond-then'), thenDate = gv('.notas-cond-then-date');
+    const elseText = gv('.notas-cond-else'), elseDate = gv('.notas-cond-else-date');
+    const prevCond = prev.cond || {};
+    let cond = null;
+    if (thenText || elseText) {
+      cond = {
+        thenText, thenDate, thenFired: prevCond.thenText === thenText ? !!prevCond.thenFired : false,
+        elseText, elseDate, elseFired: prevCond.elseText === elseText ? !!prevCond.elseFired : false
+      };
+    }
+    setNote(id, { prio, durationMin, detail, valor, parcPagas, parcRest, cond, subs });
     updateToggle(id);
   }
   const debouncedSave = panel => { clearTimeout(saveTimer); saveTimer = setTimeout(() => saveFromPanel(panel), 400); };
@@ -167,7 +194,7 @@
     const btn = card.querySelector('.notas-toggle');
     if (!btn) return;
     const note = getNote(id);
-    const has = !!(note.prio || note.valor || note.parcPagas || note.parcRest || note.durationMin || note.detail.trim() || note.subs.length);
+    const has = !!(note.prio || note.valor || note.parcPagas || note.parcRest || hasCond(note.cond) || note.durationMin || note.detail.trim() || note.subs.length);
     btn.classList.toggle('has', has);
     let label = has ? '' : 'Detalhes';
     if (note.valor || note.parcPagas || note.parcRest) {
@@ -176,6 +203,7 @@
     }
     else if (note.durationMin) label += ' ' + fmtDur(note.durationMin);
     else if (note.subs.length) { const d = note.subs.filter(s => s.done).length; label += ` ${d}/${note.subs.length}`; }
+    else if (hasCond(note.cond)) label += ' condicional';
     else if (note.detail.trim()) label += ' •';
     btn.innerHTML = NOTE_SVG;
     btn.appendChild(document.createTextNode(label.trim() ? label.replace(/^ /, '') : ''));
@@ -272,7 +300,7 @@
   document.addEventListener('input', e => {
     const panel = e.target.closest('.notas-panel');
     if (!panel) return;
-    if (e.target.matches('.notas-detail') || e.target.matches('.notas-valor') || e.target.matches('.notas-parc-pagas') || e.target.matches('.notas-parc-rest') || e.target.matches('.notas-sub input[type=text]')) debouncedSave(panel);
+    if (e.target.matches('.notas-detail') || e.target.matches('.notas-valor') || e.target.matches('.notas-parc-pagas') || e.target.matches('.notas-parc-rest') || e.target.matches('.notas-cond-then') || e.target.matches('.notas-cond-then-date') || e.target.matches('.notas-cond-else') || e.target.matches('.notas-cond-else-date') || e.target.matches('.notas-sub input[type=text]')) debouncedSave(panel);
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.target.matches('.notas-add input')) {

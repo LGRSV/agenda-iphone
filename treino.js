@@ -15,7 +15,7 @@
   const STYLE_ID = 'treinoStyles';
   const HORIZON = 90;   // gera treinos para os próximos 90 dias
   const REGEN = 60;     // regera quando a cobertura cair abaixo de 60 dias
-  const META_VERSION = 3; // sobe quando a regra de geração muda (seg–sex, 05:30)
+  const META_VERSION = 4; // sobe quando a regra de geração muda (seg–sex, 05:30, sem emoji)
   const TIME_KEY = 'agenda_treino_time_v1'; // horário do treino, ajustável pelo editor ("aplicar a todos os próximos")
   const treinoTime = () => { try { const t = localStorage.getItem(TIME_KEY); return /^\d{2}:\d{2}$/.test(t || '') ? t : '05:30'; } catch (_) { return '05:30'; } };
 
@@ -211,7 +211,7 @@
   const shortDate = dstr => { const p = dstr.split('-'); return `${p[2]}/${p[1]}`; };
 
   /* -------------- gera os cards de treino diários na agenda -------------- */
-  const workoutText = w => `🏋️ Treino ${w} · ${WORKOUTS[w].muscles}`;
+  const workoutText = w => `Treino ${w} · ${WORKOUTS[w].muscles}`;
 
   function ensureTasks() {
     const meta = readJSON(META_KEY, {}) || {};
@@ -613,7 +613,7 @@
       b.type = 'button';
       b.className = 'tr-open';
       b.dataset.treinoId = id;
-      b.innerHTML = '🏋️ Abrir treino';
+      b.innerHTML = 'Abrir treino';
       footer.appendChild(b);
     });
   }
