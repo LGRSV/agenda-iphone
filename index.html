@@ -181,6 +181,29 @@
         localStorage.setItem('agenda_seed_pessoal_v2','1');
       }catch(_){}
     })();
+    /* seed pessoal v3: anunciar iPhone 13 amanha (09/07) entre trabalho e academia; reagenda se ja estiver pendente em dia anterior */
+    (function seedPessoal3(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v3'))return;
+        let alvo=tasks.find(t=>!t.done&&/iphone/i.test(t.text)&&/anunc|vender|venda/i.test(t.text));
+        if(alvo){ alvo.date='2026-07-09'; alvo.time='17:45'; }             // reagenda a pendente para amanha
+        else{
+          alvo={id:'sd3-iphone',text:'Anunciar iPhone 13 (PM)',date:'2026-07-09',time:'17:45',tag:'pessoal',reminder:15,done:false};
+          tasks.push(alvo);
+        }
+        save();
+        const NK='agenda_notas_v1';
+        const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+        const n=notas[alvo.id]||{prio:'',durationMin:null,detail:'',valor:'',subs:[]};
+        n.detail='ANÚNCIO PRONTO (copiar e colar):\n\n📱 iPhone 13 — 128 GB\n\n✅ Bateria com 100% de saúde (bateria trocada recentemente)\n✅ 128 GB de armazenamento\n✅ Funcionando perfeitamente\n\nAparelho em Palmas–TO. Entrego em mãos.\nAceito propostas — chama no chat!';
+        n.subs=Array.isArray(n.subs)?n.subs:[];
+        if(!n.subs.some(s=>/facebook/i.test(s.text)))n.subs.push({id:'sd3-fb',text:'Anunciar no Facebook',done:false});
+        if(!n.subs.some(s=>/olx/i.test(s.text)))n.subs.push({id:'sd3-olx',text:'Anunciar na OLX',done:false});
+        notas[alvo.id]=n;
+        localStorage.setItem(NK,JSON.stringify(notas));
+        localStorage.setItem('agenda_seed_pessoal_v3','1');
+      }catch(_){}
+    })();
     el.currentDate.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'}).format(new Date());applyTheme(localStorage.getItem(THEME_KEY)==='light'?'light':'dark');topUpRecurring();render();if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{if(sessionStorage.getItem('sw_reloaded'))return;sessionStorage.setItem('sw_reloaded','1');}catch(_){}location.reload();});registerWorker().then(function(r){try{if(r&&r.update)r.update();}catch(_){}}).catch(()=>{});}setInterval(checkAlerts,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAlerts()});
     (function(){function wire(){const b=document.getElementById('app-update');if(b&&!b.dataset.wired){b.dataset.wired='1';b.addEventListener('click',appForceUpdate);}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();})();
     el.themeToggle.addEventListener('click',()=>applyTheme(el.root.dataset.theme==='dark'?'light':'dark'));el.alertsBtn.addEventListener('click',()=>{updateAlertsStatus();el.alertsDialog.showModal()});$('#closeAlertsDialog').addEventListener('click',()=>el.alertsDialog.close());$('#activateAlerts').addEventListener('click',activateAlerts);$('#exportCalendar').addEventListener('click',exportCalendar);$('#openDialog').addEventListener('click',openTaskForm);$('#closeTaskDialog').addEventListener('click',()=>el.taskDialog.close());
