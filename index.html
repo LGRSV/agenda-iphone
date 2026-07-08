@@ -145,6 +145,42 @@
         localStorage.setItem('agenda_seed_pessoal_v1','1');
       }catch(_){}
     })();
+    /* seed pessoal v2: rotina de 08/07 + pendencias (titulo curto, detalhe na caixinha) */
+    (function seedPessoal2(){
+      try{
+        if(localStorage.getItem('agenda_seed_pessoal_v2'))return;
+        const novas=[
+          {id:'sd2-janta',text:'Janta',date:'2026-07-08',time:'21:00',tag:'pessoal',reminder:-1,done:false},
+          {id:'sd2-lavar',text:'Lavar roupa',date:'2026-07-08',time:'20:40',tag:'casa',reminder:0,done:false},
+          {id:'sd2-secar',text:'Secar roupa',date:'2026-07-08',time:'23:40',tag:'casa',reminder:0,done:false},
+          {id:'sd2-medvet',text:'Renomear hospital no repositório de estoque',date:'2026-07-08',time:'',tag:'pessoal',reminder:-1,done:false},
+          {id:'sd2-radios',text:'Entregar rádios no DMSL',date:'2026-07-09',time:'07:30',tag:'trabalho',reminder:15,done:false},
+          {id:'sd2-kml',text:'Simular KML T1/T2 (COEP 2025)',date:'2026-07-11',time:'',tag:'trabalho',reminder:-1,done:false},
+          {id:'sd2-radios-cobrar',text:'Cobrar parecer dos rádios (DMSL)',date:'2026-07-14',time:'',tag:'trabalho',reminder:-1,done:false},
+        ];
+        let mudou=false;
+        novas.forEach(n=>{
+          if(tasks.some(t=>String(t.id)===n.id||t.text===n.text))return;
+          tasks.push(n);mudou=true;
+        });
+        if(mudou)save();
+        // detalhamento na caixinha de notas
+        try{
+          const NK='agenda_notas_v1';
+          const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
+          const det={
+            'sd2-medvet':'Pendência pessoal: no repositório de controle de estoque, mudar o nome do hospital que está lá para "Medical Vet".',
+            'sd2-radios':'Levar os rádios ao DMSL para avaliação em detalhes. Importante: são itens FORA DE ESTOQUE.',
+            'sd2-kml':'Simular o KML de T1 e T2 de todos os trechos da pasta de 2025 do COEP.',
+            'sd2-radios-cobrar':'Cobrar do DMSL se já existe algum parecer da avaliação dos rádios entregues em 09/07 (itens fora de estoque).',
+            'sd2-secar':'Colocar a roupa da máquina para secar (lavagem começou às 20:40).'
+          };
+          Object.keys(det).forEach(k=>{if(!notas[k])notas[k]={prio:'',durationMin:null,detail:det[k],valor:'',subs:[]};});
+          localStorage.setItem(NK,JSON.stringify(notas));
+        }catch(_){}
+        localStorage.setItem('agenda_seed_pessoal_v2','1');
+      }catch(_){}
+    })();
     el.currentDate.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'}).format(new Date());applyTheme(localStorage.getItem(THEME_KEY)==='light'?'light':'dark');topUpRecurring();render();if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{if(sessionStorage.getItem('sw_reloaded'))return;sessionStorage.setItem('sw_reloaded','1');}catch(_){}location.reload();});registerWorker().then(function(r){try{if(r&&r.update)r.update();}catch(_){}}).catch(()=>{});}setInterval(checkAlerts,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAlerts()});
     (function(){function wire(){const b=document.getElementById('app-update');if(b&&!b.dataset.wired){b.dataset.wired='1';b.addEventListener('click',appForceUpdate);}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();})();
     el.themeToggle.addEventListener('click',()=>applyTheme(el.root.dataset.theme==='dark'?'light':'dark'));el.alertsBtn.addEventListener('click',()=>{updateAlertsStatus();el.alertsDialog.showModal()});$('#closeAlertsDialog').addEventListener('click',()=>el.alertsDialog.close());$('#activateAlerts').addEventListener('click',activateAlerts);$('#exportCalendar').addEventListener('click',exportCalendar);$('#openDialog').addEventListener('click',openTaskForm);$('#closeTaskDialog').addEventListener('click',()=>el.taskDialog.close());
