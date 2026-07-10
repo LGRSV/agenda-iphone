@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v103';
+const CACHE = 'agenda-lagares-v104';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -7,8 +7,8 @@ const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3"><\/script>';
 const SYNC_SCRIPT = '<script src="./sync.js?v=9"><\/script>';
 const UNDO_SCRIPT = '<script src="./undo.js?v=1"><\/script>';
 const LIXEIRA_SCRIPT = '<script src="./lixeira.js?v=1"><\/script>';
-const INTEL_SCRIPT = '<script src="./agenda-intelligence.js?v=1"><\/script>';
-const LIST_STATUS_SCRIPT = '<script src="./agenda-list-status.js?v=1"><\/script>';
+const INTEL_SCRIPT = '<script src="./agenda-intelligence.js?v=2"><\/script>';
+const LIST_STATUS_SCRIPT = '<script src="./agenda-list-status.js?v=2"><\/script>';
 const EXPORT_SCRIPT = '<script src="./export-localstorage.js?v=1"><\/script>';
 const POLISH_STYLE = '<link rel="stylesheet" href="./interface-polish.css?v=1">';
 const POLISH_SCRIPT = '<script src="./interface-polish.js?v=1" defer><\/script>';
@@ -87,4 +87,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v103-export-localstorage
+// redeploy trigger v104-date-groups-weekday
