@@ -7,10 +7,15 @@ create table if not exists public.agenda_documents (
     document_key in ('tasks', 'notes', 'rules', 'training_logs', 'training_meta', 'settings', 'trash', 'history')
   ),
   payload jsonb not null,
+  device_id text,
   version bigint not null default 1,
   updated_at timestamptz not null default now(),
   primary key (user_id, document_key)
 );
+
+-- Permite executar novamente caso a tabela tenha sido criada por uma versão anterior.
+alter table public.agenda_documents
+  add column if not exists device_id text;
 
 comment on table public.agenda_documents is
   'Documentos JSON da Agenda Lagares, isolados por usuário com Row Level Security.';
