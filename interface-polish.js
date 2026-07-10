@@ -63,11 +63,15 @@
       }
     }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
 
+    const collectRevealItems = node => {
+      if (node === document) return [...document.querySelectorAll(revealSelector)];
+      if (!(node instanceof Element)) return [];
+      return node.matches(revealSelector) ? [node, ...node.querySelectorAll(revealSelector)] : [...node.querySelectorAll(revealSelector)];
+    };
+
     const watch = node => {
-      if (!(node instanceof Element)) return;
-      const items = node.matches?.(revealSelector) ? [node] : [...node.querySelectorAll?.(revealSelector) || []];
-      for (const item of items) {
-        if (item.classList.contains('ui-visible')) continue;
+      for (const item of collectRevealItems(node)) {
+        if (item.classList.contains('ui-visible') || item.classList.contains('ui-reveal')) continue;
         item.classList.add('ui-reveal');
         observer.observe(item);
       }
