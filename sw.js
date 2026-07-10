@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v101';
+const CACHE = 'agenda-lagares-v102';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -7,6 +7,8 @@ const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3"><\/script>';
 const SYNC_SCRIPT = '<script src="./sync.js?v=9"><\/script>';
 const UNDO_SCRIPT = '<script src="./undo.js?v=1"><\/script>';
 const LIXEIRA_SCRIPT = '<script src="./lixeira.js?v=1"><\/script>';
+const INTEL_SCRIPT = '<script src="./agenda-intelligence.js?v=1"><\/script>';
+const LIST_STATUS_SCRIPT = '<script src="./agenda-list-status.js?v=1"><\/script>';
 const POLISH_STYLE = '<link rel="stylesheet" href="./interface-polish.css?v=1">';
 const POLISH_SCRIPT = '<script src="./interface-polish.js?v=1" defer><\/script>';
 
@@ -40,6 +42,8 @@ self.addEventListener('fetch', event => {
     if (!html.includes('sync.js')) html = html.replace('</body>', `${SYNC_SCRIPT}</body>`);
     if (!html.includes('undo.js')) html = html.replace('</body>', `${UNDO_SCRIPT}</body>`);
     if (!html.includes('lixeira.js')) html = html.replace('</body>', `${LIXEIRA_SCRIPT}</body>`);
+    if (!html.includes('agenda-intelligence.js')) html = html.replace('</body>', `${INTEL_SCRIPT}</body>`);
+    if (!html.includes('agenda-list-status.js')) html = html.replace('</body>', `${LIST_STATUS_SCRIPT}</body>`);
     if (!html.includes('interface-polish.js')) html = html.replace('</body>', `${POLISH_SCRIPT}</body>`);
 
     const headers = new Headers(response.headers);
@@ -81,4 +85,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v101-interface-polish
+// redeploy trigger v102-agenda-intelligence-list-status
