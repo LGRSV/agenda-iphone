@@ -1,12 +1,13 @@
 /*
   Agenda Intelligence
   Enriquece as tarefas lidas pelo JARVIS sem alterar o armazenamento original.
-  Assim o assistente passa a entender: atrasada, venceu hoje, hoje, futura e sem data.
+  Regra central: atrasadas = datas anteriores a hoje; hoje = somente hoje; futuras = depois de hoje.
 */
 (() => {
   'use strict';
 
   const TASK_KEY = 'agenda_lagares_v3';
+  const DAY_NAMES = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 
   const pad = n => String(n).padStart(2, '0');
   const nowParts = () => {
@@ -17,6 +18,18 @@
       time: `${pad(n.getHours())}:${pad(n.getMinutes())}`,
       minutes: n.getHours() * 60 + n.getMinutes()
     };
+  };
+
+  const parseLocalDate = iso => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '').trim());
+    if (!m) return null;
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0);
+  };
+
+  const dateLabel = iso => {
+    const d = parseLocalDate(iso);
+    if (!d) return '';
+    return `${DAY_NAMES[d.getDay()]}, ${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
   };
 
   const timeToMinutes = value => {
@@ -34,7 +47,20 @@
     }
   };
 
-  const isTreino = task => /^🏋/.test(String(task?.text || ''));
+  const isTreino = task => /^(🏋️?|treino\b)/i.test(String(task?.text || '').trim());
+
+  const baseMeta = (task, group, status, atrasada, motivo, prioridade) => {
+    const date = String(task?.date || '').trim();
+    return {
+      agendaGrupoData: group,
+      agendaStatus: status,
+      agendaAtrasada: atrasada,
+      agendaPrioridadeTempo: prioridade,
+      agendaMotivo: motivo,
+      agendaDataTexto: dateLabel(date),
+      agendaEhTreino: isTreino(task)
+    };
+  };
 
   const classify = task => {
     const n = nowParts();
@@ -42,86 +68,69 @@
     const taskMinutes = timeToMinutes(task?.time);
 
     if (task?.done) {
-      return {
-        agendaStatus: 'concluida',
-        agendaAtrasada: false,
-        agendaPrioridadeTempo: 90,
-        agendaMotivo: 'Tarefa já concluída.'
-      };
+      return baseMeta(task, 'concluidas', 'concluida', false, 'Tarefa já concluída.', 90);
     }
 
     if (!date) {
-      return {
-        agendaStatus: 'sem_data',
-        agendaAtrasada: false,
-        agendaPrioridadeTempo: 50,
-        agendaMotivo: 'Tarefa pendente sem data definida.'
-      };
+      return baseMeta(task, 'sem_data', 'sem_data', false, 'Tarefa pendente sem data definida.', 50);
     }
 
     if (date < n.iso) {
-      return {
-        agendaStatus: 'atrasada_dias_anteriores',
-        agendaAtrasada: true,
-        agendaPrioridadeTempo: 0,
-        agendaMotivo: `A data da tarefa (${date}) é anterior a hoje (${n.iso}).`
-      };
-    }
-
-    if (date === n.iso && taskMinutes != null && taskMinutes < n.minutes) {
-      return {
-        agendaStatus: 'venceu_hoje',
-        agendaAtrasada: true,
-        agendaPrioridadeTempo: 1,
-        agendaMotivo: `Era para hoje às ${task.time}, mas agora já são ${n.time}.`
-      };
-    }
-
-    if (date === n.iso && taskMinutes != null) {
-      return {
-        agendaStatus: 'hoje_ainda_no_horario',
-        agendaAtrasada: false,
-        agendaPrioridadeTempo: 10 + taskMinutes,
-        agendaMotivo: `Tarefa marcada para hoje às ${task.time}.`
-      };
+      return baseMeta(task, 'atrasadas', 'atrasada_dias_anteriores', true, `A data da tarefa (${dateLabel(date)}) é anterior a hoje (${dateLabel(n.iso)}).`, 0);
     }
 
     if (date === n.iso) {
-      return {
-        agendaStatus: 'hoje_sem_horario',
-        agendaAtrasada: false,
-        agendaPrioridadeTempo: 20,
-        agendaMotivo: 'Tarefa marcada para hoje, sem horário definido.'
-      };
+      if (taskMinutes != null && taskMinutes < n.minutes) {
+        return baseMeta(task, 'hoje', 'venceu_hoje', false, `É uma tarefa de hoje (${dateLabel(date)}) às ${task.time}; o horário já passou, mas ela continua no grupo de hoje.`, 10 + taskMinutes);
+      }
+      if (taskMinutes != null) {
+        return baseMeta(task, 'hoje', 'hoje_ainda_no_horario', false, `Tarefa marcada para hoje (${dateLabel(date)}) às ${task.time}.`, 10 + taskMinutes);
+      }
+      return baseMeta(task, 'hoje', 'hoje_sem_horario', false, `Tarefa marcada para hoje (${dateLabel(date)}), sem horário definido.`, 20);
     }
 
-    return {
-      agendaStatus: 'futura',
-      agendaAtrasada: false,
-      agendaPrioridadeTempo: 70,
-      agendaMotivo: `Tarefa futura marcada para ${date}.`
-    };
+    return baseMeta(task, 'futuras', 'futura', false, `Tarefa futura marcada para ${dateLabel(date)}.`, 70);
   };
 
   const enrichTask = task => ({ ...task, ...classify(task) });
 
   const getEnrichedTasks = () => readRawTasks().map(enrichTask);
 
+  const byDateTime = (a, b) => String(a.date || '').localeCompare(String(b.date || '')) || String(a.time || '99:99').localeCompare(String(b.time || '99:99'));
+
   const summarize = () => {
-    const tasks = getEnrichedTasks().filter(t => !t.done && !isTreino(t));
-    const counts = tasks.reduce((acc, task) => {
-      acc[task.agendaStatus] = (acc[task.agendaStatus] || 0) + 1;
-      if (task.agendaAtrasada) acc.totalAtrasadas += 1;
-      return acc;
-    }, { totalAtrasadas: 0 });
+    const tasks = getEnrichedTasks().filter(t => !t.done);
+    const agendaTasks = tasks.filter(t => !t.agendaEhTreino);
+    const treinos = tasks.filter(t => t.agendaEhTreino);
+    const make = list => ({
+      atrasadas: list.filter(t => t.agendaGrupoData === 'atrasadas').sort(byDateTime),
+      hoje: list.filter(t => t.agendaGrupoData === 'hoje').sort(byDateTime),
+      futuras: list.filter(t => t.agendaGrupoData === 'futuras').sort(byDateTime),
+      semData: list.filter(t => t.agendaGrupoData === 'sem_data').sort(byDateTime)
+    });
+    const agenda = make(agendaTasks);
+    const treino = make(treinos);
 
     return {
       agora: nowParts().iso + ' ' + nowParts().time,
-      totalPendentes: tasks.length,
-      totalAtrasadas: counts.totalAtrasadas,
-      porStatus: counts,
-      atrasadas: tasks.filter(t => t.agendaAtrasada).sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || String(a.time || '').localeCompare(String(b.time || ''))),
-      proximas: tasks.filter(t => !t.agendaAtrasada && /^hoje_/.test(t.agendaStatus)).sort((a, b) => String(a.time || '99:99').localeCompare(String(b.time || '99:99')))
+      hojeTexto: dateLabel(nowParts().iso),
+      totalPendentes: agendaTasks.length,
+      totalAtrasadas: agenda.atrasadas.length,
+      totalHoje: agenda.hoje.length,
+      totalFuturas: agenda.futuras.length,
+      agenda,
+      treinos: treino,
+      porStatus: {
+        atrasadas: agenda.atrasadas.length,
+        hoje: agenda.hoje.length,
+        futuras: agenda.futuras.length,
+        semData: agenda.semData.length,
+        treinosAtrasados: treino.atrasadas.length,
+        treinosHoje: treino.hoje.length,
+        treinosFuturos: treino.futuras.length
+      },
+      atrasadas: agenda.atrasadas,
+      proximas: agenda.hoje
     };
   };
 
@@ -156,6 +165,7 @@
   window.AgendaIntel = {
     classify,
     getTasks: getEnrichedTasks,
-    summarize
+    summarize,
+    dateLabel
   };
 })();
