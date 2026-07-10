@@ -1,29 +1,38 @@
 /*
   Agenda List Status
   Mostra na lista, de forma explícita, o estado temporal de cada tarefa:
-  Atrasada, venceu hoje, hoje, futura ou sem data.
+  Atrasadas, hoje, futuras ou sem data — com dia da semana por texto.
 */
 (() => {
   'use strict';
 
   const STYLE_ID = 'agendaListStatusStyles';
   const BADGE_CLASS = 'agenda-status-badge';
+  const DAY_NAMES = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 
   const esc = value => String(value ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const pad = value => String(value).padStart(2, '0');
+  const dateText = iso => {
+    if (window.AgendaIntel?.dateLabel) return window.AgendaIntel.dateLabel(iso);
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+    if (!m) return '';
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0);
+    return `${DAY_NAMES[d.getDay()]}, ${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
+  };
 
   const ensureStyles = () => {
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-      .task-card.agenda-status-late,
-      .task-card.agenda-status-due-today {
+      .task-card.agenda-status-late {
         border: 1px solid color-mix(in srgb, var(--danger) 42%, var(--line));
         background: linear-gradient(135deg, color-mix(in srgb, var(--danger) 13%, transparent), color-mix(in srgb, var(--surface) 88%, transparent));
         box-shadow: 0 12px 30px rgba(0,0,0,.14), 0 0 0 1px color-mix(in srgb, var(--danger) 10%, transparent) inset;
       }
 
-      .task-card.agenda-status-today {
+      .task-card.agenda-status-today,
+      .task-card.agenda-status-due-today {
         border: 1px solid color-mix(in srgb, #ffb74d 38%, var(--line));
         background: linear-gradient(135deg, color-mix(in srgb, #ffb74d 12%, transparent), color-mix(in srgb, var(--surface) 88%, transparent));
       }
@@ -55,14 +64,14 @@
         background: currentColor;
       }
 
-      .${BADGE_CLASS}.late,
-      .${BADGE_CLASS}.due-today {
+      .${BADGE_CLASS}.late {
         border-color: color-mix(in srgb, var(--danger) 48%, var(--line));
         background: color-mix(in srgb, var(--danger) 15%, transparent);
         color: var(--danger);
       }
 
-      .${BADGE_CLASS}.today {
+      .${BADGE_CLASS}.today,
+      .${BADGE_CLASS}.due-today {
         border-color: color-mix(in srgb, #ffb74d 52%, var(--line));
         background: color-mix(in srgb, #ffb74d 16%, transparent);
         color: #ffb74d;
@@ -83,20 +92,20 @@
   };
 
   const statusMeta = task => {
-    switch (task?.agendaStatus) {
-      case 'atrasada_dias_anteriores':
-        return { cls: 'late', card: 'agenda-status-late', label: 'Atrasada' };
-      case 'venceu_hoje':
-        return { cls: 'due-today', card: 'agenda-status-due-today', label: 'Venceu hoje' };
-      case 'hoje_ainda_no_horario':
-        return { cls: 'today', card: 'agenda-status-today', label: task.time ? `Hoje ${task.time}` : 'Hoje' };
-      case 'hoje_sem_horario':
-        return { cls: 'today', card: 'agenda-status-today', label: 'Hoje' };
-      case 'futura':
-        return { cls: 'next', card: 'agenda-status-next', label: task.date ? `Futura ${task.date.slice(8,10)}/${task.date.slice(5,7)}` : 'Futura' };
+    const d = task?.agendaDataTexto || dateText(task?.date);
+    switch (task?.agendaGrupoData) {
+      case 'atrasadas':
+        return { cls: 'late', card: 'agenda-status-late', label: `Atrasada · ${d}` };
+      case 'hoje':
+        return { cls: task.agendaStatus === 'venceu_hoje' ? 'due-today' : 'today', card: task.agendaStatus === 'venceu_hoje' ? 'agenda-status-due-today' : 'agenda-status-today', label: task.time ? `Hoje · ${d} · ${task.time}` : `Hoje · ${d}` };
+      case 'futuras':
+        return { cls: 'next', card: 'agenda-status-next', label: `Futura · ${d}` };
       case 'sem_data':
         return { cls: 'no-date', card: 'agenda-status-no-date', label: 'Sem data' };
       default:
+        if (task?.agendaStatus === 'atrasada_dias_anteriores') return { cls: 'late', card: 'agenda-status-late', label: `Atrasada · ${d}` };
+        if (/^hoje_|venceu_hoje/.test(String(task?.agendaStatus || ''))) return { cls: 'today', card: 'agenda-status-today', label: task.time ? `Hoje · ${d} · ${task.time}` : `Hoje · ${d}` };
+        if (task?.agendaStatus === 'futura') return { cls: 'next', card: 'agenda-status-next', label: `Futura · ${d}` };
         return null;
     }
   };
@@ -110,6 +119,11 @@
   };
 
   const findTaskForCard = (card, tasks) => {
+    const id = card.querySelector('.check[data-id]')?.dataset?.id;
+    if (id) {
+      const byId = tasks.find(t => String(t.id) === String(id));
+      if (byId) return byId;
+    }
     const title = card.querySelector('.task-title')?.textContent || '';
     const normalized = esc(title);
     if (!normalized) return null;
