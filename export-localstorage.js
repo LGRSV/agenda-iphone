@@ -1,7 +1,7 @@
 /*
   Export LocalStorage
   Adiciona botão no topo para exportar os dados locais da Agenda Lagares.
-  O arquivo gerado pode ser enviado para análise externa sem precisar acessar o iPhone remotamente.
+  Tokens, sessões e credenciais são sempre omitidos ou mascarados.
 */
 (() => {
   'use strict';
@@ -11,29 +11,16 @@
   const KNOWN_KEYS = [
     'agenda_lagares_v3',
     'agenda_notas_v1',
-    'agenda_regras_v1',
-    'agenda_treino_time_v1',
-    'agenda_seed_pessoal_v1',
-    'agenda_seed_pessoal_v2',
-    'agenda_seed_pessoal_v3',
-    'agenda_seed_pessoal_v4',
-    'agenda_seed_pessoal_v5',
-    'agenda_seed_pessoal_v6',
-    'agenda_seed_pessoal_v7',
-    'agenda_seed_pessoal_v8',
-    'agenda_seed_pessoal_v9',
-    'agenda_seed_pessoal_v10',
-    'agenda_seed_pessoal_v11',
-    'agenda_seed_pessoal_v12',
-    'agenda_seed_pessoal_v13',
-    'agenda_seed_pessoal_v14',
-    'agenda_seed_pessoal_v15',
-    'agenda_seed_pessoal_v16',
-    'agenda_seed_pessoal_v17',
-    'agenda_seed_pessoal_v18',
-    'agenda_seed_pessoal_v19',
-    'agenda_seed_pessoal_v20'
+    'agenda_lagares_rules_v1',
+    'agenda_treino_logs_v1',
+    'agenda_treino_meta_v1',
+    'agenda_lagares_config_v1',
+    'agenda_lixeira_v1',
+    'agenda_historico_v1'
   ];
+
+  const SENSITIVE_KEY = /(token|secret|password|senha|service[_-]?role|auth[_-]?key|auth-token|publishablekey|anonkey)/i;
+  const SENSITIVE_STORAGE_KEY = /(^sb-.+-auth-token$|agenda_lagares_gitsync|agenda_supabase_config)/i;
 
   const pad = value => String(value).padStart(2, '0');
   const timestamp = () => {
@@ -45,18 +32,35 @@
     try { return JSON.parse(value); } catch (_) { return value; }
   };
 
+  const redact = (value, key = '') => {
+    if (SENSITIVE_KEY.test(String(key))) return '[REDACTED]';
+    if (Array.isArray(value)) return value.map(item => redact(item));
+    if (value && typeof value === 'object') {
+      const result = {};
+      for (const [childKey, childValue] of Object.entries(value)) {
+        result[childKey] = redact(childValue, childKey);
+      }
+      return result;
+    }
+    return value;
+  };
+
   const collect = () => {
     const localStorageDump = {};
     for (let i = 0; i < localStorage.length; i += 1) {
       const key = localStorage.key(i);
       if (!key) continue;
-      localStorageDump[key] = tryJson(localStorage.getItem(key));
+      if (SENSITIVE_STORAGE_KEY.test(key) || SENSITIVE_KEY.test(key)) {
+        localStorageDump[key] = '[REDACTED]';
+        continue;
+      }
+      localStorageDump[key] = redact(tryJson(localStorage.getItem(key)), key);
     }
 
     const agendaKeys = {};
     for (const key of KNOWN_KEYS) {
       const value = localStorage.getItem(key);
-      if (value !== null) agendaKeys[key] = tryJson(value);
+      if (value !== null) agendaKeys[key] = redact(tryJson(value), key);
     }
 
     let intelligence = null;
@@ -66,10 +70,11 @@
 
     return {
       app: 'Agenda Lagares',
-      exportVersion: 1,
+      exportVersion: 2,
       exportedAt: new Date().toISOString(),
       userAgent: navigator.userAgent,
       locationHref: location.href,
+      securityNotice: 'Tokens, sessões e credenciais foram removidos deste arquivo.',
       agendaKeys,
       intelligence,
       localStorage: localStorageDump
@@ -99,19 +104,14 @@
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
-    showToast('Dados da agenda exportados em JSON.');
+    showToast('Dados exportados sem tokens ou credenciais.');
   };
 
   const ensureStyles = () => {
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement('style');
     style.id = STYLE_ID;
-    style.textContent = `
-      #${BUTTON_ID} svg {
-        width: 22px;
-        height: 22px;
-      }
-    `;
+    style.textContent = `#${BUTTON_ID} svg{width:22px;height:22px}`;
     document.head.appendChild(style);
   };
 
