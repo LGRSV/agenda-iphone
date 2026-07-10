@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v105';
+const CACHE = 'agenda-lagares-v106-github-storage';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -11,6 +11,7 @@ const INTEL_SCRIPT = '<script src="./agenda-intelligence.js?v=2"><\/script>';
 const LIST_STATUS_SCRIPT = '<script src="./agenda-list-status.js?v=2"><\/script>';
 const EXPORT_SCRIPT = '<script src="./export-localstorage.js?v=1"><\/script>';
 const REALTIME_SCRIPT = '<script src="./realtime-refresh.js?v=1"><\/script>';
+const GITHUB_STORAGE_SCRIPT = '<script src="./github-storage.js?v=1"><\/script>';
 const POLISH_STYLE = '<link rel="stylesheet" href="./interface-polish.css?v=1">';
 const POLISH_SCRIPT = '<script src="./interface-polish.js?v=1" defer><\/script>';
 
@@ -48,6 +49,7 @@ self.addEventListener('fetch', event => {
     if (!html.includes('agenda-list-status.js')) html = html.replace('</body>', `${LIST_STATUS_SCRIPT}</body>`);
     if (!html.includes('export-localstorage.js')) html = html.replace('</body>', `${EXPORT_SCRIPT}</body>`);
     if (!html.includes('realtime-refresh.js')) html = html.replace('</body>', `${REALTIME_SCRIPT}</body>`);
+    if (!html.includes('github-storage.js')) html = html.replace('</body>', `${GITHUB_STORAGE_SCRIPT}</body>`);
     if (!html.includes('interface-polish.js')) html = html.replace('</body>', `${POLISH_SCRIPT}</body>`);
 
     const headers = new Headers(response.headers);
@@ -89,4 +91,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v105-realtime-refresh
+// redeploy trigger v106-github-storage
