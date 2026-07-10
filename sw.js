@@ -1,10 +1,11 @@
-const CACHE = 'agenda-lagares-v106-supabase';
+const CACHE = 'agenda-lagares-v107-supabase-live';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
 const NOTAS_SCRIPT = '<script src="./notas.js?v=5"><\/script>';
 const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3"><\/script>';
-const SUPABASE_SCRIPT = '<script src="./supabase-storage.js?v=1"><\/script>';
+const SUPABASE_CONFIG_SCRIPT = '<script src="./supabase-project-config.js?v=1"><\/script>';
+const SUPABASE_SCRIPT = '<script src="./supabase-storage.js?v=2"><\/script>';
 const UNDO_SCRIPT = '<script src="./undo.js?v=1"><\/script>';
 const LIXEIRA_SCRIPT = '<script src="./lixeira.js?v=1"><\/script>';
 const INTEL_SCRIPT = '<script src="./agenda-intelligence.js?v=2"><\/script>';
@@ -41,6 +42,7 @@ self.addEventListener('fetch', event => {
     if (!html.includes('painel.js')) html = html.replace('</body>', `${PAINEL_SCRIPT}</body>`);
     if (!html.includes('notas.js')) html = html.replace('</body>', `${NOTAS_SCRIPT}</body>`);
     if (!html.includes('condicional.js')) html = html.replace('</body>', `${CONDICIONAL_SCRIPT}</body>`);
+    if (!html.includes('supabase-project-config.js')) html = html.replace('</body>', `${SUPABASE_CONFIG_SCRIPT}</body>`);
     if (!html.includes('supabase-storage.js')) html = html.replace('</body>', `${SUPABASE_SCRIPT}</body>`);
     if (!html.includes('undo.js')) html = html.replace('</body>', `${UNDO_SCRIPT}</body>`);
     if (!html.includes('lixeira.js')) html = html.replace('</body>', `${LIXEIRA_SCRIPT}</body>`);
@@ -89,4 +91,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v106-supabase
+// redeploy trigger v107-supabase-live
