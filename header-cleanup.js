@@ -16,7 +16,7 @@
       @media (max-width: 760px) {
         .topbar{position:relative!important;top:auto!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:start!important;overflow:visible!important}
         .topbar>div:first-child{min-width:0!important}
-        .head-actions{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:8px!important;max-width:172px!important;overflow:hidden!important;flex-wrap:nowrap!important}
+        .head-actions{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:6px!important;max-width:150px!important;overflow:visible!important;flex-wrap:wrap!important}
         .head-actions>.icon-btn{width:46px!important;height:46px!important;flex:0 0 46px!important}
         .agenda-hidden-header-control{display:none!important}
         [data-agenda-preview-control="desktop"]{display:none!important}
