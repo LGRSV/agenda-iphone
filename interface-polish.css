@@ -375,3 +375,8 @@ select:focus {
     transform: none;
   }
 }
+
+
+/* Paginação progressiva: limita o trabalho de layout em listas grandes. */
+.list-more{display:block;width:calc(100% - 10px);margin:14px 5px 6px;padding:13px 14px;border:1px solid color-mix(in srgb,var(--accent) 42%,var(--line));border-radius:14px;background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--accent);font-size:13px;font-weight:800;transition:transform .16s var(--ui-spring),background .18s var(--ui-motion)}
+.list-more small{display:block;margin-top:3px;color:var(--muted);font-size:10px;font-weight:700}.list-more:active{transform:scale(.97);background:color-mix(in srgb,var(--accent) 22%,var(--surface))}
