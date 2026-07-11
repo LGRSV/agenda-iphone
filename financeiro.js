@@ -9,7 +9,7 @@
   let dialogEl;
 
   const esc = value => { const d = document.createElement('div'); d.textContent = value == null ? '' : value; return d.innerHTML; };
-  const load = key => { try { const value = JSON.parse(localStorage.getItem(key) || key === TASK_KEY ? '[]' : '{}'); return value; } catch (_) { return key === TASK_KEY ? [] : {}; } };
+  const load = key => { try { const raw = localStorage.getItem(key); return JSON.parse(raw || (key === TASK_KEY ? '[]' : '{}')); } catch (_) { return key === TASK_KEY ? [] : {}; } };
   const money = value => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
   const parseMoney = value => {
     const raw = String(value ?? '').trim().replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]/g, '');
