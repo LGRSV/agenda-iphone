@@ -209,6 +209,36 @@ dialog,
   opacity: .72;
 }
 
+/* Entrada discreta a cada renderização da lista, sem depender de observador. */
+.group .task-card {
+  animation: uiTaskEnter .24s var(--ui-motion) both;
+  animation-delay: min(calc(var(--task-index, 0) * 18ms), 150ms);
+}
+
+.task-card.task-completing {
+  pointer-events: none;
+  animation: uiTaskComplete .18s var(--ui-motion) forwards;
+}
+
+.task-card.done {
+  animation: uiTaskDone .32s var(--ui-spring) both;
+}
+
+@keyframes uiTaskEnter {
+  from { opacity: .01; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes uiTaskComplete {
+  to { opacity: .48; transform: scale(.985); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+}
+
+@keyframes uiTaskDone {
+  0% { transform: scale(.985); opacity: .56; }
+  65% { transform: scale(1.008); opacity: .82; }
+  100% { transform: scale(1); opacity: .72; }
+}
+
 .check {
   transition: transform .16s var(--ui-spring), background .16s var(--ui-motion), border-color .16s var(--ui-motion), box-shadow .16s var(--ui-motion);
 }
