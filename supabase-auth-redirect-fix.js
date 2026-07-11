@@ -1,11 +1,14 @@
-/* Corrige o destino dos e-mails de confirmação do Supabase.
-   O link passa a voltar para a própria URL pública da Agenda, nunca localhost. */
+/* Correções de autenticação da Agenda Lagares.
+   - Nunca usa localhost como retorno.
+   - Reenvia confirmação para a URL pública.
+   - Traduz erros de autenticação para mensagens claras. */
 (() => {
   'use strict';
 
   const MODULE_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
   const CONFIG_KEY = 'agenda_supabase_config_v1';
   const OVERLAY_ID = 'agendaLoginOverlay';
+  const PUBLIC_APP_URL = 'https://lgrsv.github.io/agenda-iphone/?app=1';
   let clientPromise = null;
 
   const readConfig = () => {
@@ -13,12 +16,7 @@
     catch (_) { return {}; }
   };
 
-  const redirectTo = () => {
-    const url = new URL('./', location.href);
-    url.search = '';
-    url.hash = '';
-    return url.href;
-  };
+  const redirectTo = () => PUBLIC_APP_URL;
 
   const getClient = async () => {
     if (!clientPromise) {
@@ -52,10 +50,31 @@
     password: overlay.querySelector('#agendaLoginPassword')?.value || ''
   });
 
+  const translateStatus = status => {
+    const text = String(status.textContent || '').trim();
+    if (/invalid login credentials/i.test(text)) {
+      status.textContent = 'Senha incorreta para esta conta. O e-mail já está confirmado.';
+      status.classList.add('error');
+    } else if (/email not confirmed/i.test(text)) {
+      status.textContent = 'O e-mail ainda não foi confirmado. Use “Reenviar confirmação”.';
+      status.classList.add('error');
+    }
+  };
+
   const install = () => {
     const overlay = document.getElementById(OVERLAY_ID);
-    if (!overlay || overlay.dataset.redirectFix === '1') return;
-    overlay.dataset.redirectFix = '1';
+    if (!overlay || overlay.dataset.redirectFix === '2') return;
+    overlay.dataset.redirectFix = '2';
+
+    const status = overlay.querySelector('#agendaLoginStatus');
+    if (status) {
+      new MutationObserver(() => translateStatus(status)).observe(status, {
+        childList: true,
+        characterData: true,
+        subtree: true
+      });
+      translateStatus(status);
+    }
 
     const oldCreate = overlay.querySelector('#agendaCreateAccount');
     if (!oldCreate) return;
@@ -63,12 +82,15 @@
     const create = oldCreate.cloneNode(true);
     oldCreate.replaceWith(create);
 
-    const resend = document.createElement('button');
-    resend.className = 'action';
-    resend.id = 'agendaResendConfirmation';
-    resend.type = 'button';
-    resend.textContent = 'Reenviar confirmação';
-    create.insertAdjacentElement('afterend', resend);
+    let resend = overlay.querySelector('#agendaResendConfirmation');
+    if (!resend) {
+      resend = document.createElement('button');
+      resend.className = 'action';
+      resend.id = 'agendaResendConfirmation';
+      resend.type = 'button';
+      resend.textContent = 'Reenviar confirmação';
+      create.insertAdjacentElement('afterend', resend);
+    }
 
     create.addEventListener('click', async () => {
       const current = values(overlay);
@@ -95,7 +117,7 @@
           setStatus('Conta criada. Abrindo sua agenda…');
           setTimeout(() => location.reload(), 500);
         } else {
-          setStatus('Conta criada. Use o novo e-mail de confirmação; o link antigo de localhost não funciona mais.');
+          setStatus('Conta criada. Abra o e-mail mais recente de confirmação.');
           setBusy(false);
         }
       } catch (error) {
@@ -121,7 +143,7 @@
           options: { emailRedirectTo: redirectTo() }
         });
         if (error) throw error;
-        setStatus('Novo e-mail enviado. Abra somente o link mais recente.');
+        setStatus('Novo e-mail enviado. O retorno será para a Agenda pública, não localhost.');
       } catch (error) {
         setStatus(error?.message || 'Não foi possível reenviar a confirmação.', true);
       } finally {
