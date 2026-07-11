@@ -1,7 +1,8 @@
-const CACHE = 'agenda-lagares-v116-simple-access';
+const CACHE = 'agenda-lagares-v117-financeiro';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
+const FINANCEIRO_SCRIPT = '<script src="./financeiro.js?v=1"><\/script>';
 const NOTAS_SCRIPT = '<script src="./notas.js?v=5"><\/script>';
 const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3"><\/script>';
 const SUPABASE_CONFIG_SCRIPT = '<script src="./supabase-project-config.js?v=1"><\/script>';
@@ -39,6 +40,7 @@ self.addEventListener('fetch', event => {
     if (!html.includes('edit-enhancement.js')) html = html.replace('</body>', `${EDIT_SCRIPT}</body>`);
     if (!html.includes('treino.js')) html = html.replace('</body>', `${TREINO_SCRIPT}</body>`);
     if (!html.includes('painel.js')) html = html.replace('</body>', `${PAINEL_SCRIPT}</body>`);
+    if (!html.includes('financeiro.js')) html = html.replace('</body>', `${FINANCEIRO_SCRIPT}</body>`);
     if (!html.includes('notas.js')) html = html.replace('</body>', `${NOTAS_SCRIPT}</body>`);
     if (!html.includes('condicional.js')) html = html.replace('</body>', `${CONDICIONAL_SCRIPT}</body>`);
     if (!html.includes('supabase-project-config.js')) html = html.replace('</body>', `${SUPABASE_CONFIG_SCRIPT}</body>`);
@@ -83,4 +85,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v116-simple-access
+// redeploy trigger v117-financeiro
