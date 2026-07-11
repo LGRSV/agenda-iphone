@@ -5,7 +5,7 @@
 (() => {
   'use strict';
 
-  const ALLOWED_IDS = new Set(['supabaseStorageBtn', 'painelBtn', 'financeiroBtn', 'lixBtn', 'alertsBtn', 'themeToggle', 'atualizarBtn', 'notaRapidaBtn']);
+  const ALLOWED_IDS = new Set(['supabaseStorageBtn', 'painelBtn', 'financeiroBtn', 'lixBtn', 'alertsBtn', 'themeToggle', 'atualizarBtn', 'notaRapidaBtn', 'equipamentosBtn']);
   const STYLE_ID = 'agendaHeaderCleanupStyles';
 
   const ensureStyles = () => {

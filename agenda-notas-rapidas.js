@@ -20,6 +20,9 @@
   }
 
   var ICON_NOTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v4M16 2.5v4"/><rect x="4" y="5" width="16" height="16.5" rx="2.4"/><path d="M8 11h8M8 15h5"/></svg>';
+  // religador (recloser): simbolo de chave seccionadora aberta
+  var ICON_RECLOSER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12H7M17 12h4.5"/><circle cx="7" cy="12" r="1.6"/><circle cx="17" cy="12" r="1.6"/><path d="M8.4 11.3 16 6.6"/></svg>';
+  var EQUIP_URL = 'https://lgrsv.github.io/equipamentos-especiais-v0/';
   var ICON_REFRESH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>';
 
   function ensureStyles() {
@@ -109,6 +112,11 @@
     }
     if (!document.getElementById('notaRapidaBtn')) {
       host.insertBefore(mkBtn('notaRapidaBtn', 'Notas rápidas', ICON_NOTE, openNotes), host.firstChild);
+    }
+    if (!document.getElementById('equipamentosBtn')) {
+      host.insertBefore(mkBtn('equipamentosBtn', 'Equipamentos Especiais', ICON_RECLOSER, function () {
+        window.open(EQUIP_URL, '_blank', 'noopener');
+      }), host.firstChild);
     }
   }
 

@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v131-notas-header';
+const CACHE = 'agenda-lagares-v132-religador';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -86,4 +86,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v131-notas-rapidas-atualizar-cardio-fora-financeiro
+// redeploy trigger v132-religador-header-equipamentos
