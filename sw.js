@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v118-sync-fix';
+const CACHE = 'agenda-lagares-v119-list-visible';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -17,7 +17,7 @@ const INTEL_SCRIPT = '<script src="./agenda-intelligence.js?v=2"><\/script>';
 const LIST_STATUS_SCRIPT = '<script src="./agenda-list-status.js?v=2"><\/script>';
 const EXPORT_SCRIPT = '<script src="./export-localstorage.js?v=2"><\/script>';
 const REALTIME_SCRIPT = '<script src="./realtime-refresh.js?v=1"><\/script>';
-const POLISH_STYLE = '<link rel="stylesheet" href="./interface-polish.css?v=1">';
+const POLISH_STYLE = '<link rel="stylesheet" href="./interface-polish.css?v=2">';
 const POLISH_SCRIPT = '<script src="./interface-polish.js?v=1" defer><\/script>';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
@@ -85,4 +85,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v118-sync-fix
+// redeploy trigger v119-list-visible
