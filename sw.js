@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v122-panel-access';
+const CACHE = 'agenda-lagares-v123-salary-rules';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -85,4 +85,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v122-panel-access
+// redeploy trigger v123-salary-rules
