@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v129-finance-colors';
+const CACHE = 'agenda-lagares-v130-perf';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -86,4 +86,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v129-finance-colors
+// redeploy trigger v130-perf-remove-sync-legado
