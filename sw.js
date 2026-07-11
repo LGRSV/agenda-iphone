@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v111-auth-reviewed';
+const CACHE = 'agenda-lagares-v112-viewmode';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -8,6 +8,7 @@ const SUPABASE_CONFIG_SCRIPT = '<script src="./supabase-project-config.js?v=1"><
 const SUPABASE_SCRIPT = '<script src="./supabase-storage.js?v=2"><\/script>';
 const SUPABASE_LOGIN_SCRIPT = '<script src="./supabase-login-ui.js?v=3"><\/script>';
 const SUPABASE_REDIRECT_FIX_SCRIPT = '<script src="./supabase-auth-redirect-fix.js?v=2"><\/script>';
+const VIEWMODE_SCRIPT = '<script src="./viewmode.js?v=1"><\/script>';
 const UNDO_SCRIPT = '<script src="./undo.js?v=1"><\/script>';
 const LIXEIRA_SCRIPT = '<script src="./lixeira.js?v=1"><\/script>';
 const INTEL_SCRIPT = '<script src="./agenda-intelligence.js?v=2"><\/script>';
@@ -43,6 +44,7 @@ self.addEventListener('fetch', event => {
     if (!html.includes('supabase-storage.js')) html = html.replace('</body>', `${SUPABASE_SCRIPT}</body>`);
     if (!html.includes('supabase-login-ui.js')) html = html.replace('</body>', `${SUPABASE_LOGIN_SCRIPT}</body>`);
     if (!html.includes('supabase-auth-redirect-fix.js')) html = html.replace('</body>', `${SUPABASE_REDIRECT_FIX_SCRIPT}</body>`);
+    if (!html.includes('viewmode.js')) html = html.replace('</body>', `${VIEWMODE_SCRIPT}</body>`);
     if (!html.includes('undo.js')) html = html.replace('</body>', `${UNDO_SCRIPT}</body>`);
     if (!html.includes('lixeira.js')) html = html.replace('</body>', `${LIXEIRA_SCRIPT}</body>`);
     if (!html.includes('agenda-intelligence.js')) html = html.replace('</body>', `${INTEL_SCRIPT}</body>`);
@@ -79,4 +81,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v111-auth-reviewed
+// redeploy trigger v112-viewmode-zoom-iphone13
