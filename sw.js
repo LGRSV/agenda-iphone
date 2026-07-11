@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v110-auth-redirect';
+const CACHE = 'agenda-lagares-v111-auth-reviewed';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -7,7 +7,7 @@ const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3"><\/script>';
 const SUPABASE_CONFIG_SCRIPT = '<script src="./supabase-project-config.js?v=1"><\/script>';
 const SUPABASE_SCRIPT = '<script src="./supabase-storage.js?v=2"><\/script>';
 const SUPABASE_LOGIN_SCRIPT = '<script src="./supabase-login-ui.js?v=3"><\/script>';
-const SUPABASE_REDIRECT_FIX_SCRIPT = '<script src="./supabase-auth-redirect-fix.js?v=1"><\/script>';
+const SUPABASE_REDIRECT_FIX_SCRIPT = '<script src="./supabase-auth-redirect-fix.js?v=2"><\/script>';
 const UNDO_SCRIPT = '<script src="./undo.js?v=1"><\/script>';
 const LIXEIRA_SCRIPT = '<script src="./lixeira.js?v=1"><\/script>';
 const INTEL_SCRIPT = '<script src="./agenda-intelligence.js?v=2"><\/script>';
@@ -79,4 +79,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v110-auth-redirect
+// redeploy trigger v111-auth-reviewed
