@@ -288,15 +288,12 @@ select:focus {
   transform: translateY(-1px);
 }
 
-.ui-reveal {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
+/* O conteúdo principal nunca pode depender do IntersectionObserver para aparecer.
+   Em PWA/iOS ele pode não disparar após uma recarga de sincronização. */
+.ui-reveal,
 .ui-reveal.ui-visible {
   opacity: 1;
-  transform: translateY(0);
-  transition: opacity .36s var(--ui-motion), transform .36s var(--ui-motion);
+  transform: none;
 }
 
 .ui-pressed {
