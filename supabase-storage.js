@@ -20,6 +20,7 @@
   const DIALOG_ID = 'supabaseStorageDialog';
   const STYLE_ID = 'supabaseStorageStyles';
   const STATUS_DOT_ID = 'supabaseStorageDot';
+  const RELOAD_GUARD_KEY = 'agenda_supabase_reload_guard_v1';
 
   const DOCUMENTS = {
     tasks: { localKey: 'agenda_lagares_v3', fallback: [] },
@@ -48,6 +49,7 @@
   let reloadTimer = 0;
   let lastError = '';
   let libraryPromise = null;
+  let startedUserId = '';
 
   const safeJson = (value, fallback) => {
     try {
@@ -185,7 +187,7 @@
       renderStatus();
       updateDialogStatus();
       if (currentUser && changed) setTimeout(() => startAuthenticatedMode().catch(handleError), 0);
-      if (!currentUser) destroyRealtime();
+      if (!currentUser) { startedUserId = ''; destroyRealtime(); }
     });
 
     const { data, error } = await client.auth.getSession();
@@ -257,7 +259,12 @@
     window.dispatchEvent(new CustomEvent('agenda:datachange', { detail }));
   };
 
-  const scheduleReload = message => {
+  const scheduleReload = (message, fingerprint = '') => {
+    const key = fingerprint || message || 'reload';
+    try {
+      if (sessionStorage.getItem(RELOAD_GUARD_KEY) === key) return;
+      sessionStorage.setItem(RELOAD_GUARD_KEY, key);
+    } catch (_) {}
     clearTimeout(reloadTimer);
     reloadTimer = setTimeout(() => {
       showToast(message || 'Dados atualizados pelo Supabase.');
@@ -313,7 +320,7 @@
       clearDirty(rows.map(row => row.document_key));
       setConfig({ lastSyncAt: new Date().toISOString() });
       lastError = '';
-      if (changed && reload) scheduleReload('Agenda atualizada pelo Supabase.');
+      if (changed && reload) scheduleReload('Agenda atualizada pelo Supabase.', 'pull:' + rows.map(row => [row.document_key,row.version,row.updated_at].join(':')).sort().join('|'));
       else showToast('Dados conferidos no Supabase.');
       return rows;
     } finally {
@@ -332,6 +339,7 @@
       const dirty = getDirty();
       const rows = await fetchDocuments();
       const remoteMap = new Map(rows.map(row => [row.document_key, row]));
+      const remoteFingerprint = rows.map(row => [row.document_key,row.version,row.updated_at].join(':')).sort().join('|');
       let localChanged = false;
       const pushed = [];
 
@@ -369,7 +377,7 @@
       lastError = '';
       if (localChanged) {
         notifyDataChanged('initial-pull');
-        scheduleReload('Agenda sincronizada com o Supabase.');
+        scheduleReload('Agenda sincronizada com o Supabase.', 'initial:' + remoteFingerprint);
       }
     } finally {
       syncing = false;
@@ -401,7 +409,7 @@
           : row.payload;
         if (writeLocal(row.document_key, nextPayload)) {
           notifyDataChanged('realtime');
-          scheduleReload('Alteração recebida em tempo real.');
+          scheduleReload('Alteração recebida em tempo real.', 'realtime:' + [row.document_key,row.version,row.updated_at].join(':'));
         }
       })
       .subscribe(status => {
@@ -413,10 +421,16 @@
   };
 
   const startAuthenticatedMode = async () => {
-    if (!currentUser) return;
-    await initialSync();
-    await subscribeRealtime();
-    updateDialogStatus();
+    if (!currentUser || startedUserId === currentUser.id) return;
+    startedUserId = currentUser.id;
+    try {
+      await initialSync();
+      await subscribeRealtime();
+      updateDialogStatus();
+    } catch (error) {
+      startedUserId = '';
+      throw error;
+    }
   };
 
   const schedulePush = () => {
@@ -560,6 +574,7 @@
       setConfig(readFormConfig());
       client = null;
       currentUser = null;
+      startedUserId = '';
       await createSupabaseClient();
       updateDialogStatus('Projeto salvo. Entre na sua conta.');
     };
@@ -603,6 +618,7 @@
       try {
         if (client) await client.auth.signOut();
         currentUser = null;
+        startedUserId = '';
         await destroyRealtime();
         updateDialogStatus('Sessão encerrada.');
         renderStatus();
