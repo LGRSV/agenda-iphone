@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v117-financeiro';
+const CACHE = 'agenda-lagares-v118-sync-fix';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -6,7 +6,7 @@ const FINANCEIRO_SCRIPT = '<script src="./financeiro.js?v=1"><\/script>';
 const NOTAS_SCRIPT = '<script src="./notas.js?v=5"><\/script>';
 const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3"><\/script>';
 const SUPABASE_CONFIG_SCRIPT = '<script src="./supabase-project-config.js?v=1"><\/script>';
-const SUPABASE_SCRIPT = '<script src="./supabase-storage.js?v=2"><\/script>';
+const SUPABASE_SCRIPT = '<script src="./supabase-storage.js?v=3"><\/script>';
 const SUPABASE_LOGIN_SCRIPT = '<script src="./supabase-login-ui.js?v=3"><\/script>';
 const SIMPLE_ACCESS_SCRIPT = '<script src="./supabase-simple-access.js?v=1"><\/script>';
 const VIEWMODE_SCRIPT = '<script src="./viewmode.js?v=1"><\/script>';
@@ -85,4 +85,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v117-financeiro
+// redeploy trigger v118-sync-fix
