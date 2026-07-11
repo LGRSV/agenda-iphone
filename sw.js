@@ -1,8 +1,8 @@
-const CACHE = 'agenda-lagares-v123-salary-rules';
+const CACHE = 'agenda-lagares-v124-finance-page';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
-const FINANCEIRO_SCRIPT = '<script src="./financeiro.js?v=1"><\/script>';
+const FINANCEIRO_SCRIPT = '<script src="./financeiro.js?v=2"><\/script>';
 const NOTAS_SCRIPT = '<script src="./notas.js?v=5"><\/script>';
 const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3"><\/script>';
 const SUPABASE_CONFIG_SCRIPT = '<script src="./supabase-project-config.js?v=1"><\/script>';
@@ -36,26 +36,27 @@ self.addEventListener('fetch', event => {
     const contentType = response.headers.get('content-type') || '';
     if (!response.ok || !contentType.includes('text/html')) return response;
     let html = await response.text();
-    if (!html.includes('interface-polish.css')) html = html.replace('</head>', `${POLISH_STYLE}</head>`);
-    if (!html.includes('edit-enhancement.js')) html = html.replace('</body>', `${EDIT_SCRIPT}</body>`);
-    if (!html.includes('treino.js')) html = html.replace('</body>', `${TREINO_SCRIPT}</body>`);
-    if (!html.includes('painel.js')) html = html.replace('</body>', `${PAINEL_SCRIPT}</body>`);
-    if (!html.includes('financeiro.js')) html = html.replace('</body>', `${FINANCEIRO_SCRIPT}</body>`);
-    if (!html.includes('notas.js')) html = html.replace('</body>', `${NOTAS_SCRIPT}</body>`);
-    if (!html.includes('condicional.js')) html = html.replace('</body>', `${CONDICIONAL_SCRIPT}</body>`);
-    if (!html.includes('supabase-project-config.js')) html = html.replace('</body>', `${SUPABASE_CONFIG_SCRIPT}</body>`);
-    if (!html.includes('supabase-storage.js')) html = html.replace('</body>', `${SUPABASE_SCRIPT}</body>`);
-    if (!html.includes('supabase-login-ui.js')) html = html.replace('</body>', `${SUPABASE_LOGIN_SCRIPT}</body>`);
-    if (!html.includes('supabase-simple-access.js')) html = html.replace('</body>', `${SIMPLE_ACCESS_SCRIPT}</body>`);
-    if (!html.includes('viewmode.js')) html = html.replace('</body>', `${VIEWMODE_SCRIPT}</body>`);
-    if (!html.includes('header-cleanup.js')) html = html.replace('</body>', `${HEADER_CLEANUP_SCRIPT}</body>`);
-    if (!html.includes('undo.js')) html = html.replace('</body>', `${UNDO_SCRIPT}</body>`);
-    if (!html.includes('lixeira.js')) html = html.replace('</body>', `${LIXEIRA_SCRIPT}</body>`);
-    if (!html.includes('agenda-intelligence.js')) html = html.replace('</body>', `${INTEL_SCRIPT}</body>`);
-    if (!html.includes('agenda-list-status.js')) html = html.replace('</body>', `${LIST_STATUS_SCRIPT}</body>`);
-    if (!html.includes('export-localstorage.js')) html = html.replace('</body>', `${EXPORT_SCRIPT}</body>`);
-    if (!html.includes('realtime-refresh.js')) html = html.replace('</body>', `${REALTIME_SCRIPT}</body>`);
-    if (!html.includes('interface-polish.js')) html = html.replace('</body>', `${POLISH_SCRIPT}</body>`);
+    const isFinance = html.includes('financeiro.html');
+    if (!isFinance && !html.includes('interface-polish.css')) html = html.replace('</head>', `${POLISH_STYLE}</head>`);
+    if (!isFinance && !html.includes('edit-enhancement.js')) html = html.replace('</body>', `${EDIT_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('treino.js')) html = html.replace('</body>', `${TREINO_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('painel.js')) html = html.replace('</body>', `${PAINEL_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('financeiro.js')) html = html.replace('</body>', `${FINANCEIRO_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('notas.js')) html = html.replace('</body>', `${NOTAS_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('condicional.js')) html = html.replace('</body>', `${CONDICIONAL_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('supabase-project-config.js')) html = html.replace('</body>', `${SUPABASE_CONFIG_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('supabase-storage.js')) html = html.replace('</body>', `${SUPABASE_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('supabase-login-ui.js')) html = html.replace('</body>', `${SUPABASE_LOGIN_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('supabase-simple-access.js')) html = html.replace('</body>', `${SIMPLE_ACCESS_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('viewmode.js')) html = html.replace('</body>', `${VIEWMODE_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('header-cleanup.js')) html = html.replace('</body>', `${HEADER_CLEANUP_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('undo.js')) html = html.replace('</body>', `${UNDO_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('lixeira.js')) html = html.replace('</body>', `${LIXEIRA_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('agenda-intelligence.js')) html = html.replace('</body>', `${INTEL_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('agenda-list-status.js')) html = html.replace('</body>', `${LIST_STATUS_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('export-localstorage.js')) html = html.replace('</body>', `${EXPORT_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('realtime-refresh.js')) html = html.replace('</body>', `${REALTIME_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('interface-polish.js')) html = html.replace('</body>', `${POLISH_SCRIPT}</body>`);
     const headers = new Headers(response.headers);
     headers.delete('content-length');
     headers.delete('content-encoding');
@@ -85,4 +86,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v123-salary-rules
+// redeploy trigger v124-finance-page
