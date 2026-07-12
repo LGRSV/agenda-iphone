@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v153-jarvis-contexto-hoje';
+const CACHE = 'agenda-lagares-v154-jarvis-rodizio-sticky';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -86,4 +86,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v153-jarvis-contexto-hoje-atraso-proximas
+// redeploy trigger v154-jarvis-tts-rodizio-total-chave-sticky
