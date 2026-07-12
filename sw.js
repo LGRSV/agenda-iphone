@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v141-investimentos-mercado-pago';
+const CACHE = 'agenda-lagares-v142-investimentos-composto-diario';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -86,4 +86,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v141-investimentos-mercado-pago-sem-ir-regressivo
+// redeploy trigger v142-investimentos-juros-compostos-arredonda-dia
