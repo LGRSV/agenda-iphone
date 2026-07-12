@@ -1,7 +1,8 @@
-const CACHE = 'agenda-lagares-v155-web-push';
+const CACHE = 'agenda-lagares-v156-gamificacao';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
+const GAME_SCRIPT = '<script src="./gamificacao.js?v=1"><\/script>';
 const FINANCEIRO_SCRIPT = '<script src="./financeiro.js?v=2"><\/script>';
 const NOTAS_SCRIPT = '<script src="./notas.js?v=5"><\/script>';
 const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3"><\/script>';
@@ -42,6 +43,7 @@ self.addEventListener('fetch', event => {
     if (!isFinance && !html.includes('edit-enhancement.js')) html = html.replace('</body>', `${EDIT_SCRIPT}</body>`);
     if (!isFinance && !html.includes('treino.js')) html = html.replace('</body>', `${TREINO_SCRIPT}</body>`);
     if (!isFinance && !html.includes('painel.js')) html = html.replace('</body>', `${PAINEL_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('gamificacao.js')) html = html.replace('</body>', `${GAME_SCRIPT}</body>`);
     if (!isFinance && !html.includes('financeiro.js')) html = html.replace('</body>', `${FINANCEIRO_SCRIPT}</body>`);
     if (!isFinance && !html.includes('notas.js')) html = html.replace('</body>', `${NOTAS_SCRIPT}</body>`);
     if (!isFinance && !html.includes('condicional.js')) html = html.replace('</body>', `${CONDICIONAL_SCRIPT}</body>`);
@@ -71,7 +73,6 @@ self.addEventListener('push', event => {
   let data = { title: 'Lembrete da Agenda', body: 'Você tem uma tarefa agendada.' };
   try { data = { ...data, ...(event.data ? event.data.json() : {}) }; }
   catch (_) { if (event.data) data.body = event.data.text(); }
-
   event.waitUntil(self.registration.showNotification(data.title, {
     body: data.body,
     tag: data.tag || 'agenda-alerta',
@@ -79,11 +80,7 @@ self.addEventListener('push', event => {
     icon: './icon-192.png',
     badge: './icon-192.png',
     timestamp: Date.now(),
-    data: {
-      url: data.url || './?alert=1',
-      taskId: data.taskId || null,
-      scheduledFor: data.scheduledFor || null
-    }
+    data: { url: data.url || './?alert=1', taskId: data.taskId || null, scheduledFor: data.scheduledFor || null }
   }));
 });
 
@@ -102,4 +99,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v155-web-push
+// redeploy trigger v156-gamificacao
