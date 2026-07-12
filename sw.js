@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v142-investimentos-composto-diario';
+const CACHE = 'agenda-lagares-v143-saldo-atual-conta';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -86,4 +86,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v142-investimentos-juros-compostos-arredonda-dia
+// redeploy trigger v143-saldo-atual-mp-nubank
