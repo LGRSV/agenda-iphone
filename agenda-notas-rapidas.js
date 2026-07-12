@@ -117,7 +117,7 @@
       }), host.firstChild);
     }
     if (!document.getElementById('notaRapidaBtn')) {
-      host.insertBefore(mkBtn('notaRapidaBtn', cardioDoneToday()?'Cardio de hoje marcado':'Marcar cardio de hoje', cardioDoneToday()?ICON_HEART_FILL:ICON_HEART_OUT, toggleCardio), host.firstChild);
+      host.insertBefore(mkBtn('notaRapidaBtn', cardioDoneToday()?'Cardio de hoje marcado':'Marcar cardio de hoje', ICON_HEART_OUT, toggleCardio), host.firstChild);
     }
     if (!document.getElementById('equipamentosBtn')) {
       host.insertBefore(mkBtn('equipamentosBtn', 'Equipamentos Especiais', ICON_RECLOSER, function () {
