@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v144-transfere-nubank-mp';
+const CACHE = 'agenda-lagares-v145-previsto-com-saldo-atual';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -86,4 +86,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v144-nubank-para-mercado-pago
+// redeploy trigger v145-previsto-parte-do-saldo-atual-sem-fernanda
