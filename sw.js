@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v156-gamificacao';
+const CACHE = 'agenda-lagares-v157-sync-multidispositivo';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -7,9 +7,9 @@ const FINANCEIRO_SCRIPT = '<script src="./financeiro.js?v=2"><\/script>';
 const NOTAS_SCRIPT = '<script src="./notas.js?v=5"><\/script>';
 const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3"><\/script>';
 const SUPABASE_CONFIG_SCRIPT = '<script src="./supabase-project-config.js?v=1"><\/script>';
-const SUPABASE_SCRIPT = '<script src="./supabase-storage.js?v=3"><\/script>';
+const SUPABASE_SCRIPT = '<script src="./supabase-shared-storage.js?v=1"><\/script>';
 const SUPABASE_LOGIN_SCRIPT = '<script src="./supabase-login-ui.js?v=3"><\/script>';
-const SIMPLE_ACCESS_SCRIPT = '<script src="./supabase-simple-access.js?v=1"><\/script>';
+const SIMPLE_ACCESS_SCRIPT = '<script src="./supabase-simple-access.js?v=2"><\/script>';
 const WEB_PUSH_SCRIPT = '<script src="./web-push.js?v=1"><\/script>';
 const VIEWMODE_SCRIPT = '<script src="./viewmode.js?v=1"><\/script>';
 const HEADER_CLEANUP_SCRIPT = '<script src="./header-cleanup.js?v=2"><\/script>';
@@ -48,7 +48,7 @@ self.addEventListener('fetch', event => {
     if (!isFinance && !html.includes('notas.js')) html = html.replace('</body>', `${NOTAS_SCRIPT}</body>`);
     if (!isFinance && !html.includes('condicional.js')) html = html.replace('</body>', `${CONDICIONAL_SCRIPT}</body>`);
     if (!isFinance && !html.includes('supabase-project-config.js')) html = html.replace('</body>', `${SUPABASE_CONFIG_SCRIPT}</body>`);
-    if (!isFinance && !html.includes('supabase-storage.js')) html = html.replace('</body>', `${SUPABASE_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('supabase-shared-storage.js')) html = html.replace('</body>', `${SUPABASE_SCRIPT}</body>`);
     if (!isFinance && !html.includes('supabase-login-ui.js')) html = html.replace('</body>', `${SUPABASE_LOGIN_SCRIPT}</body>`);
     if (!isFinance && !html.includes('supabase-simple-access.js')) html = html.replace('</body>', `${SIMPLE_ACCESS_SCRIPT}</body>`);
     if (!isFinance && !html.includes('web-push.js')) html = html.replace('</body>', `${WEB_PUSH_SCRIPT}</body>`);
@@ -99,4 +99,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v156-gamificacao
+// redeploy trigger v157-sync-multidispositivo
