@@ -1,4 +1,4 @@
-/* Acesso simples da Agenda Lagares — usuário + e-mail, sem senha. */
+/* Acesso simples da Agenda Lagares — usuário + e-mail, sem senha visível. */
 (() => {
   'use strict';
 
@@ -6,6 +6,7 @@
   const CONFIG_KEY = 'agenda_supabase_config_v1';
   const OVERLAY_ID = 'agendaLoginOverlay';
   const PROFILE_KEY = 'agenda_app_profile_v1';
+  const LOGIN_FUNCTION = 'agenda-device-login';
   let clientPromise = null;
 
   const readJson = (key, fallback = {}) => {
@@ -27,6 +28,24 @@
     return clientPromise;
   };
 
+  const requestLoginToken = async (username, email) => {
+    const cfg = readJson(CONFIG_KEY);
+    const response = await fetch(`${String(cfg.url || '').replace(/\/$/, '')}/functions/v1/${LOGIN_FUNCTION}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': cfg.publishableKey
+      },
+      body: JSON.stringify({ username, email })
+    });
+    let data = {};
+    try { data = await response.json(); } catch (_) {}
+    if (!response.ok || !data?.ok || !data?.tokenHash || !data?.ownerUserId) {
+      throw new Error(data?.error || `Falha ao autenticar (${response.status}).`);
+    }
+    return data;
+  };
+
   const setStatus = (message, error = false) => {
     const el = document.getElementById('agendaSimpleStatus');
     if (!el) return;
@@ -40,8 +59,8 @@
   };
 
   const build = overlay => {
-    if (!overlay || overlay.dataset.simpleAccess === '2') return;
-    overlay.dataset.simpleAccess = '2';
+    if (!overlay || overlay.dataset.simpleAccess === '3') return;
+    overlay.dataset.simpleAccess = '3';
 
     const saved = readJson(PROFILE_KEY, { username: 'jalms2', email: '' });
     overlay.innerHTML = `
@@ -52,7 +71,7 @@
         <p class="intro">Use o mesmo usuário e e-mail em cada aparelho para abrir a mesma agenda.</p>
         <div class="field"><label for="agendaSimpleUsername">Usuário</label><input id="agendaSimpleUsername" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" value="${String(saved.username || 'jalms2').replace(/"/g, '&quot;')}" placeholder="jalms2" required></div>
         <div class="field"><label for="agendaSimpleEmail">E-mail</label><input id="agendaSimpleEmail" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" value="${String(saved.email || '').replace(/"/g, '&quot;')}" placeholder="seuemail@exemplo.com" required></div>
-        <div id="agendaSimpleStatus" class="status">Sem senha e sem confirmação de e-mail.</div>
+        <div id="agendaSimpleStatus" class="status">Acesso sem senha pelo servidor seguro da Agenda.</div>
         <div class="actions"><button class="action primary" id="agendaSimpleEnter" type="submit">Entrar e sincronizar</button></div>
         <p class="security">Use exatamente o mesmo usuário e e-mail nos outros aparelhos.</p>
       </form>`;
@@ -65,7 +84,7 @@
 
     overlay.querySelector('#agendaSimpleForm').addEventListener('submit', async event => {
       event.preventDefault();
-      const username = overlay.querySelector('#agendaSimpleUsername').value.trim();
+      const username = overlay.querySelector('#agendaSimpleUsername').value.trim().toLowerCase();
       const email = overlay.querySelector('#agendaSimpleEmail').value.trim().toLowerCase();
       if (!username || !email || !email.includes('@')) {
         setStatus('Informe um usuário e um e-mail válido.', true);
@@ -73,69 +92,55 @@
       }
 
       setBusy(true);
-      setStatus('Vinculando este aparelho…');
+      setStatus('Validando usuário e criando a sessão…');
       try {
         const sb = await getClient();
-        const { data: sessionData, error: sessionError } = await sb.auth.getSession();
-        if (sessionError) throw sessionError;
+        const login = await requestLoginToken(username, email);
+        const { data: currentData, error: currentError } = await sb.auth.getSession();
+        if (currentError) throw currentError;
 
-        let session = sessionData.session;
-        if (!session) {
-          const { data, error } = await sb.auth.signInAnonymously({
-            options: { data: { app_username: username, app_email: email, app_name: 'Agenda Lagares' } }
+        let session = currentData.session;
+        if (!session || session.user.id !== login.ownerUserId) {
+          if (session) await sb.auth.signOut({ scope: 'local' });
+          const { data, error } = await sb.auth.verifyOtp({
+            token_hash: login.tokenHash,
+            type: login.tokenType || 'email'
           });
           if (error) throw error;
           session = data.session;
-        } else {
-          const { error } = await sb.auth.updateUser({ data: { app_username: username, app_email: email, app_name: 'Agenda Lagares' } });
-          if (error) throw error;
         }
-        if (!session) throw new Error('Não foi possível criar a sessão deste aparelho.');
 
-        const { data: workspaceRows, error: workspaceError } = await sb.rpc('claim_agenda_workspace', {
-          p_username: username,
-          p_email: email
-        });
-        if (workspaceError) throw workspaceError;
-        const workspace = Array.isArray(workspaceRows) ? workspaceRows[0] : workspaceRows;
-        if (!workspace?.owner_user_id) throw new Error('Não foi possível localizar o espaço da Agenda.');
+        if (!session || session.user.id !== login.ownerUserId) {
+          throw new Error('A sessão criada não corresponde à sua Agenda.');
+        }
 
-        localStorage.setItem(PROFILE_KEY, JSON.stringify({ username, email, userId: session.user.id, workspaceId: workspace.workspace_id }));
+        await sb.auth.updateUser({
+          data: { app_username: username, app_email: email, app_name: 'Agenda Lagares' }
+        }).catch(() => {});
+
+        localStorage.setItem(PROFILE_KEY, JSON.stringify({
+          username,
+          email,
+          userId: session.user.id,
+          workspaceId: login.workspaceId
+        }));
+
         const cfg = readJson(CONFIG_KEY);
         localStorage.setItem(CONFIG_KEY, JSON.stringify({
           ...cfg,
           username,
           email,
           enabled: true,
-          workspaceId: workspace.workspace_id,
-          workspaceOwnerId: workspace.owner_user_id,
-          migratedUserId: workspace.owner_user_id
+          workspaceId: login.workspaceId,
+          workspaceOwnerId: login.ownerUserId,
+          migratedUserId: login.ownerUserId
         }));
 
-        setStatus('Vinculado. Baixando a agenda compartilhada…');
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        const { data: existing, error: existingError } = await sb.from('agenda_documents')
-          .select('document_key')
-          .eq('user_id', workspace.owner_user_id)
-          .limit(1);
-        if (existingError) throw existingError;
-
-        if (Array.isArray(existing) && existing.length) {
-          if (window.SupabaseAgenda?.pullAll) await window.SupabaseAgenda.pullAll({ reload: false });
-        } else if (window.SupabaseAgenda?.pushAll) {
-          await window.SupabaseAgenda.pushAll();
-        }
-
-        setStatus('Agenda sincronizada neste aparelho.');
+        setStatus('Sessão criada. Baixando sua agenda do Supabase…');
         setTimeout(() => location.reload(), 650);
       } catch (error) {
         const message = String(error?.message || error || 'Falha ao entrar.');
-        if (/anonymous.*disabled|anonymous sign-ins are disabled/i.test(message)) {
-          setStatus('O acesso sem senha não está habilitado no Supabase.', true);
-        } else {
-          setStatus(message, true);
-        }
+        setStatus(message, true);
         setBusy(false);
       }
     });
