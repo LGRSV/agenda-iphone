@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v159-financeiro-jogo';
+const CACHE = 'agenda-lagares-v160-auth-gate';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -22,6 +22,7 @@ const REALTIME_SCRIPT = '<script src="./realtime-refresh.js?v=1"><\/script>';
 const POLISH_STYLE = '<link rel="stylesheet" href="./interface-polish.css?v=4">';
 const POLISH_SCRIPT = '<script src="./interface-polish.js?v=1" defer><\/script>';
 const REG_FIN_SCRIPT = '<script src="./registros-financeiros.js?v=1"><\/script>';
+const AUTH_GATE_SCRIPT = '<script src="./auth-gate.js?v=1"><\/script>';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 self.addEventListener('activate', event => {
@@ -63,6 +64,7 @@ self.addEventListener('fetch', event => {
     if (!isFinance && !html.includes('realtime-refresh.js')) html = html.replace('</body>', `${REALTIME_SCRIPT}</body>`);
     if (!isFinance && !html.includes('interface-polish.js')) html = html.replace('</body>', `${POLISH_SCRIPT}</body>`);
     if (!isFinance && !html.includes('registros-financeiros.js')) html = html.replace('</body>', `${REG_FIN_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('auth-gate.js')) html = html.replace('</body>', `${AUTH_GATE_SCRIPT}</body>`);
     const headers = new Headers(response.headers);
     headers.delete('content-length');
     headers.delete('content-encoding');
