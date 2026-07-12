@@ -25,12 +25,32 @@
     catch (_) { return []; }
   };
 
+  // Lançamentos manuais de SAÍDA (ex.: "Motel · R$ 206") são anotações de
+  // gasto, não conquistas — ficam FORA do jogo para o XP e as porcentagens
+  // não serem distorcidos por itens que nunca se "concluem". Entradas e
+  // cobranças continuam valendo (marcar = recebi).
+  const readNotes = () => {
+    try { const v = JSON.parse(localStorage.getItem('agenda_notas_v1')); return v && typeof v === 'object' ? v : {}; }
+    catch (_) { return {}; }
+  };
+  const isFinRecord = (task, notes) => {
+    if (!task || task.tag !== 'financeiro') return false;
+    const n = notes[String(task.id)] || notes[task.id];
+    return !!(n && n.movimento === 'saida');
+  };
+
+  // Tabela de XP — é ela que aparece em "Como o jogo funciona" no painel.
+  const XP_TAGS = { trabalho: 25, faculdade: 30, saude: 20, financeiro: 15, pessoal: 10, casa: 10, outros: 10 };
+  const XP_TAG_LABELS = { faculdade: 'Faculdade', trabalho: 'Trabalho', saude: 'Saúde', financeiro: 'Financeiro (sem valor)', pessoal: 'Pessoal / Casa / Outros' };
+  const XP_BONUS = [
+    ['Tarefas do JARVIS', 50, t => t.includes('jarvis')],
+    ['Tarefas do VERA', 40, t => t.includes('vera')],
+    ['Equipamentos especiais', 35, t => t.includes('equipamento especial')]
+  ];
   const xpFor = task => {
     const text = String(task.text || '').toLowerCase();
-    if (text.includes('jarvis')) return 50;
-    if (text.includes('vera')) return 40;
-    if (text.includes('equipamento especial')) return 35;
-    return ({ trabalho: 25, faculdade: 30, saude: 20, financeiro: 15, pessoal: 10, casa: 10, outros: 10 })[task.tag] || 10;
+    for (const [, xp, test] of XP_BONUS) if (test(text)) return xp;
+    return XP_TAGS[task.tag] || 10;
   };
 
   const levelInfo = totalXp => {
@@ -110,6 +130,16 @@
       .gm-section{margin:18px 2px 9px;color:var(--faint);font-size:11px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
       .gm-attribute{display:grid;grid-template-columns:32px 86px 1fr 38px;align-items:center;gap:9px;padding:9px 2px}.gm-attribute>.gm-svg{color:var(--accent)}.gm-attribute b{font-size:12px}.gm-mini{height:8px;border-radius:99px;background:var(--soft2);overflow:hidden}.gm-mini>i{display:block;height:100%;border-radius:inherit;background:var(--accent)}.gm-attribute em{font-style:normal;text-align:right;color:var(--muted);font-size:11px;font-weight:800}
       .gm-achievements{display:grid;gap:8px}.gm-ach{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:10px;padding:11px;border:1px solid var(--line);border-radius:15px;background:var(--surface);opacity:.55}.gm-ach.ok{opacity:1}.gm-ach .gm-svg{width:25px;height:25px;color:var(--accent)}.gm-ach b{display:block;font-size:12px}.gm-ach span{display:block;margin-top:2px;color:var(--muted);font-size:10px}.gm-ach mark{background:transparent;color:var(--muted);font-size:11px;font-weight:850}.gm-ach.ok mark{color:#78d88b}
+      .gm-rules{padding:13px 14px;border:1px solid var(--line);border-radius:15px;background:var(--surface);font-size:12px;color:var(--muted);line-height:1.55}
+      .gm-rules b{color:var(--text)}
+      .gm-rules table{width:100%;margin:10px 0;border-collapse:collapse}
+      .gm-rules td{padding:6px 2px;border-bottom:1px solid var(--line);font-weight:700;color:var(--text);font-size:12px}
+      .gm-rules td:last-child{text-align:right;color:var(--accent);font-weight:850}
+      .gm-rules tr.gm-bonus td{color:var(--muted)}.gm-rules tr.gm-bonus td:last-child{color:#ffb74d}
+      .gm-rules .gm-note{margin:8px 0 0;font-size:11px}
+      .gm-xp-toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(14px);background:var(--surface);border:1px solid var(--accent);color:var(--text);border-radius:999px;padding:9px 18px;font-size:14px;font-weight:850;z-index:99999;opacity:0;transition:all .25s ease;box-shadow:0 10px 26px rgba(0,0,0,.35);display:flex;align-items:center;gap:8px}
+      .gm-xp-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+      .gm-xp-toast .gm-svg{width:18px;height:18px;color:var(--accent)}
       @media(max-width:390px){.gm-cards{grid-template-columns:1fr 1fr}.gm-cards .gm-card:last-child{grid-column:1/-1}.gm-attribute{grid-template-columns:28px 76px 1fr 34px}}
     `;
     document.head.appendChild(style);
@@ -120,10 +150,10 @@
     const body = document.getElementById('pgBody');
     if (!dialog || !body) return;
 
-    const tasks = readTasks().filter(t => t && t.text);
+    const notes = readNotes();
+    const tasks = readTasks().filter(t => t && t.text && !isFinRecord(t, notes));
     const completed = tasks.filter(t => t.done);
     const xp = completed.reduce((sum, task) => sum + xpFor(task), 0);
-    const coins = Math.floor(xp / 10);
     const info = levelInfo(xp);
     const streakDays = streak(tasks);
     const attrs = categoryStats(tasks);
@@ -152,18 +182,61 @@
       <div class="gm-cards">
         <div class="gm-card"><span class="gm-svg">${ICONS.star}</span><b>${xp}</b><span>XP total</span></div>
         <div class="gm-card"><span class="gm-svg">${ICONS.flame}</span><b>${streakDays}</b><span>dias de sequência</span></div>
-        <div class="gm-card"><span class="gm-svg">${ICONS.coin}</span><b>${coins}</b><span>moedas</span></div>
+        <div class="gm-card"><span class="gm-svg">${ICONS.trophy}</span><b>${completed.length}</b><span>tarefas concluídas</span></div>
       </div>
 
-      <p class="gm-section">Atributos</p>
+      <p class="gm-section">Atributos · % concluído por área</p>
       ${attrs.map(a => `<div class="gm-attribute"><span class="gm-svg">${ICONS[a.icon]}</span><b>${a.label}</b><div class="gm-mini"><i style="width:${a.pct}%"></i></div><em>${a.pct}%</em></div>`).join('')}
 
       <p class="gm-section">Conquistas · ${ach.filter(a => a.ok).length}/${ach.length}</p>
-      <div class="gm-achievements">${ach.map(a => `<div class="gm-ach ${a.ok ? 'ok' : ''}"><span class="gm-svg">${ICONS.trophy}</span><div><b>${a.name}</b><span>${a.desc}</span></div><mark>${a.ok ? 'Obtida' : 'Bloqueada'}</mark></div>`).join('')}</div>`;
+      <div class="gm-achievements">${ach.map(a => `<div class="gm-ach ${a.ok ? 'ok' : ''}"><span class="gm-svg">${ICONS.trophy}</span><div><b>${a.name}</b><span>${a.desc}</span></div><mark>${a.ok ? 'Obtida' : 'Bloqueada'}</mark></div>`).join('')}</div>
+
+      <p class="gm-section">Como o jogo funciona</p>
+      <div class="gm-rules">
+        <p>Cada tarefa <b>concluída</b> vale XP conforme a área. XP acumulado sobe seu nível; a sequência conta dias seguidos com pelo menos uma tarefa concluída.</p>
+        <table>
+          <tr><td>Faculdade</td><td>+30 XP</td></tr>
+          <tr><td>Trabalho</td><td>+25 XP</td></tr>
+          <tr><td>Saúde / Academia</td><td>+20 XP</td></tr>
+          <tr><td>Financeiro (contas e cobranças)</td><td>+15 XP</td></tr>
+          <tr><td>Pessoal · Casa · Outros</td><td>+10 XP</td></tr>
+          ${XP_BONUS.map(([nome, xpb]) => `<tr class="gm-bonus"><td>${nome}</td><td>+${xpb} XP</td></tr>`).join('')}
+        </table>
+        <p class="gm-note">Lançamentos de <b>saída</b> do painel financeiro são registro de gasto: não aparecem como tarefa e não valem XP. Entradas e cobranças valem — marcar significa "recebi".</p>
+      </div>`;
+  };
+
+  // Feedback imediato: ao concluir uma tarefa, mostra "+N XP" na hora.
+  let xpToastTimer = 0;
+  const xpToast = amount => {
+    let el = document.getElementById('gmXpToast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'gmXpToast';
+      el.className = 'gm-xp-toast';
+      document.body.appendChild(el);
+    }
+    el.innerHTML = `<span class="gm-svg">${ICONS.star}</span>+${amount} XP`;
+    requestAnimationFrame(() => el.classList.add('show'));
+    clearTimeout(xpToastTimer);
+    xpToastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+  };
+
+  const bindXpFeedback = () => {
+    if (document.body.dataset.gmXpFeedback) return;
+    document.body.dataset.gmXpFeedback = '1';
+    document.body.addEventListener('change', event => {
+      const box = event.target;
+      if (!box.matches || !box.matches('.task-card .check[data-id]') || !box.checked) return;
+      const task = readTasks().find(t => String(t.id) === String(box.dataset.id));
+      if (!task || isFinRecord(task, readNotes())) return;
+      xpToast(xpFor(task));
+    });
   };
 
   const install = () => {
     ensureStyles();
+    bindXpFeedback();
     const button = document.getElementById('painelBtn');
     if (button && !button.dataset.gameBound) {
       button.dataset.gameBound = '1';

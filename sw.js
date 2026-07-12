@@ -1,8 +1,8 @@
-const CACHE = 'agenda-lagares-v158-login-token';
+const CACHE = 'agenda-lagares-v159-financeiro-jogo';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
-const GAME_SCRIPT = '<script src="./gamificacao.js?v=1"><\/script>';
+const GAME_SCRIPT = '<script src="./gamificacao.js?v=2"><\/script>';
 const FINANCEIRO_SCRIPT = '<script src="./financeiro.js?v=2"><\/script>';
 const NOTAS_SCRIPT = '<script src="./notas.js?v=5"><\/script>';
 const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3"><\/script>';
@@ -21,6 +21,7 @@ const EXPORT_SCRIPT = '<script src="./export-localstorage.js?v=2"><\/script>';
 const REALTIME_SCRIPT = '<script src="./realtime-refresh.js?v=1"><\/script>';
 const POLISH_STYLE = '<link rel="stylesheet" href="./interface-polish.css?v=4">';
 const POLISH_SCRIPT = '<script src="./interface-polish.js?v=1" defer><\/script>';
+const REG_FIN_SCRIPT = '<script src="./registros-financeiros.js?v=1"><\/script>';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 self.addEventListener('activate', event => {
@@ -61,6 +62,7 @@ self.addEventListener('fetch', event => {
     if (!isFinance && !html.includes('export-localstorage.js')) html = html.replace('</body>', `${EXPORT_SCRIPT}</body>`);
     if (!isFinance && !html.includes('realtime-refresh.js')) html = html.replace('</body>', `${REALTIME_SCRIPT}</body>`);
     if (!isFinance && !html.includes('interface-polish.js')) html = html.replace('</body>', `${POLISH_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('registros-financeiros.js')) html = html.replace('</body>', `${REG_FIN_SCRIPT}</body>`);
     const headers = new Headers(response.headers);
     headers.delete('content-length');
     headers.delete('content-encoding');
