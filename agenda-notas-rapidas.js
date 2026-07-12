@@ -116,9 +116,6 @@
         if (u) u.click(); else location.reload();
       }), host.firstChild);
     }
-    if (!document.getElementById('notaRapidaBtn')) {
-      host.insertBefore(mkBtn('notaRapidaBtn', cardioDoneToday()?'Cardio de hoje marcado':'Marcar cardio de hoje', ICON_HEART_OUT, toggleCardio), host.firstChild);
-    }
     if (!document.getElementById('equipamentosBtn')) {
       host.insertBefore(mkBtn('equipamentosBtn', 'Equipamentos Especiais', ICON_RECLOSER, function () {
         window.open(EQUIP_URL, '_blank', 'noopener');

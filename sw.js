@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v151-coracao-contorno';
+const CACHE = 'agenda-lagares-v152-remove-coracao';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -86,4 +86,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v151-coracao-cardio-sem-vermelho
+// redeploy trigger v152-remove-coracao-cardio-header
