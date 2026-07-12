@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v140-investimentos-faixa-120cdi';
+const CACHE = 'agenda-lagares-v141-investimentos-mercado-pago';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -86,4 +86,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v140-investimentos-120cdi-ate-10k
+// redeploy trigger v141-investimentos-mercado-pago-sem-ir-regressivo
