@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v148-extrato-saida-form-aplica';
+const CACHE = 'agenda-lagares-v149-inter-black-cardio-coracao';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -86,4 +86,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v148-extrato-saida-form-reconcilia
+// redeploy trigger v149-cartao-inter-black-mastercard-coracao-cardio

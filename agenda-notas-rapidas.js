@@ -23,6 +23,12 @@
   // religador (recloser): simbolo de chave seccionadora aberta
   var ICON_RECLOSER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12H7M17 12h4.5"/><circle cx="7" cy="12" r="1.6"/><circle cx="17" cy="12" r="1.6"/><path d="M8.4 11.3 16 6.6"/></svg>';
   var EQUIP_URL = 'https://lgrsv.github.io/equipamentos-especiais-v0/';
+  var ICON_HEART_OUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.3S3.5 15 3.5 8.8C3.5 5.9 5.7 4 8.1 4c1.7 0 3.1.9 3.9 2.2C12.8 4.9 14.2 4 15.9 4c2.4 0 4.6 1.9 4.6 4.8 0 6.2-8.5 11.5-8.5 11.5z"/></svg>';
+  var ICON_HEART_FILL = '<svg viewBox="0 0 24 24" fill="#ff5a6a" stroke="#ff5a6a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.3S3.5 15 3.5 8.8C3.5 5.9 5.7 4 8.1 4c1.7 0 3.1.9 3.9 2.2C12.8 4.9 14.2 4 15.9 4c2.4 0 4.6 1.9 4.6 4.8 0 6.2-8.5 11.5-8.5 11.5z"/></svg>';
+  function _todayStr(){var d=new Date(),p=function(x){return String(x).padStart(2,'0');};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
+  function cardioTaskToday(){try{var a=JSON.parse(localStorage.getItem('agenda_lagares_v3')||'[]');var td=_todayStr();return a.find(function(x){return x&&x.date===td&&x.tag==='saude'&&/cardio/i.test(x.text||'');})||null;}catch(_){return null;}}
+  function cardioDoneToday(){var t=cardioTaskToday();return !!(t&&t.done);}
+  function toggleCardio(){try{var TK='agenda_lagares_v3',a=JSON.parse(localStorage.getItem(TK)||'[]'),t=cardioTaskToday();if(t){t.done=!t.done;}else{a.push({id:'cardio-'+Date.now().toString(36),text:'Cardio',date:_todayStr(),time:'',tag:'saude',reminder:-1,done:true});}localStorage.setItem(TK,JSON.stringify(a));location.reload();}catch(_){}}
   var ICON_REFRESH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>';
 
   function ensureStyles() {
@@ -111,7 +117,7 @@
       }), host.firstChild);
     }
     if (!document.getElementById('notaRapidaBtn')) {
-      host.insertBefore(mkBtn('notaRapidaBtn', 'Notas rápidas', ICON_NOTE, openNotes), host.firstChild);
+      host.insertBefore(mkBtn('notaRapidaBtn', cardioDoneToday()?'Cardio de hoje marcado':'Marcar cardio de hoje', cardioDoneToday()?ICON_HEART_FILL:ICON_HEART_OUT, toggleCardio), host.firstChild);
     }
     if (!document.getElementById('equipamentosBtn')) {
       host.insertBefore(mkBtn('equipamentosBtn', 'Equipamentos Especiais', ICON_RECLOSER, function () {
