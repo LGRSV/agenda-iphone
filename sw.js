@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v134-fin-hoje-hora';
+const CACHE = 'agenda-lagares-v135-fin-data-completa';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -86,4 +86,4 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// redeploy trigger v134-financeiro-data-hoje-horario
+// redeploy trigger v135-financeiro-data-ddmmaaaa
