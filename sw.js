@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v154-jarvis-rodizio-sticky';
+const CACHE = 'agenda-lagares-v155-web-push';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -9,6 +9,7 @@ const SUPABASE_CONFIG_SCRIPT = '<script src="./supabase-project-config.js?v=1"><
 const SUPABASE_SCRIPT = '<script src="./supabase-storage.js?v=3"><\/script>';
 const SUPABASE_LOGIN_SCRIPT = '<script src="./supabase-login-ui.js?v=3"><\/script>';
 const SIMPLE_ACCESS_SCRIPT = '<script src="./supabase-simple-access.js?v=1"><\/script>';
+const WEB_PUSH_SCRIPT = '<script src="./web-push.js?v=1"><\/script>';
 const VIEWMODE_SCRIPT = '<script src="./viewmode.js?v=1"><\/script>';
 const HEADER_CLEANUP_SCRIPT = '<script src="./header-cleanup.js?v=2"><\/script>';
 const UNDO_SCRIPT = '<script src="./undo.js?v=1"><\/script>';
@@ -48,6 +49,7 @@ self.addEventListener('fetch', event => {
     if (!isFinance && !html.includes('supabase-storage.js')) html = html.replace('</body>', `${SUPABASE_SCRIPT}</body>`);
     if (!isFinance && !html.includes('supabase-login-ui.js')) html = html.replace('</body>', `${SUPABASE_LOGIN_SCRIPT}</body>`);
     if (!isFinance && !html.includes('supabase-simple-access.js')) html = html.replace('</body>', `${SIMPLE_ACCESS_SCRIPT}</body>`);
+    if (!isFinance && !html.includes('web-push.js')) html = html.replace('</body>', `${WEB_PUSH_SCRIPT}</body>`);
     if (!isFinance && !html.includes('viewmode.js')) html = html.replace('</body>', `${VIEWMODE_SCRIPT}</body>`);
     if (!isFinance && !html.includes('header-cleanup.js')) html = html.replace('</body>', `${HEADER_CLEANUP_SCRIPT}</body>`);
     if (!isFinance && !html.includes('undo.js')) html = html.replace('</body>', `${UNDO_SCRIPT}</body>`);
@@ -66,12 +68,22 @@ self.addEventListener('fetch', event => {
 });
 
 self.addEventListener('push', event => {
-  let data = { title: 'Lembrete da agenda', body: 'Você tem uma tarefa agendada.' };
+  let data = { title: 'Lembrete da Agenda', body: 'Você tem uma tarefa agendada.' };
   try { data = { ...data, ...(event.data ? event.data.json() : {}) }; }
   catch (_) { if (event.data) data.body = event.data.text(); }
+
   event.waitUntil(self.registration.showNotification(data.title, {
-    body: data.body, tag: data.tag || 'agenda-alerta', renotify: true,
-    data: { url: data.url || './?alert=1' }
+    body: data.body,
+    tag: data.tag || 'agenda-alerta',
+    renotify: true,
+    icon: './icon-192.png',
+    badge: './icon-192.png',
+    timestamp: Date.now(),
+    data: {
+      url: data.url || './?alert=1',
+      taskId: data.taskId || null,
+      scheduledFor: data.scheduledFor || null
+    }
   }));
 });
 
@@ -81,9 +93,13 @@ self.addEventListener('notificationclick', event => {
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     const current = windows.find(client => client.url.startsWith(self.location.origin));
-    if (current) return current.focus();
+    if (current) {
+      await current.focus();
+      if ('navigate' in current) await current.navigate(target);
+      return;
+    }
     return self.clients.openWindow(target);
   })());
 });
 
-// redeploy trigger v154-jarvis-tts-rodizio-total-chave-sticky
+// redeploy trigger v155-web-push
