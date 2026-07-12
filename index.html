@@ -713,11 +713,26 @@
         return t.length?JSON.stringify(t):'(nenhuma tarefa pendente)';
       }catch(_){return'(indisponivel)';}
     }
+    function agendaContext(){
+      try{
+        const all=(window.AgendaAPI?window.AgendaAPI.getTasks():[])||[];
+        const iso=nowInfo().iso;
+        const fmt=t=>{const o={t:t.text,tag:t.tag};if(t.time)o.h=t.time;if(t.done)o.feito=true;return o;};
+        const byTime=(a,b)=>String(a.time||'99:99').localeCompare(String(b.time||'99:99'));
+        const hoje=all.filter(t=>t.date===iso).sort(byTime).map(fmt);
+        const atras=all.filter(t=>!t.done&&t.date&&t.date<iso).sort((a,b)=>a.date.localeCompare(b.date)).map(t=>{const o=fmt(t);o.data=t.date;return o;});
+        const prox=all.filter(t=>!t.done&&t.date&&t.date>iso).sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||''))).slice(0,25).map(t=>{const o=fmt(t);o.data=t.date;return o;});
+        return 'HOJE ('+iso+'): '+(hoje.length?JSON.stringify(hoje):'nenhuma tarefa hoje')+
+          '\nEM ATRASO: '+(atras.length?JSON.stringify(atras):'nenhuma')+
+          '\nPROXIMAS: '+(prox.length?JSON.stringify(prox):'nenhuma');
+      }catch(_){return'(indisponivel)';}
+    }
     function systemPrompt(){
       const now=nowInfo();
       return `Voce e o J.A.R.V.I.S, assistente pessoal inteligente de Lagares, tecnico da Energisa Tocantins (departamento DCMD), morador de Palmas-TO. Personalidade: prestativo, direto, levemente sofisticado como o Jarvis do Homem de Ferro; trata o usuario como "Senhor" ocasionalmente. Sempre responda em portugues brasileiro, de forma concisa.
 DATA E HORA ATUAL: ${now.human} (ISO: ${now.iso}).
-TAREFAS PENDENTES DA AGENDA DO USUARIO: ${agendaSnapshot()}
+AGENDA DO USUARIO (dados reais — use como verdade absoluta, nao invente; ao perguntarem "hoje" use a secao HOJE):
+${agendaContext()}
 VOCE CONTROLA A AGENDA. Responda SEMPRE e SOMENTE com um JSON puro (sem markdown, sem crases) neste formato:
 {"action":"none|add_task|complete_task|delete_task","task":{"text":"","date":"YYYY-MM-DD","time":"HH:MM ou vazio","tag":"trabalho|pessoal|casa|faculdade|saude|financeiro|outros"},"query":"","transcript":"","reply":"sua resposta ao usuario em PT-BR"}
 Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (preencha task; se nao houver horario, deixe time vazio; escolha a tag mais adequada). Use complete_task quando disserem que concluiram algo, e delete_task para remover/cancelar (preencha query com palavras-chave exatas do texto da tarefa). Use none para conversas e perguntas. Quando receber AUDIO, preencha transcript com a transcricao exata em PT-BR do que o usuario falou. Calcule datas relativas (amanha, segunda que vem) a partir da data atual. No reply, confirme a acao naturalmente. Seja conciso: reply com no maximo 2-3 frases diretas, salvo quando o usuario pedir detalhes.`;
