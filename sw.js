@@ -1,6 +1,6 @@
-const CACHE = 'agenda-lagares-v165-quick-actions';
+const CACHE = 'agenda-lagares-v166-scroll-and-training-page';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4"><\/script>';
-const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
+const TREINO_SCRIPT = '<script src="./treino.js?v=9"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
 const GAME_SCRIPT = '<script src="./gamificacao.js?v=2"><\/script>';
 const FINANCEIRO_SCRIPT = '<script src="./financeiro.js?v=2"><\/script>';
@@ -42,7 +42,8 @@ self.addEventListener('fetch', event => {
     let html = await response.text();
     const isFinance = html.includes('financeiro.html');
     const isGame = html.includes('gamificacao.html');
-    const isAuxPage = isFinance || isGame;
+    const isTraining = html.includes('treino.html');
+    const isAuxPage = isFinance || isGame || isTraining;
     if (!isAuxPage && !html.includes('interface-polish.css')) html = html.replace('</head>', `${POLISH_STYLE}</head>`);
     if (!isAuxPage && !html.includes('edit-enhancement.js')) html = html.replace('</body>', `${EDIT_SCRIPT}</body>`);
     if (!isAuxPage && !html.includes('treino.js')) html = html.replace('</body>', `${TREINO_SCRIPT}</body>`);
