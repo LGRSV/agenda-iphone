@@ -164,7 +164,7 @@
       const card=document.querySelector('.task-card .check[data-id="'+String(taskId).replace(/"/g,'')+'"]')?.closest('.task-card');
       if(task.done&&card){
         card.classList.add('task-completing');
-        setTimeout(finish,180);
+        setTimeout(finish,720);
       }else finish();
     }
     function trashPush(task){try{const k='agenda_lixeira_v1';const arr=JSON.parse(localStorage.getItem(k)||'[]');arr.push({task:task,at:Date.now()});while(arr.length>150)arr.shift();localStorage.setItem(k,JSON.stringify(arr))}catch(_){}}
@@ -1242,7 +1242,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
   <script src="./viewmode.js?v=1"></script>
   <script src="./treino.js?v=10"></script>
   <script src="./painel.js?v=2"></script>
-  <script src="./gamificacao.js?v=3"></script>
+  <script src="./gamificacao.js?v=4"></script>
   <script src="./notas.js?v=6"></script>
   <script src="./condicional.js?v=3"></script>
   <script src="./agenda-notas-rapidas.js?v=5"></script>
