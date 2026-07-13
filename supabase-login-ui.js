@@ -164,8 +164,7 @@
       try {
         if (!window.SupabaseAgenda) throw new Error('O sincronizador ainda não terminou de carregar.');
         await window.SupabaseAgenda.pushDirty();
-        await window.SupabaseAgenda.pullAll({ overwrite: true, reload: false });
-        setStatus('Agenda sincronizada com sucesso.');
+        setStatus('Alterações pendentes enviadas. A agenda permanece nesta tela.');
       } catch (error) { setStatus(error?.message || 'Não foi possível sincronizar.', true); }
       finally { setBusy(false); }
     });
