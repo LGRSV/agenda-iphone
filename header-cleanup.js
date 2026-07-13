@@ -5,7 +5,7 @@
 (() => {
   'use strict';
 
-  const ALLOWED_IDS = new Set(['supabaseStorageBtn', 'painelBtn', 'financeiroBtn', 'lixBtn', 'alertsBtn', 'themeToggle', 'atualizarBtn', 'notaRapidaBtn', 'equipamentosBtn', 'calFullBtn']);
+  const ALLOWED_IDS = new Set(['moreMenuBtn', 'quickMenu', 'supabaseStorageBtn', 'painelBtn', 'financeiroBtn', 'lixBtn', 'alertsBtn', 'themeToggle', 'atualizarBtn', 'notaRapidaBtn', 'equipamentosBtn', 'calFullBtn']);
   const STYLE_ID = 'agendaHeaderCleanupStyles';
 
   const ensureStyles = () => {
@@ -29,6 +29,12 @@
     ensureStyles();
     const actions = document.querySelector('.head-actions');
     if (actions) {
+      const menu = actions.querySelector('#quickMenu');
+      if (menu) {
+        [...actions.children].forEach(child => {
+          if (child !== menu && child.id !== 'moreMenuBtn') menu.appendChild(child);
+        });
+      }
       [...actions.children].forEach(child => {
         const keep = child.id && ALLOWED_IDS.has(child.id);
         child.classList.toggle('agenda-hidden-header-control', !keep);
