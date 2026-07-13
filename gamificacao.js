@@ -140,6 +140,7 @@
       .gm-xp-toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(14px);background:var(--surface);border:1px solid var(--accent);color:var(--text);border-radius:999px;padding:9px 18px;font-size:14px;font-weight:850;z-index:99999;opacity:0;transition:all .25s ease;box-shadow:0 10px 26px rgba(0,0,0,.35);display:flex;align-items:center;gap:8px}
       .gm-xp-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
       .gm-xp-toast .gm-svg{width:18px;height:18px;color:var(--accent)}
+      .task-card{position:relative}.gm-xp-burst{position:absolute;z-index:8;top:4px;right:39px;display:inline-flex;align-items:center;gap:4px;padding:5px 8px;border:1px solid var(--accent);border-radius:999px;background:var(--surface);color:var(--accent);box-shadow:0 8px 20px rgba(0,0,0,.42);font-size:12px;font-weight:900;line-height:1;opacity:0;pointer-events:none;transform:translateY(8px) scale(.74)}.gm-xp-burst .gm-svg{width:14px;height:14px}.gm-xp-burst.show{animation:gmXpBurst .66s cubic-bezier(.18,.85,.24,1) both}.task-card.gm-xp-earned{box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 58%,transparent),0 0 24px color-mix(in srgb,var(--accent) 22%,transparent)}@keyframes gmXpBurst{0%{opacity:0;transform:translateY(9px) scale(.72)}25%{opacity:1;transform:translateY(-8px) scale(1.08)}68%{opacity:1;transform:translateY(-22px) scale(1)}100%{opacity:0;transform:translateY(-32px) scale(.94)}}@media(prefers-reduced-motion:reduce){.gm-xp-burst.show{animation:none;opacity:1;transform:none}}
       @media(max-width:390px){.gm-cards{grid-template-columns:1fr 1fr}.gm-cards .gm-card:last-child{grid-column:1/-1}.gm-attribute{grid-template-columns:28px 76px 1fr 34px}}
     `;
     document.head.appendChild(style);
@@ -208,20 +209,19 @@
       </div>`;
   };
 
-  // Feedback imediato: ao concluir uma tarefa, mostra "+N XP" na hora.
-  let xpToastTimer = 0;
-  const xpToast = amount => {
-    let el = document.getElementById('gmXpToast');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'gmXpToast';
-      el.className = 'gm-xp-toast';
-      document.body.appendChild(el);
-    }
-    el.innerHTML = `<span class="gm-svg">${ICONS.star}</span>+${amount} XP`;
-    requestAnimationFrame(() => el.classList.add('show'));
-    clearTimeout(xpToastTimer);
-    xpToastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+  // Feedback imediato e localizado: o XP nasce no próprio cartão concluído.
+  const xpBurst = (card, amount) => {
+    if (!card) return;
+    card.querySelector('.gm-xp-burst')?.remove();
+    card.classList.remove('gm-xp-earned');
+    void card.offsetWidth;
+    card.classList.add('gm-xp-earned');
+    const badge = document.createElement('span');
+    badge.className = 'gm-xp-burst';
+    badge.innerHTML = `<span class="gm-svg">${ICONS.star}</span>+${amount} XP`;
+    card.appendChild(badge);
+    requestAnimationFrame(() => badge.classList.add('show'));
+    setTimeout(() => { badge.remove(); card.classList.remove('gm-xp-earned'); }, 720);
   };
 
   const bindXpFeedback = () => {
@@ -232,7 +232,7 @@
       if (!box.matches || !box.matches('.task-card .check[data-id]') || !box.checked) return;
       const task = readTasks().find(t => String(t.id) === String(box.dataset.id));
       if (!task || isFinRecord(task, readNotes())) return;
-      xpToast(xpFor(task));
+      xpBurst(box.closest('.task-card'), xpFor(task));
     });
   };
 
