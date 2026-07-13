@@ -35,6 +35,16 @@
   const cfg = () => json(localStorage.getItem(CONFIG_KEY) || '{}', {});
   const saveCfg = patch => originalSetItem.call(localStorage, CONFIG_KEY, JSON.stringify({ ...cfg(), ...patch }));
   const ownerId = () => String(cfg().workspaceOwnerId || session?.user?.id || '');
+  const deviceId = () => {
+    const existing = String(cfg().deviceId || '').trim();
+    if (existing) return existing;
+    const generated = (globalThis.crypto?.randomUUID?.() || `agenda-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    saveCfg({ deviceId: generated });
+    return generated;
+  };
+  const notifySync = documentKey => {
+    try { window.dispatchEvent(new CustomEvent('agenda:remote-sync', { detail: { documentKey } })); } catch (_) {}
+  };
   const read = doc => json(localStorage.getItem(DOCUMENTS[doc][0]), structuredClone(DOCUMENTS[doc][1]));
   const write = (doc, payload) => {
     internalWrite = true;
@@ -70,7 +80,7 @@
     try {
       for (const key of keys) {
         const { error } = await sb.from('agenda_documents').upsert({
-          user_id: ownerId(), document_key: key, payload: read(key), device_id: cfg().deviceId || navigator.userAgent.slice(0, 120)
+          user_id: ownerId(), document_key: key, payload: read(key), device_id: deviceId()
         }, { onConflict: 'user_id,document_key' });
         if (error) throw error;
       }
@@ -95,8 +105,8 @@
         if (before !== after) { write(row.document_key, row.payload); changed = true; }
       }
       saveDirty({}); saveCfg({ lastSyncAt: new Date().toISOString() }); lastError = '';
-      if (changed && reload) setTimeout(() => location.reload(), 250);
-      else toast('Agenda conferida no Supabase.');
+      if (changed) notifySync('all');
+      if (!changed) toast('Agenda conferida no Supabase.');
       return data || [];
     } finally { syncing = false; render(); }
   }
@@ -138,8 +148,9 @@
     }, payload => {
       const row = payload.new?.document_key ? payload.new : payload.old;
       if (!row || !DOCUMENTS[row.document_key] || dirty()[row.document_key]) return;
+      if (String(row.device_id || '') === deviceId()) return;
       write(row.document_key, payload.eventType === 'DELETE' ? DOCUMENTS[row.document_key][1] : row.payload);
-      setTimeout(() => location.reload(), 250);
+      notifySync(row.document_key);
     }).subscribe();
   }
 
@@ -191,15 +202,8 @@
     try {
       await getClient();
       if (session?.user && cfg().workspaceOwnerId) {
-        const before = Object.fromEntries(Object.keys(DOCUMENTS).map(key => [key, JSON.stringify(read(key))]));
         await pullAll({ reload: false });
         await subscribe();
-        const changed = Object.keys(DOCUMENTS).some(key => before[key] !== JSON.stringify(read(key)));
-        const marker = `agenda_shared_boot_loaded_v2:${ownerId()}`;
-        if (changed && !sessionStorage.getItem(marker)) {
-          sessionStorage.setItem(marker, '1');
-          setTimeout(() => location.reload(), 120);
-        }
       }
     } catch (error) { handle(error); }
   }
