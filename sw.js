@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v180-login-inicial';
+const CACHE = 'agenda-lagares-v181-sync-automatico';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=10"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -7,7 +7,7 @@ const FINANCEIRO_SCRIPT = '<script src="./financeiro.js?v=2"><\/script>';
 const NOTAS_SCRIPT = '<script src="./notas.js?v=7"><\/script>';
 const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3"><\/script>';
 const SUPABASE_CONFIG_SCRIPT = '<script src="./supabase-project-config.js?v=1"><\/script>';
-const SUPABASE_SCRIPT = '<script src="./supabase-shared-storage.js?v=1"><\/script>';
+const SUPABASE_SCRIPT = '<script src="./supabase-shared-storage.js?v=2"><\/script>';
 const SUPABASE_LOGIN_SCRIPT = '<script src="./supabase-login-ui.js?v=3"><\/script>';
 const SIMPLE_ACCESS_SCRIPT = '<script src="./supabase-simple-access.js?v=5"><\/script>';
 const SHARING_SCRIPT = '<script src="./agenda-sharing.js?v=2"><\/script>';
@@ -53,8 +53,8 @@ self.addEventListener('fetch', event => {
     if (!isAuxPage && !html.includes('financeiro.js')) html = html.replace('</body>', `${FINANCEIRO_SCRIPT}</body>`);
     if (!isAuxPage && !html.includes('notas.js')) html = html.replace('</body>', `${NOTAS_SCRIPT}</body>`);
     if (!isAuxPage && !html.includes('condicional.js')) html = html.replace('</body>', `${CONDICIONAL_SCRIPT}</body>`);
-    if (!isAuxPage && !html.includes('supabase-project-config.js')) html = html.replace('</body>', `${SUPABASE_CONFIG_SCRIPT}</body>`);
-    if (!isAuxPage && !html.includes('supabase-shared-storage.js')) html = html.replace('</body>', `${SUPABASE_SCRIPT}</body>`);
+    if (!html.includes('supabase-project-config.js')) html = html.replace('</body>', `${SUPABASE_CONFIG_SCRIPT}</body>`);
+    if (!html.includes('supabase-shared-storage.js')) html = html.replace('</body>', `${SUPABASE_SCRIPT}</body>`);
     if (!isAuxPage && !html.includes('supabase-login-ui.js')) html = html.replace('</body>', `${SUPABASE_LOGIN_SCRIPT}</body>`);
     if (!isAuxPage && !html.includes('supabase-simple-access.js')) html = html.replace('</body>', `${SIMPLE_ACCESS_SCRIPT}</body>`);
     if (!isAuxPage && !html.includes('web-push.js')) html = html.replace('</body>', `${WEB_PUSH_SCRIPT}</body>`);
