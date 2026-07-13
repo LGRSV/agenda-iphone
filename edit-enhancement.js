@@ -223,8 +223,8 @@
   function installButtons() {
     document.querySelectorAll('.task-card').forEach(card => {
       const checkbox = card.querySelector('.check[data-id]');
-      const deleteButton = card.querySelector('.delete');
-      if (!checkbox || !deleteButton || card.querySelector('.agenda-edit')) return;
+      const rescheduleButton = card.querySelector('.task-reschedule');
+      if (!checkbox || !rescheduleButton || card.querySelector('.agenda-edit')) return;
 
       const button = document.createElement('button');
       button.type = 'button';
@@ -234,7 +234,7 @@
       button.title = 'Editar ou reagendar';
       button.textContent = '✎';
       card.classList.add('edit-enabled');
-      deleteButton.before(button);
+      rescheduleButton.before(button);
     });
   }
 
