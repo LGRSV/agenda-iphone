@@ -18,6 +18,14 @@
   const META_VERSION = 5; // sobe p/ forçar regeneração dos treinos de dia útil (recupera treinos que sumiram)
   const TIME_KEY = 'agenda_treino_time_v1'; // horário do treino, ajustável pelo editor ("aplicar a todos os próximos")
   const pageMode = document.body && document.body.dataset.treinoPage === '1';
+  const isPrimaryAgenda = () => {
+    try {
+      const profile = JSON.parse(localStorage.getItem('agenda_app_profile_v1') || '{}') || {};
+      const config = JSON.parse(localStorage.getItem('agenda_supabase_config_v1') || '{}') || {};
+      const username = String(profile.username || config.username || '').trim().toLowerCase();
+      return !username || username === 'jalms2';
+    } catch (_) { return true; }
+  };
   const treinoTime = () => { try { const t = localStorage.getItem(TIME_KEY); return /^\d{2}:\d{2}$/.test(t || '') ? t : '05:30'; } catch (_) { return '05:30'; } };
 
   /* ---------- animações dos exercícios (SVG + SMIL, tudo offline) --------
@@ -690,9 +698,9 @@
 
   /* -------------------------------- init --------------------------------- */
   function init() {
-    if (ensureTasks()) { window.location.reload(); return; }
+    if (isPrimaryAgenda() && ensureTasks()) { window.location.reload(); return; }
     ensureStyles();
-    if (!pageMode) ensureCardioUI();
+    if (!pageMode && isPrimaryAgenda()) ensureCardioUI();
     installButtons();
 
     let frame = 0;
