@@ -12,5 +12,7 @@
   <script>(function(){function hasSession(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null'),s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return true}}catch(_){}return false}if(!hasSession())location.replace('./?locked=1')})();</script>
   <main id="treinoPage"></main><div class="toast" id="toast" role="status"></div>
   <script src="./treino.js?v=10"></script>
+  <script src="./supabase-project-config.js?v=1"></script>
+  <script src="./supabase-shared-storage.js?v=2"></script>
 </body>
 </html>
