@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#17181c">
+  <meta name="app-page" content="gamificacao.html">
+  <title>Gamificação · Agenda Lagares</title>
+  <style>
+    :root{--bg:#17181c;--surface:#202228;--soft:#252830;--soft2:#2d313a;--line:#3b404a;--text:#f7f8fb;--muted:#a6acb8;--faint:#747b88;--accent:#6ec9ff;--accent2:#438ecc}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html{min-height:100%;overflow-x:clip;background:var(--bg);-webkit-text-size-adjust:100%;text-size-adjust:100%}body{min-height:100%;margin:0;overflow-x:clip;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}.app{width:min(100%,620px);margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom));animation:gameEnter .28s cubic-bezier(.2,.8,.2,1) both}.app.leaving{animation:gameLeave .18s ease both}.head{display:flex;align-items:center;gap:13px;margin-bottom:20px}.back{display:grid;place-items:center;width:44px;height:44px;flex:0 0 auto;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--text);text-decoration:none}.back svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.ey{margin:0;color:var(--accent);font-size:11px;font-weight:850;letter-spacing:.12em;text-transform:uppercase}.head h1{margin:3px 0 2px;font-size:29px;letter-spacing:-.045em}.sub{margin:0;color:var(--muted);font-size:13px}.game-body{min-width:0}@keyframes gameEnter{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}@keyframes gameLeave{to{opacity:0;transform:translateX(20px)}}@media(prefers-reduced-motion:reduce){.app,.app.leaving{animation:none}}
+  </style>
+</head>
+<body>
+  <script>(function(){function hasSession(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null'),s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return true}}catch(_){}return false}if(!hasSession())location.replace('./?locked=1')})();</script>
+  <main class="app" id="gamePage">
+    <header class="head"><a class="back" id="gameBack" href="./" aria-label="Voltar para a agenda"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></a><div><p class="ey">Gamificação</p><h1>Sua evolução</h1><p class="sub">Rotina transformada em progresso</p></div></header>
+    <section class="game-body" id="gmPageBody" aria-live="polite"></section>
+  </main>
+  <script src="./gamificacao.js?v=3"></script>
+  <script>document.getElementById('gameBack').addEventListener('click',function(e){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;e.preventDefault();document.getElementById('gamePage').classList.add('leaving');setTimeout(function(){location.href='./'},170)})</script>
+</body>
+</html>
