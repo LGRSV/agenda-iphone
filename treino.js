@@ -280,6 +280,7 @@
       .tr-head h3{margin:0;font-size:24px;letter-spacing:-.04em}
       .tr-sub{margin:5px 0 0;color:var(--muted);font-size:13px;text-transform:capitalize}
       .tr-close{position:absolute;top:14px;right:14px;width:34px;height:34px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--text);font-size:19px;line-height:1;display:grid;place-items:center}
+      .tr-home{display:none;position:absolute;top:14px;right:14px;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font-size:12px;font-weight:800}.tr-home svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
       .tr-timer{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--line);background:var(--surface)}
       .tr-ring{position:relative;width:52px;height:52px;flex:0 0 auto}
       .tr-ring svg{transform:rotate(-90deg)}
@@ -339,7 +340,7 @@
       .tr-btn.solid{border:1px solid var(--accent);background:var(--accent);color:var(--accentInk)}
       body[data-treino-page="1"] #treinoPage{display:flex;flex-direction:column;min-height:100dvh;background:var(--bg)}
       body[data-treino-page="1"] #treinoPage .tr-wrap{max-height:none;min-height:100dvh}
-      body[data-treino-page="1"] #treinoPage .tr-head{padding-top:calc(18px + env(safe-area-inset-top))}
+      body[data-treino-page="1"] #treinoPage .tr-head{padding-top:calc(18px + env(safe-area-inset-top));padding-right:108px}body[data-treino-page="1"] #treinoPage .tr-close{display:none}body[data-treino-page="1"] #treinoPage .tr-home{display:inline-flex;top:calc(14px + env(safe-area-inset-top))}
     `;
     document.head.appendChild(style);
   }
@@ -444,6 +445,7 @@
           <h3 id="trTitle">Treino</h3>
           <p class="tr-sub" id="trSub"></p>
           <button class="tr-close" id="trClose" type="button" aria-label="Fechar">×</button>
+          <button class="tr-home" id="trHome" type="button" aria-label="Voltar para a agenda"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z"/></svg>Agenda</button>
         </div>
         <div class="tr-timer">
           <div class="tr-ring" id="trRing">
@@ -476,6 +478,7 @@
     if (!pageMode) document.body.appendChild(dialogEl);
     const returnToDay=()=>{stopTimer();stopCardio();location.href='./?view=day&date='+encodeURIComponent(currentDate||today())};
     dialogEl.querySelector('#trClose').addEventListener('click', () => pageMode ? returnToDay() : dialogEl.close());
+    dialogEl.querySelector('#trHome').addEventListener('click', returnToDay);
     if (!pageMode) dialogEl.addEventListener('click', e => { if (e.target === dialogEl) dialogEl.close(); });
     dialogEl.addEventListener('close', () => { stopTimer(); stopCardio(); });
     dialogEl.addEventListener('click', e => {
