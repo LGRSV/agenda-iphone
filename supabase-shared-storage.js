@@ -91,7 +91,7 @@
     } finally { syncing = false; render(); }
   }
 
-  async function pullAll({ reload = true } = {}) {
+  async function pullAll() {
     const sb = await requireAccess();
     syncing = true; render('Baixando…');
     try {
@@ -106,7 +106,6 @@
       }
       saveDirty({}); saveCfg({ lastSyncAt: new Date().toISOString() }); lastError = '';
       if (changed) notifySync('all');
-      if (!changed) toast('Agenda conferida no Supabase.');
       return data || [];
     } finally { syncing = false; render(); }
   }
@@ -114,7 +113,6 @@
   async function syncNow() {
     const keys = Object.keys(dirty()).filter(k => DOCUMENTS[k]);
     if (keys.length) await pushDocs(keys, true);
-    await pullAll({ reload: true });
   }
 
   function markDirty(doc) {
