@@ -17,6 +17,7 @@
   const REGEN = 60;     // regera quando a cobertura cair abaixo de 60 dias
   const META_VERSION = 5; // sobe p/ forçar regeneração dos treinos de dia útil (recupera treinos que sumiram)
   const TIME_KEY = 'agenda_treino_time_v1'; // horário do treino, ajustável pelo editor ("aplicar a todos os próximos")
+  const pageMode = document.body && document.body.dataset.treinoPage === '1';
   const treinoTime = () => { try { const t = localStorage.getItem(TIME_KEY); return /^\d{2}:\d{2}$/.test(t || '') ? t : '05:30'; } catch (_) { return '05:30'; } };
 
   /* ---------- animações dos exercícios (SVG + SMIL, tudo offline) --------
@@ -328,6 +329,9 @@
       .tr-btn{flex:1;min-height:48px;border-radius:14px;font-size:14px;font-weight:800}
       .tr-btn.ghost{border:1px solid var(--line);background:var(--soft);color:var(--text)}
       .tr-btn.solid{border:1px solid var(--accent);background:var(--accent);color:var(--accentInk)}
+      body[data-treino-page="1"] #treinoPage{display:flex;flex-direction:column;min-height:100dvh;background:var(--bg)}
+      body[data-treino-page="1"] #treinoPage .tr-wrap{max-height:none;min-height:100dvh}
+      body[data-treino-page="1"] #treinoPage .tr-head{padding-top:calc(18px + env(safe-area-inset-top))}
     `;
     document.head.appendChild(style);
   }
@@ -422,8 +426,9 @@
 
   function ensureDialog() {
     if (dialogEl) return dialogEl;
-    dialogEl = document.createElement('dialog');
-    dialogEl.id = DIALOG_ID;
+    dialogEl = pageMode ? document.getElementById('treinoPage') : document.createElement('dialog');
+    if (!dialogEl) return null;
+    if (!pageMode) dialogEl.id = DIALOG_ID;
     dialogEl.innerHTML = `
       <div class="tr-wrap">
         <div class="tr-head">
@@ -460,9 +465,10 @@
           <button class="tr-btn solid" id="trDone" type="button">Salvar e concluir ✓</button>
         </div>
       </div>`;
-    document.body.appendChild(dialogEl);
-    dialogEl.querySelector('#trClose').addEventListener('click', () => dialogEl.close());
-    dialogEl.addEventListener('click', e => { if (e.target === dialogEl) dialogEl.close(); });
+    if (!pageMode) document.body.appendChild(dialogEl);
+    const returnToDay=()=>{stopTimer();stopCardio();location.href='./?view=day&date='+encodeURIComponent(currentDate||today())};
+    dialogEl.querySelector('#trClose').addEventListener('click', () => pageMode ? returnToDay() : dialogEl.close());
+    if (!pageMode) dialogEl.addEventListener('click', e => { if (e.target === dialogEl) dialogEl.close(); });
     dialogEl.addEventListener('close', () => { stopTimer(); stopCardio(); });
     dialogEl.addEventListener('click', e => {
       const cp = e.target.closest('[data-cardio]');
@@ -558,7 +564,7 @@
       plan.exercises.map(ex => exerciseRow(ex, logs)).join('');
     syncCardioUI();
     if (!restInt) paintTimer();
-    if (!dlg.open) dlg.showModal();
+    if (!pageMode && !dlg.open) dlg.showModal();
   }
 
   function saveSession(markDone) {
@@ -583,9 +589,9 @@
       const tasks = readTasks();
       const task = tasks.find(t => String(t.id) === 'treino-' + currentDate);
       if (task) { task.done = true; writeTasks(tasks); }
-      dialogEl.close();
+      if (!pageMode) dialogEl.close();
       toast(`Treino ${currentW} concluído! ${count} carga${count === 1 ? '' : 's'} salva${count === 1 ? '' : 's'}.`);
-      setTimeout(() => window.location.reload(), 350);
+      setTimeout(() => pageMode ? location.href='./?view=day&date='+encodeURIComponent(currentDate) : window.location.reload(), 350);
       return;
     }
     toast(count ? `${count} carga${count === 1 ? '' : 's'} salva${count === 1 ? '' : 's'}.` : 'Nada para salvar ainda.');
@@ -625,15 +631,14 @@
     if (document.getElementById('cardioFab')) return;
     const st = document.createElement('style');
     st.textContent = `
-      #cardioFab{position:fixed;z-index:5;right:max(18px,env(safe-area-inset-right));bottom:calc(88px + env(safe-area-inset-bottom));width:48px;height:48px;display:grid;place-items:center;border:1px solid var(--line);border-radius:15px;background:var(--surface);color:var(--accent);box-shadow:0 10px 24px rgba(0,0,0,.25);transition:transform .14s ease}
+      #cardioFab{position:relative;z-index:5;width:48px;height:48px;display:grid;place-items:center;border:1px solid var(--line);border-radius:15px;background:var(--surface);color:var(--accent);box-shadow:0 10px 24px rgba(0,0,0,.25);transition:transform .14s ease}
       #cardioFab:active{transform:scale(.94)}
-      @media(min-width:600px){#cardioFab{right:calc((100vw - min(100vw,760px))/2 + 22px)}}
       #${CARDIO_DIALOG_ID} .two-fields{margin-top:0}`;
     document.head.appendChild(st);
     const b = document.createElement('button');
     b.id = 'cardioFab'; b.type = 'button'; b.title = 'Registrar cardio'; b.setAttribute('aria-label', 'Registrar cardio');
     b.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 8.6a5.5 5.5 0 0 0-9.3-3.9L12 5l.5-.3a5.5 5.5 0 0 0-9.3 3.9c0 5 8.8 10.5 8.8 10.5S20.8 13.6 20.8 8.6z"/><path d="M3.5 12h4l1.5-2.5 2 4 1.5-2.5h4"/></svg>';
-    document.body.appendChild(b);
+    (document.getElementById('agendaActions')||document.body).appendChild(b);
     const dlg = document.createElement('dialog');
     dlg.id = CARDIO_DIALOG_ID;
     dlg.innerHTML = `<form class="modal" id="cardioForm" method="dialog">
@@ -687,7 +692,7 @@
   function init() {
     if (ensureTasks()) { window.location.reload(); return; }
     ensureStyles();
-    ensureCardioUI();
+    if (!pageMode) ensureCardioUI();
     installButtons();
 
     let frame = 0;
@@ -698,15 +703,16 @@
 
     document.addEventListener('click', e => {
       const b = e.target.closest('.tr-open');
-      if (b) { e.preventDefault(); e.stopImmediatePropagation(); openModal(b.dataset.treinoId); return; }
+      if (b) { e.preventDefault(); e.stopImmediatePropagation(); pageMode ? openModal(b.dataset.treinoId) : location.href='./treino.html?date='+encodeURIComponent(String(b.dataset.treinoId).replace('treino-','')); return; }
       // clicar no título de um card de treino também abre o painel do treino
       const title = e.target.closest('.task-title');
       if (title) {
         const check = title.closest('.task-card') && title.closest('.task-card').querySelector('.check[data-id]');
         const id = check && check.dataset.id;
-        if (id && String(id).startsWith('treino-')) { e.preventDefault(); e.stopImmediatePropagation(); openModal(id); }
+        if (id && String(id).startsWith('treino-')) { e.preventDefault(); e.stopImmediatePropagation(); pageMode ? openModal(id) : location.href='./treino.html?date='+encodeURIComponent(String(id).replace('treino-','')); }
       }
     }, true);
+    if (pageMode) { const d=new URLSearchParams(location.search).get('date');if(/^\d{4}-\d{2}-\d{2}$/.test(d||''))openModal('treino-'+d); }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
