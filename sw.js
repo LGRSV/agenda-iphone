@@ -1,10 +1,10 @@
-const CACHE = 'agenda-lagares-v173-training-home-button';
+const CACHE = 'agenda-lagares-v174-details-popup-calendar-zoom';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=10"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
 const GAME_SCRIPT = '<script src="./gamificacao.js?v=2"><\/script>';
 const FINANCEIRO_SCRIPT = '<script src="./financeiro.js?v=2"><\/script>';
-const NOTAS_SCRIPT = '<script src="./notas.js?v=5"><\/script>';
+const NOTAS_SCRIPT = '<script src="./notas.js?v=6"><\/script>';
 const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3"><\/script>';
 const SUPABASE_CONFIG_SCRIPT = '<script src="./supabase-project-config.js?v=1"><\/script>';
 const SUPABASE_SCRIPT = '<script src="./supabase-shared-storage.js?v=1"><\/script>';
