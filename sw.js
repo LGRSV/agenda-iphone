@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v167-sharing-and-blank-workspaces';
+const CACHE = 'agenda-lagares-v168-view-roll-transition';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=9"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
