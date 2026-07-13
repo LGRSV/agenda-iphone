@@ -167,6 +167,7 @@
     const actions = document.querySelector('.head-actions');
     if (!actions) return;
     let b = document.getElementById('painelBtn');
+    if (b && b.tagName === 'A') return;
     if (!b) {
       b = document.createElement('button');
       b.id = 'painelBtn';
