@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#17181c">
+  <meta name="app-page" content="treino.html">
+  <title>Treino · Agenda Lagares</title>
+  <style>:root{--bg:#17181c;--surface:#202228;--soft:#252830;--soft2:#2d313a;--line:#3b404a;--text:#f7f8fb;--muted:#a6acb8;--faint:#747b88;--accent:#6ec9ff;--accent2:#438ecc;--accentInk:#081018;--danger:#ff7f91}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{min-height:100%;margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}body{overflow-x:clip}button,input,select{font:inherit}.toast{position:fixed;z-index:20;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));max-width:calc(100% - 32px);padding:11px 14px;border:1px solid var(--line);border-radius:999px;background:var(--soft2);color:var(--text);box-shadow:0 10px 28px rgba(0,0,0,.35);font-size:13px;font-weight:700;opacity:0;pointer-events:none;transform:translate(-50%,18px);transition:opacity .2s ease,transform .2s ease}.toast.show{opacity:1;transform:translate(-50%,0)}</style>
+</head>
+<body data-treino-page="1">
+  <script>(function(){function hasSession(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null'),s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return true}}catch(_){}return false}if(!hasSession())location.replace('./?locked=1')})();</script>
+  <main id="treinoPage"></main><div class="toast" id="toast" role="status"></div>
+  <script src="./treino.js?v=9"></script>
+</body>
+</html>
