@@ -13,8 +13,23 @@
   var esc = s => String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
   var WD = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
   var MN = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  var CATEGORIES = {
+    trabalho: { color: '#0a84ff', background: 'rgba(10,132,255,.35)', soft: '#8ec5ff' },
+    pessoal: { color: '#bf5af2', background: 'rgba(191,90,242,.35)', soft: '#dda8ff' },
+    casa: { color: '#30d158', background: 'rgba(48,209,88,.32)', soft: '#91f5a6' },
+    faculdade: { color: '#ff9f0a', background: 'rgba(255,159,10,.34)', soft: '#ffca72' },
+    saude: { color: '#64d2ff', background: 'rgba(100,210,255,.30)', soft: '#a9e7ff' },
+    financeiro: { color: '#ff375f', background: 'rgba(255,55,95,.33)', soft: '#ff9eae' },
+    outros: { color: '#8e8e93', background: 'rgba(142,142,147,.32)', soft: '#c8c8cc' }
+  };
   var pd = x => String(x).padStart(2, '0');
   var dstr = d => d.getFullYear() + '-' + pd(d.getMonth() + 1) + '-' + pd(d.getDate());
+  function category(task) {
+    var tag = String(task && task.tag || '').trim().toLowerCase();
+    if (/academia|sa[úu]de|health/.test(tag)) tag = 'saude';
+    if (/work|energisa/.test(tag)) tag = 'trabalho';
+    return CATEGORIES[tag] || CATEGORIES.outros;
+  }
   function tasks() { try { var a = JSON.parse(localStorage.getItem('agenda_lagares_v3') || '[]'), n = JSON.parse(localStorage.getItem('agenda_notas_v1') || '{}') || {}; return Array.isArray(a) ? a.filter(function (t) { var note = t && (n[String(t.id)] || n[t.id]); return !(t && t.tag === 'financeiro' && note && note.movimento === 'saida'); }) : []; } catch (_) { return []; } }
   var cur = null, ov = null;
 
@@ -42,11 +57,10 @@
       '#' + OV_ID + ' .cf-dn{font-size:15px;font-weight:800;text-align:center;color:#fff;margin-bottom:1px}',
       '#' + OV_ID + ' .cf-cell.out .cf-dn{color:#48484a}',
       '#' + OV_ID + ' .cf-cell.today .cf-dn{color:#ff453a}',
-      '#' + OV_ID + ' .cf-ev{font-size:8.5px;line-height:1.18;border-radius:4px;padding:2px 4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}',
-      '#' + OV_ID + ' .cf-ev.timed{background:rgba(40,95,160,.55);color:#eaf2fb;font-weight:700}',
-      '#' + OV_ID + ' .cf-ev.timed b{display:block;color:#8fbdf0;font-weight:600;font-size:8px}',
-      '#' + OV_ID + ' .cf-ev.allday{background:rgba(255,255,255,.1);color:#fff;font-weight:700;display:flex;align-items:center;gap:3px}',
-      '#' + OV_ID + ' .cf-ev .dot{width:7px;height:7px;flex:0 0 auto;border-radius:50%;border:1.6px solid #ff9f0a}',
+      '#' + OV_ID + ' .cf-ev{font-size:8.5px;line-height:1.18;border-left:3px solid var(--cf-color);border-radius:5px;padding:2px 4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;background:var(--cf-background);color:#fff;font-weight:750;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}',
+      '#' + OV_ID + ' .cf-ev.timed b{display:block;color:var(--cf-soft);font-weight:700;font-size:8px}',
+      '#' + OV_ID + ' .cf-ev.allday{display:flex;align-items:center;gap:3px}',
+      '#' + OV_ID + ' .cf-ev .dot{width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:var(--cf-color);box-shadow:0 0 0 1px rgba(255,255,255,.3)}',
       '#' + OV_ID + ' .cf-ev.done{opacity:.4;text-decoration:line-through}',
       '#' + OV_ID + ' .cf-more{font-size:8px;color:#8a8a8e;font-weight:800;padding-left:3px}',
       '#' + OV_ID + ' .cf-foot{display:flex;justify-content:center;padding:8px 0 calc(10px + env(safe-area-inset-bottom))}',
@@ -70,8 +84,9 @@
       var list = (byDate[ds] || []).slice().sort(function (a, b) { return (a.time || '~').localeCompare(b.time || '~'); });
       var evs = list.slice(0, 3).map(function (t) {
         var done = t.done ? ' done' : '';
-        if (/^\d{2}:\d{2}$/.test(t.time || '')) return '<div class="cf-ev timed' + done + '">' + esc(t.text) + '<b>' + t.time + '</b></div>';
-        return '<div class="cf-ev allday' + done + '"><span class="dot"></span>' + esc(t.text) + '</div>';
+        var cat = category(t), style = ' style="--cf-color:' + cat.color + ';--cf-background:' + cat.background + ';--cf-soft:' + cat.soft + '"';
+        if (/^\d{2}:\d{2}$/.test(t.time || '')) return '<div class="cf-ev timed' + done + '"' + style + '>' + esc(t.text) + '<b>' + t.time + '</b></div>';
+        return '<div class="cf-ev allday' + done + '"' + style + '><span class="dot"></span>' + esc(t.text) + '</div>';
       }).join('');
       if (list.length > 3) evs += '<div class="cf-more">+' + (list.length - 3) + '</div>';
       cells += '<div class="cf-cell' + (out ? ' out' : '') + (isT ? ' today' : '') + '"><div class="cf-dn">' + d.getDate() + '</div>' + evs + '</div>';
