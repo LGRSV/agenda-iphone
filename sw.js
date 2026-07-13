@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v166-scroll-and-training-page';
+const CACHE = 'agenda-lagares-v167-sharing-and-blank-workspaces';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=9"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -9,7 +9,8 @@ const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3"><\/script>';
 const SUPABASE_CONFIG_SCRIPT = '<script src="./supabase-project-config.js?v=1"><\/script>';
 const SUPABASE_SCRIPT = '<script src="./supabase-shared-storage.js?v=1"><\/script>';
 const SUPABASE_LOGIN_SCRIPT = '<script src="./supabase-login-ui.js?v=3"><\/script>';
-const SIMPLE_ACCESS_SCRIPT = '<script src="./supabase-simple-access.js?v=3"><\/script>';
+const SIMPLE_ACCESS_SCRIPT = '<script src="./supabase-simple-access.js?v=4"><\/script>';
+const SHARING_SCRIPT = '<script src="./agenda-sharing.js?v=1"><\/script>';
 const WEB_PUSH_SCRIPT = '<script src="./web-push.js?v=1"><\/script>';
 const VIEWMODE_SCRIPT = '<script src="./viewmode.js?v=1"><\/script>';
 const HEADER_CLEANUP_SCRIPT = '<script src="./header-cleanup.js?v=3"><\/script>';
@@ -68,6 +69,7 @@ self.addEventListener('fetch', event => {
     if (!isAuxPage && !html.includes('interface-polish.js')) html = html.replace('</body>', `${POLISH_SCRIPT}</body>`);
     if (!isAuxPage && !html.includes('registros-financeiros.js')) html = html.replace('</body>', `${REG_FIN_SCRIPT}</body>`);
     if (!isAuxPage && !html.includes('auth-gate.js')) html = html.replace('</body>', `${AUTH_GATE_SCRIPT}</body>`);
+    if (!isAuxPage && !html.includes('agenda-sharing.js')) html = html.replace('</body>', `${SHARING_SCRIPT}</body>`);
     const headers = new Headers(response.headers);
     headers.delete('content-length');
     headers.delete('content-encoding');
