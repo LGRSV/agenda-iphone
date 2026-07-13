@@ -109,14 +109,10 @@
   }
 
   function install() {
-    var host = document.querySelector('.head-actions');
-    if (!host || document.getElementById('calFullBtn')) return;
-    var b = document.createElement('button');
-    b.id = 'calFullBtn'; b.className = 'icon-btn'; b.type = 'button';
-    b.title = 'Calendário em tela cheia'; b.setAttribute('aria-label', 'Calendário em tela cheia');
-    b.innerHTML = ICON_EXPAND;
+    var b = document.getElementById('calFullBtn');
+    if (!b || b.dataset.calFullBound) return;
+    b.dataset.calFullBound = '1';
     b.addEventListener('click', openCal);
-    host.insertBefore(b, host.firstChild);
   }
 
   function init() {
