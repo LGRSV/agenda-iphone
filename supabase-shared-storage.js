@@ -16,7 +16,9 @@
     training_meta: ['agenda_treino_meta_v1', {}],
     settings: ['agenda_lagares_config_v1', {}],
     trash: ['agenda_lixeira_v1', []],
-    history: ['agenda_historico_v1', []]
+    history: ['agenda_historico_v1', []],
+    investments: ['agenda_investimentos_v1', {}],
+    accounts: ['agenda_contas_v1', {}]
   };
   const LOCAL_TO_DOC = new Map(Object.entries(DOCUMENTS).map(([doc, [key]]) => [key, doc]));
   const originalSetItem = Storage.prototype.setItem;
@@ -188,7 +190,17 @@
     new MutationObserver(ensureUI).observe(document.body, { childList: true, subtree: true });
     try {
       await getClient();
-      if (session?.user && cfg().workspaceOwnerId) { await pullAll({ reload: false }); await subscribe(); }
+      if (session?.user && cfg().workspaceOwnerId) {
+        const before = Object.fromEntries(Object.keys(DOCUMENTS).map(key => [key, JSON.stringify(read(key))]));
+        await pullAll({ reload: false });
+        await subscribe();
+        const changed = Object.keys(DOCUMENTS).some(key => before[key] !== JSON.stringify(read(key)));
+        const marker = `agenda_shared_boot_loaded_v2:${ownerId()}`;
+        if (changed && !sessionStorage.getItem(marker)) {
+          sessionStorage.setItem(marker, '1');
+          setTimeout(() => location.reload(), 120);
+        }
+      }
     } catch (error) { handle(error); }
   }
 
