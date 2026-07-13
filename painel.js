@@ -165,16 +165,22 @@
 
   function ensureButton() {
     const actions = document.querySelector('.head-actions');
-    if (!actions || document.getElementById('painelBtn')) return;
-    const b = document.createElement('button');
-    b.id = 'painelBtn';
-    b.className = 'icon-btn';
-    b.type = 'button';
-    b.title = 'Visão geral';
-    b.setAttribute('aria-label', 'Visão geral das tarefas');
-    b.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20h17"/><path d="M6 20v-7M12 20V5M18 20v-10"/></svg>';
-    actions.insertBefore(b, actions.firstChild);
-    b.addEventListener('click', open);
+    if (!actions) return;
+    let b = document.getElementById('painelBtn');
+    if (!b) {
+      b = document.createElement('button');
+      b.id = 'painelBtn';
+      b.className = 'icon-btn';
+      b.type = 'button';
+      b.title = 'Visão geral';
+      b.setAttribute('aria-label', 'Visão geral das tarefas');
+      b.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20h17"/><path d="M6 20v-7M12 20V5M18 20v-10"/></svg>';
+      actions.insertBefore(b, actions.firstChild);
+    }
+    if (!b.dataset.painelBound) {
+      b.dataset.painelBound = '1';
+      b.addEventListener('click', open);
+    }
   }
 
   function init() {
