@@ -1,260 +1,383 @@
-/Ê¢=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=B¢ oÝFsËæsÈ%BcØxhe^a[çÃë×e[Âe[ÖaZoÈeHaYF i]fdeKà A[òtöa\"nòb÷Ãè6,xnF RrWe[Æ:¢  8(¢u\&Ãé|£Ûòda]FvaYF 
-hsÈÃèiYFsÊ  ("SÝV-]FrVa\2cÛö 6eX6b÷ 
-di[öa\"mXcØ/Ü&m[÷e\"
- â 
- Fthe[çoÈmHe^oÈi]geH &t0:oÈoÜa\  GÝVrFdòp÷ FrVaHmHoØ6l7oÜ&gÙRsÙWa\&dó ì£ÛòtöaHoÈÃî¦lV F pà MYWm[òpr°:oÈeHnn6mYVtoÈrVnòj2/ÈaZe[Âj2
- Ó=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÓ=OÒ*ð(
- Ó ° u\6 7rt	s
-¢ 6n7 äTU_Ò´YH 	vgÙVdn÷a\5v;Â¢ 6n7 5YSÄ_Ò Ò'ÛætSÝGlW'Î° oÛçtUT% Ò[Ì,0Â4R c,0Â1L#]N° e]BdWaZDlö ÒnVl° e]BaX7i]fPe[Â=Hu[Æ;Â¢ Æta]fTe\"=H;Â  oÛçtoØ Ò(
-=Oâ{Èr{ÈoÛçt ÒJ4Nça\'eJoØ6l7oÜ&gÙRgÙWI]FmJOÕDS×ôEV)N²rWu\& b&bte[ö b=OÓ 	vb¦cÝB òv ·;È 6t6 
-)H &tWn}N²}H;Â¢ 6n7 6vTlÂ=H Ó ÆcØSÝFreKçe]DtV(äTU_Ò´YKÂJ4Nçt&nvfaJ;Â¢ 6n7 vtætR=Hd> 6n7 â=HoØ(
-iYE;Èe]Grâ{Èr: 	b âp&oÈ|'ËÂdWa]FoÛäi[ã â&bnæu\&tnÖn|u[Æ,e]Fi[Ã â&bnæe]Fi[Â|Â'Ér fl÷: 	b âvoÜ"|Â'Ér r5aYvsÎ¢n&.r5aYvsÈ|'ËÂpcÔ&sÝC â&bnça\&RWt|'ËÂcÛöd¢n&.6nB|ÂnVlÂsÝVsÎ¢n&r&yKæsÐr(âsÝVsÊ?È.7b2:]H;È;Â¢ 6n7 sÐ6nB=H Ó (2&b(7rgÊ.Fe[åe^ Ç 	r)Kçr(
-|ÂSÝGi[æ(2e[ÇeUFxB|Â'Ér.Gi[Ò)J;Â¢ 6n7 ISõ Ò{ÈlF: ÆbV:A[ÇaIr 6l÷:#Ùfbsd	r}KÂu\&e[çeN¢{ÈaX&l¢'ÕWgÙVtR,oÛÆr¢'È6fv9L Ò}N° oÛçtOÕD_Ô5GÈ 	ssÝf vdF=H#4"hVgÚ=H#4"vwÐ&xÒ0 # #"i[Æ=H&oÛæ"t&kÙS"7r&nDoÛÆr"sÝGoÚ¶-]vdF=H#. 7röeKÖi[æcØ=H'oÝVd"sÝGoÚ¶-[ÆnVoÚ=H'oÝVd"sÝGlS"frFcØ-XiYv:ÓpmXgÚ-\&gÚ:Gx#<&cÝBxÒ5H"yOÒ3È"wÚt""eZhC""xÒ2">Ça]F C"Ó 6Ó hd9H6"ó<÷vs'Î° u[ætna\6T()^·rcÛösÝBaOÔSÓô.r6(ÆcØSÝFreKæe]DtV(	vgÙVdla\&s×÷3Ér|Â[×Ò)N¶oÛçt=Pr.A\'a^aJaKæi[æ(>7rgÊ.)OÓ=T7rgÊd
-:çlÃrWu\& B&Bt|Â'Î·cØcÚ_ÊrWu\& 	r;ß×
-fVcÝFoÛâsÙWN÷eJdÂn÷eJ{Â¢ cÛösÝBa[Æ Òlöd
-;Â¢ cÛösÝBe[×t=Hn÷eKçr 	b oÝF.Gri[öMZ 	b oÝF.Ftlçr(
-&b![ætRvoÜ"&b![ætRpcÔgØ 	b oÝF.r5e\7 	b a\4oÛæ(ætRcÛöd
-&b(oÝF.7b2|Â![ætRsÝVsËæe[æt;Â¢ iYb(VpG)He[ÆtRa[Æ[Ú]N²e[ÇeHlÅiYE Òn÷eN°  6vTlÂa[Æ)N° 
-cÛösÝBe\6A]Gr 2=OâSÝGi[æ(2=OÒnVl 	r ¢sÊrWleJ&ö,&p²)Kçe\aX6(ò/Ùr 	rq]Vt²)Kçe\aX6(ó/Ùr 	rlC'ÊrWleJ>ö,&w;Ér;Â¢ 6n7 7b Ò(
-=Oâ'Ü2 
-²DeKæoÝr)KçoÔ7rgÊ6+Èa]F.&nFmJ.FSÝGi[æ(3)KçleJ,)N° u[ætnm]Du\"mZ)H
- f![ÖnrWu\& 	r;Â¢ cÛösÝBh ÖtfÆoÜ"mZ ò6, ÒmZ 	R6
- e]Grâh 
- ò`	GhÖ$µt&nrmJpSÝFrB2Â'Ì)_Ö ¢`	GhÖ`
-:$¶}[Ön
-}B¢ gn7i[ö Fa\7(×gÊ{Â¢ cÛösÝBt FcÝVe[ç.vtVe[ÖnDyR(	woØt	r;Â¢ iYb()He]Grã
- .FxDoÛçe[ç Òm\6;È.6a\7LtædB'Ü6oÝr)N°  6eXTe[÷t
-oØtåt
- Fa\7.÷ ÒsÙWTe[÷t
-)H>.6a\7Ltçe[ÖvR'Ü6oÝr)KÂ2#0
-
-}B  u[ætnn7rUte\2)H
- fdöu[ÖnBgÙWE[ÆmYVt'IYBSÕELUIQB)He]Grã
- oÛçt Òdöu[ÖnBcÜ&a]FE[ÆmYVt
-sÝGlR)N°  2iYB=HTEWôD°  2tWt6nFnB=H
-  æoÝFsË×oÙvlWmXgÚ-[ÆfCa]WoÎ¶i\7l:leKÖlW;ØiYv-Ze[×:6nFr¶a\5\;ÜdFns4 pb÷dW:xoÛÆda\"-KÖi[æ)N¶oÜ&e\"ri]W:9\;Ø&cÚ¶r÷nCv(ÒsÝWfeJcÛöoÜ#v(Òm]WeYB;ÙfnBsÚeN£1\;ÙfnBwÙVgÚ:0¶i[æ-ZiYvt£;ÝGa[çi]FoÛãt&n6oÜ& ã3Ü2eXe_Ð  .æt-]FgÙveN¦cÝFvWt&n6oÜ&:6a[Æ(ã4
-
-  æoÝFsË×oÙvlRh{Ø&rFrÖoÛÆr§a\"-KÖcØ6nB;Ø6l÷:fr-XcÙVt
-bkÙwoÝVd¦oÛÆrÖi^i[âsÜ&bÇa\"-KÖcØ6nB %KÇrsÜrVt
-
-  æoÝFsË×a[æl¶r-X6lVn£/ËÓ;ÛÖrvn×oÜ1Lx·aYFi[æ:p1L7x¶oÜ&e\#1\ 6l fr-[ÆnR;Ø&rFr×aYFu\31MGx¶aX6gÜ&u[æ:fr-\6fB}B¢  n÷a\2pe[ÅhdV]^¶i\7l:ænW
-  æoÝFsËÖaX&l¶oÛÆr§a\"-KÖaZt
-föt×i^¦:pföt×eZhC8;ÛÆtFr×pi[æ:ã6V;ÝFxBt&n6oÜ&:WpWcØeN¶a\&i[ã0 xÐ  .æt-YGr7dpÆyN¦lW;Ùfe^wÜ&p§r;Ùvp£p
-  æoÝFsËÖu\'pdgÎ£p1Lx¶oÜ&e\#1\ 6l fr-[ÆnR;Ø&rFr×aYFu\39NpbkÙwoÝVd§a\"-K×u\&aX6)N¶oÛÆr§a\"-K×e^)N¶oÛç-\6zS1L'x¶oÛç-]viYvt£0leKÖeZhC1_Ð  .æt-YGræn¶oÜ&e\"cÛöoÜ#v(ÒaX6e[ç)N¶aX6gÜ&u[æ:fr-XcÙVt
-cÛöoÜ#v(ÒaX6e[çI[æ)_Ð  .æt-\i[÷{ÙFsÜa^fÆx¶lW-]wa\wÜ&p¶a\6}B¢  n÷a\2p&oÞ·aYFi[æ:gx1\;Ø&rFr£psÛöiYBv(ÒleJb÷dW-\&dsÎ£9Nx¶aX6gÜ&u[æ:fr-\7rfcÙR;Ø6l÷:fr-]FxB;ÙfnBsÚeN£2;ÙfnBwÙVgÚ:0¶i[æ-ZiYvt£}B¢  n÷a\2p&oËæn¶oÜ&e\"cÛöoÜ#v(ÒaX6e[ç)N¶aX6gÜ&u[æ:fr-XcÙVt
-cÛöoÜ#v(ÒaX6e[çI[æ)_Ð  .æt-\i[òpÖlF.ö{Ø&rFrÖoÛÆr¢ff7ÍF;Ø&cÚ¶r÷nC#Ùfbsd¶oÛÆr¢3ØaL}B¢  n÷a\2p&oËç-]WgÙVtRoÛçb÷dW-X6l÷:6fv9LbkÙwoÝVd¢fcf;Ø6l÷:3aL1L'
-  æoÝFsËÖl{ÙFsÜa^i[æi[æ-Yfe^a[ÆgÛâi]Fm\3cÙVtW;ÜdFns3Ü x¶oÜ&e\"ri]W:9\;ÙfnBsÚeN£0;ÙfnBwÙVgÚ:0¶i[æ-ZiYvt£;Ø6l÷:fr-\,6f#4B;Ø&rFr£psÛöiYBcÛöoÜ"mZ( 7gØ"v(Òp2#Ùfbsd
-5L,fr-[ÆnR)N¶aX6gÜ&u[æ:6l÷-[Öx
-nrv,fr-\,6f#4B %KÇrsÜrVt
-
-  æoÝFsË×e\hVgÚ:x¶aX6gÜ&u[æ:fr-[ÆnR;ÛÖrvn£2 
-  æoÝFsË×uX'dpÆyN¦r;ÙwiYBtVpÆtRcÛöu[ÖsÎ£2 r6;Ùvp£pa[ÆgÛâi]Fm\3cÙVtW;ÛÖrvnÖoÝGoÛÓ6}B¢  n÷a\2cÚcÚ·a\eXa[æeN¦oÛæ;ÝvdF:#phVgÚ:#pfÆx£ a]WoÎ¶oÜ&e\#1KãpsÛöiYBv(ÒfnB;Ø&rFr×aYFu\36;Ø&cÚ¶r÷nCt&n7a\&nCdpÆyN¦r;ÜaX6-Ze[×:6nFr¶oÛÆr§a\"-KÖcØ6nDn²;ÙfnBsÚeN£2;ÙfnBwÙVgÚ:0Ð  .æt-X6eX6:6eX6eYGb÷dW-X6l÷:fr-XcÙVt
-bkÙwoÝVd§a\"-KÖcØ6nB}B¢  n÷a\2cÚcÚ³cÚcÚ¶d£aYge\'cÛötVt¢â§É"Ð  .æt-\7bnt·y\=]FxE{ÝvdF:0	SmZ-ZiYvt£4;ÜdFns6 x¶oÜ&e\#1\ 6l fr-[ÆnR;Ø&rFr×aYFu\39\;Ø&cÚ¶r÷nCv(ÒsÝWfeJcÛöoÜ#v(ÒtWt
-föt×i^¦:p
-  æoÝFsË×uX"döeHnt·y\=]FxE{Ø6l÷:fr-Yfi[ç)N·e^-YFcÛ÷a]FoÛãleK×h&uYv}B¢  n÷a\2dV{Ø&rFr£;Ø&cÚ¶r÷nCt&n7a\&nCcÛöoÜ#v(ÒfnB;ÙfnBsÚeN£9\;ÛÆnRhVgÚ:pdgÎ£pb÷dW-\&dsÎ£p
-  æoÝFsËÖe[ÃaX7i]f{Ø6l÷:fr-YFnvrbkÙwoÝVd§a\"-K×oÙg2
-  æoÝFsËÖdGdpÆyN¦r;ÙwiYBtVpÆtRcÛöu[ÖsÎ£f"a]WoÎ¶a\8;ÛÖrvn£p0p
-  æoÝFsËÖdBi[çu]GmZ-ZiYvt£6;ÜdFns7Ü pb÷dW:xoÛÆda\"-KÖi[æ)N¶oÜ&e\"ri]W:pbkÙwoÝVd§a\"-K×u\&aX6)N¶oÛÆr§a\"-K×e^)N¶oÛç-\6zS1MGxÐ  .æt-Xdu]GoÛçpdgÎ£ pb÷dW:xoÛÆda\"-KÖcØ6nB;Ø&rFr×aYFu\31Lx¶aX6gÜ&u[æ:fr-XcÙVt
-cÛöoÜ#v(ÒaX6e[çI[æ)N¶oÛç-\6zS1Nx¶oÛç-]viYvt£0
-  æoÝFsË×a[Ær×oÝwdpÆyN¦lW;ØiYv-Ze[×:6nFr¶a\9\;ÛÖrvnÖoÝGoÛÓ2}B¢  n÷a\2voÜ"r÷ 7a[çföt×i^¦:pföt×eZhC8;Ø6l÷:fr-XcÙVt
-
-  æoÝFsË×a[Ær¶lW:mZ-ZiYvt£2;ÜdFns9\ pb÷dW:xoÛÆda\"-KÖi[æ)N¶oÜ&e\"ri]W:pbkÙwoÝVd§a\"-K×u\&aX6)N¶oÛÆr§a\"-K×e^)N¶oÛç-\6zS1Mgx¶oÛç-]viYvt£0
-  æoÝFsË×a[Ær¦oØ7sÞ¶oÜ&e\"cÛöoÜ#v(ÒaX6e[ç)N¶oÞsÚd÷:0 7xgØ&(7ËÃ022S,ã)_Ð  .æt-\r2r÷{ÙFsÜa^gÜ&d¶r-]Fm\a]F-X6lVn31Yg r¶a\9\;ÛÖrvnÖoÝGoÛÓ2}B¢  n÷a\2pcÞ¶i\7l:fe^fÆxÖi\&cÝFoÛãcÛöu[Ö;Ùvp£pmXgÚ:
-  æoÝFsË×a\&>7a[çföt×i^¦:pföt×eZhC8;ÛÆtFr×pi[æ:ã6V;ÝFxBt&n6oÜ&:WpWcØeN¶oÛÆr§a\"-KÖaZt
-
-  æoÝFsË×a\& pW{ÛÖnÖeZhC4'x·aYFi[æ:x1\;Ø&rFr£psÛöiYBv(ÒleJb÷dW-\&dsÎ£2;Ø&cÚ¶r÷nCv(ÒsÝWfeJcÛöoÜ#v(ÒtWt
-föt×i^¦:pföt×eZhC7Ì}B¢  n÷a\2pcÈnt¦oØ7sÞ¶oÜ&e\"cÛöoÜ#v(ÒaX6e[ç)N¶oÞsÚd÷:0 7xgØ&(7ËÃ022S,ã)_Ð  .æt-X6nBb&n6{ÛÖrvnÖoÝGoÛÓ1LxÐ  .æt-X6nBtögÛÆ{ÙFsÜa^fÆx¶lnÖtVsÎ¦e[çe\#jWtyKÖoÛçe[ç:7aX6-X&tve[ãgØ:pwÚt1L%N¶i[âhVgÚ:CppdgÎ£p1Lx¶oÜ&e\#1\ 6l fr-[ÆnR;Ø&rFr×aYFu\31L'x¶aX6gÜ&u[æ:fr-\7rfcÙR;Ø6l÷:fr-]FxB;ÙfnCi[æe\&t¶oÛç-\6zS1L7x¶oÛç-]viYvt£5LtWtÖln¦eYg}B¢  n÷a\2cÛöd×oÙvlS:&f÷e^¶oÛçe[ç:.¬2;ÙFsÜa^gÜ&d·leKÖtVsÎ¦e[çe\#wÚt2x¶eZhC2x¶oÜ&e\"ri]W:wx¶aX6gÜ&u[æ:fr-\6fC)N¶oÛÆr§a\"-KÖcØ6nB;ÙfnBsÚeN£6;ÛÆnRhVgÚ:
-  æoÝFsËÖoÛæ-]FgÙveHp:fr7-X6i[Æ{ÛÖrvn×iYvt¦u]F}B¢  n÷a\2cÛöd×oÙvlRcÛ÷y^¶oÛÆr§a\"-KÖcØ6nB;ÙfnBsÚeN£1\;ÙfnBwÙVgÚ:0Ð  .æt-X6nBtögÛÆ.ö{Ø&rFrÖoÛÆr¦oÛÆrÖi^i[âsÜ&bÇa\"-KÖcØ6nB S%KÇa\"-KÖi[æ)JbkÙwoÝVd¦oÛÆrÖi^i[âsÜ&bÇa\"-KÖcØ6nB %KÇa\"-K×u\&aX6)J
-  æoÝFsËÖoÛæ[ÚdFn×dpÆyN¦oÛæ}B¢  n÷a\2cÛödæsËÖpV{ÜdFnrt÷:pa[æmXi[ö:ætCÛöd ãsÈuX&cËÖe^¦e\".".."1Jb÷hÐ  .æt-X6nBcØ{ÙFsÜa^bÆcÚ³föt×i^¦:pföt×eZhC8;Ø6l÷:fr-]FxB;ÛÖrvnÖoÝGoÛÓ6}B¢  n÷a\2cÛödÖa\b¶oÛÆr§a\"-KÖcØ6nB;ÙfnBwÙVgÚ:0Ð  .æt-X6nBflG{ÙFsÜa^gÜ&d¶r-]Fm\a]F-X6lVn31Yg 8 pgØ:wxÐ  .æt-X6nBflG pW{ÛÖnÖeZhC4x·aYFi[æ:x0;Ø&rFr£psÛöiYBv(ÒleJb÷dW-\&dsÎ£0;Ø&cÚ¶r÷nCv(ÒsÝWfeJcÛöoÜ#v(ÒtWt
-föt×i^¦:p
-  æoÝFsËÖoÛæ-Yfe[ÆsÈnt¦oØ7sÞ¶oÜ&e\"cÛöoÜ#v(ÒaX6e[ç)N¶oÞsÚd÷:0 7xgØ&(7ËÃ022S,ã)_Ð  .æt-X6nBflG æoÝFsËÖoÛæ-]Gt¶r-X6lVn£/ËÓ}B¢  n÷a\2cÛödÖi[ç{ÛÖrvn£p0;Ø6l÷:fr-Yfi[ç)N¶oÛç-\6zS1L5\;ÛÆnRhVgÚ:4Ð  @¶yYga[ÖsÈoÝFsÐ6nDn¶rö{Û÷aX6t0·rsÙfrÓt&n6a]FYJ6)_×oÞ¶pi]G:t&n6oÜ&:Ga[çleV0
-}B¢  mYViXmX-]vdF:C0)^²n÷a\2cÛödÖiYVd7gÜ&d×e[×leKÖoÛÇm[ç:rf'.æt-X6nBflG æoÝFsËÖoÛæ-]Gt¶r-X6lVn£/ËÓ}_Ð  .æt-YFtl·iYGh£0;ÛÖnÖeZhC7Ì'x·aYFi[æ:x1\;Ø&rFr£psÛöiYBv(ÒleJb÷dW-\&dsÎ£1\;Ø&cÚ¶r÷nCv(ÒsÝWfeJcÛöoÜ#v(ÒtWt
-föt×i^¦:pleKÖeZhC1Kã5N·e\6zSvWta[ÃfötÖa[Öli[æe\&t¶u]Fi[æ:
-  æoÝFsËÖe]Fi[Ãföu\7b÷dW-X6l÷:fr-XcÙVt
-b÷-\6aYFwÎ£ 0prvaJ1Mr2,#5KÂ2
-  æoÝFsËÖe]Fi[Âr÷{ÙFsÜa^fÆx¶u\7iYg-X6nFnCfÆxÖnCmXgÚ-]Fp£p
-  æoÝFsËÖoÜ{ÜdFns6 pb÷dW:xoÛÆda\"-KÖi[æ)N¶oÜ&e\"ri]W:x¶aX6gÜ&u[æ:fr-\7rfcÙR;Ø6l÷:fr-XcÙVt
-föt×i^¦:pföt×eZhC8}B¢  n÷a\2cÛ÷yN¦cÝFvWt&n6oÜ&:6a[Æ(ã5J
-  6oÝFsÑFa[ÆgÞ·iYGh¦i[âcØcÊ0 Ò2Gx
-5L#p;ÛÖxÖeZhCcØcÊ0v-H4)N·aYFi[æ:oÝfrfoÝshdV;Ø&rFr£psÛöiYBv(ÒleJb÷dW-\&dsÎ£3Ü;Ø&cÚ¶r÷nCv(ÒsÝWfeJcÛöoÜ#v(ÒtWt
-b÷-\6aYFwÎ£ #p7ÌxgØ&(0Ã,ã2
-  6oÝFsÑFa[ÆgÎ£bkÙGoÜbkÙwoÝVd§gØ&(0Ã,ã6bkÙGoÜftW:&u\"3Ü)_Ð  #ÛætDlö[Û÷e[å{Øi[Ötn¦oÝFsÑFa[ÆgÒ ã42cÝViX2bWiYW(ã,ã5KÂ2Ã)HoÝF}B¢  n÷a\2m[öa[ÇdpÆyN¦lW;Ùfe^deX7i[ö:6lVn¶a^hVgÚ:6l21Ldf Ò2Gx
-
-  æoÝFsËÖoÙFlÖeX{ÙFsÜa^fÆx¶lnÖtVsÎ¦e[çe\#jWtyKÖoÛçe[ç:7aX6-X&tve[ãgØ:ppdgÎ£6 p1L7x¶oÜ&e\"b÷tö:xoÛÆda\"-KÖi[æ)N¶aX6gÜ&u[æ:fr-\6fB}B¢  n÷a\2m[öa[ÂhVd3Þ¶i[âwÚt0¶a\&i[ã0¶vWfÆwÎ¦iYFe[ãföt×i^¦:plWtW-\7aX6ns-Kã3ÙV;Ývi]F-\7aX6:æwÜ&p·e^-[÷e\&l÷:VlsÚ}B¢  n÷a\2m[öa[ÂcÛÆsÙWdpÆyN¦r;ÜaX6-Ze[×:6nFr·iYGh£2;ÚiYvt£2;Ùfe^0 tópdgÎ£;Ø&rFr£psÛöiYBv(ÒleJb÷dW-\&dsÎ£0;Ø&cÚ¶r÷nCv(ÒsÝWfeJcÛöoÜ#v(ÒtWt
-föt×i^¦:#pleKÖeZhC1_Ð  .æt-[Öd-X6nFnGoÝfrfoÝryN¦u]F;ÜdFns1L'x4 p-]vb¶tÖvWfÆwË×cÜ&lÆnst÷cÚ
-  6oÝFsÑFa[ÆgÈn÷a\2pe[ÇmXgÚ:pdgÎ£;Ø&rFr£;Ø&rFr×aYFu\30¶aX6gÜ&u[æ:Ga[çpe[ç}B¢  kÙWf&mYW ætDlöI[çf&m^¶pi]G:t&n6oÜ&:6a[Æ(ã2t&n6a]FYJ4)_×oÞ¶pi]G:t&n6oÜ&:6a[Æ( Ga[çleV0
-}B¢  mYViXp&fWsË×eYGcÙV-[Ötn§eYGcÙR{È6oÝFsÑFa[ÆgÖ¶pV]^¶na]FoÛãnöe_×
- ;Â¢ döu[ÖnBhVdæpnDhd
-)N° 
-¢ ò Ò-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-He[Çe\' Ò-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ*ð oÛçta\&IYB=Ha\& Ó ²cÛösÝBcÈ 6rBq]Vre[ÆcÝFr.6eX6[ÙFtiYE'Ê &tWn òcËæa]FsÙW. ¢nVl²}N° oÛçta\&F÷ ÒiYB=Oâ[Ëâ.FcÝVe[ç.e\'SÙVeX7oÜ$lÂ'Ëça\6-X6rB)WÒfd
- Ó 6rDd
-)H=OÒiYB Ç çlÃ
-¢ gn7i[ö 7b&wÊuX" °  &tWn<FvlsÏÒn÷a\2sÝV 	GsÝV.FnR?ÈdöeIr:'ßÒ FtsÚ=H"{ÙWcÐt"sÝV.)_Ò>+Â¢  <pW 6a\7=H&oÝFsËÖhVkÈ"teOÒcÚcÚ¶oÞ 	GsÝV.FnR?ÈcÚcÚ¶d	r:'ßÒa\&aKÖaX&lÒCÛöcÛÇi\"sÝV-]FrVaH#`
-  i[çu]BteOÒtWt"vuYS"Ge\6A]GruX"tWt
-"a^e[æt"#0"pÆcÙVoÛÆe\#"7b×a\&f>+Â¢  <'tFnlsÏÒn÷a\2dV"y\=H&u]GoÛâ iXle[Ã"&m[÷e\"sÝV-]FrVaH#Ãås/Ø'tFnã/ÙFvæ;Â¢ Ð
-fVcÝFoÛâbVlEa[æl
-a\&,d
-{Â¢ lW nV ÒcØdçuYWyT6lVt÷(	rn÷a\2pe[Â)N°   
-a[æl
-rWu\& nV;Â¢ cÛösÝBn÷eH vtætRiYB;Â¢ pe[Â=HoØ7mYVtærVtTlVe[ç(	vi]b)N°  nV.6a\7NeH 	voÝFsË×a[æl	s
- a[ælæiYFe[â=HrV;Â¢ pe[Âda\6tæiYB=Hd°  nV.Fte]BdWmZ Òn÷eKæu\&tnÖn 7rgÊoÝF.Gri[öMZ)H 	r;Â¢ pe[Âda\6tçrlWe[Â=HoÝF.i[ò|Â'És
- oÛçtsÑfn FsÚµaYriYB Ó=Hfa[æeZoÉs
- oÛçtrCÚp2=H<'tFnlsÏÒn÷a\2p&oÈ{ÈoÝF.i[ò?ÈoÛâ ¢'Éw"y\=H&u]GoÛâ Ftp&oÏÒ"äoÜ&a[Ã/Ø'tFnæ 
-°  OØ&eX7.¶y\2P$OÔ2.Öp
- Ó bWtö 6a\7=H&oÝFsË×r $¶}H{ÛætRp&oÈ=OÒkÈ 	vnr:'ßÒ GpS"'tFn"daK×r=H"{Ú·"â{ÔISõ[Úµ.ÆbV}OÂbWtö>.¦i[â'Ér;Â¢ pe[Âi[æe\$TÔ Ð  `Ç 6a\7=H&oÝFsËÖaX&l#P&oÜ&deOÂpãd 6a\7=H&oÝFsË×rsÈ#$·rCÚp7<öi]c<FvlsÏÒn÷a\2sÙW"ã/ÙFvæ 
-°  (F ò`Ç 6a\7=H&oÝFsËÖaX&l#VoÜ"(")OÂpãd 6a\7=H&oÝFsË×a[Ær×oÝr>Çp>"<÷p>ÆntlsÏÒn÷a\2voÜ" GpS"çmX&r"i[çu]FoÙF=H&eX6mX"tW=H#."i[ã" aX6hödW=H#,"a[ÇeOÒ$¶sØ4tG(ætRvoÜ"|Â'Ér}H#<öi]c`
-  `Ç 6a\7=H&oÝFsËÖaX&l#PcÙVa\2(÷cÚn)OÂpãd 6a\7=H&oÝFsË×a\&-\&wÈ#<ÆbV 6a\7=H&oÝFsË×a\&"ãsÜnåaYvsÏÂsÜnãi[çu]BcÛÆsÜ3"æt-\r2pa\2 GpS"çmX&r"i[çu]FoÙF=H&u[Ör"i[ã" 7e\" aX6hödW=H#"a[ÇeOÒ$¶sØ4tG(ætRpcÔgØ Ç 	r)_Ò>Âle[Ã<ÆbV 6a\7=H&oÝFsË×a\&"ãsÜnåe\7a[çe\3/Ü7a[ã<pW 6a\7=H&oÝFsË×a\&-\&sÝB GpS"çmX&r"i[çu]FoÙF=H&u[Ör"i[ã" 7e\" aX6hödW=H#"a[ÇeOÒ$¶sØ4tG(ætRpcÔ&sÝB|Â'Ér}H#<öaX&lã/ÙFvãd 6a\7=H&oÝFsË×e\>Âd>:'Ê+Â¢  <cÛÆsÜ3"æt-[ÆbV"äu\&Ãé|£Ûó/Ü`
-  d 6a\7=H&oÝFsËÖu\'"æ 
-°  DUSËæa\mH><'tFnlsÏÒn÷a\2dW 	Gn÷eKæu\&tnÖn=OÒmH 	vnr:'ßÒ GpS"'tFn"daKÖu\#"Gm_Ò>Gf×DW(Ò}OÂbWtö>.¦i[â'Ér 
-°  `Âd>+Â¢  <FvlsÏÒn÷a\2sÙW"ã/ÙFvæ 
-°  `Ç 6a\7=H&oÝFsËÖaX&l#SÝV-]FrVa\3/Ü`
-  d 6a\7=H&oÝFsË×uX'"â{ÛætRsÝVsËæa\sÝVR÷)KæoÚ(	r)_Ó/ÙFvæ 
-°  `Æi]bcÛÆsÜ3"æt-Xd#<pW GpS"FxB aX6hödW=H$oÝf 7b×a\&f ÖxÆnwhÒ2"ãbWtö GpS"'tFn"daKÖdBa\&aKÖaX&lÒAYFcÚn"î¼"³/Ø'tFnã/ÙFvæ 
-°  `Æi]bcÛÆsÜ3"æt-\6p#<öi]c`
-  
-u[ætn{Ø6n7 6nCn÷eKæoÛæ|Ç}KÂe[æbÆdÖa\4oÛæ(ætRcÛöd
-rWu\& bWtö 6a\7=H&oÝFsËÖoÛæ-]FgÙveH{ÙVaX&eYB?ÈoÛâ ¢'Éw"y\=H&u]GoÛâ FtcÛöd×oÙvlRa\&aKÖxnFdÒ$¶nlV}H#<7a[ãCÛödi[öa[Ã/Ü7a[ã<7a[âcÛÆsÜ3"æt-X6nBtögÛÆ-X6p>Ge[æbÆd 	ueYwa\2a]Fv'È 	tdi[öa\"rVr}OÂsÜnã/Ø'tFnæ 
-°   <FvlsÏÒn÷a\2cÛöd{ÙVaX&eYB?Èi\2oÜnr:'ßÒ 	Ge[æbÆd 	r ¢'ÚdFnw>+Â¢   d 6a\7=H&oÝFsËÖoÛæ-X'a[æh#<7a[âcÛÆsÜ3"æt-X6nBcØ"åeHuHbæoÛælVrÂbâe\7aHa\&f 7iX:ÂsÜnãd 6a\7=H&oÝFsËÖoÛæ-Yfe[ÆsÈ#<pW 6a\7=H&oÝFsËÖoÛæ-]Fe[ân÷a\2cÛöd×xB GpS"FxB ÖxÆnwhÒ2"leZlFrÒN÷aHa\&f flV=H"{ÙWcÐt"cÛödçhVTWt|'Ê"ãi[çu]BcÛÆsÜ3"æt-X6nBtnÖa]F"y\=H&a]F"a[ÇeOÒ$¶sØ4tG(6nBtnFtR|Â'Ér}H#<pW 6a\7=H&oÝFsËÖoÛæ-]Fe[âteH"teOÒteH"vuYS"Ge\6A]GroÛæ.Fe[åi[Ö Ç 	r)_Ò>Âd>Âd>+Â¢   d 6a\7=H&oÝFsËÖoÛæ-X'a[æh#<7a[âcÛÆsÜ3"æt-X6nBcØ"åeHbæÃè6 oÛçeX6rÂbâ(sÜ6raHa]F)KÂcÜ&a\#<÷p>Æi]bcÛÆsÜ3"æt-X6nBflG"ãi[çu]BcÛÆsÜ3"æt-X6nBe[ÇeHoÝFsËÖoÛæ-]Gt"teOÒtWt"mXlVgÝF=H#0 aX6hödW=H$oÝf FrVaH"vuYS"Ge\6A]GroÛæ.VsÙUe^ Ç 	r)_Ò>ÆntlsÏÒn÷a\2cÛödÖl6-YFtR GpS"FtR flV=H"{ÙWcÐt"cÛödæl6DeH|'Ê"ãi[çu]BcÛÆsÜ3"æt-X6nBe[ÇeK×i[Ö"y\=H'i[Ö"a[ÇeOÒ$¶sØ4tG(6nBe[ÇeUFmYR|Â'Ér}H#<öi]c<öi]c`
-  `Ç 6a\7=H&oÝFsËÖoÛæ-ZnB>n÷aHa\&fÃêcÜ&aYF 6zha[òcÛöcÛÇi\"(&m[ò"6n6uZ"oÝRq]VnF daHa\7a\"sÙV 6n6uZ 
-a[Ö &Ãè6 oÛçeX6r".e[ÒdaHrVn6iYF,sØaHa]F FsÝF FrVaN²oÈoÜ,¡\&oÈ©Hp6oÛælã/Ü`
-  `Âd>}J)H
-  d 6a\7=H&oÝFsË×e\>Âd>+Â¢  <cÛÆsÜ3"æt-[ÆbV"äe]FlsÏÂpæ 
-°  `Çe^a\&aHlsÏÒn÷a\2dWaZ"leZlFrÒA[æt§ð;e\2 &cØoÜ2 7pösø(¦"mXlVgÝF=H#0"ã/ÝFxFrV>+Â¢  <FvlsÏÒn÷a\2dWaZ-\&wÈ#<'tFnlsÏÒn÷a\2cÛ÷yH"teOÒbWtö"äoÜa\#/Ø'tFnã/ÙFvæ;Â¢ cØdæpnDhd
-a[æl
-
- a[ælçuYWyT6lVt÷(	rn÷a\2dWaZ'ÊvuYR=HoÝF.Ftl°  &tWna[æl° 
-¢ ò &cÛösÝGÃì6 n÷aH rFroÈaZe[Â(fnF F frFdRe[çuXtòaX&rF)B¢ gn7i[ö 6vTröPe[Âpe[Â °  6n7  Òpe[Âda\6tæiYC
- f!Z)He]Grã
- oÛçtuX' Ò[Ëâ.nV.e\'SÙVeX7oÜ$lÂ'ËæoÝFsË×uX")WÒmX("=Oâ(°  iYC "da\6tçiYB
-  FxC "q]Vre[ÆcÝFri[çu]EteO×e^]Ir.flV,¢  oÛæ:.e\'SÙVeX7oÜ"'ËæoÝFsËÖhVkÉr.6eX6eY@  Ò)Kæi[Çe\"sÈ>.FxBt&mJ =H'È|.FnR;Â¢ cÛösÝBdWaZ Òpe[Âq]Vre[ÆcÝFr.æt-YFtl	r.flV;Â¢ cÛösÝBdWa]FoÛäi[â=Ha[ælæa]FsÙW.GrÖn çmX&ra[ælæa]FsÙW.GrÖn:u[Æ;Â¢ cÛösÝBvV Òpe[Âq]Vre[ÆcÝFr.æt-]fl÷'Ê
- oÛçta[Ær dl dlça[ÇeKçr(
-:gÙWN÷eJd
-voÜ"|Â'Ér;Â¢ cÛösÝBpV Òpe[Âq]Vre[ÆcÝFr.æt-\r2pa\2)N°  6n7 $l nV.e\'SÙVeX7oÜ"'ËæoÝFsË×a\&-\&sÝB)N°  6n7 e]b=He]DoÝF()N°  6n7 r5aYvsÈ l lça[ÇeKçr(
-:p&vça\&Pa\2|Â'Ér;Â¢ cÛösÝBpcÔ&sÝB=HE[Â?ÈE[ÂvuYRt&mJ ¢(e]bpcÔ&sÝB|Â'Ér;Â¢ cÛösÝBp&oÈ nV.Fte]Bp&oÛÆvV Ç 	r;Â¢ cÛösÝBgÝb=He[Â=Oâ{ÈoÛçtl nV.e\'SÙVeX7oÜ"sÙV)N²rWu\& V òe[ÂvuYRt&mJ ¢'És Ó
- oÛçthVTWt w(	rn÷a\2cÛöd×hV'Ê Fe[äa]F ÒgÝb'ËæoÝFsËÖoÛæ-]Fe[âdeIr,hVTeH w(	rn÷a\2cÛöd×hV-]FmYR)N°  6n7 VsÙUe^ ÒgÝb'ËæoÝFsËÖoÛæ-YVsÙR)KÂe[ÇeQFtR=Hv.æt-X6nBe[ÇeKÖa]F'Ê VsÙUi[Ö ÒgÝb'ËæoÝFsËÖoÛæ-YVsÙRteIr;Â¢ cÛösÝBp&v6nB=HrW.6nB|Â{ßÓ
- e]BcÛöd çlÃ
- ftnFxB|Âe[ÇeUFxB °  cÛöd °   hVTWtÂtnFtR Fe[åi[Ö,hVFeYC e]doÛæ.Fe[åe^ Ó=HhVTWt p&v6nBtnfrV ¢fsÙR
-  e[ÇeUFxB VsÙTa]F,l6TeKÂe[ÇeQfrV:rWCÛödæl6TWt=OÒe[ÇeUFxB?È!\e]doÛæ.VsÙTi\&d fl6
-  Ó
- 
- e]DoÝF(, i[ò Gri[öMZ,e]Fi[Â fl÷,a\&Pa\2 r5e\7,oÛæ,uX' Ò;Â¢ u\a]FTögÛÆ()N° 
-cÛösÝBdVoÝVcÙVSØeH nV Ó ²cÛÆa\%i[ÖoÝW(6vUi[Ör 6vUi[Ör 6tFmYVu]B(
-=OâsØeQgoÛÕa[æl
-a[æl
- C0
- Ó
-¢ gn7i[ö WdeUFgÙveJd
-{Â¢ cÛösÝBcØd 6rDoÜ"iYB;Â¢ iYb(a\&)He]Grã
- oÛçttâ=Ha\&.e\'SÙVeX7oÜ"'ËæoÝFsË×oÙvlR)N°   
-bF)He]Grã
- oÛçtoÝF ÒgÙWN÷eJd
-
- oÛçta\2=H!JoÝF.i[ò|Ân÷eKça[Ær|oÝF.r5aYvsÈ|oÝF.r5e\7 Ç sÐ6nBn÷eKæoÛæ)H|oÝF.Gri[öMZ Ç ætRdWaZ.Gi[Ò)H|oÝF.7b2lVgÝF)N°  'nælsÓÆsÝBtögÛÆ(	va\2,a\2;Â¢ lW ÆbV Òh ò'Ér:DWa[Æe\2;Â¢ iYb(ætRvoÜ"|Ân÷eKça\&Pa\2|Ân÷eKça\&RWt
-{Â¢  fn÷eKça[Ærle[Â+ÏÒ'È$ 
-²n÷eKça[Ær°  iYb(ætRpcÔgØ Ç ætRpcÔ&sÝB ²cÛösÝBp çmX&roÝF.r5aYvsÈ|)KÂr çmX&roÝF.r5e\7 Ç ;ÈaX&l=H 0+ 	GpÒ$· 
-²rÒpcØ Ð  Ð  VsÙRiYb(ætRdWa]FoÛäi[â ÆbV 
-³ 	r'È ftGroÝF.Gri[öMZ)N°  VsÙRiYb(ætRsÝVsËæe[æt ²cÛösÝBd ætRsÝVsËæi[Çe\"sÈ>.FnR.Ænwh²le[Â+ÏÒ`{ÙG/ÉGn÷eKçuX'.ÆnwhÖ;È
- l6  
-a\4oÛæ(ætRcÛöd
- ÆbV 
-³ 	rcÛödi[öa[Â;Â¢ e[ÇeHfn÷eKæe]Fi[Ât&mJ)HaX&l=H 8(¢s
- tâi[æe\$TÔ ÒNõEWõVs
- tâa\e[æCÚlBdöu[ÖnBcÜ&a]FTWtædRle[Ât&mJ òle[ÂrWleJ^,'Ê:'Ê;Â¢ /ËòbdVrdRp&oÜ&deHoÈa\&
- oÛçtoÛ÷e\"=Ha\&.e\'SÙVeX7oÜ"'Ëça\6-YfoÝFrr;Â¢ lW faYr=Ha\&.e\'SÙVeX7oÜ"'ËæoÝFsËÖl'Ê
- fn÷eKçr 	b ISõ[ÛætRp&o×Ò °  iYb(l 	b foÝFr{Èl Òdöu[ÖnBcÜ&a]FE[ÆmYVt
-sÜnr;Èl.6a\7NeH 	voÝFsËÖl'Î²fötW.sÙWt&f÷eJl,oÛ÷e\"fsÝDhd
- Ð  iYb(faYr ²fÆgËænærMSÂ=H<7gÈiYGhÒ1L iYvtÒ1L fe]toÞ"044"flÒnöeH"sÝGoÚ¶=H&u\'e[çCÛöoÜ" 7röeK×iYGhÒ2ã"t&kÙRleX6pÒr÷nB 7röeKÖi[æjönÒr÷nB 7y[Æ=H&a\&i[ârhC4"ãph=H$5H1UcMMR41[Â2 "4"ó<÷vs'Î²fÆgËæpnDhd
-oØ7mYVtærVtUe^NöeJRSÖ¶oÝF.i[õ.ÆbV)J faYrsÝGlRsÙWP&pWt'ËÒp2,RSÖ¶oÝF.i[õ.6l÷)N²}B¢ }Hl6  
-l)H faYrrVoÝf(
- Ð 
-¢ ò Ò-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒdWa[Æe\2e[Òp÷-]W Ò-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ*ð u[ætnn7rTe]Fi[ÄiXoÙr)H
- fdWaZDlö)He]GrâdWaZDlö;Â¢ dWaZDlö Òdöu[ÖnBcÜ&a]FE[ÆmYVt
-dlö'Ê
- e]Fi[ÄiXoÙriYB=Hn÷a\4iXoÙr;Â¢ dWaZDlö.nWHDL 	ssÙVtnlsÏÒn÷a\2m[öa[Â iXle[Ã"FthW F FrVaH#<aYFrlsÏÒn÷a\2m[öa[ÂhVd#< =H&oÝFsÑFa[ÆgÕFtÆ"äe]FlsÈaHa\&f/Ú>Æu]GoÛâcÛÆsÜ3"æt-[Öd-X6oÜ6"y\=H&u]GoÛâ iXle[Ã"fcÚre]FlsÈ#Ãås/Ø'tFnã/ÚaYFrãd 6a\7=H&oÝFsËÖoÙFlÖoÛçe[ç"ã/ÙFvã/Ü6cÝFoÛã'Î°  FcÝVe[ç.&da\e[æCÚlBdWaZDlö)N°  FtlFa[ÆgËçuYWyT6lVt÷(	rn÷a\2m[öa[ÂcÛÆsÙR)KædDvVtÆsÝFnW(	vlkÉr 
- Ó FtlFa[ÆgËæl÷eJ)N°  FtlFa[ÆgËædDvVtÆsÝFnW(	vlkÉr We[ç Ó ²iYb(We[ç.Frvt=OÒdWaZDlö)He]Fi[ÄiXoÙrcÛÆsÙR)N²}J
- e]Fi[ÄiXoÙraYFE]fnDi\7e[ærcÛÆsÙR,)H>
-   
-aX7i]fPe[Â &tWn°  sØeQgoÛÕa[æl
-cÝFvUa[æl
-
-  6n7 6rB=Ha\&F÷(teTnV.Fte]Bn)N°  aX7i]fPe[ÂhdV Òt'eN°  iYb(6rB 6rBa\e[æCÚlBaX7i]fPe[Â;Â¢  cÝFvUa[æl çlÃ
- )N°  &tWne]Fi[ÄiXoÙs
-}B  u[ætnpVDWaZsÊd
-{Â¢ cÛösÝBcØd 6rDoÜ"iYB;Â¢ iYb(a\&)He]Grã
- oÛçtiXoÙr=Hn7rTe]Fi[ÄiXoÙr)N°   
-iXoÙroÜndlö.6oÜ6(
-
- oÛçta[æl 'i[ÆPe[ÂcØdÂiYB;Â¢ pe[ÂhdV ÒfsÙS
- cÝFvUa[æl nV;Â¢ dlö.e\'SÙVeX7oÜ"'È6oÝFsÑFa[ÆgÕFtÆ'ÊtWt6nFnB=Ha\&.e\'SÙVeX7oÜ"'Ëça\6-]FtÆ'Ê.FxDoÛçe[ç Ç 	te]FlsÈaHa\&f;Â¢ dlö.e\'SÙVeX7oÜ"'ËæoÝFsËÖoÙFlÖoÛçe[ç'ÊrWleP6i[ÆrV(nV)N°  Fa[ÆgËçh÷M[öa[Â)N° 
-¢ 6n7 FgÙveH  Ó ÷e[äe]Fi[Ç()N°
-fVcÝFoÛâi[çtlFgÙve\2)H
- oØ7mYVtçuYWyT6lVt÷A[Æ(	rtkËÖa\&'Êf÷EXh
-a\& Ó °  cÛösÝBiYB=Ha\&IYBcØd
-
-   
-iYB|ÂSÝGi[æ()Kçtt5i]F(	wrVnò'Ê &tWn²/Ëòt&i[æ FmHaZe[Âp,³Üi[ð  cÛösÝBfötW ÒcØdçuYWyT6lVt÷(	rtkËÖoÛ÷e\")N°  iYb(oÛ÷e\"|ÂfötW.e\'SÙVeX7oÜ"'ËæoÝFsË×oÙvlR)JrWu\&;Â¢  oÛçt Òdöu[ÖnBcÜ&a]FE[ÆmYVt
-bWtö'Ê
-  "teH 	vu]GoÛâ;Â¢  .6a\7NeH 	voÝFsË×oÙvlR;Â¢  .Fte]Bn ÒiYC
-  "i[æe\$TÔ ÒNõEWõVs
-  foÝFræpnDhd
-)N°  u\a]FTögÛÆ()N°  Ò;Â¢ Ð
-/Ê¢-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-HvVt÷ Ò-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-KÒ-H/Â¢ FcÝVe[ç.dWe[çLtVe\"'Ø6iX6'ËÂeH>
- oÛçtoÙr=H.Frvtæl÷e\7(	rn÷a\2tögÛÆ'Ê
- ftö)H Rp&vVtFflB)N²eKçt÷P&pa]FoÛâ)N²tögÛÆ(FgËæa]FsÙW.æd
- &tWn²}B¢ /ËòcÛÆcØ æ L­]GlòdteYf FmX,©[ÒaX'eH 6i^n 
-e\6r§ð:oÈ 7b×a\&f)B¢ cÛösÝBtlR=H.Frvtæl÷e\7(	rtkË×i]FeIr;Â¢ iYb(FtÆ)H
-  6n7 6rB=Hi]FeKæl÷e\7(	rtkËÖa\&'Ê
-  6n7  ÒcØd&a\&IYBcØd
-
-   
-d&SÝGi[æ()Kçtt5i]F(	wrVnò'Ê ²eKçrWe[çDVa]Vt
-;È.7oÜr÷aYvtn;ÈoÙvlRiYB;Èe]Grã Ð  Ð  6n7 nV ÒeKça\&e]BcÛÆsÙWt
-.æt-\nV'Ê
- f!\nV)He]Grã
- oÛçtoÛæTögÛÆ ÒeKça\&e]BcÛÆsÙWt
-[ÙFtcÛöd×oÙvlU'Ê
- fcÛödFgÙveJ{Â¢  oÛçtoÞ=Ha[ælçuYWyT6lVt÷(	rn÷a\2cÛöd	r;Â¢  oÛçtpVi[æ Òb÷.dFn°  b÷.dFn pVi[æ;Â¢  oÞcÛÆsÜ4i\7.FgÙveJi\2oÜnr ÷e[ænr;Â¢  oÛæTögÛÆ.6a\7LtçoÙvlR'Ûö'ËÂoÜngÊ
-  6nEoÙvlRsÙWA]Gru]F(	vr-YWpdV'ËÂSÝGi[æ(÷e[ænr)N°  cÛödFgÙveKçuYWyT6lVt÷(	rn÷a\2cÛöd×oÙvlRcÛ÷yIr.FxDoÛçe[ç ÒoÜngÈ 	toÛæiYwr &gÜ&sÉr:RVr i]fsÉs
-  &tWn°  Ð  6n7 Gr RtgÙW.6oÜ6sÝB'Ö¶a]F-YGrÒ)N°   
-u\" °  cÛösÝBv Græa]FsÙW.Gr°  cÛösÝBcÝW Òpe[Âda\6tæu\&i[â|Â'És
-  nV.Fte]BdWmZ ÒcÝW Ó=H ò'Ér:;Â¢  a[ælçuYWyT6lVt÷A[Æ(	rn÷a\2dW'Êf÷EXh
- Ó cÛÆsÜ4i\7.FgÙveJoÛâ,.Fte]BdW Ó=Ha[ælæa]FsÙW.GrÖn;Â¢  a]fF&mTnV(nV)N²rWu\&;Â¢ }B¢ cÛösÝBp&oÐ'n RtgÙW.6oÜ6sÝB'Ö¶a]F-\i[õ'Ê
- fp&oÐ'n{Â¢  oÛçt Òp&oÐ'næa]FsÙW.i[ò|Â'És
-  nV.Fte]Bp&oÛÆvV Òv°  pe[Âq]Vre[ÆcÝFrl
-.æt-\i[ò)KæoÜ$aX6(=OâxælsÓÆsÝBtögÛÆ(	vnr 
-.Fte]Bp&oÈ|'Ê=OÓ b)N°  sØeQgoÛÕa[æl
-a[æl
- &tWn°  Ð   
-.Frvtæl÷e\7(	udaKÖdE'Ê °  cÛösÝBi[ç Òpe[Âq]Vre[ÆcÝFr.æt-Xdnt	r;Â¢  oÛçte^ Òi[ç.flV.Gi[Ò)N°  iYb(e^)He]Grã
-  nV.e\'SÙVeX7oÜ"'ËæoÝFsË×uX''Êi[çe\'AYFaX6nDTÔ(	veYfrVnB,uX%oÝr{Èd¢sÝVIYB)KÂtWtÂdöeN¢fsÙR}J;Â¢  nvuYR=H'Î°  sØeQgoÛÕa[æl
-a[æl
- &tWn°  Ð  6n7 Fl RtgÙW.6oÜ6sÝB'ËæoÝFsËÖe[Â)N°   
-e[Â ²dV.6oÜ6sÝB'ËæoÝFsË×uX")Kçe[ÖvR)N²sØeQgoÛÕa[æl
-a[æl
- &tWn²}B¢ iYb(RtgÙW.6oÜ6sÝB'ËæoÝFsËÖoÜ'Ê °  cÛösÝBt Òpe[Âq]Vre[ÆcÝFr.æt-YFtl	r.flV;Â¢  f!]Gtçr(
- ²tösÝB'ÓædpaHoÜa\"'Ê &tWn²}B¢  oÛçtoÛæ Ò(
-=OâtösÝB'ÑFthW 6pd÷.r;Â¢  fniYvt÷.6i\oØd&a]fgØoÜ"cÛÆp&a\&.wi]FTWt
-niYvt÷.6i\oØdçreUFxBt)KçhV(FnR.6t6(
- Ó flÆaX6CÛ÷yJa[ælÂdöeJ;Â¢  l6 flÆaX6CÛ÷yJa[ælÂdöeJ
- 
-}KÂt'eJ
-¢ gn7i[ö flÆaX6CÛ÷yJa[ælÂdöeJ{Â¢ cÛösÝBt=Ha[ælçuYWyT6lVt÷(	rn÷a\2dWaZ'Ê
- aKæoØ7sÊ;ÈaKçe[ÆcÝB)N°  GyH FcÝVe[ç.WeX4oÛÖa[æ(	voÜ'Ê FnR)N²}Ha]Fh_Ê{ÈoØt
-CÛ÷iYRmXuXmYVtR'Ê Ð 
-¢ FcÝVe[ç.dWe[çLtVe\"'Ø6a[æeIr R=Oâ{Â¢ iYb(.Frvtæa]FhW(	rn÷a\2cÚcÚ²)JrWu\&;Â¢ cÛösÝBr÷ ÒeKça\&e]BcÛÆsÙWt
-.æt-\7br;Â¢ r÷.6a\7LtçoÙvlR'ÙFnR,.FrvtæhVkÙV)N°  6vTröPe[ÂeKça\&e]BcÛÆsÙWt
-.æt-\nV'Ê;Â¢ Ò;Â¢ FcÝVe[ç.dWe[çLtVe\"'ÚpW'ËÂeH>
- oÛçta[æl RtgÙW.6oÜ6sÝB'ËæoÝFsË×a[æl	r;Â¢ iYb(a[æl
-rWu\&;Â¢ iYb(RtgÙW.Öt6e\2'ËæoÝFsËÖe]Fi[Â)H|.Frvtæa]FhW(	rn÷a\2voÜ")H|.Frvtæa]FhW(	rn÷a\2pcË×aYvsÉr Ç RtgÙW.Öt6e\2'ËæoÝFsË×a\&-\&sÝB)H|.Frvtæa]FhW(	rn÷a\2cÛöd×hV'Ê|ÂeKça\&e]BmXcÚsÊ.æt-X6nBtnÖa]F'Ê|ÂeKça\&e]BmXcÚsÊ.æt-X6nBtn×i[Ö'Ê|ÂeKça\&e]BmXcÚsÊ.æt-X6nBe[ÇeIr Ç RtgÙW.Öt6e\2'ËæoÝFsËÖoÛæ-YVsÙRdeIr Ç RtgÙW.Öt6e\2'ËæoÝFsËÖoÛæ-YVsÙRteIr Ç RtgÙW.Öt6e\2'ËæoÝFsË×uX"i[çu]EteO×e^]Ir)HeX&u[æeYEa]f(nV)N° )N° oØ7mYVtædDvVtÆsÝFnW(	ve^oÝv'ËÂeH>
- feKæe^=OÓ 	tnFrr&beKça\&e]BmXcÚsÊ.æt-Xdnt	r)H
-  Rp&vVtFflB)N°  cÛösÝBpe[Â=H.Frvtæl÷e\7(	rn÷a\2pe[Â)N°  pe[Âq]Vre[ÆcÝFr[ÙFtaYF]Ir.6iX6(
-
- 
-}J
-¢ gn7i[ö i]B)H
- n7rUte\2)N°  sÝFlÅoÙvlW(
-
- e]Bf&mYR=H;Â¢ nW ×ti[öOØ'e\'e\"(
-=Oâ{Èa[æe[Äna]FoÛäreJreJ ga[Ö ÒrWuYWti[Ötnga[Ö(sÝFlÅoÙvlW)N²}J  .ösÙWvRdöu[ÖnBböyKÂ{ÈhdÆsÝC GuYR 7bGeYS GuYR}J
-}B¢  
-oØ7mYVtçeXyT7a]F Ó=HlödgÉr FcÝVe[ç.dWe[çLtVe\"'ÑDMP6nFnDoØeYB,n)N° l6 i]B)N°}J)N°
+/* =========================================================================
+   notas.js — caixinha expansível embaixo de cada atividade.
+   Ao tocar no botão, expande e revela:
+     • Duração da atividade (chips rápidos)
+     • Sub-tarefas com checkbox (adicionar/marcar/remover)
+     • Detalhamento em texto livre + botão Copiar
+   Guardado por tarefa em localStorage separado; não toca no núcleo do app.
+   Mesmo padrão de enhancement do treino.js / painel.js.
+   ========================================================================= */
+(() => {
+  'use strict';
+
+  const NOTES_KEY = 'agenda_notas_v1';
+  const STYLE_ID = 'notasStyles';
+  const DURS = [15, 30, 45, 60, 90, 120];
+  let detailDialog = null;
+  let activePanel = null;
+  let saveTimer = 0;
+
+  const load = () => { try { const v = JSON.parse(localStorage.getItem(NOTES_KEY)); return v && typeof v === 'object' ? v : {}; } catch (_) { return {}; } };
+  const saveAll = a => localStorage.setItem(NOTES_KEY, JSON.stringify(a));
+  const getNote = id => { const n = load()[id]; return { prio: n && n.prio || '', durationMin: n && n.durationMin || null, detail: n && n.detail || '', valor: n && n.valor || '', parcPagas: n && n.parcPagas || '', parcRest: n && n.parcRest || '', cond: n && n.cond || null, subs: n && Array.isArray(n.subs) ? n.subs : [] }; };
+  const hasCond = c => !!(c && (String(c.thenText || '').trim() || String(c.elseText || '').trim()));
+  const PRIOS = { alta: { label: 'Alta', color: '#ffb74d' }, urgente: { label: 'Urgente', color: '#ff7f91' } };
+  const NOTE_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>';
+  function taskTag(id){try{const a=JSON.parse(localStorage.getItem('agenda_lagares_v3')||'[]');const t=Array.isArray(a)?a.find(x=>String(x.id)===String(id)):null;return t&&t.tag||'';}catch(_){return '';}}
+  function setNote(id, note) {
+    const all = load();
+    const empty = !note.prio && !note.durationMin && !note.detail.trim() && !note.valor && !note.parcPagas && !note.parcRest && !hasCond(note.cond) && (!note.subs || !note.subs.length);
+    if (empty) delete all[id]; else all[id] = note;
+    saveAll(all);
+  }
+  const escAttr = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const subId = () => 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  function fmtDur(min) {
+    if (!min) return '';
+    const h = Math.floor(min / 60), m = min % 60;
+    return h ? (m ? `${h}h${String(m).padStart(2, '0')}` : `${h}h`) : `${m}min`;
+  }
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function ensureStyles() {
+    if (document.getElementById(STYLE_ID)) return;
+    const s = document.createElement('style');
+    s.id = STYLE_ID;
+    s.textContent = `
+      .notas-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);font-size:11px;font-weight:800;line-height:1;transition:transform .13s ease}
+      .notas-toggle:active{transform:scale(.94)}
+      .notas-toggle.has{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+      .notas-panel{grid-column:1/-1;margin-top:10px;padding:12px 13px;border:1px solid var(--line);border-radius:14px;background:var(--soft)}
+      .notas-panel[hidden]{display:none}
+      .notas-label{color:var(--faint);font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin:0 0 8px}
+      .notas-durs{display:flex;flex-wrap:wrap;gap:6px}
+      .notas-dur{padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);font-size:12px;font-weight:800;line-height:1}
+      .notas-dur.on{border-color:var(--accent);background:var(--accent);color:var(--accentInk)}
+      .notas-prios{display:flex;flex-wrap:wrap;gap:6px}
+      .notas-prio{padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);font-size:12px;font-weight:800;line-height:1}
+      .notas-prio.on{border-color:var(--accent);background:var(--accent);color:var(--accentInk)}
+      .notas-prio.p-alta.on{border-color:#ffb74d;background:#ffb74d;color:#3a2a06}
+      .notas-prio.p-urgente.on{border-color:#ff7f91;background:#ff7f91;color:#3a0a12}
+      .notas-flag{display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:800;line-height:1;color:var(--pc,#ffb74d);border:1px solid color-mix(in srgb,var(--pc,#ffb74d) 50%,var(--line));background:color-mix(in srgb,var(--pc,#ffb74d) 16%,transparent)}
+      .notas-sep{height:1px;background:var(--line);margin:12px 0}
+      .notas-sub{display:grid;grid-template-columns:22px 1fr 26px;gap:8px;align-items:center;margin-bottom:6px}
+      .notas-check{appearance:none;width:20px;height:20px;flex:0 0 auto;border:1.5px solid var(--faint);border-radius:6px;background:transparent;display:grid;place-items:center;color:var(--accentInk);font-size:12px;font-weight:900}
+      .notas-check:checked{border-color:var(--accent);background:var(--accent)}
+      .notas-check:checked::after{content:"✓"}
+      .notas-sub input[type=text]{width:100%;min-height:34px;padding:6px 9px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);font-size:14px}
+      .notas-sub.done input[type=text]{color:var(--faint);text-decoration:line-through}
+      .notas-del{border:0;background:transparent;color:var(--faint);font-size:19px;line-height:1;padding:2px;border-radius:7px}
+      .notas-del:active{color:var(--danger);background:var(--soft2)}
+      .notas-add{display:grid;grid-template-columns:1fr auto;gap:8px;margin:8px 0 2px}
+      .notas-add input{min-height:36px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px}
+      .notas-add button{padding:0 13px;border:1px solid var(--accent);border-radius:10px;background:var(--accent);color:var(--accentInk);font-size:18px;font-weight:800}
+      .notas-valor-row{display:flex;align-items:center;gap:9px;margin-bottom:2px}
+      .notas-valor-row span{font-size:15px;font-weight:800;color:var(--accent)}
+      .notas-valor{flex:1;min-height:42px;padding:9px 11px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font-size:16px;font-weight:700}
+      .notas-valor:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(117,203,255,.2)}
+      .notas-parc-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:2px}
+      .notas-parc{display:flex;flex-direction:column;gap:5px;margin:0}
+      .notas-parc>span{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+      .notas-parc input{min-height:42px;padding:9px 11px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font-size:16px;font-weight:700}
+      .notas-parc input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(117,203,255,.2)}
+      .notas-cond-branch{margin-bottom:10px}
+      .notas-cond-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:43px;padding:8px 11px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-weight:850;text-align:left}
+      .notas-cond-toggle::before{content:"↳";display:grid;place-items:center;width:20px;height:20px;border-radius:7px;background:var(--soft2);color:var(--accent);font-size:16px;line-height:1}
+      .notas-cond-toggle span:first-child{margin-right:auto}
+      .notas-cond-toggle-copy{color:var(--accent);font-size:11px;font-weight:800}
+      .notas-cond-toggle.on{border-color:color-mix(in srgb,var(--accent) 58%,var(--line));background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+      .notas-cond[hidden]{display:none}
+      .notas-cond.is-open{padding-top:12px;animation:notasCondIn .2s cubic-bezier(.2,.8,.2,1) both}
+      .notas-cond-cap{display:block;font-size:11px;font-weight:800;color:var(--text);margin-bottom:6px}
+      .notas-cond-cap b{color:var(--accent);font-weight:800}
+      .notas-cond-fields{display:grid;grid-template-columns:1fr 128px 92px;gap:7px}
+      .notas-cond-fields input{min-height:40px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px}
+      .notas-cond-fields input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(117,203,255,.2)}
+      .notas-cond-fields .notas-cond-txt{grid-column:1/-1}
+      .notas-cond-hint{margin:2px 0 0;color:var(--faint);font-size:10.5px;line-height:1.4}
+      @keyframes notasCondIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+      @media(max-width:430px){.notas-cond-fields{grid-template-columns:1fr 1fr}.notas-cond-fields .notas-cond-txt{grid-column:1/-1}}
+      .notas-detail{width:100%;min-height:72px;padding:9px 11px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--text);font-size:14px;line-height:1.45;resize:vertical;font-family:inherit;outline:0}
+      .notas-detail:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(117,203,255,.2)}
+      .notas-detail-row{display:flex;justify-content:flex-end;margin-top:7px}
+      .notas-copy{padding:6px 13px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--accent);font-size:12px;font-weight:800}
+      .notas-copy:active{transform:scale(.95)}
+      #notasDialog{width:min(calc(100% - 24px),520px);max-height:calc(100dvh - 24px);padding:0;overflow:hidden;border:1px solid var(--line);border-radius:23px;background:var(--surface);color:var(--text);box-shadow:0 28px 70px rgba(0,0,0,.52)}
+      #notasDialog::backdrop{background:rgba(0,0,0,.56);backdrop-filter:blur(3px)}
+      #notasDialog[open]{animation:notasDialogIn .24s cubic-bezier(.2,.85,.2,1) both}
+      .notas-modal{display:flex;flex-direction:column;max-height:calc(100dvh - 24px)}
+      .notas-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 16px 13px;border-bottom:1px solid var(--line);background:var(--soft)}
+      .notas-modal-head h3{min-width:0;margin:0;overflow:hidden;font-size:17px;letter-spacing:-.03em;white-space:nowrap;text-overflow:ellipsis}
+      .notas-modal-close{display:grid;place-items:center;width:32px;height:32px;flex:0 0 auto;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font-size:22px;line-height:1}
+      .notas-modal-content{overflow-y:auto;padding:12px 14px 16px;-webkit-overflow-scrolling:touch}
+      #notasDialog .notas-panel{margin:0;padding:0;border:0;border-radius:0;background:transparent}
+      @keyframes notasDialogIn{from{opacity:0;transform:scale(.82) translateY(14px)}to{opacity:1;transform:scale(1) translateY(0)}}
+      @media(prefers-reduced-motion:reduce){#notasDialog[open]{animation:none}}
+    `;
+    document.head.appendChild(s);
+  }
+
+  /* ------------------------------ helpers ------------------------------- */
+  const cardId = card => { const c = card.querySelector('.check[data-id]'); return c ? c.dataset.id : null; };
+  const cardFor = id => [...document.querySelectorAll('.task-card')].find(c => cardId(c) === id) || null;
+
+  function subRow(sub) {
+    return `<div class="notas-sub ${sub.done ? 'done' : ''}" data-sid="${escAttr(sub.id)}">` +
+      `<input class="notas-check" type="checkbox" ${sub.done ? 'checked' : ''} aria-label="Concluir sub-tarefa">` +
+      `<input type="text" value="${escAttr(sub.text)}" maxlength="200" placeholder="Sub-tarefa">` +
+      `<button class="notas-del" type="button" aria-label="Remover sub-tarefa">×</button></div>`;
+  }
+
+  function buildPanel(card, id) {
+    let panel = card.querySelector('.notas-panel');
+    if (panel) return panel;
+    const note = getNote(id);
+    panel = document.createElement('div');
+    panel.className = 'notas-panel';
+    panel.hidden = true;
+    panel.dataset.nid = id;
+    panel.dataset.durmin = note.durationMin ? String(note.durationMin) : '';
+    panel.dataset.priolevel = note.prio || '';
+    const isFin = taskTag(id) === 'financeiro';
+    const prioChips = `<button class="notas-prio ${!note.prio ? 'on' : ''}" type="button" data-prio="">Normal</button>` +
+      Object.keys(PRIOS).map(k => `<button class="notas-prio p-${k} ${note.prio === k ? 'on' : ''}" type="button" data-prio="${k}">${PRIOS[k].label}</button>`).join('');
+    panel.innerHTML =
+      `<p class="notas-label">Prioridade</p><div class="notas-prios">${prioChips}</div><div class="notas-sep"></div>` +
+      (isFin ? `<p class="notas-label">Valor (R$)</p><div class="notas-valor-row"><span>R$</span><input class="notas-valor" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00" value="${escAttr(note.valor || '')}"></div>` +
+        `<p class="notas-label">Parcelas (opcional)</p><div class="notas-parc-row"><label class="notas-parc"><span>Pagas</span><input class="notas-parc-pagas" type="number" inputmode="numeric" min="0" step="1" placeholder="0" value="${escAttr(note.parcPagas || '')}"></label><label class="notas-parc"><span>Restantes</span><input class="notas-parc-rest" type="number" inputmode="numeric" min="0" step="1" placeholder="0" value="${escAttr(note.parcRest || '')}"></label></div><div class="notas-sep"></div>` : '') +
+      `<p class="notas-label">Duração</p>` +
+      `<div class="notas-durs">` +
+      DURS.map(m => `<button class="notas-dur ${note.durationMin === m ? 'on' : ''}" type="button" data-dur="${m}">${fmtDur(m)}</button>`).join('') +
+      `</div>` +
+      `<div class="notas-sep"></div>` +
+      `<p class="notas-label">Sub-tarefas</p>` +
+      `<div class="notas-subs">${note.subs.map(subRow).join('')}</div>` +
+      `<div class="notas-add"><input type="text" placeholder="Nova sub-tarefa" maxlength="200"><button type="button" data-add aria-label="Adicionar">＋</button></div>` +
+      `<div class="notas-sep"></div>` +
+      (function(){const cond=note.cond||{}, enabled=hasCond(note.cond);return `<button class="notas-cond-toggle ${enabled ? 'on' : ''}" type="button" data-cond-toggle aria-expanded="${enabled}"><span>Condicional</span><span class="notas-cond-toggle-copy">${enabled ? 'Regras ativas' : 'Adicionar regra'}</span></button>` +
+        `<div class="notas-cond ${enabled ? 'is-open' : ''}" ${enabled ? '' : 'hidden'}>` +
+        `<div class="notas-cond-branch"><span class="notas-cond-cap">Se eu <b>concluir</b> esta tarefa, criar:</span><div class="notas-cond-fields"><input class="notas-cond-then notas-cond-txt" type="text" maxlength="200" placeholder="Nova tarefa" value="${escAttr(cond.thenText || '')}"><input class="notas-cond-then-date" type="date" value="${escAttr(cond.thenDate || '')}"><input class="notas-cond-then-time" type="time" value="${escAttr(cond.thenTime || '')}"></div></div>` +
+        `<div class="notas-cond-branch"><span class="notas-cond-cap">Se <b>não acontecer</b> (passar da data), criar:</span><div class="notas-cond-fields"><input class="notas-cond-else notas-cond-txt" type="text" maxlength="200" placeholder="Nova tarefa" value="${escAttr(cond.elseText || '')}"><input class="notas-cond-else-date" type="date" value="${escAttr(cond.elseDate || '')}"><input class="notas-cond-else-time" type="time" value="${escAttr(cond.elseTime || '')}"></div></div>` +
+        `<p class="notas-cond-hint">A nova tarefa é criada sozinha ao concluir (ramo "concluir") ou quando a data passar sem concluir (ramo "não acontecer"). Sem data preenchida, usa a data desta tarefa; o horário é opcional.</p>` +
+        `</div>`;})() +
+      `<div class="notas-sep"></div>` +
+      `<p class="notas-label">Detalhes</p>` +
+      `<textarea class="notas-detail" placeholder="Anotações, recados, cupons…" maxlength="4000"></textarea>` +
+      `<div class="notas-detail-row"><button class="notas-copy" type="button">Copiar</button></div>`;
+    card.appendChild(panel);
+    panel.querySelector('.notas-detail').value = note.detail;
+    return panel;
+  }
+
+  // reconstrói a nota a partir do painel (fonte da verdade enquanto aberto)
+  function saveFromPanel(panel) {
+    const id = panel.dataset.nid;
+    if (!id) return;
+    const subs = [...panel.querySelectorAll('.notas-sub')].map(r => ({
+      id: r.dataset.sid,
+      text: r.querySelector('input[type=text]').value,
+      done: r.querySelector('.notas-check').checked
+    })).filter(s => s.text.trim() !== '' || s.done);
+    const detail = panel.querySelector('.notas-detail').value;
+    const durationMin = panel.dataset.durmin ? Number(panel.dataset.durmin) : null;
+    const vEl = panel.querySelector('.notas-valor');
+    const valor = vEl ? vEl.value.trim() : (getNote(id).valor || '');
+    const pEl = panel.querySelector('.notas-parc-pagas');
+    const rEl = panel.querySelector('.notas-parc-rest');
+    const prev = getNote(id);
+    const parcPagas = pEl ? pEl.value.trim() : (prev.parcPagas || '');
+    const parcRest = rEl ? rEl.value.trim() : (prev.parcRest || '');
+    const prio = panel.dataset.priolevel || '';
+    const gv = sel => { const el = panel.querySelector(sel); return el ? el.value.trim() : ''; };
+    const thenText = gv('.notas-cond-then'), thenDate = gv('.notas-cond-then-date'), thenTime = gv('.notas-cond-then-time');
+    const elseText = gv('.notas-cond-else'), elseDate = gv('.notas-cond-else-date'), elseTime = gv('.notas-cond-else-time');
+    const prevCond = prev.cond || {};
+    let cond = null;
+    if (thenText || elseText) {
+      cond = {
+        thenText, thenDate, thenTime, thenFired: prevCond.thenText === thenText ? !!prevCond.thenFired : false,
+        elseText, elseDate, elseTime, elseFired: prevCond.elseText === elseText ? !!prevCond.elseFired : false
+      };
+    }
+    setNote(id, { prio, durationMin, detail, valor, parcPagas, parcRest, cond, subs });
+    updateToggle(id);
+  }
+  const debouncedSave = panel => { clearTimeout(saveTimer); saveTimer = setTimeout(() => saveFromPanel(panel), 400); };
+
+  function updateToggle(id) {
+    const card = cardFor(id);
+    if (!card) return;
+    const btn = card.querySelector('.notas-toggle');
+    if (!btn) return;
+    const note = getNote(id);
+    const has = !!(note.prio || note.valor || note.parcPagas || note.parcRest || hasCond(note.cond) || note.durationMin || note.detail.trim() || note.subs.length);
+    btn.classList.toggle('has', has);
+    let label = has ? '' : 'Detalhes';
+    if (note.valor || note.parcPagas || note.parcRest) {
+      if (note.valor) label += ' R$ ' + note.valor;
+      if (note.parcPagas || note.parcRest) { const p = Number(note.parcPagas || 0), r = Number(note.parcRest || 0); label += ` · ${p}/${p + r} parc`; }
+    }
+    else if (note.durationMin) label += ' ' + fmtDur(note.durationMin);
+    else if (note.subs.length) { const d = note.subs.filter(s => s.done).length; label += ` ${d}/${note.subs.length}`; }
+    else if (hasCond(note.cond)) label += ' condicional';
+    else if (note.detail.trim()) label += ' •';
+    btn.innerHTML = NOTE_SVG;
+    btn.appendChild(document.createTextNode(label.trim() ? label.replace(/^ /, '') : ''));
+    // bandeira de prioridade no card
+    const footer = card.querySelector('.task-footer');
+    let flag = card.querySelector('.notas-flag');
+    if (note.prio && PRIOS[note.prio]) {
+      if (!flag && footer) { flag = document.createElement('span'); flag.className = 'notas-flag'; footer.insertBefore(flag, footer.firstChild); }
+      if (flag) { flag.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>'; flag.appendChild(document.createTextNode(PRIOS[note.prio].label)); flag.style.setProperty('--pc', PRIOS[note.prio].color); }
+    } else if (flag) { flag.remove(); }
+  }
+
+  /* ---------------------------- detalhes em pop-up ---------------------- */
+  function ensureDetailDialog() {
+    if (detailDialog) return detailDialog;
+    detailDialog = document.createElement('dialog');
+    detailDialog.id = 'notasDialog';
+    detailDialog.innerHTML = '<section class="notas-modal" aria-label="Detalhes da tarefa"><header class="notas-modal-head"><h3 id="notasDialogTitle">Detalhes da tarefa</h3><button class="notas-modal-close" type="button" aria-label="Fechar detalhes">×</button></header><div class="notas-modal-content"></div></section>';
+    document.body.appendChild(detailDialog);
+    detailDialog.querySelector('.notas-modal-close').addEventListener('click', () => detailDialog.close());
+    detailDialog.addEventListener('click', event => { if (event.target === detailDialog) detailDialog.close(); });
+    detailDialog.addEventListener('close', () => {
+      if (!activePanel) return;
+      saveFromPanel(activePanel);
+      const card = cardFor(activePanel.dataset.nid);
+      activePanel.hidden = true;
+      if (card) card.appendChild(activePanel);
+      activePanel = null;
+    });
+    return detailDialog;
+  }
+
+  function openDetails(id) {
+    const card = cardFor(id);
+    if (!card) return;
+    const dialog = ensureDetailDialog();
+    if (dialog.open) dialog.close();
+    const panel = buildPanel(card, id);
+    panel.hidden = false;
+    activePanel = panel;
+    dialog.querySelector('#notasDialogTitle').textContent = card.querySelector('.task-title')?.textContent || 'Detalhes da tarefa';
+    dialog.querySelector('.notas-modal-content').replaceChildren(panel);
+    dialog.showModal();
+  }
+
+  const toggle = id => openDetails(id);
+
+  function installToggles() {
+    document.querySelectorAll('.task-card').forEach(card => {
+      const id = cardId(card);
+      if (!id || String(id).startsWith('treino-')) return; // treino tem painel próprio
+      const footer = card.querySelector('.task-footer');
+      if (!footer || footer.querySelector('.notas-toggle')) return;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'notas-toggle';
+      b.dataset.nid = id;
+      b.innerHTML = NOTE_SVG;
+      footer.appendChild(b);
+      updateToggle(id);
+    });
+  }
+
+  /* ------------------------------- eventos ------------------------------ */
+  document.addEventListener('click', e => {
+    const tog = e.target.closest('.notas-toggle');
+    if (tog) { e.preventDefault(); e.stopPropagation(); toggle(tog.dataset.nid); return; }
+    // clicar no título da tarefa também abre a caixinha (descrição + sub-tarefas)
+    const title = e.target.closest('.task-title');
+    if (title) {
+      const card = title.closest('.task-card');
+      const id = card && cardId(card);
+      if (id && !String(id).startsWith('treino-')) { e.preventDefault(); e.stopPropagation(); toggle(id); return; }
+    }
+    const panel = e.target.closest('.notas-panel');
+    if (!panel) return;
+    const condToggle = e.target.closest('[data-cond-toggle]');
+    if (condToggle) {
+      const box = panel.querySelector('.notas-cond');
+      const opening = box.hidden;
+      box.hidden = !opening;
+      box.classList.toggle('is-open', opening);
+      condToggle.classList.toggle('on', opening);
+      condToggle.setAttribute('aria-expanded', String(opening));
+      condToggle.querySelector('.notas-cond-toggle-copy').textContent = opening ? 'Configurar regras' : 'Regras ativas';
+      return;
+    }
+    const dur = e.target.closest('[data-dur]');
+    if (dur) {
+      const v = dur.dataset.dur;
+      const cur = panel.dataset.durmin || '';
+      panel.dataset.durmin = cur === v ? '' : v;
+      panel.querySelectorAll('.notas-dur').forEach(x => x.classList.toggle('on', x.dataset.dur === panel.dataset.durmin));
+      saveFromPanel(panel); return;
+    }
+    const prioBtn = e.target.closest('[data-prio]');
+    if (prioBtn) {
+      const v = prioBtn.dataset.prio || '';
+      panel.dataset.priolevel = v;
+      panel.querySelectorAll('.notas-prio').forEach(x => x.classList.toggle('on', (x.dataset.prio || '') === v));
+      saveFromPanel(panel); return;
+    }
+    if (e.target.closest('[data-add]')) {
+      const inp = panel.querySelector('.notas-add input');
+      const text = inp.value.trim();
+      if (!text) return;
+      panel.querySelector('.notas-subs').insertAdjacentHTML('beforeend', subRow({ id: subId(), text, done: false }));
+      inp.value = '';
+      saveFromPanel(panel); return;
+    }
+    const del = e.target.closest('.notas-del');
+    if (del) { del.closest('.notas-sub').remove(); saveFromPanel(panel); return; }
+    if (e.target.closest('.notas-copy')) {
+      const txt = panel.querySelector('.notas-detail').value;
+      if (!txt.trim()) { toast('Nada para copiar.'); return; }
+      const done = () => toast('Detalhes copiados.');
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => fallbackCopy(panel, done));
+      else fallbackCopy(panel, done);
+    }
+  }, true);
+
+  function fallbackCopy(panel, done) {
+    const ta = panel.querySelector('.notas-detail');
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); done(); } catch (_) { toast('Copie manualmente.'); }
+  }
+
+  document.addEventListener('change', e => {
+    if (!e.target.matches('.notas-check')) return;
+    const row = e.target.closest('.notas-sub');
+    row.classList.toggle('done', e.target.checked);
+    saveFromPanel(e.target.closest('.notas-panel'));
+  });
+  document.addEventListener('input', e => {
+    const panel = e.target.closest('.notas-panel');
+    if (!panel) return;
+    if (e.target.matches('.notas-detail') || e.target.matches('.notas-valor') || e.target.matches('.notas-parc-pagas') || e.target.matches('.notas-parc-rest') || e.target.matches('.notas-cond-then') || e.target.matches('.notas-cond-then-date') || e.target.matches('.notas-cond-then-time') || e.target.matches('.notas-cond-else') || e.target.matches('.notas-cond-else-date') || e.target.matches('.notas-cond-else-time') || e.target.matches('.notas-sub input[type=text]')) debouncedSave(panel);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target.matches('.notas-add input')) {
+      e.preventDefault();
+      const panel = e.target.closest('.notas-panel');
+      panel.querySelector('[data-add]').click();
+    }
+  });
+
+  function init() {
+    ensureStyles();
+    installToggles();
+    let frame = 0;
+    new MutationObserver(() => { cancelAnimationFrame(frame); frame = requestAnimationFrame(installToggles); })
+      .observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
