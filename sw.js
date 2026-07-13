@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v160-auth-gate';
+const CACHE = 'agenda-lagares-v161-menu-clean';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -12,7 +12,7 @@ const SUPABASE_LOGIN_SCRIPT = '<script src="./supabase-login-ui.js?v=3"><\/scrip
 const SIMPLE_ACCESS_SCRIPT = '<script src="./supabase-simple-access.js?v=3"><\/script>';
 const WEB_PUSH_SCRIPT = '<script src="./web-push.js?v=1"><\/script>';
 const VIEWMODE_SCRIPT = '<script src="./viewmode.js?v=1"><\/script>';
-const HEADER_CLEANUP_SCRIPT = '<script src="./header-cleanup.js?v=2"><\/script>';
+const HEADER_CLEANUP_SCRIPT = '<script src="./header-cleanup.js?v=3"><\/script>';
 const UNDO_SCRIPT = '<script src="./undo.js?v=1"><\/script>';
 const LIXEIRA_SCRIPT = '<script src="./lixeira.js?v=1"><\/script>';
 const INTEL_SCRIPT = '<script src="./agenda-intelligence.js?v=2"><\/script>';
