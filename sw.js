@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v168-view-roll-transition';
+const CACHE = 'agenda-lagares-v169-list-today-anchor';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=9"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
