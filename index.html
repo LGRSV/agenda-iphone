@@ -147,10 +147,10 @@
         const copy=filter==='work'?['Nada de trabalho por aqui','Tarefas com a tag Trabalho ou marcadas no horário de expediente aparecem nesta visão.']:filter==='open'?['Nada pendente','Você concluiu todas as tarefas cadastradas.']:filter==='done'?['Nada concluído ainda','As tarefas finalizadas aparecerão aqui.']:['Nenhuma tarefa agendada','Use o botão “Nova tarefa” para começar.'];
         el.viewContent.innerHTML=`<section class="view-shell">${heading}<div class="day-empty"><strong>${copy[0]}</strong><span>${copy[1]}</span></div></section>`;return;
       }
-      const groups=visible.reduce((map,task)=>{(map[task.date]??=[]).push(task);return map},{}),anchorDate=today();
+      const groups=visible.reduce((map,task)=>{(map[task.date]??=[]).push(task);return map},{}),anchorDate=selectedDate;
       groups[anchorDate]??=[];
       const dates=Object.keys(groups).sort();
-      const body=dates.map(date=>{const items=groups[date];return`<section class="group" id="list-date-${date}"><div class="group-title"><strong>${date===anchorDate?'Hoje · ':''}${fullDate(date)}</strong><span>${items.filter(t=>t.done).length}/${items.length}</span></div>${items.length?items.map(taskCard).join(''):'<p class="day-empty" style="padding:12px 5px">Sem tarefas para hoje.</p>'}</section>`}).join('');
+      const body=dates.map(date=>{const items=groups[date];return`<section class="group" id="list-date-${date}"><div class="group-title"><strong>${dateShort(date)}</strong><span>${items.filter(t=>t.done).length}/${items.length}</span></div>${items.length?items.map(taskCard).join(''):'<p class="day-empty" style="padding:12px 5px">Sem tarefas neste dia.</p>'}</section>`}).join('');
       el.viewContent.innerHTML=`<section class="view-shell">${heading}<div class="list-body">${body}</div></section>`;
       requestAnimationFrame(()=>document.getElementById(`list-date-${anchorDate}`)?.scrollIntoView({block:'start'}));
     }
