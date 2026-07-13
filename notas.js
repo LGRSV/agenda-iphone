@@ -13,7 +13,8 @@
   const NOTES_KEY = 'agenda_notas_v1';
   const STYLE_ID = 'notasStyles';
   const DURS = [15, 30, 45, 60, 90, 120];
-  const expanded = new Set();
+  let detailDialog = null;
+  let activePanel = null;
   let saveTimer = 0;
 
   const load = () => { try { const v = JSON.parse(localStorage.getItem(NOTES_KEY)); return v && typeof v === 'object' ? v : {}; } catch (_) { return {}; } };
@@ -98,6 +99,17 @@
       .notas-detail-row{display:flex;justify-content:flex-end;margin-top:7px}
       .notas-copy{padding:6px 13px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--accent);font-size:12px;font-weight:800}
       .notas-copy:active{transform:scale(.95)}
+      #notasDialog{width:min(calc(100% - 24px),520px);max-height:calc(100dvh - 24px);padding:0;overflow:hidden;border:1px solid var(--line);border-radius:23px;background:var(--surface);color:var(--text);box-shadow:0 28px 70px rgba(0,0,0,.52)}
+      #notasDialog::backdrop{background:rgba(0,0,0,.56);backdrop-filter:blur(3px)}
+      #notasDialog[open]{animation:notasDialogIn .24s cubic-bezier(.2,.85,.2,1) both}
+      .notas-modal{display:flex;flex-direction:column;max-height:calc(100dvh - 24px)}
+      .notas-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 16px 13px;border-bottom:1px solid var(--line);background:var(--soft)}
+      .notas-modal-head h3{min-width:0;margin:0;overflow:hidden;font-size:17px;letter-spacing:-.03em;white-space:nowrap;text-overflow:ellipsis}
+      .notas-modal-close{display:grid;place-items:center;width:32px;height:32px;flex:0 0 auto;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font-size:22px;line-height:1}
+      .notas-modal-content{overflow-y:auto;padding:12px 14px 16px;-webkit-overflow-scrolling:touch}
+      #notasDialog .notas-panel{margin:0;padding:0;border:0;border-radius:0;background:transparent}
+      @keyframes notasDialogIn{from{opacity:0;transform:scale(.82) translateY(14px)}to{opacity:1;transform:scale(1) translateY(0)}}
+      @media(prefers-reduced-motion:reduce){#notasDialog[open]{animation:none}}
     `;
     document.head.appendChild(s);
   }
@@ -217,10 +229,40 @@
     } else if (flag) { flag.remove(); }
   }
 
-  /* ---------------------------- expand/collapse ------------------------- */
-  function expand(id) { const card = cardFor(id); if (!card) return; buildPanel(card, id).hidden = false; expanded.add(id); }
-  function collapse(id) { const card = cardFor(id); const p = card && card.querySelector('.notas-panel'); if (p) p.hidden = true; expanded.delete(id); }
-  const toggle = id => (expanded.has(id) ? collapse(id) : expand(id));
+  /* ---------------------------- detalhes em pop-up ---------------------- */
+  function ensureDetailDialog() {
+    if (detailDialog) return detailDialog;
+    detailDialog = document.createElement('dialog');
+    detailDialog.id = 'notasDialog';
+    detailDialog.innerHTML = '<section class="notas-modal" aria-label="Detalhes da tarefa"><header class="notas-modal-head"><h3 id="notasDialogTitle">Detalhes da tarefa</h3><button class="notas-modal-close" type="button" aria-label="Fechar detalhes">×</button></header><div class="notas-modal-content"></div></section>';
+    document.body.appendChild(detailDialog);
+    detailDialog.querySelector('.notas-modal-close').addEventListener('click', () => detailDialog.close());
+    detailDialog.addEventListener('click', event => { if (event.target === detailDialog) detailDialog.close(); });
+    detailDialog.addEventListener('close', () => {
+      if (!activePanel) return;
+      saveFromPanel(activePanel);
+      const card = cardFor(activePanel.dataset.nid);
+      activePanel.hidden = true;
+      if (card) card.appendChild(activePanel);
+      activePanel = null;
+    });
+    return detailDialog;
+  }
+
+  function openDetails(id) {
+    const card = cardFor(id);
+    if (!card) return;
+    const dialog = ensureDetailDialog();
+    if (dialog.open) dialog.close();
+    const panel = buildPanel(card, id);
+    panel.hidden = false;
+    activePanel = panel;
+    dialog.querySelector('#notasDialogTitle').textContent = card.querySelector('.task-title')?.textContent || 'Detalhes da tarefa';
+    dialog.querySelector('.notas-modal-content').replaceChildren(panel);
+    dialog.showModal();
+  }
+
+  const toggle = id => openDetails(id);
 
   function installToggles() {
     document.querySelectorAll('.task-card').forEach(card => {
@@ -235,7 +277,6 @@
       b.innerHTML = NOTE_SVG;
       footer.appendChild(b);
       updateToggle(id);
-      if (expanded.has(id)) buildPanel(card, id).hidden = false;
     });
   }
 
