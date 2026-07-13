@@ -15,7 +15,7 @@
   var MN = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   var pd = x => String(x).padStart(2, '0');
   var dstr = d => d.getFullYear() + '-' + pd(d.getMonth() + 1) + '-' + pd(d.getDate());
-  function tasks() { try { var a = JSON.parse(localStorage.getItem('agenda_lagares_v3') || '[]'); return Array.isArray(a) ? a : []; } catch (_) { return []; } }
+  function tasks() { try { var a = JSON.parse(localStorage.getItem('agenda_lagares_v3') || '[]'), n = JSON.parse(localStorage.getItem('agenda_notas_v1') || '{}') || {}; return Array.isArray(a) ? a.filter(function (t) { var note = t && (n[String(t.id)] || n[t.id]); return !(t && t.tag === 'financeiro' && note && note.movimento === 'saida'); }) : []; } catch (_) { return []; } }
   var cur = null, ov = null;
 
   var ICON_EXPAND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"/></svg>';
