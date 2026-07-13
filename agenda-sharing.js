@@ -4,6 +4,9 @@
   const MODULE_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
   const CONFIG_KEY = 'agenda_supabase_config_v1';
   const TASK_KEY = 'agenda_lagares_v3';
+  const SHARE_RECIPIENTS = [
+    { id: 'ana-carolina', name: 'Ana Carolina', email: 'anacarolina.social123@gmail.com' }
+  ];
   let clientPromise;
   let selectedTaskId = '';
 
@@ -44,7 +47,8 @@
     if (!document.getElementById('agendaShareDialog')) {
       const dialog = document.createElement('dialog');
       dialog.id = 'agendaShareDialog';
-      dialog.innerHTML = `<form class="modal" id="agendaShareForm"><h3>Compartilhar tarefa</h3><p class="share-task-name" id="agendaShareTaskName"></p><p class="share-help">A pessoa verá uma cópia desta tarefa e poderá deixar comentários. Ela precisa já ter entrado na Agenda pelo menos uma vez.</p><label class="field-label" for="agendaShareEmail">E-mail da pessoa</label><input id="agendaShareEmail" type="email" inputmode="email" autocomplete="email" placeholder="pessoa@exemplo.com" required><p id="agendaShareStatus" class="share-help"></p><div class="actions"><button class="secondary" type="button" id="agendaShareCancel">Cancelar</button><button class="primary" type="submit">Compartilhar</button></div></form>`;
+      const recipientOptions = SHARE_RECIPIENTS.map(person => `<option value="${escape(person.id)}">${escape(person.name)} · ${escape(person.email)}</option>`).join('');
+      dialog.innerHTML = `<form class="modal" id="agendaShareForm"><h3>Compartilhar tarefa</h3><p class="share-task-name" id="agendaShareTaskName"></p><p class="share-help">Escolha quem pode acompanhar esta tarefa e deixar comentários.</p><label class="field-label" for="agendaShareRecipient">Compartilhar com</label><select id="agendaShareRecipient" required>${recipientOptions}</select><p id="agendaShareStatus" class="share-help"></p><div class="actions"><button class="secondary" type="button" id="agendaShareCancel">Cancelar</button><button class="primary" type="submit">Compartilhar</button></div></form>`;
       document.body.appendChild(dialog);
       dialog.querySelector('#agendaShareCancel').addEventListener('click', () => dialog.close());
       dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
@@ -67,7 +71,7 @@
     ensureDialogs();
     selectedTaskId = String(taskId);
     document.getElementById('agendaShareTaskName').textContent = task.text;
-    document.getElementById('agendaShareEmail').value = '';
+    document.getElementById('agendaShareRecipient').value = SHARE_RECIPIENTS[0]?.id || '';
     document.getElementById('agendaShareStatus').textContent = '';
     document.getElementById('agendaShareDialog').showModal();
   }
@@ -75,10 +79,11 @@
   async function submitShare(event) {
     event.preventDefault();
     const status = document.getElementById('agendaShareStatus');
-    const email = document.getElementById('agendaShareEmail').value.trim().toLowerCase();
+    const recipient = SHARE_RECIPIENTS.find(person => person.id === document.getElementById('agendaShareRecipient').value);
+    const email = String(recipient?.email || '').trim().toLowerCase();
     const task = taskById(selectedTaskId);
     if (!task || !email) return;
-    status.textContent = 'Compartilhando…';
+    status.textContent = `Compartilhando com ${recipient.name}…`;
     try {
       const sb = await getClient();
       const { data: sessionData, error: sessionError } = await sb.auth.getSession();
@@ -92,7 +97,7 @@
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.ok) throw new Error(result.error || 'Não foi possível compartilhar agora.');
       document.getElementById('agendaShareDialog').close();
-      toast('Tarefa compartilhada.');
+      toast(`Tarefa compartilhada com ${recipient.name}.`);
     } catch (error) { status.textContent = String(error?.message || error); }
   }
 
