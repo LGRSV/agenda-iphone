@@ -147,8 +147,8 @@
 
   const render = () => {
     const dialog = document.getElementById('painelDialog');
-    const body = document.getElementById('pgBody');
-    if (!dialog || !body) return;
+    const body = document.getElementById('gmPageBody') || document.getElementById('pgBody');
+    if (!body) return;
 
     const notes = readNotes();
     const tasks = readTasks().filter(t => t && t.text && !isFinRecord(t, notes));
@@ -160,13 +160,15 @@
     const ach = achievements(tasks, xp, streakDays, info.level);
     const pct = Math.min(100, Math.round(info.progress / info.need * 100));
 
-    dialog.classList.add(GAME_CLASS);
-    const eyebrow = dialog.querySelector('.pg-eyebrow');
-    const title = dialog.querySelector('.pg-head h3');
-    const sub = dialog.querySelector('#pgSub');
-    if (eyebrow) eyebrow.textContent = 'Indicadores';
-    if (title) title.textContent = 'Sua evolução';
-    if (sub) sub.textContent = 'Rotina transformada em progresso';
+    if (dialog) {
+      dialog.classList.add(GAME_CLASS);
+      const eyebrow = dialog.querySelector('.pg-eyebrow');
+      const title = dialog.querySelector('.pg-head h3');
+      const sub = dialog.querySelector('#pgSub');
+      if (eyebrow) eyebrow.textContent = 'Indicadores';
+      if (title) title.textContent = 'Sua evolução';
+      if (sub) sub.textContent = 'Rotina transformada em progresso';
+    }
 
     body.innerHTML = `
       <section class="gm-hero">
@@ -237,8 +239,13 @@
   const install = () => {
     ensureStyles();
     bindXpFeedback();
+    const pageBody = document.getElementById('gmPageBody');
+    if (pageBody && !pageBody.dataset.gameRendered) {
+      pageBody.dataset.gameRendered = '1';
+      render();
+    }
     const button = document.getElementById('painelBtn');
-    if (button && !button.dataset.gameBound) {
+    if (button && button.tagName === 'BUTTON' && !button.dataset.gameBound) {
       button.dataset.gameBound = '1';
       button.title = 'Indicadores e evolução';
       button.setAttribute('aria-label', 'Abrir indicadores e evolução');
