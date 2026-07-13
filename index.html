@@ -89,7 +89,10 @@
     function id(){return `${Date.now()}-${Math.random().toString(36).slice(2,9)}`}
     function tagKey(value){const v=String(value||'').trim().toLowerCase();if(TAGS[v])return v;if(/work|trabalho|energisa/.test(v))return'trabalho';if(/casa|home/.test(v))return'casa';if(/faculdade|college|estudo/.test(v))return'faculdade';if(/saúde|saude|health/.test(v))return'saude';if(/finance|dinheiro/.test(v))return'financeiro';if(/pessoal|personal/.test(v))return'pessoal';return'outros'}
     function normalise(item,index){if(!item||!item.text)return null;let date=item.date;if(!date&&item.day){const [d,m]=String(item.day).split('/').map(Number);if(d&&m)date=`2026-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}if(!/^\d{4}-\d{2}-\d{2}$/.test(String(date||'')))return null;const reminder=Number.isFinite(Number(item.reminder))?Number(item.reminder):Number.isFinite(Number(item.alert))?Number(item.alert):-1;return{id:String(item.id||`task-${index}-${id()}`),text:String(item.text),date:String(date),time:/^\d{2}:\d{2}$/.test(String(item.time||''))?String(item.time):'',tag:tagKey(item.tag||item.category||item.calendar),reminder,done:Boolean(item.done),flag:item.flag==='verificar'?'verificar':''}}
-    function loadTasks(){const hasReal=a=>Array.isArray(a)&&a.some(t=>t&&t.text&&!/^(?:🏋|Treino [ABC])/.test(t.text));const saved=json(localStorage.getItem(TASK_KEY));const savedArr=Array.isArray(saved)?saved.map(normalise).filter(Boolean):null;if(hasReal(savedArr))return savedArr;const treino=(savedArr||[]).filter(t=>/^(?:🏋|Treino [ABC])/.test(t.text||''));const merge=arr=>{const conv=arr.map(normalise).filter(Boolean);if(!conv.some(t=>!/^(?:🏋|Treino [ABC])/.test(t.text)))return null;const m=conv.concat(treino.filter(tt=>!conv.some(c=>c.id===tt.id)));localStorage.setItem(TASK_KEY,JSON.stringify(m));return m;};for(const key of['agenda_profissional_iphone_v1','agenda_tasks']){const old=json(localStorage.getItem(key));if(Array.isArray(old)){const r=merge(old);if(r)return r;}}const pre=json(localStorage.getItem('agenda_lagares_backup_pre_sync_v1'));if(pre&&Array.isArray(pre.tarefas)){const r=merge(pre.tarefas);if(r)return r;}return savedArr||seed}
+    function agendaUsername(){const profile=json(localStorage.getItem('agenda_app_profile_v1'))||{},config=json(localStorage.getItem('agenda_supabase_config_v1'))||{};return String(profile.username||config.username||'').trim().toLowerCase()}
+    function isPrimaryAgenda(){return !agendaUsername()||agendaUsername()==='jalms2'}
+    function prepareBlankWorkspace(){const config=json(localStorage.getItem('agenda_supabase_config_v1'))||{},owner=String(config.workspaceOwnerId||'');if(!owner||isPrimaryAgenda()||localStorage.getItem('agenda_local_workspace_owner_v1')===owner)return;const docs={agenda_lagares_v3:[],agenda_notas_v1:{},agenda_lagares_rules_v1:[],agenda_treino_logs_v1:{},agenda_treino_meta_v1:{},agenda_lagares_config_v1:{},agenda_lixeira_v1:[],agenda_historico_v1:[]};Object.entries(docs).forEach(([key,value])=>localStorage.setItem(key,JSON.stringify(value)));localStorage.setItem('agenda_local_workspace_owner_v1',owner)}
+    function loadTasks(){prepareBlankWorkspace();const hasReal=a=>Array.isArray(a)&&a.some(t=>t&&t.text&&!/^(?:🏋|Treino [ABC])/.test(t.text));const saved=json(localStorage.getItem(TASK_KEY));const savedArr=Array.isArray(saved)?saved.map(normalise).filter(Boolean):null;if(!isPrimaryAgenda())return savedArr||[];if(hasReal(savedArr))return savedArr;const treino=(savedArr||[]).filter(t=>/^(?:🏋|Treino [ABC])/.test(t.text||''));const merge=arr=>{const conv=arr.map(normalise).filter(Boolean);if(!conv.some(t=>!/^(?:🏋|Treino [ABC])/.test(t.text)))return null;const m=conv.concat(treino.filter(tt=>!conv.some(c=>c.id===tt.id)));localStorage.setItem(TASK_KEY,JSON.stringify(m));return m;};for(const key of['agenda_profissional_iphone_v1','agenda_tasks']){const old=json(localStorage.getItem(key));if(Array.isArray(old)){const r=merge(old);if(r)return r;}}const pre=json(localStorage.getItem('agenda_lagares_backup_pre_sync_v1'));if(pre&&Array.isArray(pre.tarefas)){const r=merge(pre.tarefas);if(r)return r;}return savedArr||seed}
     function save(){localStorage.setItem(TASK_KEY,JSON.stringify(tasks))}
     const RULES_KEY='agenda_lagares_rules_v1',RECUR_HORIZON=120,RECUR_REGEN=75;
     function loadRules(){const v=json(localStorage.getItem(RULES_KEY));return Array.isArray(v)?v:[]}
@@ -192,6 +195,7 @@
     /* seed pessoal v1: cardio de ontem (07/07) + expediente Energisa + compra Venvanse — roda 1x por aparelho, sem duplicar */
     (function seedPessoal(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v1'))return;
         let mudou=false;
         // 1) cardio feito em 07/07 (1h) que nao deu para marcar
@@ -216,6 +220,7 @@
     /* seed pessoal v2: rotina de 08/07 + pendencias (titulo curto, detalhe na caixinha) */
     (function seedPessoal2(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v2'))return;
         const novas=[
           {id:'sd2-janta',text:'Janta',date:'2026-07-08',time:'21:00',tag:'pessoal',reminder:-1,done:false},
@@ -252,6 +257,7 @@
     /* seed pessoal v3: anunciar iPhone 13 amanha (09/07) entre trabalho e academia; reagenda se ja estiver pendente em dia anterior */
     (function seedPessoal3(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v3'))return;
         let alvo=tasks.find(t=>!t.done&&/iphone/i.test(t.text)&&/anunc|vender|venda/i.test(t.text));
         if(alvo){ alvo.date='2026-07-09'; alvo.time='17:45'; }             // reagenda a pendente para amanha
@@ -275,6 +281,7 @@
     /* seed pessoal v4: conclui janta+lavagem; move renomear-repositorio p/ 09/07 06:00 (junto da academia); fechar orcamento 09:30-11:30 */
     (function seedPessoal4(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v4'))return;
         tasks.forEach(t=>{
           if(t.done)return;
@@ -298,6 +305,7 @@
     /* seed pessoal v5: lembrete Allan cabeleireiro (09/07 10:00) + conclui 'Secar e dobrar roupas' de 28/06 */
     (function seedPessoal5(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v5'))return;
         tasks.forEach(t=>{if(!t.done&&t.date==='2026-06-28'&&/secar e dobrar/i.test(t.text))t.done=true;});
         if(!tasks.some(t=>/allan/i.test(t.text)&&/cabele/i.test(t.text))){
@@ -315,6 +323,7 @@
     })();
     (function seedPessoal6(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v6'))return;
         const NK='agenda_notas_v1';
         const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
@@ -333,6 +342,7 @@
     })();
     (function seedPessoal7(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v7'))return;
         const NK='agenda_notas_v1';
         const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
@@ -347,6 +357,7 @@
     })();
     (function seedPessoal8(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v8'))return;
         const NK='agenda_notas_v1';
         const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
@@ -361,6 +372,7 @@
     })();
     (function seedPessoal9(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v9'))return;
         const NK='agenda_notas_v1';
         const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
@@ -385,6 +397,7 @@
     })();
     (function seedPessoal10(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v10'))return;
         const NK='agenda_notas_v1';
         const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
@@ -403,6 +416,7 @@
     })();
     (function seedPessoal11(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v11'))return;
         const NK='agenda_notas_v1';
         const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
@@ -417,6 +431,7 @@
     })();
     (function seedPessoal12(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v12'))return;
         const NK='agenda_notas_v1';
         const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
@@ -435,6 +450,7 @@
     })();
     (function seedPessoal13(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v13'))return;
         // Move as cobranças Lustosa/Fernanda de 11/07 06:00 -> sexta 10/07 08:00
         tasks.forEach(t=>{
@@ -446,6 +462,7 @@
     })();
     (function seedPessoal14(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v14'))return;
         const NK='agenda_notas_v1';
         const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
@@ -466,6 +483,7 @@
     })();
     (function seedPessoal15(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v15'))return;
         // Pitágoras: parcela 6 de 10 (5 pagas, 5 restantes)
         const NK='agenda_notas_v1';
@@ -483,6 +501,7 @@
     })();
     (function seedPessoal16(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v16'))return;
         tasks.forEach(t=>{if(t.id==='sd2-secar'&&!t.done)t.done=true;});
         save();
@@ -491,6 +510,7 @@
     })();
     (function seedPessoal17(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v17'))return;
         const NK='agenda_notas_v1';
         const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
@@ -505,6 +525,7 @@
     })();
     (function seedPessoal18(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v18'))return;
         if(!tasks.some(t=>t.id==='sd18-tenis'||(/lavar/i.test(t.text)&&/t[êe]nis/i.test(t.text)))){
           tasks.push({id:'sd18-tenis',text:'Lavar os tênis',date:'2026-07-11',time:'15:00',tag:'casa',reminder:0,done:false});
@@ -515,6 +536,7 @@
     })();
     (function seedPessoal19(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v19'))return;
         const NK='agenda_notas_v1';
         const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
@@ -529,6 +551,7 @@
     })();
     (function seedPessoal20(){
       try{
+        if(!isPrimaryAgenda())return;
         if(localStorage.getItem('agenda_seed_pessoal_v20'))return;
         const NK='agenda_notas_v1';
         const notas=JSON.parse(localStorage.getItem(NK)||'{}')||{};
@@ -1219,5 +1242,6 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
   <script src="./agenda-notas-rapidas.js?v=5"></script>
   <script src="./calendario-cheio.js?v=2"></script>
   <script src="./header-cleanup.js?v=3"></script>
+  <script src="./agenda-sharing.js?v=1"></script>
 </body>
 </html>
