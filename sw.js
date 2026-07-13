@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v174-details-popup-calendar-zoom';
+const CACHE = 'agenda-lagares-v175-black-theme-recipient-select';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=10"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -10,7 +10,7 @@ const SUPABASE_CONFIG_SCRIPT = '<script src="./supabase-project-config.js?v=1"><
 const SUPABASE_SCRIPT = '<script src="./supabase-shared-storage.js?v=1"><\/script>';
 const SUPABASE_LOGIN_SCRIPT = '<script src="./supabase-login-ui.js?v=3"><\/script>';
 const SIMPLE_ACCESS_SCRIPT = '<script src="./supabase-simple-access.js?v=4"><\/script>';
-const SHARING_SCRIPT = '<script src="./agenda-sharing.js?v=1"><\/script>';
+const SHARING_SCRIPT = '<script src="./agenda-sharing.js?v=2"><\/script>';
 const WEB_PUSH_SCRIPT = '<script src="./web-push.js?v=1"><\/script>';
 const VIEWMODE_SCRIPT = '<script src="./viewmode.js?v=1"><\/script>';
 const HEADER_CLEANUP_SCRIPT = '<script src="./header-cleanup.js?v=3"><\/script>';
