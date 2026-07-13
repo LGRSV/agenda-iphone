@@ -43,16 +43,6 @@
   </style>
 </head>
 <body>
-  <div id="agendaAuthVeil" role="status" aria-label="Verificando acesso"><div class="veil-box"><div class="veil-spin" aria-hidden="true"></div><p>Verificando seu acesso à Agenda…</p><button type="button" onclick="try{window.AgendaSupabaseLogin&&window.AgendaSupabaseLogin.open()}catch(e){};location.hash=''">Entrar</button></div></div>
-  <script>
-  /* Trava imediata (antes de qualquer dado pintar). Revela na hora se já há
-     sessão — sem depender de rede/CDN, então nunca tranca o dono pra fora. */
-  (function(){
-    function hasSession(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null');var s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return true;}}catch(_){}return false;}
-    if(hasSession()){var v=document.getElementById('agendaAuthVeil');if(v)v.parentNode.removeChild(v);}
-    else{document.documentElement.classList.add('agenda-locked');}
-  })();
-  </script>
   <main class="app">
     <header class="topbar">
       <div><span class="eyebrow">Organização pessoal</span><h1>Minha agenda</h1><p class="subhead" id="currentDate"></p></div>
