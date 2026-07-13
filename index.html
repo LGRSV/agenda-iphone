@@ -43,6 +43,14 @@
   </style>
 </head>
 <body>
+  <div id="agendaAuthVeil" role="status" aria-label="Carregando acesso"><div class="veil-box"><div class="veil-spin" aria-hidden="true"></div><p>Preparando seu acesso à Agenda…</p><button type="button" onclick="try{window.AgendaSupabaseLogin&&window.AgendaSupabaseLogin.open()}catch(_){}">Entrar</button></div></div>
+  <script>
+  (function(){
+    function hasSession(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null');var s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return true;}}catch(_){}return false;}
+    if(hasSession()){var v=document.getElementById('agendaAuthVeil');if(v)v.remove();}
+    else{document.documentElement.classList.add('agenda-locked');}
+  })();
+  </script>
   <main class="app">
     <header class="topbar">
       <div><span class="eyebrow">Organização pessoal</span><h1>Minha agenda</h1><p class="subhead" id="currentDate"></p></div>
@@ -1238,6 +1246,11 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
   <script src="./agenda-notas-rapidas.js?v=5"></script>
   <script src="./calendario-cheio.js?v=3"></script>
   <script src="./header-cleanup.js?v=3"></script>
+  <script src="./supabase-project-config.js?v=1"></script>
+  <script src="./supabase-shared-storage.js?v=1"></script>
+  <script src="./supabase-login-ui.js?v=3"></script>
+  <script src="./supabase-simple-access.js?v=4"></script>
+  <script src="./auth-gate.js?v=1"></script>
   <script src="./agenda-sharing.js?v=2"></script>
 </body>
 </html>
