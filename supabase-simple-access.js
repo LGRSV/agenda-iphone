@@ -58,6 +58,14 @@
     if (button) button.disabled = busy;
   };
 
+  const lockCloseWhenRequired = overlay => {
+    const close = overlay?.querySelector('#agendaLoginClose');
+    if (!close) return;
+    const locked = document.documentElement.classList.contains('agenda-locked');
+    close.hidden = locked;
+    close.style.display = locked ? 'none' : '';
+  };
+
   const build = overlay => {
     if (!overlay || overlay.dataset.simpleAccess === '4') return;
     overlay.dataset.simpleAccess = '4';
@@ -81,6 +89,7 @@
       document.documentElement.classList.remove('agenda-login-open');
       document.body.classList.remove('agenda-login-open');
     });
+    lockCloseWhenRequired(overlay);
 
     overlay.querySelector('#agendaSimpleForm').addEventListener('submit', async event => {
       event.preventDefault();
@@ -148,7 +157,7 @@
 
   const install = () => {
     const overlay = document.getElementById(OVERLAY_ID);
-    if (overlay) build(overlay);
+    if (overlay) { build(overlay); lockCloseWhenRequired(overlay); }
   };
 
   new MutationObserver(install).observe(document.documentElement, { childList: true, subtree: true });
