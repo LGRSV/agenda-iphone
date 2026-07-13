@@ -708,12 +708,15 @@
       isOpen=!isOpen;panel.classList.toggle('open',isOpen);btn.classList.toggle('pulse',!isOpen);
       if(isOpen&&!msgs.children.length){
         if(jarvisBriefed){
-          // Já cumprimentou por voz ao abrir a Agenda — não repete a saudação.
+          // Já entregou o briefing nesta sessão — não repete.
           addMsg('bot','Pois não, Lagares. Em que posso ajudar?');
         }else{
+          // Primeira abertura: entrega o briefing do dia e fala (só ao tocar no ícone).
+          // Usa o cache pré-carregado no primeiro toque; senão calcula na hora.
           jarvisBriefed=true;
-          const h=new Date().getHours(),g=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
-          addMsg('bot',`${g}, Lagares. J.A.R.V.I.S online. ${todayPhrase()} Como posso ajudar?`);
+          const brief=briefingCache||agendaBriefing();
+          addMsg('bot',brief+'Como posso ajudar?');
+          if(voiceOn)speak(brief);
         }
       }
     }
@@ -946,7 +949,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       browserSpeak(t);
     }
 
-    let jarvisBriefed=false;
+    let jarvisBriefed=false,briefingCache='';
     function isTreino(t){const x=t.text||'';return /^(?:🏋|Treino [ABC])/.test(x)||/^Treino [ABC]\b/.test(x);} // ignora os cards de treino no briefing
     function todayPhrase(){
       const n=new Date(),iso=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
@@ -966,9 +969,16 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       const h=new Date().getHours(),g=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
       return `${g}, Lagares. J.A.R.V.I.S online. ${todayPhrase()} `;
     }
-    function fireBriefing(){if(jarvisBriefed||!voiceOn)return;jarvisBriefed=true;unlockTTS();speak(agendaBriefing());}
-    document.addEventListener('pointerdown',fireBriefing,{once:true});
-    document.addEventListener('touchend',fireBriefing,{once:true});
+    // O J.A.R.V.I.S NÃO fala mais sozinho ao abrir a Agenda. No primeiro toque
+    // (gesto do usuário) apenas PRÉ-AQUECEMOS a voz e já deixamos o briefing do
+    // dia pronto em cache — assim a primeira fala sai rápida quando ele tocar
+    // no ícone. A fala do briefing acontece só em togglePanel (ao abrir).
+    function prewarmJarvis(){
+      unlockTTS();                 // destrava o áudio e monta o modulador de voz
+      try{ briefingCache=agendaBriefing(); }catch(_){}   // pendências do dia já prontas
+    }
+    document.addEventListener('pointerdown',prewarmJarvis,{once:true});
+    document.addEventListener('touchend',prewarmJarvis,{once:true});
 
     function extractJson(t){
       const s=t.indexOf('{');
