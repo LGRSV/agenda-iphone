@@ -29,6 +29,38 @@
     #agendaAuthVeil button{min-height:46px;padding:0 20px;border:1px solid #56c2fa;border-radius:14px;background:linear-gradient(135deg,#5ec7fb,#42aee9);color:#081018;font-size:15px;font-weight:800}
     html.agenda-locked{overflow:hidden}
   </style>
+  <style id="agendaQuickActionsStyle">
+    /* Card com ações rápidas: relógio (reagendar) + arrastar p/ esquerda (lixeira). */
+    .task-card{position:relative;overflow:hidden;border-top:1px solid var(--line)}
+    .task-card:first-child{border-top:0}
+    .task-swipe{display:flex;align-items:flex-start;gap:10px;padding:12px 5px;background:var(--surface);position:relative;z-index:1;transition:transform .22s cubic-bezier(.4,0,.2,1);will-change:transform}
+    .task-swipe>.task-main{flex:1 1 auto;min-width:0}
+    .task-swipe>.check,.task-swipe>.reschedule,.task-swipe>.agenda-edit{flex:0 0 auto}
+    .task-swipe>.reschedule,.task-swipe>.agenda-edit{margin-top:-1px}
+    .task-card.swiping .task-swipe{transition:none}
+    .task-card.swiped .task-swipe{transform:translateX(-78px)}
+    .reschedule{padding:2px;border:0;border-radius:8px;background:transparent;color:var(--faint);display:grid;place-items:center;line-height:0}
+    .reschedule svg{width:20px;height:20px}
+    .reschedule:active{background:var(--soft2);color:var(--accent)}
+    .task-del{position:absolute;top:0;right:0;bottom:0;width:78px;display:grid;place-items:center;border:0;background:var(--danger,#e5484d);color:#fff;z-index:0}
+    .task-del svg{width:23px;height:23px}
+    /* Popup de reagendar — quadradinho que surge (não cobre a tela). */
+    #reschedBack{position:fixed;inset:0;z-index:399;background:transparent;display:none}
+    #reschedBack.open{display:block}
+    #reschedPop{position:fixed;z-index:400;width:min(90vw,270px);padding:15px;border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--text);box-shadow:0 26px 64px rgba(0,0,0,.5);transform:scale(.4);opacity:0;transform-origin:top right;transition:transform .19s cubic-bezier(.34,1.56,.64,1),opacity .13s ease;pointer-events:none}
+    #reschedPop.open{transform:scale(1);opacity:1;pointer-events:auto}
+    #reschedPop h4{margin:0 0 3px;font-size:15px;letter-spacing:-.03em}
+    #reschedPop .rp-task{margin:0 0 11px;color:var(--muted);font-size:12px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    #reschedPop .rp-quick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px}
+    #reschedPop .rp-quick button{flex:1 1 auto;min-height:36px;padding:0 8px;border:1px solid var(--line);border-radius:11px;background:var(--soft);color:var(--text);font-size:12px;font-weight:800}
+    #reschedPop .rp-quick button:active{transform:scale(.95)}
+    #reschedPop .rp-fields{display:grid;grid-template-columns:1fr .72fr;gap:8px;margin-bottom:13px}
+    #reschedPop .rp-fields input{min-height:44px;font-size:15px}
+    #reschedPop .rp-actions{display:flex;justify-content:flex-end;gap:8px}
+    #reschedPop .rp-actions button{padding:9px 14px;border-radius:12px;font-size:13px;font-weight:800}
+    #reschedPop .rp-cancel{border:1px solid var(--line);background:var(--soft);color:var(--text)}
+    #reschedPop .rp-save{border:1px solid var(--accent);background:var(--accent);color:var(--accentInk)}
+  </style>
 </head>
 <body>
   <div id="agendaAuthVeil" role="status" aria-label="Verificando acesso"><div class="veil-box"><div class="veil-spin" aria-hidden="true"></div><p>Verificando seu acesso à Agenda…</p><button type="button" onclick="try{window.AgendaSupabaseLogin&&window.AgendaSupabaseLogin.open()}catch(e){};location.hash=''">Entrar</button></div></div>
@@ -107,14 +139,25 @@
       const t=task.time;
       return (t>='07:30'&&t<='11:30')||(t>='13:30'&&t<='17:30');
     }
+    // Lançamentos feitos no painel financeiro (nota com movimento entrada/saída)
+    // são registros de dinheiro, não tarefas — ficam FORA da agenda (diária,
+    // mensal e lista). Continuam existindo só no painel financeiro.
+    let financeSet=new Set();
+    function refreshFinanceSet(){
+      financeSet=new Set();
+      try{const n=JSON.parse(localStorage.getItem('agenda_notas_v1')||'{}')||{};for(const id in n){const m=n[id]&&n[id].movimento;if(m==='entrada'||m==='saida')financeSet.add(String(id));}}catch(_){}
+    }
     function matches(task){
+      if(financeSet.has(String(task.id)))return false;
       if(filter==='work')return task.tag==='trabalho'||inExpediente(task);
       return filter==='all'||(filter==='open'?!task.done:task.done);
     }
     function tasksOn(date){return tasks.filter(task=>task.date===date&&matches(task)).sort(taskSort)}
-    function renderSummary(){const monthPrefix=today().slice(0,7);const monthTasks=tasks.filter(t=>String(t.date||'').startsWith(monthPrefix));const total=monthTasks.length,done=monthTasks.filter(t=>t.done).length,pct=total?Math.round(done/total*100):0;el.progressText.innerHTML=`${done}<small>/${total}</small>`;el.progressBar.style.width=`${pct}%`;el.progressMessage.textContent=total===0?'Nenhuma tarefa neste mês.':done===total?'Tudo concluído. Excelente trabalho!':`${pct}% das tarefas concluídas.`}
+    function renderSummary(){const monthPrefix=today().slice(0,7);const monthTasks=tasks.filter(t=>!financeSet.has(String(t.id))&&String(t.date||'').startsWith(monthPrefix));const total=monthTasks.length,done=monthTasks.filter(t=>t.done).length,pct=total?Math.round(done/total*100):0;el.progressText.innerHTML=`${done}<small>/${total}</small>`;el.progressBar.style.width=`${pct}%`;el.progressMessage.textContent=total===0?'Nenhuma tarefa neste mês.':done===total?'Tudo concluído. Excelente trabalho!':`${pct}% das tarefas concluídas.`}
     const BELL_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>';
-    function taskCard(task){const meta=[task.time,task.time&&task.reminder>=0?`${BELL_SVG}${reminderLabel(task.reminder)}`:''].filter(Boolean).join(' · ');return`<article class="task-card ${task.done?'done':''}"><input class="check" type="checkbox" data-action="toggle" data-id="${task.id}" aria-label="Concluir tarefa" ${task.done?'checked':''}><div class="task-main"><span class="task-title">${esc(task.text)}</span><div class="task-footer">${tagPill(task.tag)}${task.flag==='verificar'?'<span class="verify-pill">Verificar</span>':''}${meta?`<span class="task-time">${meta}</span>`:''}</div></div><button class="delete" type="button" data-action="delete" data-id="${task.id}" aria-label="Excluir tarefa">×</button></article>`}
+    const CLOCK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 1.9"/></svg>';
+    const TRASH_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M10 11v6M14 11v6"/></svg>';
+    function taskCard(task){const meta=[task.time,task.time&&task.reminder>=0?`${BELL_SVG}${reminderLabel(task.reminder)}`:''].filter(Boolean).join(' · ');return`<article class="task-card ${task.done?'done':''}" data-id="${task.id}"><div class="task-swipe"><input class="check" type="checkbox" data-action="toggle" data-id="${task.id}" aria-label="Concluir tarefa" ${task.done?'checked':''}><div class="task-main"><span class="task-title">${esc(task.text)}</span><div class="task-footer">${tagPill(task.tag)}${task.flag==='verificar'?'<span class="verify-pill">Verificar</span>':''}${meta?`<span class="task-time">${meta}</span>`:''}</div></div><button class="reschedule" type="button" data-action="reschedule" data-id="${task.id}" aria-label="Reagendar">${CLOCK_SVG}</button></div><button class="task-del" type="button" data-action="swipe-delete" data-id="${task.id}" aria-label="Apagar">${TRASH_SVG}</button></article>`}
     function toolbar(title,sub,prev,next,todayButton){return`<header class="toolbar"><button class="nav-btn" type="button" data-shift="${prev}" aria-label="Anterior">‹</button><div class="toolbar-title">${title}${sub?`<small>${sub}</small>`:''}</div>${todayButton?`<button class="today-btn" type="button" data-today="1">Hoje</button>`:`<button class="nav-btn" type="button" data-shift="${next}" aria-label="Próximo">›</button>`}</header>`}
     function renderDay(){const list=tasksOn(selectedDate);const subtitle=selectedDate===today()?'Hoje':dateShort(selectedDate);const header=`<header class="toolbar"><button class="nav-btn" type="button" data-day-shift="-1" aria-label="Dia anterior">‹</button><div class="toolbar-title day-pick"><label>${fullDate(selectedDate)} ▾<small>${subtitle}</small><input type="date" class="day-pick-input" value="${selectedDate}" aria-label="Escolher data"></label></div><button class="nav-btn" type="button" data-day-shift="1" aria-label="Próximo dia">›</button></header>`;const body=list.length?`<div class="day-content">${list.map(taskCard).join('')}</div>`:`<div class="day-empty"><strong>Nenhuma tarefa neste dia</strong><span>Use “Nova tarefa” para preencher sua agenda.</span></div>`;el.viewContent.innerHTML=`<section class="view-shell">${header}${body}</section>`}
     function renderMonth(){const year=monthCursor.getFullYear(),month=monthCursor.getMonth();const first=new Date(year,month,1,12),start=new Date(year,month,1-first.getDay(),12);const cells=[];for(let index=0;index<42;index++){const day=new Date(start);day.setDate(start.getDate()+index);const key=iso(day),items=tasksOn(key),unique=[...new Set(items.map(t=>t.tag))],shown=unique.slice(0,2);const chips=shown.map(tag=>{const meta=tagMeta(tag);return`<span class="calendar-tag" style="--tag:${meta.color}">${meta.label}</span>`}).join('');const more=items.length>shown.length?`<span class="calendar-more">+${items.length-shown.length}</span>`:'';const classes=['calendar-day',day.getMonth()===month?'current':'outside',key===selectedDate?'selected':'',key===today()?'today':''].filter(Boolean).join(' ');cells.push(`<button class="${classes}" type="button" data-calendar-date="${key}" aria-label="Abrir ${key}"><span class="day-number">${day.getDate()}</span><span class="calendar-tags">${chips}${more}</span></button>`)}const legend=Object.entries(TAGS).map(([key,meta])=>`<span class="tag-pill" style="--tag:${meta.color}">${meta.label}</span>`).join('');const header=`<header class="toolbar"><button class="nav-btn" type="button" data-month-shift="-1" aria-label="Mês anterior">‹</button><div class="toolbar-title">${monthName(monthCursor)}<small>Toque em um dia para abrir a agenda diária</small></div><button class="nav-btn" type="button" data-month-shift="1" aria-label="Próximo mês">›</button></header>`;el.viewContent.innerHTML=`<section class="view-shell">${header}<div class="month-grid-wrap"><div class="week-labels"><span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span></div><div class="month-grid">${cells.join('')}</div></div><footer class="calendar-legend">${legend}</footer></section>`}
@@ -132,7 +175,7 @@
       const more=rest>0?`<button class="list-more" type="button" data-action="load-more">Mostrar mais ${Math.min(60,rest)} tarefas <small>(${rest} restantes)</small></button>`:'';
       el.viewContent.innerHTML=`<section class="view-shell">${heading}<div class="list-body">${body}${more}</div></section>`;
     }
-    function render(){renderSummary();document.querySelectorAll('[data-view]').forEach(button=>button.classList.toggle('active',button.dataset.view===view));document.querySelectorAll('[data-filter]').forEach(button=>button.classList.toggle('active',button.dataset.filter===filter));if(view==='day')renderDay();else if(view==='month')renderMonth();else renderList()}
+    function render(){refreshFinanceSet();renderSummary();document.querySelectorAll('[data-view]').forEach(button=>button.classList.toggle('active',button.dataset.view===view));document.querySelectorAll('[data-filter]').forEach(button=>button.classList.toggle('active',button.dataset.filter===filter));if(view==='day')renderDay();else if(view==='month')renderMonth();else renderList()}
     function toggleTask(taskId){
       const task=tasks.find(t=>t.id===taskId);if(!task)return;
       task.done=!task.done;
@@ -549,9 +592,69 @@
     (function(){function wire(){const b=document.getElementById('app-update');if(b&&!b.dataset.wired){b.dataset.wired='1';b.addEventListener('click',appForceUpdate);}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();})();
     el.themeToggle.addEventListener('click',()=>applyTheme(el.root.dataset.theme==='dark'?'light':'dark'));el.alertsBtn.addEventListener('click',()=>{updateAlertsStatus();el.alertsDialog.showModal()});$('#closeAlertsDialog').addEventListener('click',()=>el.alertsDialog.close());$('#activateAlerts').addEventListener('click',activateAlerts);$('#exportCalendar').addEventListener('click',exportCalendar);$('#openDialog').addEventListener('click',openTaskForm);$('#closeTaskDialog').addEventListener('click',()=>el.taskDialog.close());
     el.viewTabs.addEventListener('click',event=>{const button=event.target.closest('[data-view]');if(!button)return;view=button.dataset.view;render()});el.filters.addEventListener('click',event=>{const button=event.target.closest('[data-filter]');if(!button)return;filter=button.dataset.filter;render()});
-    el.viewContent.addEventListener('click',event=>{const del=event.target.closest('[data-action="delete"]');if(del){deleteTask(del.dataset.id);return}const dayNav=event.target.closest('[data-day-shift]');if(dayNav){moveDay(Number(dayNav.dataset.dayShift));return}const monthNav=event.target.closest('[data-month-shift]');if(monthNav){moveMonth(Number(monthNav.dataset.monthShift));return}const cell=event.target.closest('[data-calendar-date]');if(cell){selectedDate=cell.dataset.calendarDate;monthCursor=dateAtNoon(selectedDate);view='day';render();return}const loadMore=event.target.closest('[data-action="load-more"]');if(loadMore){listLimit+=60;render();return}const clear=event.target.closest('#clearDone');if(clear){const doneList=tasks.filter(t=>t.done);const count=doneList.length;if(!count)return;if(!confirm('Limpar '+count+' tarefa'+(count>1?'s':'')+' concluída'+(count>1?'s':'')+'?\n\nVão para a lixeira.'))return;doneList.forEach(trashPush);tasks=tasks.filter(t=>!t.done);save();render();showToast(`${count} tarefa${count>1?'s':''} na lixeira`)}});el.viewContent.addEventListener('change',event=>{if(event.target.matches('[data-action="toggle"]')){toggleTask(event.target.dataset.id);return}if(event.target.classList.contains('day-pick-input')){const v=event.target.value;if(/^\d{4}-\d{2}-\d{2}$/.test(v)){selectedDate=v;monthCursor=dateAtNoon(v);render()}}});
+    el.viewContent.addEventListener('click',event=>{const rs=event.target.closest('[data-action="reschedule"]');if(rs){openReschedule(rs.dataset.id,rs);return}const sdel=event.target.closest('[data-action="swipe-delete"]');if(sdel){deleteTask(sdel.dataset.id);return}const del=event.target.closest('[data-action="delete"]');if(del){deleteTask(del.dataset.id);return}const dayNav=event.target.closest('[data-day-shift]');if(dayNav){moveDay(Number(dayNav.dataset.dayShift));return}const monthNav=event.target.closest('[data-month-shift]');if(monthNav){moveMonth(Number(monthNav.dataset.monthShift));return}const cell=event.target.closest('[data-calendar-date]');if(cell){selectedDate=cell.dataset.calendarDate;monthCursor=dateAtNoon(selectedDate);view='day';render();return}const loadMore=event.target.closest('[data-action="load-more"]');if(loadMore){listLimit+=60;render();return}const clear=event.target.closest('#clearDone');if(clear){const doneList=tasks.filter(t=>t.done);const count=doneList.length;if(!count)return;if(!confirm('Limpar '+count+' tarefa'+(count>1?'s':'')+' concluída'+(count>1?'s':'')+'?\n\nVão para a lixeira.'))return;doneList.forEach(trashPush);tasks=tasks.filter(t=>!t.done);save();render();showToast(`${count} tarefa${count>1?'s':''} na lixeira`)}});el.viewContent.addEventListener('change',event=>{if(event.target.matches('[data-action="toggle"]')){toggleTask(event.target.dataset.id);return}if(event.target.classList.contains('day-pick-input')){const v=event.target.value;if(/^\d{4}-\d{2}-\d{2}$/.test(v)){selectedDate=v;monthCursor=dateAtNoon(v);render()}}});
     el.taskForm.addEventListener('submit',event=>{event.preventDefault();const text=el.taskText.value.trim(),date=el.taskDate.value,time=el.taskTime.value,reminder=time?Number(el.taskReminder.value):-1;if(!text||!date)return;const repeat=el.taskRepeat?el.taskRepeat.value:'none',tag=tagKey(el.taskTag.value);if(repeat&&repeat!=='none'){const rules=loadRules();rules.push({id:id(),text,time,tag,reminder,freq:repeat,start:date,until:''});saveRules(rules);topUpRecurring();}else{tasks.push({id:id(),text,date,time,tag,reminder,done:false});save();}selectedDate=date;monthCursor=dateAtNoon(date);view='day';el.taskDialog.close();render();showToast(repeat&&repeat!=='none'?'Tarefa recorrente criada':(time&&reminder>=0?'Tarefa adicionada com lembrete':'Nova tarefa adicionada'))});
 
+    /* ---- Reagendar rápido (popup que surge, sem cobrir a tela) ---- */
+    let reschedId=null;
+    function ensureReschedUI(){
+      if(document.getElementById('reschedBack'))return;
+      const back=document.createElement('div');back.id='reschedBack';
+      const pop=document.createElement('div');pop.id='reschedPop';pop.setAttribute('role','dialog');pop.setAttribute('aria-label','Reagendar tarefa');
+      pop.innerHTML='<h4>Reagendar</h4><p class="rp-task" id="rpTask"></p>'+
+        '<div class="rp-quick"><button type="button" data-rq="today">Hoje</button><button type="button" data-rq="tomorrow">Amanhã</button><button type="button" data-rq="week">+7 dias</button></div>'+
+        '<div class="rp-fields"><input type="date" id="rpDate" aria-label="Nova data"><input type="time" id="rpTime" aria-label="Novo horário"></div>'+
+        '<div class="rp-actions"><button type="button" class="rp-cancel" id="rpCancel">Cancelar</button><button type="button" class="rp-save" id="rpSave">Salvar</button></div>';
+      document.body.appendChild(back);document.body.appendChild(pop);
+      back.addEventListener('click',closeReschedule);
+      pop.querySelector('#rpCancel').addEventListener('click',closeReschedule);
+      pop.querySelectorAll('.rp-quick button').forEach(b=>b.addEventListener('click',()=>{const base=today();document.getElementById('rpDate').value=b.dataset.rq==='today'?base:b.dataset.rq==='tomorrow'?addDaysStr(base,1):addDaysStr(base,7);}));
+      pop.querySelector('#rpSave').addEventListener('click',saveReschedule);
+    }
+    function openReschedule(id,anchor){
+      ensureReschedUI();
+      const t=tasks.find(x=>String(x.id)===String(id));if(!t)return;
+      reschedId=id;
+      const pop=document.getElementById('reschedPop'),back=document.getElementById('reschedBack');
+      document.getElementById('rpTask').textContent=t.text;
+      document.getElementById('rpDate').value=/^\d{4}-\d{2}-\d{2}$/.test(t.date||'')?t.date:today();
+      document.getElementById('rpTime').value=/^\d{2}:\d{2}$/.test(t.time||'')?t.time:'';
+      const r=anchor&&anchor.getBoundingClientRect?anchor.getBoundingClientRect():{right:window.innerWidth-16,bottom:120,top:80};
+      pop.style.left='auto';pop.style.right=Math.max(10,window.innerWidth-r.right)+'px';
+      pop.style.top='0px';
+      back.classList.add('open');pop.classList.add('open');
+      // clampa o popup INTEIRO dentro da tela (evita o botão Salvar sair embaixo)
+      const ph=pop.offsetHeight;let top=r.bottom+8;top=Math.min(top,window.innerHeight-ph-12);top=Math.max(12,top);
+      pop.style.top=top+'px';
+    }
+    function closeReschedule(){const pop=document.getElementById('reschedPop'),back=document.getElementById('reschedBack');if(pop)pop.classList.remove('open');if(back)back.classList.remove('open');reschedId=null;}
+    function saveReschedule(){
+      if(!reschedId)return;const t=tasks.find(x=>String(x.id)===String(reschedId));if(!t){closeReschedule();return;}
+      const d=document.getElementById('rpDate').value,tm=document.getElementById('rpTime').value;
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){showToast('Escolha uma data válida.');return;}
+      t.date=d;t.time=/^\d{2}:\d{2}$/.test(tm)?tm:'';save();closeReschedule();render();showToast('Reagendada para '+dateShort(d)+(t.time?' '+t.time:''));
+    }
+    /* ---- Arrastar o card p/ a esquerda revela a lixeira ---- */
+    (function initSwipe(){
+      let active=null,startX=0,startY=0,dx=0,decided=false,horiz=false;const OPEN=-78;
+      function closeAllSwiped(except){el.viewContent.querySelectorAll('.task-card.swiped').forEach(c=>{if(c!==except)c.classList.remove('swiped');});}
+      el.viewContent.addEventListener('pointerdown',e=>{
+        const card=e.target.closest('.task-card');
+        if(!card||e.target.closest('.reschedule,.check,.task-del')){active=null;return;}
+        active=card;startX=e.clientX;startY=e.clientY;dx=0;decided=false;horiz=false;
+      },{passive:true});
+      el.viewContent.addEventListener('pointermove',e=>{
+        if(!active)return;const mx=e.clientX-startX,my=e.clientY-startY;
+        if(!decided){if(Math.abs(mx)>8||Math.abs(my)>8){decided=true;horiz=Math.abs(mx)>Math.abs(my);if(horiz){active.classList.add('swiping');closeAllSwiped(active);}}else return;}
+        if(!horiz)return;e.preventDefault();
+        const base=active.classList.contains('swiped')?OPEN:0;dx=Math.max(OPEN,Math.min(0,base+mx));
+        const sw=active.querySelector('.task-swipe');if(sw)sw.style.transform='translateX('+dx+'px)';
+      },{passive:false});
+      function endSwipe(){if(!active)return;const card=active,wasHoriz=horiz,fdx=dx;active=null;card.classList.remove('swiping');const sw=card.querySelector('.task-swipe');if(sw)sw.style.transform='';if(wasHoriz)card.classList.toggle('swiped',fdx<OPEN/2);}
+      el.viewContent.addEventListener('pointerup',endSwipe);
+      el.viewContent.addEventListener('pointercancel',endSwipe);
+      document.addEventListener('pointerdown',e=>{if(!e.target.closest('.task-card.swiped')&&!e.target.closest('#reschedPop'))closeAllSwiped(null);},{passive:true});
+    })();
     window.AgendaAPI={
       addTask(o){o=o||{};const text=String(o.text||'').trim();const date=String(o.date||'');if(!text||!/^\d{4}-\d{2}-\d{2}$/.test(date))return false;const time=/^\d{2}:\d{2}$/.test(String(o.time||''))?String(o.time):'';tasks.push({id:id(),text,date,time,tag:tagKey(o.tag||'pessoal'),reminder:time?15:-1,done:false});save();render();showToast('Jarvis adicionou: '+text);return true},
       completeTask(query){const q=String(query||'').toLowerCase().trim();if(!q)return false;const t=tasks.find(t=>!t.done&&t.text.toLowerCase().includes(q));if(!t)return false;t.done=true;save();render();showToast('Jarvis concluiu: '+t.text);return t.text},
