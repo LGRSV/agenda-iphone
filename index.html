@@ -93,6 +93,11 @@
     function prepareBlankWorkspace(){const config=json(localStorage.getItem('agenda_supabase_config_v1'))||{},owner=String(config.workspaceOwnerId||'');if(!owner||isPrimaryAgenda()||localStorage.getItem('agenda_local_workspace_owner_v1')===owner)return;const docs={agenda_lagares_v3:[],agenda_notas_v1:{},agenda_lagares_rules_v1:[],agenda_treino_logs_v1:{},agenda_treino_meta_v1:{},agenda_lagares_config_v1:{},agenda_lixeira_v1:[],agenda_historico_v1:[]};Object.entries(docs).forEach(([key,value])=>localStorage.setItem(key,JSON.stringify(value)));localStorage.setItem('agenda_local_workspace_owner_v1',owner)}
     function loadTasks(){prepareBlankWorkspace();const hasReal=a=>Array.isArray(a)&&a.some(t=>t&&t.text&&!/^(?:🏋|Treino [ABC])/.test(t.text));const saved=json(localStorage.getItem(TASK_KEY));const savedArr=Array.isArray(saved)?saved.map(normalise).filter(Boolean):null;if(!isPrimaryAgenda())return savedArr||[];if(hasReal(savedArr))return savedArr;const treino=(savedArr||[]).filter(t=>/^(?:🏋|Treino [ABC])/.test(t.text||''));const merge=arr=>{const conv=arr.map(normalise).filter(Boolean);if(!conv.some(t=>!/^(?:🏋|Treino [ABC])/.test(t.text)))return null;const m=conv.concat(treino.filter(tt=>!conv.some(c=>c.id===tt.id)));localStorage.setItem(TASK_KEY,JSON.stringify(m));return m;};for(const key of['agenda_profissional_iphone_v1','agenda_tasks']){const old=json(localStorage.getItem(key));if(Array.isArray(old)){const r=merge(old);if(r)return r;}}const pre=json(localStorage.getItem('agenda_lagares_backup_pre_sync_v1'));if(pre&&Array.isArray(pre.tarefas)){const r=merge(pre.tarefas);if(r)return r;}return savedArr||seed}
     function save(){localStorage.setItem(TASK_KEY,JSON.stringify(tasks))}
+    let remoteSyncRenderTimer=0;
+    window.addEventListener('agenda:remote-sync',()=>{
+      clearTimeout(remoteSyncRenderTimer);
+      remoteSyncRenderTimer=setTimeout(()=>{try{tasks=loadTasks();render()}catch(_){}},60);
+    });
     const RULES_KEY='agenda_lagares_rules_v1',RECUR_HORIZON=120,RECUR_REGEN=75;
     function loadRules(){const v=json(localStorage.getItem(RULES_KEY));return Array.isArray(v)?v:[]}
     function saveRules(r){localStorage.setItem(RULES_KEY,JSON.stringify(r))}
@@ -1247,7 +1252,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
   <script src="./calendario-cheio.js?v=3"></script>
   <script src="./header-cleanup.js?v=3"></script>
   <script src="./supabase-project-config.js?v=1"></script>
-  <script src="./supabase-shared-storage.js?v=2"></script>
+  <script src="./supabase-shared-storage.js?v=3"></script>
   <script src="./supabase-login-ui.js?v=3"></script>
   <script src="./supabase-simple-access.js?v=5"></script>
   <script src="./auth-gate.js?v=1"></script>
