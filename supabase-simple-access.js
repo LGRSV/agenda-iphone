@@ -59,17 +59,17 @@
   };
 
   const build = overlay => {
-    if (!overlay || overlay.dataset.simpleAccess === '3') return;
-    overlay.dataset.simpleAccess = '3';
+    if (!overlay || overlay.dataset.simpleAccess === '4') return;
+    overlay.dataset.simpleAccess = '4';
 
-    const saved = readJson(PROFILE_KEY, { username: 'jalms2', email: '' });
+    const saved = readJson(PROFILE_KEY, { username: '', email: '' });
     overlay.innerHTML = `
       <button class="close" id="agendaLoginClose" type="button" aria-label="Fechar">×</button>
       <form class="login-shell" id="agendaSimpleForm" novalidate>
         <div class="login-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M8 13l2.6 2.6L16.5 10"/></svg></div>
         <h2>Acessar Agenda</h2>
         <p class="intro">Use o mesmo usuário e e-mail em cada aparelho para abrir a mesma agenda.</p>
-        <div class="field"><label for="agendaSimpleUsername">Usuário</label><input id="agendaSimpleUsername" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" value="${String(saved.username || 'jalms2').replace(/"/g, '&quot;')}" placeholder="jalms2" required></div>
+        <div class="field"><label for="agendaSimpleUsername">Usuário</label><input id="agendaSimpleUsername" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" value="${String(saved.username || '').replace(/"/g, '&quot;')}" placeholder="seuusuario" required></div>
         <div class="field"><label for="agendaSimpleEmail">E-mail</label><input id="agendaSimpleEmail" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" value="${String(saved.email || '').replace(/"/g, '&quot;')}" placeholder="seuemail@exemplo.com" required></div>
         <div id="agendaSimpleStatus" class="status">Acesso sem senha pelo servidor seguro da Agenda.</div>
         <div class="actions"><button class="action primary" id="agendaSimpleEnter" type="submit">Entrar e sincronizar</button></div>
