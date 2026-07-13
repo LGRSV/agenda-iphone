@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v162-menu-animado';
+const CACHE = 'agenda-lagares-v163-month-swipe';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=3"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=8"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
