@@ -62,7 +62,7 @@
     btn.id = 'seqEntryBtn';
     btn.type = 'button';
     btn.className = 'seq-entry-btn';
-    btn.innerHTML = `${CLOCK_SVG}<span>Modo sequencial · rotina gamificada</span>`;
+    btn.innerHTML = `${CLOCK_SVG}<span>Modo sequencial</span>`;
     tabs.parentNode.insertBefore(btn, tabs.nextSibling);
     btn.addEventListener('click', goToSequencia);
   };
