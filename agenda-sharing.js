@@ -38,6 +38,7 @@
     style.id = 'agendaShareStyles';
     style.textContent = `
       .agenda-share{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border:1px solid var(--line);border-radius:999px;background:var(--soft);color:var(--accent);font-size:10px;font-weight:800}.agenda-share svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+      .agenda-shared-badge{display:inline-flex;align-items:center;padding:3px 7px;border:1px solid var(--accent);border-radius:999px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);font-size:10px;font-weight:800}
       #agendaShareDialog .modal,#agendaSharedDialog .modal{max-height:calc(100dvh - 32px);overflow:auto}.share-task-name{margin-top:4px!important;color:var(--text)!important;font-weight:750}.share-help{margin-top:12px!important}.share-list{display:grid;gap:10px;margin-top:14px}.share-card{padding:12px;border:1px solid var(--line);border-radius:15px;background:var(--soft)}.share-card h4{margin:0;font-size:15px;line-height:1.35}.share-meta{margin:5px 0 10px;color:var(--muted);font-size:11px;font-weight:700}.share-comments{display:grid;gap:6px;margin:9px 0}.share-comment{padding:7px 9px;border-radius:10px;background:var(--surface);color:var(--text);font-size:12px;line-height:1.35}.share-comment.mine{border-left:3px solid var(--accent)}.share-comment small{display:block;margin-top:3px;color:var(--muted);font-size:10px}.share-comment-form{display:flex;gap:6px}.share-comment-form input{min-height:37px;padding:8px 9px;font-size:13px}.share-comment-form button{flex:0 0 auto;padding:8px 10px;border:0;border-radius:10px;background:var(--accent);color:var(--accentInk);font-size:12px;font-weight:800}.share-empty{padding:22px 8px;color:var(--muted);text-align:center;font-size:13px}
     `;
     document.head.appendChild(style);
@@ -151,8 +152,26 @@
     } catch (error) { toast(String(error?.message || error)); }
   }
 
+  function markSharedBadges() {
+    const localTasks = readJson(TASK_KEY, []) || [];
+    const sharedById = new Map(localTasks.filter(task => task && task.sharedFrom).map(task => [String(task.id), task]));
+    document.querySelectorAll('.task-card .check[data-id]').forEach(check => {
+      const footer = check.closest('.task-card')?.querySelector('.task-footer');
+      if (!footer) return;
+      const shared = sharedById.get(String(check.dataset.id));
+      const existing = footer.querySelector('.agenda-shared-badge');
+      if (!shared) { existing?.remove(); return; }
+      if (existing) return;
+      const badge = document.createElement('span');
+      badge.className = 'agenda-shared-badge';
+      badge.textContent = 'Compartilhada';
+      footer.appendChild(badge);
+    });
+  }
+
   function installButtons() {
     ensureStyles();
+    markSharedBadges();
     document.querySelectorAll('.task-card .check[data-id]').forEach(check => {
       const footer = check.closest('.task-card')?.querySelector('.task-footer');
       if (!footer || footer.querySelector('.agenda-share')) return;
@@ -179,4 +198,35 @@
   new MutationObserver(() => { cancelAnimationFrame(frame); frame = requestAnimationFrame(installButtons); }).observe(document.documentElement, { childList: true, subtree: true });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installButtons);
   else installButtons();
+
+  // Traz para a agenda de verdade (Dia/Mês/Lista) as tarefas que outra pessoa
+  // compartilhou com este usuário — antes elas só apareciam na caixa separada
+  // de "Tarefas compartilhadas". Nunca desmarca uma tarefa que a pessoa já
+  // tenha concluído localmente, só atualiza texto/data/hora/tag e promove
+  // para concluída se a origem já estiver concluída.
+  let syncingShares = false;
+  async function syncIncomingShares() {
+    if (syncingShares || !window.AgendaAPI || typeof window.AgendaAPI.upsertShared !== 'function') return;
+    syncingShares = true;
+    try {
+      const config = cfg();
+      if (!config.url || !config.publishableKey) return;
+      const sb = await getClient();
+      const { data: sessionData } = await sb.auth.getSession();
+      if (!sessionData?.session) return;
+      const { data: userData, error: userError } = await sb.auth.getUser();
+      if (userError || !userData?.user) return;
+      const { data: shares, error } = await sb.from('agenda_task_shares')
+        .select('id,task_payload')
+        .eq('recipient_user_id', userData.user.id);
+      if (error || !shares) return;
+      shares.forEach(share => { window.AgendaAPI.upsertShared({ shareId: share.id, payload: share.task_payload || {} }); });
+    } catch (_) { /* silencioso: tenta de novo no próximo ciclo */ }
+    finally { syncingShares = false; }
+  }
+  const scheduleShareSync = () => setTimeout(syncIncomingShares, 1200);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scheduleShareSync);
+  else scheduleShareSync();
+  setInterval(() => { if (!document.hidden) syncIncomingShares(); }, 45000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) syncIncomingShares(); });
 })();

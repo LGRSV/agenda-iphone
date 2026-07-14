@@ -618,7 +618,23 @@
       deleteTask(query){const q=String(query||'').toLowerCase().trim();if(!q)return false;const i=tasks.findIndex(t=>t.text.toLowerCase().includes(q));if(i<0)return false;const rem=tasks.splice(i,1)[0];trashPush(rem);save();render();showToast('Jarvis removeu: '+rem.text);return rem.text},
       getTasks(){return tasks.filter(t=>!isManualFinancialOutput(t)).map(t=>({text:t.text,date:t.date,time:t.time,tag:t.tag,done:t.done}))},
       getTasksFull(){return tasks.filter(t=>!isManualFinancialOutput(t)).map(t=>({id:t.id,text:t.text,date:t.date,time:t.time,tag:t.tag,done:t.done}))},
-      completeById(taskId){const t=tasks.find(t=>String(t.id)===String(taskId));if(!t||t.done)return false;t.done=true;save();render();return true}
+      completeById(taskId){const t=tasks.find(t=>String(t.id)===String(taskId));if(!t||t.done)return false;t.done=true;save();render();return true},
+      upsertShared(share){
+        if(!share||!share.shareId)return false;
+        const payload=share.payload||{};
+        const text=String(payload.text||'').trim(),date=String(payload.date||'');
+        if(!text||!/^\d{4}-\d{2}-\d{2}$/.test(date))return false;
+        const sharedFrom='shr:'+String(share.shareId);
+        let t=tasks.find(t=>t.sharedFrom===sharedFrom);
+        let changed=false;
+        if(!t){t={id:id(),date,time:'',tag:'pessoal',done:false,sharedFrom};tasks.push(t);changed=true}
+        const time=/^\d{2}:\d{2}$/.test(String(payload.time||''))?String(payload.time):'';
+        const tag=tagKey(payload.tag||'pessoal');
+        if(t.text!==text||t.date!==date||t.time!==time||t.tag!==tag){t.text=text;t.date=date;t.time=time;t.tag=tag;changed=true}
+        if(payload.done&&!t.done){t.done=true;changed=true}
+        if(changed){save();render()}
+        return true
+      }
     };
   })();
   </script>
