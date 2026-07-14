@@ -616,7 +616,9 @@
       addTask(o){o=o||{};const text=String(o.text||'').trim();const date=String(o.date||'');if(!text||!/^\d{4}-\d{2}-\d{2}$/.test(date))return false;const time=/^\d{2}:\d{2}$/.test(String(o.time||''))?String(o.time):'';tasks.push({id:id(),text,date,time,tag:tagKey(o.tag||'pessoal'),reminder:time?15:-1,done:false});save();render();showToast('Jarvis adicionou: '+text);return true},
       completeTask(query){const q=String(query||'').toLowerCase().trim();if(!q)return false;const t=tasks.find(t=>!t.done&&t.text.toLowerCase().includes(q));if(!t)return false;t.done=true;save();render();showToast('Jarvis concluiu: '+t.text);return t.text},
       deleteTask(query){const q=String(query||'').toLowerCase().trim();if(!q)return false;const i=tasks.findIndex(t=>t.text.toLowerCase().includes(q));if(i<0)return false;const rem=tasks.splice(i,1)[0];trashPush(rem);save();render();showToast('Jarvis removeu: '+rem.text);return rem.text},
-      getTasks(){return tasks.filter(t=>!isManualFinancialOutput(t)).map(t=>({text:t.text,date:t.date,time:t.time,tag:t.tag,done:t.done}))}
+      getTasks(){return tasks.filter(t=>!isManualFinancialOutput(t)).map(t=>({text:t.text,date:t.date,time:t.time,tag:t.tag,done:t.done}))},
+      getTasksFull(){return tasks.filter(t=>!isManualFinancialOutput(t)).map(t=>({id:t.id,text:t.text,date:t.date,time:t.time,tag:t.tag,done:t.done}))},
+      completeById(taskId){const t=tasks.find(t=>String(t.id)===String(taskId));if(!t||t.done)return false;t.done=true;save();render();return true}
     };
   })();
   </script>
@@ -1242,20 +1244,21 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
   </script>
   <!-- ========== /JARVIS v2 ========== -->
 
-  <script src="./viewmode.js?v=1"></script>
-  <script src="./treino.js?v=10"></script>
-  <script src="./painel.js?v=2"></script>
-  <script src="./gamificacao.js?v=4"></script>
-  <script src="./notas.js?v=7"></script>
-  <script src="./condicional.js?v=3"></script>
-  <script src="./agenda-notas-rapidas.js?v=5"></script>
-  <script src="./calendario-cheio.js?v=3"></script>
-  <script src="./header-cleanup.js?v=3"></script>
-  <script src="./supabase-project-config.js?v=1"></script>
-  <script src="./supabase-shared-storage.js?v=4"></script>
-  <script src="./supabase-login-ui.js?v=4"></script>
-  <script src="./supabase-simple-access.js?v=5"></script>
-  <script src="./auth-gate.js?v=1"></script>
-  <script src="./agenda-sharing.js?v=2"></script>
+  <script src="./viewmode.js?v=1" defer></script>
+  <script src="./treino.js?v=10" defer></script>
+  <script src="./painel.js?v=2" defer></script>
+  <script src="./gamificacao.js?v=4" defer></script>
+  <script src="./notas.js?v=7" defer></script>
+  <script src="./condicional.js?v=3" defer></script>
+  <script src="./agenda-notas-rapidas.js?v=5" defer></script>
+  <script src="./calendario-cheio.js?v=3" defer></script>
+  <script src="./header-cleanup.js?v=3" defer></script>
+  <script src="./supabase-project-config.js?v=1" defer></script>
+  <script src="./supabase-shared-storage.js?v=4" defer></script>
+  <script src="./supabase-login-ui.js?v=4" defer></script>
+  <script src="./supabase-simple-access.js?v=5" defer></script>
+  <script src="./auth-gate.js?v=1" defer></script>
+  <script src="./agenda-sharing.js?v=2" defer></script>
+  <script src="./sequencial.js?v=1" defer></script>
 </body>
 </html>
