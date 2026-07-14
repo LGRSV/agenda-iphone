@@ -10,10 +10,10 @@ const SUPABASE_CONFIG_SCRIPT = '<script src="./supabase-project-config.js?v=1" d
 const SUPABASE_SCRIPT = '<script src="./supabase-shared-storage.js?v=4" defer><\/script>';
 const SUPABASE_LOGIN_SCRIPT = '<script src="./supabase-login-ui.js?v=4" defer><\/script>';
 const SIMPLE_ACCESS_SCRIPT = '<script src="./supabase-simple-access.js?v=5" defer><\/script>';
-const SHARING_SCRIPT = '<script src="./agenda-sharing.js?v=2" defer><\/script>';
+const SHARING_SCRIPT = '<script src="./agenda-sharing.js?v=3" defer><\/script>';
 const WEB_PUSH_SCRIPT = '<script src="./web-push.js?v=1" defer><\/script>';
 const VIEWMODE_SCRIPT = '<script src="./viewmode.js?v=1" defer><\/script>';
-const HEADER_CLEANUP_SCRIPT = '<script src="./header-cleanup.js?v=3" defer><\/script>';
+const HEADER_CLEANUP_SCRIPT = '<script src="./header-cleanup.js?v=4" defer><\/script>';
 const UNDO_SCRIPT = '<script src="./undo.js?v=1" defer><\/script>';
 const LIXEIRA_SCRIPT = '<script src="./lixeira.js?v=1" defer><\/script>';
 const INTEL_SCRIPT = '<script src="./agenda-intelligence.js?v=2" defer><\/script>';
