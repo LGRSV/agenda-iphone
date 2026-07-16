@@ -21,7 +21,10 @@
   css.id = 'viewmodeStyles';
   css.textContent =
     'html{-webkit-text-size-adjust:100%;text-size-adjust:100%}' +
-    'html,body{overflow-x:hidden;max-width:100%}' +
+    // overflow-x:clip (e não hidden) evita rolagem horizontal SEM transformar o
+    // body em container de scroll — no PWA do iOS o "hidden" fazia os botões
+    // position:fixed rolarem junto com a página em vez de ficarem parados.
+    'html,body{overflow-x:clip;max-width:100%}' +
     'img,svg,video,canvas{max-width:100%}' +
     // impede o zoom do iOS ao focar campos (precisa ser >=16px no celular)
     '@media(max-width:600px){input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{font-size:16px !important}}' +
