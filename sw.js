@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v186-juros-fix';
+const CACHE = 'agenda-lagares-v187-swipe-editar';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=10" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
