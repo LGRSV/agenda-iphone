@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v188-fix-fabs';
+const CACHE = 'agenda-lagares-v189-investimentos';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=10" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -50,7 +50,8 @@ self.addEventListener('fetch', event => {
       const isFinance = html.includes('financeiro.html');
       const isGame = html.includes('gamificacao.html');
       const isTraining = html.includes('treino.html');
-      const isAuxPage = isFinance || isGame || isTraining;
+      const isInvest = html.includes('investimentos.html');
+      const isAuxPage = isFinance || isGame || isTraining || isInvest;
       if (!isAuxPage && !html.includes('interface-polish.css')) html = html.replace('</head>', `${POLISH_STYLE}</head>`);
       if (!isAuxPage && !html.includes('edit-enhancement.js')) html = html.replace('</body>', `${EDIT_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('treino.js')) html = html.replace('</body>', `${TREINO_SCRIPT}</body>`);

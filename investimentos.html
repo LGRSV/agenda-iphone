@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<!-- investimentos.html — simulador de aportes, saldos e metas de recebimento -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Investimentos</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<style>
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:#17181c}*{box-sizing:border-box}
+body{margin:0;background:#17181c;color:#f7f8fb;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.app{max-width:760px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom))}
+.head{display:flex;gap:13px;align-items:center}
+.back{width:44px;height:44px;display:grid;place-items:center;text-decoration:none;border:1px solid #3b404a;background:#202228;color:#f7f8fb;border-radius:13px;font-size:22px}
+.ey{margin:0;color:#6ec9ff;font-size:11px;font-weight:800;letter-spacing:.12em}
+.head h1{margin:4px 0;font-size:27px;letter-spacing:-.04em}
+.muted{margin:0;color:#a6acb8;font-size:13px}
+h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 9px;text-transform:uppercase}
+.card{border:1px solid #3b404a;border-radius:18px;background:#202228;padding:15px 16px}
+.tot{border:1px solid #3b404a;border-radius:18px;background:linear-gradient(135deg,#0e9f8e,#0f766e);padding:16px;box-shadow:0 12px 26px rgba(15,118,110,.3)}
+.tot span{color:#d7fff4;font-size:12px;font-weight:700}.tot b{display:block;font-size:30px;margin-top:5px;font-weight:850}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-top:1px solid #3b404a}
+.row:first-child{border-top:0}
+.row .nm{font-weight:750}.row .nm small{display:block;color:#a6acb8;font-weight:600;font-size:10px;margin-top:2px}
+.row .vl{font-weight:850;white-space:nowrap;text-align:right}
+.row .vl small{display:block;color:#a6acb8;font-weight:600;font-size:10px;text-decoration:none}
+.eprev{border:1px solid #ffb74d55;background:linear-gradient(135deg,#3a2f16,#202228)}
+.eprev .ep-b{color:#ffb74d;font-size:24px;font-weight:850}
+.editbtn{background:#2a2d35;border:1px solid #3b404a;color:#f7f8fb;font-weight:800;font-size:11px;padding:7px 13px;border-radius:999px;cursor:pointer}
+.editbtn:active{transform:scale(.95)}
+.sim label{display:block;color:#a6acb8;font-size:11px;font-weight:800;margin:12px 0 6px;letter-spacing:.04em}
+.sim input{width:100%;min-height:44px;padding:10px 12px;border-radius:11px;border:1px solid #3b404a;background:#17181c;color:#f7f8fb;font-size:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.simout{margin-top:16px;border-top:1px solid #3b404a;padding-top:14px}
+.simout .big{font-size:12px;color:#a6acb8;font-weight:700}
+.simout .big b{display:block;color:#6ec9ff;font-size:30px;font-weight:850;margin-top:4px;letter-spacing:-.03em}
+.simline{display:flex;justify-content:space-between;gap:10px;font-size:13px;font-weight:700;padding:7px 0;border-top:1px solid #3b404a}
+.simline span:last-child{font-weight:850}
+.pos{color:#78d88b}
+.simtable{width:100%;margin-top:12px;border-collapse:collapse;font-size:12px}
+.simtable th{color:#a6acb8;font-size:10px;text-transform:uppercase;letter-spacing:.06em;text-align:right;padding:6px 4px;border-bottom:1px solid #3b404a;font-weight:800}
+.simtable th:first-child{text-align:left}
+.simtable td{padding:7px 4px;border-bottom:1px solid #2a2d35;text-align:right;font-weight:700}
+.simtable td:first-child{text-align:left;color:#a6acb8}
+.simtable td.j{color:#78d88b}
+.meta-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:4px}
+.meta-head .pct{font-weight:850;font-size:13px}
+.bar{height:9px;border-radius:99px;background:#2a2d35;overflow:hidden;margin:8px 0 4px}
+.bar>i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#0e9f8e,#6ec9ff)}
+.meta-sub{color:#a6acb8;font-size:11px;font-weight:700}
+.meta-block{padding:13px 0;border-top:1px solid #3b404a}.meta-block:first-child{border-top:0;padding-top:2px}
+.params{display:grid;grid-template-columns:1fr 1fr;gap:1px;overflow:hidden;border-radius:14px;margin-top:2px}
+.params .p{background:#202228;padding:13px;border:1px solid #3b404a}
+.params .p b{display:block;font-size:19px;font-weight:850}
+.params .p span{display:block;color:#a6acb8;font-size:10px;font-weight:700;margin-top:4px}
+.params .p.in b{color:#78d88b}.params .p.pend b{color:#ffb74d}
+.savebtn{width:100%;margin-top:14px;padding:13px;border:0;border-radius:13px;background:#6ec9ff;color:#0a1017;font-weight:850;font-size:15px;cursor:pointer}
+.savebtn:active{transform:scale(.98)}
+.hint{color:#a6acb8;font-size:11px;margin-top:9px;line-height:1.5}
+</style>
+</head>
+<body>
+<!-- guarda de sessão: só abre logado (mesma regra do financeiro.html) -->
+<script>(function(){function h(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||"null");var s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return true;}}catch(_){}return false;}if(!h()){location.replace("./?locked=1");}})();</script>
+<main class="app">
+  <header class="head">
+    <a class="back" href="financeiro.html" aria-label="Voltar ao financeiro">‹</a>
+    <div><p class="ey">INVESTIMENTOS</p><h1>Carteira &amp; metas</h1><p class="muted">Saldos, simulador de aportes e recebíveis</p></div>
+  </header>
+
+  <h2>Saldos</h2>
+  <div class="tot"><span>Total investido (cofres + Energisa Prev)</span><b id="totGeral">R$ 0,00</b></div>
+  <div class="card" style="margin-top:10px" id="cofresBox"></div>
+  <div class="card eprev" style="margin-top:10px" id="eprevBox"></div>
+
+  <h2>Simulador de aportes</h2>
+  <div class="card sim">
+    <div class="grid2">
+      <div><label for="sInit">Saldo inicial (R$)</label><input id="sInit" type="number" step="0.01" inputmode="decimal"></div>
+      <div><label for="sAporte">Aporte mensal (R$)</label><input id="sAporte" type="number" step="0.01" inputmode="decimal" value="500"></div>
+    </div>
+    <div class="grid2">
+      <div><label for="sRate">Rentabilidade (% ao ano)</label><input id="sRate" type="number" step="0.01" inputmode="decimal"></div>
+      <div><label for="sMonths">Prazo (meses)</label><input id="sMonths" type="number" step="1" inputmode="numeric" value="60"></div>
+    </div>
+    <div class="simout" id="simOut"></div>
+    <table class="simtable" id="simTable"></table>
+    <p class="hint">Juros compostos com aportes ao fim de cada mês. A rentabilidade padrão usa 120% do CDI atual — ajuste à vontade para simular cenários.</p>
+  </div>
+
+  <h2>Metas de recebimento</h2>
+  <div class="card">
+    <div class="params">
+      <div class="p in"><b id="pRecMes">R$ 0</b><span>Recebido no mês</span></div>
+      <div class="p pend"><b id="pPendMes">R$ 0</b><span>A receber no mês</span></div>
+      <div class="p in"><b id="pRecAno">R$ 0</b><span>Recebido no ano</span></div>
+      <div class="p"><b id="pQtd">0</b><span>Entradas registradas</span></div>
+    </div>
+    <div style="margin-top:16px" id="metasWrap"></div>
+    <label class="sim" style="display:block"><span style="display:block;color:#a6acb8;font-size:11px;font-weight:800;margin:14px 0 6px;letter-spacing:.04em">Definir metas de quanto quero receber</span></label>
+    <div class="grid2">
+      <div><label for="mMes" style="color:#a6acb8;font-size:11px;font-weight:800;display:block;margin-bottom:6px">Meta mensal (R$)</label><input id="mMes" type="number" step="0.01" inputmode="decimal" style="width:100%;min-height:44px;padding:10px 12px;border-radius:11px;border:1px solid #3b404a;background:#17181c;color:#f7f8fb;font-size:16px"></div>
+      <div><label for="mTri" style="color:#a6acb8;font-size:11px;font-weight:800;display:block;margin-bottom:6px">Meta trimestral (R$)</label><input id="mTri" type="number" step="0.01" inputmode="decimal" style="width:100%;min-height:44px;padding:10px 12px;border-radius:11px;border:1px solid #3b404a;background:#17181c;color:#f7f8fb;font-size:16px"></div>
+    </div>
+    <label for="mAno" style="color:#a6acb8;font-size:11px;font-weight:800;display:block;margin:10px 0 6px">Meta anual (R$)</label>
+    <input id="mAno" type="number" step="0.01" inputmode="decimal" style="width:100%;min-height:44px;padding:10px 12px;border-radius:11px;border:1px solid #3b404a;background:#17181c;color:#f7f8fb;font-size:16px">
+    <button class="savebtn" id="saveMetas">Salvar metas</button>
+  </div>
+</main>
+
+<script>
+(()=>{
+  const TK='agenda_lagares_v3',NK='agenda_notas_v1',IK='agenda_investimentos_v1',DK='agenda_supabase_dirty_v1';
+  const DIAS_ANO=252,CAP120=1e4;
+  const j=(k,f)=>{try{return JSON.parse(localStorage.getItem(k)||'')||f}catch(_){return f}};
+  const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+  const money=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n||0);
+  const money0=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}).format(n||0);
+  const num=v=>{const n=Number(String(v??'').replace(/\./g,'').replace(',','.'));return Number.isFinite(n)?n:(Number(v)||0)};
+  const numRaw=v=>{const n=Number(String(v??'').replace(',','.'));return Number.isFinite(n)?n:0};
+  const mark=()=>{const d=j(DK,{});d.tasks=Date.now();d.notes=Date.now();d['agenda_investimentos_v1']=Date.now();save(DK,d)};
+  const invDefault=()=>({cdi:0.1095,upd:'',cofres:[{id:'lagares',nome:'Cofrinho Lagares',saldo:0},{id:'giro',nome:'Giro mensal',saldo:0}]});
+  const loadInv=()=>{const v=j(IK,null);return v&&Array.isArray(v.cofres)?v:invDefault()};
+  const saveInv=v=>save(IK,v);
+  const cdiOf=inv=>inv.cdi>0?inv.cdi:0.1095;
+
+  // ---------- Saldos dos cofres + Energisa Prev ----------
+  function renderSaldos(){
+    const inv=loadInv();
+    const cofresTot=inv.cofres.reduce((s,c)=>s+(c.saldo||0),0);
+    const eprev=(inv.energisaPrev&&num(inv.energisaPrev.saldo))||0;
+    document.querySelector('#totGeral').textContent=money(cofresTot+eprev);
+    document.querySelector('#cofresBox').innerHTML=inv.cofres.map((c,i)=>
+      '<div class="row"><div class="nm">'+c.nome+'</div><div class="vl">'+money(c.saldo||0)+
+      ' <button class="editbtn" data-cofre="'+i+'">Ajustar</button></div></div>').join('')+
+      '<div class="row"><div class="nm" style="color:#a6acb8">CDI de referência</div><div class="vl">'+(cdiOf(inv)*100).toFixed(2).replace('.',',')+'% a.a. <button class="editbtn" data-cdi="1">Ajustar</button></div></div>';
+    document.querySelector('#eprevBox').innerHTML=
+      '<div class="row"><div class="nm">Energisa Prev <small>Previdência privada</small></div>'+
+      '<div class="vl"><span class="ep-b">'+money(eprev)+'</span><br><button class="editbtn" data-eprev="1">Ajustar saldo</button></div></div>';
+  }
+
+  document.addEventListener('click',e=>{
+    const inv=loadInv();
+    const cofBtn=e.target.closest('[data-cofre]');
+    if(cofBtn){const i=+cofBtn.dataset.cofre;const v=prompt('Saldo de '+inv.cofres[i].nome+' (R$):',inv.cofres[i].saldo);if(v===null)return;inv.cofres[i].saldo=num(v);saveInv(inv);mark();renderSaldos();refillSim();return;}
+    if(e.target.closest('[data-cdi]')){const v=prompt('CDI anual (%):',(cdiOf(inv)*100).toFixed(2));if(v===null)return;inv.cdi=numRaw(v)/100;saveInv(inv);mark();renderSaldos();refillSim();return;}
+    if(e.target.closest('[data-eprev]')){const cur=(inv.energisaPrev&&inv.energisaPrev.saldo)||'';const v=prompt('Saldo na Energisa Prev (R$):',cur);if(v===null)return;inv.energisaPrev={saldo:num(v),upd:new Date().toISOString().slice(0,10)};saveInv(inv);mark();renderSaldos();return;}
+  });
+
+  // ---------- Simulador de aportes (juros compostos) ----------
+  function refillSim(){
+    const inv=loadInv();
+    const cofresTot=inv.cofres.reduce((s,c)=>s+(c.saldo||0),0);
+    const initEl=document.querySelector('#sInit'),rateEl=document.querySelector('#sRate');
+    if(!initEl.dataset.touched)initEl.value=cofresTot.toFixed(2);
+    if(!rateEl.dataset.touched)rateEl.value=(cdiOf(inv)*1.2*100).toFixed(2);
+    runSim();
+  }
+  function runSim(){
+    const P=numRaw(document.querySelector('#sInit').value);
+    const A=numRaw(document.querySelector('#sAporte').value);
+    const annual=numRaw(document.querySelector('#sRate').value)/100;
+    const n=Math.max(0,Math.min(600,Math.round(numRaw(document.querySelector('#sMonths').value))));
+    const i=Math.pow(1+annual,1/12)-1;
+    const pow=Math.pow(1+i,n);
+    const fv=P*pow+(i>0?A*((pow-1)/i):A*n);
+    const invested=P+A*n;
+    const juros=fv-invested;
+    document.querySelector('#simOut').innerHTML=
+      '<div class="big">Valor projetado em '+n+' '+(n===1?'mês':'meses')+'<b>'+money(fv)+'</b></div>'+
+      '<div class="simline"><span>Total aportado</span><span>'+money(invested)+'</span></div>'+
+      '<div class="simline"><span>Juros ganhos</span><span class="pos">+ '+money(juros)+'</span></div>'+
+      '<div class="simline"><span>Rendimento sobre o aportado</span><span class="pos">'+(invested>0?(juros/invested*100).toFixed(1).replace('.',','):'0')+'%</span></div>';
+    // tabela ano a ano
+    let rows='',bal=P,inv2=P;
+    const years=Math.ceil(n/12);
+    let head='<tr><th>Ano</th><th>Aportado</th><th>Saldo</th><th>Juros acum.</th></tr>';
+    for(let y=1;y<=years;y++){
+      const upto=Math.min(y*12,n);
+      const powY=Math.pow(1+i,upto);
+      const balY=P*powY+(i>0?A*((powY-1)/i):A*upto);
+      const investedY=P+A*upto;
+      rows+='<tr><td>'+y+'º</td><td>'+money0(investedY)+'</td><td>'+money0(balY)+'</td><td class="j">'+money0(balY-investedY)+'</td></tr>';
+    }
+    document.querySelector('#simTable').innerHTML=years>0?head+rows:'';
+  }
+  ['#sInit','#sAporte','#sRate','#sMonths'].forEach(sel=>{
+    const el=document.querySelector(sel);
+    el.addEventListener('input',()=>{el.dataset.touched='1';runSim();});
+  });
+
+  // ---------- Metas de recebimento (entradas) ----------
+  const pd=x=>String(x).padStart(2,'0');
+  const isEntrada=(t,n)=>t&&t.tag==='financeiro'&&(n.movimento==='entrada')&&num(n.valor)>0;
+  function receb(){
+    const now=new Date(),y=now.getFullYear(),m=now.getMonth();
+    const qStart=Math.floor(m/3)*3;
+    const notes=j(NK,{}),tasks=j(TK,[]);
+    let recMes=0,pendMes=0,recAno=0,pendAno=0,recTri=0,pendTri=0,qtd=0,totPend=0,totRec=0;
+    tasks.forEach(t=>{
+      const n=notes[t.id]||notes[String(t.id)]||{};
+      if(!isEntrada(t,n))return;
+      qtd++;
+      const v=num(n.valor),dt=new Date((t.date||'')+'T12:00:00');
+      if(isNaN(dt))return;
+      const inYear=dt.getFullYear()===y,inMonth=inYear&&dt.getMonth()===m,inTri=inYear&&dt.getMonth()>=qStart&&dt.getMonth()<qStart+3;
+      if(t.done){totRec+=v;if(inMonth)recMes+=v;if(inTri)recTri+=v;if(inYear)recAno+=v;}
+      else{totPend+=v;if(inMonth)pendMes+=v;if(inTri)pendTri+=v;if(inYear)pendAno+=v;}
+    });
+    return {recMes,pendMes,recTri,pendTri,recAno,pendAno,qtd,totPend,totRec};
+  }
+  function metaBar(label,recebido,previsto,meta){
+    const pct=meta>0?Math.min(100,Math.round(recebido/meta*100)):0;
+    return '<div class="meta-block"><div class="meta-head"><span style="font-weight:800">'+label+'</span>'+
+      '<span class="pct" style="color:'+(pct>=100?'#78d88b':'#6ec9ff')+'">'+(meta>0?pct+'%':'—')+'</span></div>'+
+      '<div class="bar"><i style="width:'+pct+'%"></i></div>'+
+      '<div class="meta-sub">Recebido '+money(recebido)+(meta>0?' de '+money(meta):'')+
+      ' · a receber '+money(previsto)+'</div></div>';
+  }
+  function renderMetas(){
+    const r=receb(),inv=loadInv(),metas=(inv.metasReceber)||{};
+    document.querySelector('#pRecMes').textContent=money0(r.recMes);
+    document.querySelector('#pPendMes').textContent=money0(r.pendMes);
+    document.querySelector('#pRecAno').textContent=money0(r.recAno);
+    document.querySelector('#pQtd').textContent=r.qtd;
+    document.querySelector('#metasWrap').innerHTML=
+      metaBar('Mês',r.recMes,r.pendMes,num(metas.mes))+
+      metaBar('Trimestre',r.recTri,r.pendTri,num(metas.tri))+
+      metaBar('Ano',r.recAno,r.pendAno,num(metas.ano));
+    document.querySelector('#mMes').value=metas.mes||'';
+    document.querySelector('#mTri').value=metas.tri||'';
+    document.querySelector('#mAno').value=metas.ano||'';
+  }
+  document.querySelector('#saveMetas').addEventListener('click',()=>{
+    const inv=loadInv();
+    inv.metasReceber={mes:numRaw(document.querySelector('#mMes').value),tri:numRaw(document.querySelector('#mTri').value),ano:numRaw(document.querySelector('#mAno').value)};
+    saveInv(inv);mark();renderMetas();
+    const b=document.querySelector('#saveMetas');b.textContent='Metas salvas ✓';setTimeout(()=>b.textContent='Salvar metas',1600);
+  });
+
+  // ---------- Boot + re-render em sync remoto ----------
+  function boot(){renderSaldos();refillSim();renderMetas();}
+  boot();
+  window.addEventListener('agenda:remote-sync',()=>{renderSaldos();renderMetas();});
+})();
+</script>
+</body>
+</html>
