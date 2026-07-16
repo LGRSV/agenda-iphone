@@ -74,19 +74,41 @@
     return sb;
   }
 
+  // Nunca deixa um dispositivo que já sincronizou antes sobrescrever a agenda
+  // compartilhada com um estado vazio. Isso acontece, por exemplo, quando o
+  // iOS limpa o localStorage de um app pouco usado, ou quando a troca de
+  // sessão dispara o reset local de workspace (prepareBlankWorkspace, em
+  // index.html) — sem essa trava, o próximo push automático apagaria as
+  // tarefas de todo mundo que compartilha a mesma agenda.
+  function isEmptyPayload(payload) {
+    if (Array.isArray(payload)) return payload.length === 0;
+    if (payload && typeof payload === 'object') return Object.keys(payload).length === 0;
+    return true;
+  }
+  function isSuspiciouslyEmpty(key, payload) {
+    if (!cfg().lastSyncAt) return false; // dispositivo novo, nunca sincronizou: vazio é esperado
+    return isEmptyPayload(payload);
+  }
+
   async function pushDocs(keys = Object.keys(DOCUMENTS), silent = false) {
     const sb = await requireAccess();
     syncing = true; render('Enviando…');
+    const pushed = [];
+    let recovered = false;
     try {
       for (const key of keys) {
+        const payload = read(key);
+        if (isSuspiciouslyEmpty(key, payload)) { recovered = true; continue; }
         const { error } = await sb.from('agenda_documents').upsert({
-          user_id: ownerId(), document_key: key, payload: read(key), device_id: deviceId()
+          user_id: ownerId(), document_key: key, payload, device_id: deviceId()
         }, { onConflict: 'user_id,document_key' });
         if (error) throw error;
+        pushed.push(key);
       }
-      const d = dirty(); keys.forEach(k => delete d[k]); saveDirty(d);
-      saveCfg({ lastSyncAt: new Date().toISOString() });
-      if (!silent) toast('Agenda enviada ao Supabase.');
+      const d = dirty(); pushed.forEach(k => delete d[k]); saveDirty(d);
+      if (pushed.length) saveCfg({ lastSyncAt: new Date().toISOString() });
+      if (!silent && pushed.length) toast('Agenda enviada ao Supabase.');
+      if (recovered) { toast('Dados locais vazios detectados — restaurando da nuvem em vez de apagar.'); pullAll().catch(() => {}); }
       lastError = '';
     } finally { syncing = false; render(); }
   }
@@ -194,6 +216,17 @@
     dot.title = message || lastError || (session?.user && cfg().workspaceOwnerId ? 'Agenda sincronizada' : 'Vincule este aparelho');
   }
 
+  // Rede/realtime do iOS cai silenciosamente quando o app fica em segundo
+  // plano. Sem isso, o dispositivo podia ficar horas com dados desatualizados
+  // e, ao voltar, um push automático (markDirty) sobrescrevia o servidor com
+  // esse estado velho. Isso reconecta e busca o que houver de novo sempre que
+  // o app volta ao primeiro plano, além de um pull periódico de segurança.
+  function resyncIfLinked() {
+    if (syncing || !session?.user || !ownerId()) return;
+    pullAll().catch(() => {});
+    subscribe().catch(() => {});
+  }
+
   async function boot() {
     patchStorage(); ensureUI();
     new MutationObserver(ensureUI).observe(document.body, { childList: true, subtree: true });
@@ -204,6 +237,9 @@
         await subscribe();
       }
     } catch (error) { handle(error); }
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) resyncIfLinked(); });
+    window.addEventListener('online', resyncIfLinked);
+    setInterval(() => { if (!Object.keys(dirty()).length) resyncIfLinked(); }, 60000);
   }
 
   window.SupabaseAgenda = { getConfig: cfg, openDialog, pushAll: () => pushDocs(), pullAll, pushDirty: syncNow, syncNow, getUser: () => session?.user || null };
