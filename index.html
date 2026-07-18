@@ -839,10 +839,11 @@
     function addMsg(cls,text){const d=document.createElement('div');d.className='j-msg '+cls;d.textContent=text;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d;}
 
     let ttsUnlocked=false;
-    function unlockTTS(){if(ttsUnlocked)return;ttsUnlocked=true;buildJarvisVoice();resumeVoice();try{jAudio.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';jAudio.play().catch(()=>{});}catch(_){}if('speechSynthesis'in window){try{const u0=new SpeechSynthesisUtterance(' ');u0.volume=0;window.speechSynthesis.speak(u0);}catch(_){}}}
+    function unlockTTS(){if(ttsUnlocked)return;ttsUnlocked=true;try{jAudio.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';jAudio.play().catch(()=>{});}catch(_){}if('speechSynthesis'in window){try{const u0=new SpeechSynthesisUtterance(' ');u0.volume=0;window.speechSynthesis.speak(u0);}catch(_){}}}
     function togglePanel(){
       unlockTTS();
       isOpen=!isOpen;panel.classList.toggle('open',isOpen);btn.classList.toggle('pulse',!isOpen);
+      if(isOpen&&!voiceOn)statusEl.textContent='VOZ DESLIGADA · TOQUE NO ALTO-FALANTE ACIMA';
       if(isOpen&&!msgs.children.length){
         if(jarvisBriefed){
           // Já entregou o briefing nesta sessão — não repete.
@@ -920,32 +921,50 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
     let voicesCache=[];
     function loadVoices(){voicesCache=window.speechSynthesis?window.speechSynthesis.getVoices():[];}
     if('speechSynthesis'in window){loadVoices();window.speechSynthesis.onvoiceschanged=loadVoices;}
-    const jAudio=new Audio();jAudio.crossOrigin='anonymous';let jUrl=null;let speakGen=0;
-    // ---- Modulador de voz "Jarvis" (Web Audio) sobre o audio do Charon ----
-    let jCtx=null,jSrc=null,jVoiceInit=false;
-    function makeIR(ctx,seconds,decay){const rate=ctx.sampleRate,len=Math.max(1,Math.floor(rate*seconds)),buf=ctx.createBuffer(2,len,rate);for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay);}return buf;}
-    function buildJarvisVoice(){
-      // Modulador Jarvis completo (EQ + compressao + reverb + eco metalico curto),
-      // via Web Audio. Da o timbre eletronico/sofisticado do J.A.R.V.I.S.
-      if(jVoiceInit)return;jVoiceInit=true;
-      const AC=window.AudioContext||window.webkitAudioContext;
-      if(!AC){try{jAudio.volume=1;jAudio.muted=false;}catch(_){}return;}
-      try{
-        jCtx=new AC();
-        jSrc=jCtx.createMediaElementSource(jAudio);
-        const hp=jCtx.createBiquadFilter();hp.type='highpass';hp.frequency.value=95;
-        const body=jCtx.createBiquadFilter();body.type='lowshelf';body.frequency.value=180;body.gain.value=3;
-        const pres=jCtx.createBiquadFilter();pres.type='peaking';pres.frequency.value=2600;pres.Q.value=1;pres.gain.value=6;
-        const soft=jCtx.createBiquadFilter();soft.type='highshelf';soft.frequency.value=7600;soft.gain.value=-2;
-        const comp=jCtx.createDynamicsCompressor();comp.threshold.value=-26;comp.ratio.value=6;comp.attack.value=0.003;comp.release.value=0.16;
-        // Sem eco/reverb: voz limpa (apenas EQ + compressao) para nao ficar picada
-        const master=jCtx.createGain();master.gain.value=1;
-        jSrc.connect(hp);hp.connect(body);body.connect(pres);pres.connect(soft);soft.connect(comp);
-        comp.connect(master);
-        master.connect(jCtx.destination);
-      }catch(_){try{if(jSrc)jSrc.connect(jCtx.destination);}catch(__){}}
+    const jAudio=new Audio();let jUrl=null;let speakGen=0;
+    // ---- Timbre "Jarvis": EQ + compressao renderizados OFFLINE antes de tocar ----
+    // O audio processado sai pelo <audio> comum: sem grafo Web Audio ao vivo,
+    // nada de AudioContext suspenso e a chavinha de silencioso do iPhone nao
+    // corta a fala (Web Audio ao vivo era silenciado por ela; midia comum nao).
+    function bufToWav(buf){
+      const ch=Math.min(2,buf.numberOfChannels),rate=buf.sampleRate,len=buf.length,
+            data=new ArrayBuffer(44+len*ch*2),v=new DataView(data),
+            ws=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};
+      ws(0,'RIFF');v.setUint32(4,36+len*ch*2,true);ws(8,'WAVEfmt ');v.setUint32(16,16,true);
+      v.setUint16(20,1,true);v.setUint16(22,ch,true);v.setUint32(24,rate,true);
+      v.setUint32(28,rate*ch*2,true);v.setUint16(32,ch*2,true);v.setUint16(34,16,true);
+      ws(36,'data');v.setUint32(40,len*ch*2,true);
+      let o=44;
+      const chans=[];for(let c=0;c<ch;c++)chans.push(buf.getChannelData(c));
+      for(let i=0;i<len;i++)for(let c=0;c<ch;c++){
+        const s=Math.max(-1,Math.min(1,chans[c][i]));
+        v.setInt16(o,s<0?s*0x8000:s*0x7FFF,true);o+=2;
+      }
+      return new Blob([data],{type:'audio/wav'});
     }
-    function resumeVoice(){if(jCtx&&jCtx.state==='suspended'){try{jCtx.resume();}catch(_){}}}
+    async function jarvisTimbre(blob){
+      try{
+        const OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+        const AC=window.AudioContext||window.webkitAudioContext;
+        if(!OAC||!AC)return blob;
+        const raw=await blob.arrayBuffer();
+        const dec=new AC();
+        const src0=await new Promise((res,rej)=>dec.decodeAudioData(raw.slice(0),res,rej));
+        try{dec.close();}catch(_){}
+        const ctx=new OAC(src0.numberOfChannels,src0.length,src0.sampleRate);
+        const src=ctx.createBufferSource();src.buffer=src0;
+        const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=95;
+        const body=ctx.createBiquadFilter();body.type='lowshelf';body.frequency.value=180;body.gain.value=3;
+        const pres=ctx.createBiquadFilter();pres.type='peaking';pres.frequency.value=2600;pres.Q.value=1;pres.gain.value=6;
+        const soft=ctx.createBiquadFilter();soft.type='highshelf';soft.frequency.value=7600;soft.gain.value=-2;
+        const comp=ctx.createDynamicsCompressor();comp.threshold.value=-26;comp.ratio.value=6;comp.attack.value=0.003;comp.release.value=0.16;
+        src.connect(hp);hp.connect(body);body.connect(pres);pres.connect(soft);soft.connect(comp);comp.connect(ctx.destination);
+        src.start(0);
+        const out=await ctx.startRendering();
+        return bufToWav(out);
+      }catch(_){return blob;} // qualquer falha: toca o audio original sem timbre
+    }
+    function resumeVoice(){}
     function animOn(){avatarEl.classList.add('speaking');eq.classList.add('on');statusEl.textContent='FALANDO\u2026';}
     function animOff(){avatarEl.classList.remove('speaking');eq.classList.remove('on');statusEl.textContent='ASSISTENTE PESSOAL \u00B7 ONLINE';}
     function stopSpeech(){speakGen++;try{jAudio.pause();jAudio.currentTime=0;}catch(_){}if(jUrl){URL.revokeObjectURL(jUrl);jUrl=null;}if('speechSynthesis'in window)window.speechSynthesis.cancel();animOff();}
@@ -997,31 +1016,41 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       });
     }
     function nativeMale(){return pickPtVoice();}
+    // Modelos de voz do Gemini: Pro primeiro (prosodia bem melhor), Flash como
+    // reserva. Rodizio com memoria: se um modelo cair/esgotar, o proximo que
+    // funcionar vira o padrao — inclusive se o preview for descontinuado.
+    const TTS_MODELS=['gemini-2.5-pro-preview-tts','gemini-2.5-flash-preview-tts'];
+    let jTtsIdx=0;try{jTtsIdx=Number(localStorage.getItem('jarvis_tts_idx'))||0;}catch(_){}
+    function orderedTtsModels(){const s=((jTtsIdx%TTS_MODELS.length)+TTS_MODELS.length)%TTS_MODELS.length;return TTS_MODELS.slice(s).concat(TTS_MODELS.slice(0,s)).map((m,i)=>({model:m,ti:(s+i)%TTS_MODELS.length}));}
+    function markTtsModel(ti){jTtsIdx=ti;try{localStorage.setItem('jarvis_tts_idx',String(ti));}catch(_){}}
     async function ttsFetch(t){
       const keys=orderedKeys();
       if(!keys.length)throw new Error('TTS sem chave');
       let lastErr='';
-      // rodizio completo: tenta cada chave em qualquer erro (cota, rede, permissao)
+      // rodizio completo: cada chave x cada modelo, em qualquer erro (cota, rede, modelo extinto)
       for(const {key:apiKey,idx} of keys){
-        try{
-          const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,{
-            method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-              contents:[{parts:[{text:'Narre em portugues brasileiro neutro com voz grave, calma e elegante, diccao precisa e confiante, num tom levemente eletronico e sofisticado como o assistente J.A.R.V.I.S do Homem de Ferro. Ritmo fluido, sem pressa e sem pausas artificiais: '+t}]}],
-              generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:'Charon'}}}}
-            })});
-          const d=await r.json();
-          const p=d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0];
-          const b64=p&&p.inlineData&&p.inlineData.data;
-          if(b64){
-            const rm=/rate=(\d+)/.exec(p.inlineData.mimeType||'');
-            const bin=atob(b64),pcm=new Uint8Array(bin.length);
-            for(let i=0;i<bin.length;i++)pcm[i]=bin.charCodeAt(i);
-            markKey(idx);return URL.createObjectURL(pcmToWav(pcm,rm?+rm[1]:24000));
-          }
-          const em=(d&&d.error&&(((d.error.code||'')+' '+(d.error.status||'')+' '+(d.error.message||'')).trim()))||('http '+r.status);
-          lastErr='TTS '+String(em).slice(0,90);
-        }catch(e){lastErr=String((e&&e.message)||e||'');}
+        for(const {model,ti} of orderedTtsModels()){
+          try{
+            const r=await jfetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,{
+              method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({
+                contents:[{parts:[{text:'Narre em portugues brasileiro neutro com voz grave, calma e elegante, diccao precisa e confiante, num tom levemente eletronico e sofisticado como o assistente J.A.R.V.I.S do Homem de Ferro. Ritmo fluido, sem pressa e sem pausas artificiais: '+t}]}],
+                generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:'Charon'}}}}
+              })},22000);
+            const d=await r.json();
+            const p=d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0];
+            const b64=p&&p.inlineData&&p.inlineData.data;
+            if(b64){
+              const rm=/rate=(\d+)/.exec(p.inlineData.mimeType||'');
+              const bin=atob(b64),pcm=new Uint8Array(bin.length);
+              for(let i=0;i<bin.length;i++)pcm[i]=bin.charCodeAt(i);
+              markKey(idx);markTtsModel(ti);
+              return URL.createObjectURL(await jarvisTimbre(pcmToWav(pcm,rm?+rm[1]:24000)));
+            }
+            const em=(d&&d.error&&(((d.error.code||'')+' '+(d.error.status||'')+' '+(d.error.message||'')).trim()))||('http '+r.status);
+            lastErr='TTS '+model+': '+String(em).slice(0,90);
+          }catch(e){lastErr=String((e&&e.message)||e||'');}
+        }
       }
       throw new Error(lastErr||'TTS falhou');
     }
@@ -1048,13 +1077,13 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       return chunks.filter(Boolean);
     }
     async function elFetch(t){
-      const r=await fetch('https://api.elevenlabs.io/v1/text-to-speech/onwK4e9ZLuTAKqWW03F9?output_format=mp3_44100_128',{
+      const r=await jfetch('https://api.elevenlabs.io/v1/text-to-speech/onwK4e9ZLuTAKqWW03F9?output_format=mp3_44100_128',{
         method:'POST',headers:{'xi-api-key':ELKEY,'Content-Type':'application/json'},
-        body:JSON.stringify({text:t,model_id:'eleven_flash_v2_5',voice_settings:{stability:0.5,similarity_boost:0.8}})});
+        body:JSON.stringify({text:t,model_id:'eleven_flash_v2_5',voice_settings:{stability:0.5,similarity_boost:0.8}})},18000);
       if(!r.ok)throw new Error('el '+r.status);
       const blob=await r.blob();
       if(!blob||blob.size<800)throw new Error('el vazio');
-      return URL.createObjectURL(blob);
+      return URL.createObjectURL(await jarvisTimbre(blob));
     }
     async function speak(text,prefetch){
       if(!voiceOn)return;
