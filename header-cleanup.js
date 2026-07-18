@@ -5,7 +5,9 @@
 (() => {
   'use strict';
 
-  const ALLOWED_IDS = new Set(['moreMenuBtn', 'quickMenu', 'supabaseStorageBtn', 'painelBtn', 'financeiroBtn', 'lixBtn', 'alertsBtn', 'themeToggle', 'atualizarBtn', 'notaRapidaBtn', 'equipamentosBtn', 'calFullBtn']);
+  const ALLOWED_IDS = new Set(['moreMenuBtn', 'quickMenu', 'seqTimerBtn', 'supabaseStorageBtn', 'painelBtn', 'financeiroBtn', 'lixBtn', 'alertsBtn', 'themeToggle', 'atualizarBtn', 'notaRapidaBtn', 'equipamentosBtn', 'calFullBtn']);
+  // Controles que ficam VISÍVEIS no topo (não são movidos para dentro do menu).
+  const KEEP_IN_HEADER = new Set(['moreMenuBtn', 'seqTimerBtn']);
   const STYLE_ID = 'agendaHeaderCleanupStyles';
 
   const ensureStyles = () => {
@@ -32,7 +34,7 @@
       const menu = actions.querySelector('#quickMenu');
       if (menu) {
         [...actions.children].forEach(child => {
-          if (child !== menu && child.id !== 'moreMenuBtn') menu.appendChild(child);
+          if (child !== menu && !KEEP_IN_HEADER.has(child.id)) menu.appendChild(child);
         });
       }
       [...actions.children].forEach(child => {

@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v183-sync-inteligente';
+const CACHE = 'agenda-lagares-v184-modo-sequencia';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4"><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=10"><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2"><\/script>';
@@ -13,7 +13,7 @@ const SIMPLE_ACCESS_SCRIPT = '<script src="./supabase-simple-access.js?v=5"><\/s
 const SHARING_SCRIPT = '<script src="./agenda-sharing.js?v=2"><\/script>';
 const WEB_PUSH_SCRIPT = '<script src="./web-push.js?v=1"><\/script>';
 const VIEWMODE_SCRIPT = '<script src="./viewmode.js?v=1"><\/script>';
-const HEADER_CLEANUP_SCRIPT = '<script src="./header-cleanup.js?v=3"><\/script>';
+const HEADER_CLEANUP_SCRIPT = '<script src="./header-cleanup.js?v=4"><\/script>';
 const UNDO_SCRIPT = '<script src="./undo.js?v=1"><\/script>';
 const LIXEIRA_SCRIPT = '<script src="./lixeira.js?v=1"><\/script>';
 const INTEL_SCRIPT = '<script src="./agenda-intelligence.js?v=2"><\/script>';
@@ -24,6 +24,9 @@ const POLISH_STYLE = '<link rel="stylesheet" href="./interface-polish.css?v=4">'
 const POLISH_SCRIPT = '<script src="./interface-polish.js?v=1" defer><\/script>';
 const REG_FIN_SCRIPT = '<script src="./registros-financeiros.js?v=1"><\/script>';
 const AUTH_GATE_SCRIPT = '<script src="./auth-gate.js?v=1"><\/script>';
+const SEQ_SCRIPT = '<script src="./sequencial.js?v=3"><\/script>';
+const ANIM_SCRIPT = '<script src="./anim-enhance.js?v=1"><\/script>';
+const LOGIN_MENU_SCRIPT = '<script src="./login-menu.js?v=1"><\/script>';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 self.addEventListener('activate', event => {
@@ -70,6 +73,9 @@ self.addEventListener('fetch', event => {
     if (!isAuxPage && !html.includes('registros-financeiros.js')) html = html.replace('</body>', `${REG_FIN_SCRIPT}</body>`);
     if (!isAuxPage && !html.includes('auth-gate.js')) html = html.replace('</body>', `${AUTH_GATE_SCRIPT}</body>`);
     if (!isAuxPage && !html.includes('agenda-sharing.js')) html = html.replace('</body>', `${SHARING_SCRIPT}</body>`);
+    if (!isAuxPage && !html.includes('sequencial.js')) html = html.replace('</body>', `${SEQ_SCRIPT}</body>`);
+    if (!isAuxPage && !html.includes('anim-enhance.js')) html = html.replace('</body>', `${ANIM_SCRIPT}</body>`);
+    if (!isAuxPage && !html.includes('login-menu.js')) html = html.replace('</body>', `${LOGIN_MENU_SCRIPT}</body>`);
     const headers = new Headers(response.headers);
     headers.delete('content-length');
     headers.delete('content-encoding');

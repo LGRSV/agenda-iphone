@@ -41,6 +41,30 @@
     #viewContent>.view-roll-next{animation:viewRollNext .28s cubic-bezier(.2,.8,.2,1) both}#viewContent>.view-roll-prev{animation:viewRollPrev .28s cubic-bezier(.2,.8,.2,1) both}.calendar-day-opening{position:relative;z-index:4;pointer-events:none;animation:calendarDayOpening .16s cubic-bezier(.2,.8,.2,1) both}#viewContent>.view-calendar-zoom-in{transform-origin:var(--calendar-zoom-x,50%) var(--calendar-zoom-y,30%);animation:viewCalendarZoomIn .28s cubic-bezier(.2,.8,.2,1) both}.list-heading{min-width:0}.list-heading h2{margin:0}.list-previous{display:inline-flex;align-items:center;margin-top:5px;padding:0;border:0;background:transparent;color:var(--accent);font-size:11px;font-weight:800}.list-previous:active{transform:scale(.96)}@keyframes viewRollNext{from{opacity:.3;transform:translate3d(32px,0,0)}to{opacity:1;transform:translate3d(0,0,0)}}@keyframes viewRollPrev{from{opacity:.3;transform:translate3d(-32px,0,0)}to{opacity:1;transform:translate3d(0,0,0)}}@keyframes calendarDayOpening{to{opacity:0;transform:scale(2.8)}}@keyframes viewCalendarZoomIn{from{opacity:.18;transform:scale(.94)}to{opacity:1;transform:scale(1)}}@media(prefers-reduced-motion:reduce){#viewContent>.view-roll-next,#viewContent>.view-roll-prev,#viewContent>.view-calendar-zoom-in,.calendar-day-opening{animation:none}}
     #rescheduleDialog{width:min(calc(100% - 40px),370px);overflow:visible;border-radius:22px}#rescheduleDialog[open]{animation:quickSquareIn .24s cubic-bezier(.2,.85,.2,1) both}#rescheduleDialog.is-closing{animation:quickSquareOut .18s ease both}#rescheduleDialog::backdrop{background:rgba(0,0,0,.42);backdrop-filter:blur(2px)}.reschedule-modal{padding:20px}.reschedule-head{display:flex;align-items:center;gap:12px}.reschedule-icon{width:43px;height:43px;display:grid;place-items:center;flex:0 0 auto;border:1px solid var(--line);border-radius:14px;background:var(--soft);color:var(--accent)}.reschedule-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.reschedule-head h3{margin:0;font-size:21px;letter-spacing:-.04em}.reschedule-task-name{margin:3px 0 0!important;max-width:245px;overflow:hidden;color:var(--muted)!important;white-space:nowrap;text-overflow:ellipsis}.reschedule-presets{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:14px}.reschedule-preset{min-height:38px;border:1px solid var(--line);border-radius:11px;background:var(--soft);color:var(--text);font-size:12px;font-weight:800}.reschedule-preset:active{border-color:var(--accent);color:var(--accent)}@keyframes quickSquareIn{from{opacity:0;transform:scale(.72);border-radius:8px}to{opacity:1;transform:scale(1);border-radius:22px}}@keyframes quickSquareOut{to{opacity:0;transform:scale(.78);border-radius:8px}}@media(prefers-reduced-motion:reduce){#rescheduleDialog[open],#rescheduleDialog.is-closing{animation:none}}
   </style>
+  <style id="agendaMotionPerfStyles">
+    /* ---- Animações de abrir/fechar (modais, menu) ---- */
+    /* Entrada padrão de qualquer <dialog> que não tenha animação própria. */
+    dialog[open]:not(#rescheduleDialog):not(.is-closing){animation:agDialogIn .26s cubic-bezier(.2,.85,.2,1) both}
+    dialog.is-closing:not(#rescheduleDialog){animation:agDialogOut .18s ease both}
+    dialog:not(#rescheduleDialog)::backdrop{animation:agBackdropIn .26s ease both}
+    dialog.is-closing::backdrop{animation:agBackdropOut .18s ease both}
+    @keyframes agDialogIn{from{opacity:0;transform:translateY(14px) scale(.965)}to{opacity:1;transform:none}}
+    @keyframes agDialogOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(10px) scale(.97)}}
+    @keyframes agBackdropIn{from{opacity:0}to{opacity:1}}
+    @keyframes agBackdropOut{from{opacity:1}to{opacity:0}}
+    /* Conclusão de tarefa: feedback visível no lugar dos 720ms parados. */
+    .task-card.task-completing{animation:agTaskDone .66s cubic-bezier(.2,.8,.2,1) both}
+    @keyframes agTaskDone{0%{transform:scale(1)}18%{transform:scale(.98)}45%{transform:scale(1.015);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent),0 0 22px color-mix(in srgb,var(--accent) 20%,transparent)}100%{transform:scale(1);box-shadow:none}}
+    /* ---- Performance: contenção de layout/paint ---- */
+    /* Isola o custo de re-render de cada linha e evita reflow global. */
+    .view-shell{contain:layout style}
+    .task-swipe{contain:layout paint;content-visibility:auto;contain-intrinsic-size:auto 66px}
+    .calendar-day{contain:layout paint}
+    .quick-menu{will-change:transform,opacity}
+    @media(prefers-reduced-motion:reduce){
+      dialog[open],dialog.is-closing,dialog::backdrop,.task-card.task-completing{animation:none}
+    }
+  </style>
 </head>
 <body>
   <div id="agendaAuthVeil" role="status" aria-label="Carregando acesso"><div class="veil-box"><div class="veil-spin" aria-hidden="true"></div><p>Preparando seu acesso à Agenda…</p><button type="button" onclick="try{window.AgendaSupabaseLogin&&window.AgendaSupabaseLogin.open()}catch(_){}">Entrar</button></div></div>
@@ -1250,12 +1274,15 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
   <script src="./condicional.js?v=3"></script>
   <script src="./agenda-notas-rapidas.js?v=5"></script>
   <script src="./calendario-cheio.js?v=3"></script>
-  <script src="./header-cleanup.js?v=3"></script>
+  <script src="./header-cleanup.js?v=4"></script>
   <script src="./supabase-project-config.js?v=1"></script>
   <script src="./supabase-shared-storage.js?v=4"></script>
   <script src="./supabase-login-ui.js?v=4"></script>
   <script src="./supabase-simple-access.js?v=5"></script>
   <script src="./auth-gate.js?v=1"></script>
   <script src="./agenda-sharing.js?v=2"></script>
+  <script src="./sequencial.js?v=3"></script>
+  <script src="./anim-enhance.js?v=1"></script>
+  <script src="./login-menu.js?v=1"></script>
 </body>
 </html>
