@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v201-treino-autocura';
+const CACHE = 'agenda-lagares-v202-pluggy-connect';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=12" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -53,7 +53,8 @@ self.addEventListener('fetch', event => {
       const isInvest = html.includes('investimentos.html');
       const isCarteira = html.includes('carteira.html');
       const isTreinoAna = html.includes('treino-ana.html');
-      const isAuxPage = isFinance || isGame || isTraining || isInvest || isCarteira || isTreinoAna;
+      const isPluggy = html.includes('pluggy.html');
+      const isAuxPage = isFinance || isGame || isTraining || isInvest || isCarteira || isTreinoAna || isPluggy;
       if (!isAuxPage && !html.includes('interface-polish.css')) html = html.replace('</head>', `${POLISH_STYLE}</head>`);
       if (!isAuxPage && !html.includes('edit-enhancement.js')) html = html.replace('</body>', `${EDIT_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('treino.js')) html = html.replace('</body>', `${TREINO_SCRIPT}</body>`);
