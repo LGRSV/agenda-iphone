@@ -1,0 +1,32 @@
+name: Publicar Agenda v197
+
+on:
+  push:
+    paths:
+      - "v197.patch"
+      - ".github/workflows/apply-v197.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply-v197:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Aplicar v197 exatamente
+        shell: bash
+        run: |
+          if [ ! -f v197.patch ]; then
+            echo "Patch ainda não enviado; aguardando próximo push."
+            exit 0
+          fi
+          git apply --index v197.patch
+          git rm --cached v197.patch .github/workflows/apply-v197.yml
+          rm -f v197.patch .github/workflows/apply-v197.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Agenda v197: estabiliza Jarvis, Supabase e InfoMoney"
+          git push origin HEAD:main
