@@ -1,0 +1,178 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><meta name="theme-color" content="#141019"><title>Treino da Ana Carolina</title><meta name="app-page" content="treino-ana.html"><style>
+:root{--bg:#141019;--card:#1e1826;--soft:#2a2233;--line:#372c44;--txt:#f6f2fb;--mut:#b6a9c4;--rosa:#ff5fa2;--rosa2:#ff8cc0;--roxo:#a06bff;--verde:#5fd6a0}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--bg)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.app{max-width:760px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom))}
+.head{display:flex;gap:13px;align-items:center}
+.back{width:44px;height:44px;display:grid;place-items:center;text-decoration:none;border:1px solid var(--line);background:var(--card);color:var(--txt);border-radius:13px}.back svg{width:22px}
+.ey{margin:0;color:var(--rosa);font-size:11px;font-weight:800;letter-spacing:.12em}
+.head h1{margin:4px 0;font-size:26px;letter-spacing:-.03em}
+.muted{margin:0;color:var(--mut);font-size:13px}
+.hero{margin-top:16px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(140deg,#3a1030,#241a30 60%,#1e1826);padding:16px 17px;position:relative;overflow:hidden}
+.hero:before{content:"";position:absolute;top:-40%;right:-8%;width:190px;height:190px;background:radial-gradient(circle,rgba(255,95,162,.25),transparent 70%);pointer-events:none}
+.hero h2{margin:0 0 3px;font-size:17px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:13px}
+.stat{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:13px;padding:10px 8px;text-align:center}
+.stat b{display:block;font-size:19px;color:var(--rosa2)}.stat span{display:block;font-size:10px;color:var(--mut);font-weight:700;margin-top:3px}
+.prog{margin-top:12px}
+.prog-bar{height:9px;border-radius:999px;background:rgba(255,255,255,.09);overflow:hidden}
+.prog-fill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--rosa),var(--roxo));transition:width .9s cubic-bezier(.2,.7,.2,1)}
+.prog-txt{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);font-weight:700;margin-top:6px}
+h3.sec{font-size:11px;letter-spacing:.09em;color:var(--mut);margin:24px 0 10px}
+.days{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;margin:0 -2px}.days::-webkit-scrollbar{display:none}
+.day{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--mut);border-radius:13px;padding:9px 13px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:64px}
+.day small{font-size:9px;font-weight:700;letter-spacing:.03em}
+.day.on{background:linear-gradient(135deg,var(--rosa),var(--roxo));color:#fff;border-color:transparent}
+.wk-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:16px 0 4px}
+.wk-head h2{margin:0;font-size:20px;letter-spacing:-.02em}
+.wk-focus{font-size:11px;font-weight:800;color:var(--rosa2);text-transform:uppercase;letter-spacing:.04em}
+.wk-sub{color:var(--mut);font-size:12.5px;margin:0 0 12px}
+.card{border:1px solid var(--line);border-radius:18px;background:var(--card);overflow:hidden;margin-bottom:12px}
+.card-top{display:flex;gap:12px;padding:12px}
+.demo{position:relative;width:96px;height:96px;flex:0 0 auto;border-radius:14px;overflow:hidden;background:var(--soft)}
+.demo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.demo img.flip{opacity:0;animation:frames 1.6s steps(1,end) infinite}
+@keyframes frames{0%,50%{opacity:0}50.01%,100%{opacity:1}}
+.demo .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--mut);font-size:26px}
+.ex-info{flex:1;min-width:0}
+.ex-name{font-weight:800;font-size:15px;line-height:1.25}
+.ex-mus{display:inline-block;margin-top:4px;font-size:10px;font-weight:800;color:var(--roxo);background:rgba(160,107,255,.13);border:1px solid rgba(160,107,255,.3);padding:2px 8px;border-radius:999px}
+.ex-pre{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+.pill{font-size:11px;font-weight:800;background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:5px 9px}
+.pill b{color:var(--rosa2)}
+.prg{padding:0 12px 12px}
+.prg summary{cursor:pointer;list-style:none;font-size:11.5px;font-weight:800;color:var(--verde);display:flex;align-items:center;gap:6px;padding:8px 0 4px;border-top:1px dashed var(--line)}
+.prg summary::-webkit-details-marker{display:none}
+.prg summary:before{content:"▸";transition:transform .2s}
+.prg[open] summary:before{transform:rotate(90deg)}
+.prg p{margin:4px 0 0;font-size:12.5px;color:var(--mut);line-height:1.5}
+.card.cardio{background:linear-gradient(135deg,#132a22,#1e1826)}
+.card.cardio .ex-mus{color:var(--verde);background:rgba(95,214,160,.12);border-color:rgba(95,214,160,.3)}
+.note{border:1px solid var(--line);border-radius:16px;background:var(--card);padding:14px 16px;margin-top:8px}
+.note h4{margin:0 0 7px;font-size:13px;color:var(--rosa2)}
+.note ul{margin:0;padding-left:18px}.note li{font-size:13px;color:var(--mut);line-height:1.65;margin-bottom:3px}
+.foot{text-align:center;color:var(--mut);font-size:11px;margin-top:22px;line-height:1.6}
+</style></head><body><main class="app">
+<header class="head"><a class="back" href="./" aria-label="Voltar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></a><div><p class="ey">TREINO PERSONALIZADO</p><h1>Ana Carolina</h1><p class="muted">Emagrecimento · musculação + cardio · 5×/semana</p></div></header>
+
+<section class="hero">
+  <h2>Meta: chegar aos 46 kg com saúde 💪</h2>
+  <p class="muted">Plano de iniciante com foco em queimar gordura, preservar músculo e criar constância. Progressão de carga sugerida em cada exercício.</p>
+  <div class="stats">
+    <div class="stat"><b>51 kg</b><span>ATUAL</span></div>
+    <div class="stat"><b>46 kg</b><span>META</span></div>
+    <div class="stat"><b>1,60 m</b><span>ALTURA</span></div>
+  </div>
+  <div class="prog">
+    <div class="prog-bar"><div class="prog-fill" id="pf"></div></div>
+    <div class="prog-txt"><span>Início 51 kg</span><span id="pfl">0% do caminho</span><span>46 kg</span></div>
+  </div>
+</section>
+
+<h3 class="sec">ESCOLHA O DIA</h3>
+<div class="days" id="days"></div>
+
+<div id="plan"></div>
+
+<h3 class="sec">COMO EVOLUIR A CARGA (leia primeiro)</h3>
+<div class="note">
+  <h4>Regra da dupla progressão — simples e segura</h4>
+  <ul>
+    <li><b>Comece leve:</b> escolha um peso em que, no fim da série, você sente que ainda faria mais 2 a 3 repetições. Nada de falhar.</li>
+    <li><b>Suba as repetições primeiro:</b> quando conseguir fazer <b>todas as séries no topo da faixa</b> (ex.: 3×15) por <b>2 treinos seguidos</b>, aumente o peso.</li>
+    <li><b>Quanto aumentar:</b> membros inferiores (perna/glúteo) +2 a 4 kg; superiores (braço/ombro) +1 a 2 kg. Ao subir, as repetições caem — recomece pela base da faixa e suba de novo.</li>
+    <li><b>Descanso:</b> 45–60 s entre séries de isolamento; 60–90 s nos compostos (agachamento, terra, remada).</li>
+    <li><b>Semanas 1–2:</b> foco total na técnica, peso bem leve. <b>3–4:</b> começa a somar carga. <b>5–8:</b> progressão contínua pela regra acima.</li>
+  </ul>
+</div>
+
+<h3 class="sec">CARDIO &amp; DIA A DIA (onde o emagrecimento acontece)</h3>
+<div class="note">
+  <h4>Estratégia de gasto calórico</h4>
+  <ul>
+    <li><b>Cardio moderado (Zona 2):</b> 25–35 min após a musculação, num ritmo em que dá pra conversar puxado. Esteira inclinada, elíptico, bike ou caminhada rápida.</li>
+    <li><b>1× por semana HIIT (sexta):</b> 8–10 tiros de 30 s forte / 60 s leve. Curto e potente.</li>
+    <li><b>Passos:</b> meta de 8.000–10.000 passos/dia — é o que mais soma no fim do mês.</li>
+    <li><b>Realidade:</b> emagrecer os 5 kg é ~70% alimentação. O treino acelera e preserva o músculo (o que deixa o corpo "durinho"), mas o défice calórico na comida é o que puxa o ponteiro da balança. Capriche na proteína e na hidratação.</li>
+  </ul>
+</div>
+
+<p class="foot">Plano montado por Lagares 💗 · Ajuste as cargas ao seu ritmo — constância vale mais que intensidade.<br>Fotos: free-exercise-db (domínio público).</p>
+</main>
+<script>(()=>{
+'use strict';
+const BASE='https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises';
+const demo=slug=>{
+  if(!slug)return '<div class="demo"><div class="ph">🏋️</div></div>';
+  const b=BASE+'/'+encodeURIComponent(slug);
+  return '<div class="demo"><div class="ph">🏋️</div>'+
+    '<img src="'+b+'/0.jpg" alt="" loading="lazy" onerror="this.style.display=\'none\'">'+
+    '<img class="flip" src="'+b+'/1.jpg" alt="" loading="lazy" onerror="this.style.display=\'none\'"></div>';
+};
+// 5 dias · foco emagrecimento, ênfase em glúteo/perna (queima muito) + full body + core
+const PLAN=[
+  {d:'Seg',t:'Inferiores A',focus:'Glúteo & Quadríceps',sub:'Base de perna — os maiores músculos gastam mais energia.',ex:[
+    {n:'Agachamento no Smith',m:'Glúteo/Quadríceps',s:3,r:'12',slug:'Smith_Machine_Squat',p:'Comece só com a barra. Desça até a coxa ficar paralela ao chão, joelho na direção do pé. Suba o peso quando fizer 3×12 firmes.'},
+    {n:'Leg press 45°',m:'Pernas',s:3,r:'12–15',slug:'Leg_Press',p:'Pés na largura do quadril. É o exercício mais fácil de progredir carga: some 5–10 kg quando as 15 saírem tranquilas.'},
+    {n:'Elevação de quadril (hip thrust)',m:'Glúteo',s:3,r:'12',slug:'Barbell_Hip_Thrust',p:'O melhor pra glúteo. Comece com peso leve na barra/apoio; segure 1 s no topo apertando o glúteo. +2–4 kg por vez.'},
+    {n:'Cadeira extensora',m:'Quadríceps',s:3,r:'15',slug:'Leg_Extensions',p:'Isolamento — suba 1 placa quando fizer 3×15 sem balançar.'},
+    {n:'Cadeira abdutora',m:'Glúteo médio',s:3,r:'15–20',slug:'Thigh_Abductor',p:'Incline levemente o tronco à frente pra pegar mais glúteo. Progressão de 1 placa.'},
+    {n:'Panturrilha em pé',m:'Panturrilha',s:4,r:'20',slug:'Standing_Calf_Raises',p:'Amplitude total, sobe no talão. 4×20; suba carga quando as últimas não arderem.'}
+  ]},
+  {d:'Ter',t:'Superiores',focus:'Costas, Peito, Ombro & Braço',sub:'Corpo inteiro de cima — postura e tônus.',ex:[
+    {n:'Puxada frontal (pulldown)',m:'Costas',s:3,r:'12',slug:'Wide-Grip_Lat_Pulldown',p:'Puxe a barra até o queixo levando os cotovelos pra baixo. +1 placa a cada 3×12 completos.'},
+    {n:'Remada baixa na máquina',m:'Costas',s:3,r:'12',slug:'Seated_Cable_Rows',p:'Aperte as escápulas atrás. Progressão de 1 placa.'},
+    {n:'Supino com halteres',m:'Peito',s:3,r:'12',slug:'Dumbbell_Bench_Press',p:'Comece com 4–6 kg cada mão. +1–2 kg quando 3×12 saírem com folga.'},
+    {n:'Desenvolvimento com halteres',m:'Ombro',s:3,r:'12',slug:'Dumbbell_Shoulder_Press',p:'Halteres na linha das orelhas, sobe sem travar o cotovelo. +1 kg por vez.'},
+    {n:'Elevação lateral',m:'Ombro',s:3,r:'15',slug:'Side_Lateral_Raise',p:'Leve (1–3 kg)! Sobe até a linha do ombro. Aqui a progressão é lenta — priorize técnica.'},
+    {n:'Rosca martelo',m:'Bíceps/Antebraço',s:3,r:'12–15',slug:'Hammer_Curls',p:'Sem balançar o corpo. +1 kg quando o topo da faixa ficar fácil.'},
+    {n:'Tríceps na corda',m:'Tríceps',s:3,r:'15',slug:'Triceps_Pushdown_-_Rope_Attachment',p:'Abra a corda no fim do movimento. Progressão de 1 placa.'}
+  ]},
+  {d:'Qua',t:'Cardio + Core',focus:'Queima & Abdômen',sub:'Dia mais leve nos pesos, forte no cardio.',ex:[
+    {n:'Cardio Zona 2',m:'Aeróbico',s:1,r:'35 min',slug:'',cardio:true,p:'Esteira inclinada, elíptico ou bike num ritmo que dá pra conversar puxado. É o queima-gordura principal da semana.'},
+    {n:'Prancha isométrica',m:'Core',s:3,r:'30–45 s',slug:'Plank',p:'Corpo reto, bumbum na linha. Aumente 5 s por semana.'},
+    {n:'Abdominal crunch',m:'Abdômen',s:3,r:'15–20',slug:'Crunches',p:'Movimento curto e controlado, sem puxar o pescoço.'},
+    {n:'Elevação de pernas deitada',m:'Abdômen inferior',s:3,r:'12–15',slug:'Flat_Bench_Lying_Leg_Raise',p:'Lombar colada no banco/chão. Desça as pernas devagar.'},
+    {n:'Russian twist',m:'Oblíquos',s:3,r:'20 (10/lado)',slug:'Russian_Twist',p:'Gire o tronco tocando ao lado. Segure um peso leve quando ficar fácil.'}
+  ]},
+  {d:'Qui',t:'Inferiores B',focus:'Posterior & Glúteo',sub:'Foco na parte de trás da perna e no bumbum.',ex:[
+    {n:'Levantamento terra romeno',m:'Posterior/Glúteo',s:3,r:'12',slug:'Romanian_Deadlift',p:'Barra/halteres deslizando na coxa, empurra o quadril pra trás, joelho quase reto. Comece MUITO leve — técnica primeiro. +2–4 kg.'},
+    {n:'Mesa flexora',m:'Posterior de coxa',s:3,r:'12–15',slug:'Lying_Leg_Curls',p:'Puxe o calcanhar até o glúteo. Progressão de 1 placa.'},
+    {n:'Afundo com halteres',m:'Glúteo/Quadríceps',s:3,r:'10/perna',slug:'Dumbbell_Lunges',p:'Passo firme, joelho de trás quase no chão. Comece sem peso, depois 2–4 kg em cada mão.'},
+    {n:'Coice na polia (glúteo)',m:'Glúteo',s:3,r:'15/perna',slug:'Glute_Kickback',p:'Empurre o calcanhar pra trás e cima, aperta o glúteo. +1 placa quando fizer 3×15 firme.'},
+    {n:'Elevação de quadril na barra',m:'Glúteo',s:3,r:'15',slug:'Barbell_Glute_Bridge',p:'Variação no chão. Pausa de 1 s no topo.'},
+    {n:'Panturrilha sentada ou em pé',m:'Panturrilha',s:4,r:'20',slug:'Standing_Calf_Raises',p:'Amplitude total. 4×20.'}
+  ]},
+  {d:'Sex',t:'Full Body + HIIT',focus:'Corpo todo & Metabólico',sub:'Circuito rápido pra fechar a semana gastando muito.',ex:[
+    {n:'Agachamento com halter (goblet)',m:'Pernas/Glúteo',s:3,r:'12',slug:'Dumbbell_Squat',p:'Segure 1 halter junto ao peito. Peso moderado, ritmo constante.'},
+    {n:'Remada curvada com halteres',m:'Costas',s:3,r:'12',slug:'Bent_Over_Two-Dumbbell_Row',p:'Tronco inclinado, puxa os halteres às costelas.'},
+    {n:'Cadeira adutora',m:'Parte interna da coxa',s:3,r:'15–20',slug:'Thigh_Adductor',p:'Feche as pernas controlando. Progressão de 1 placa.'},
+    {n:'Agachamento livre / peso do corpo',m:'Pernas',s:3,r:'15',slug:'Bodyweight_Squat',p:'Ritmo mais rápido aqui, pra elevar os batimentos.'},
+    {n:'HIIT final',m:'Aeróbico intenso',s:1,r:'8–10 tiros',slug:'',cardio:true,p:'30 s forte / 60 s leve na esteira ou bike. Termina o treino com o metabolismo lá em cima.'}
+  ]}
+];
+const daysEl=document.getElementById('days'),planEl=document.getElementById('plan');
+let cur=Math.max(0,Math.min(4,(new Date().getDay()+6)%7)); if(cur>4)cur=0; // seg-sex; fim de semana cai na seg
+PLAN.forEach((w,i)=>{
+  const b=document.createElement('button');
+  b.className='day'+(i===cur?' on':'');
+  b.innerHTML=w.d+'<small>'+w.t.toUpperCase()+'</small>';
+  b.onclick=()=>{cur=i;renderDays();renderPlan();};
+  daysEl.appendChild(b);
+});
+function renderDays(){[...daysEl.children].forEach((b,i)=>b.classList.toggle('on',i===cur));}
+function renderPlan(){
+  const w=PLAN[cur];
+  planEl.innerHTML=
+    '<div class="wk-head"><h2>'+w.d+' · '+w.t+'</h2><span class="wk-focus">'+w.focus+'</span></div>'+
+    '<p class="wk-sub">'+w.sub+'</p>'+
+    w.ex.map(e=>'<div class="card'+(e.cardio?' cardio':'')+'"><div class="card-top">'+demo(e.slug)+
+      '<div class="ex-info"><div class="ex-name">'+e.n+'</div><span class="ex-mus">'+e.m+'</span>'+
+      '<div class="ex-pre"><span class="pill"><b>'+e.s+'</b> série'+(e.s>1?'s':'')+'</span><span class="pill"><b>'+e.r+'</b>'+(/min|tiro|s$/.test(e.r)?'':' reps')+'</span></div></div></div>'+
+      '<details class="prg"><summary>Progressão sugerida</summary><p>'+e.p+'</p></details></div>').join('');
+}
+renderDays();renderPlan();
+// barra de meta (estática por enquanto — no futuro dá pra puxar o peso real)
+setTimeout(()=>{document.getElementById('pf').style.width='0%';document.getElementById('pfl').textContent='vamos começar!';},300);
+})();</script>
+</body></html>
