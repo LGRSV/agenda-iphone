@@ -1,0 +1,221 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1220"><title>Importar extrato</title><meta name="app-page" content="importar.html"><style>
+html{-webkit-text-size-adjust:100%;background:#0b1220}*{box-sizing:border-box}
+body{margin:0;background:#0b1220;color:#eef2f8;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.app{max-width:640px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(120px + env(safe-area-inset-bottom))}
+.head{display:flex;gap:13px;align-items:center}
+.back{width:44px;height:44px;display:grid;place-items:center;text-decoration:none;border:1px solid #26324a;background:#141d2e;color:#eef2f8;border-radius:13px}.back svg{width:22px}
+.ey{margin:0;color:#4fd1c5;font-size:11px;font-weight:800;letter-spacing:.12em}
+.head h1{margin:4px 0;font-size:25px;letter-spacing:-.03em}
+.muted{margin:0;color:#93a1b8;font-size:13px}
+.step{border:1px solid #26324a;border-radius:16px;background:#141d2e;padding:14px 16px;margin-top:14px}
+.step h3{margin:0 0 8px;font-size:12px;color:#4fd1c5;letter-spacing:.05em}
+select,.filebtn{width:100%;min-height:46px;padding:10px 13px;border-radius:12px;border:1px solid #26324a;background:#0e1626;color:#eef2f8;font-size:15px;font-weight:700}
+.filebtn{display:grid;place-items:center;cursor:pointer;border-style:dashed;border-color:#3b82c4;color:#6ec9ff}
+input[type=file]{display:none}
+.acct{display:inline-block;vertical-align:1px;margin-left:5px;padding:1px 6px 2px;border-radius:6px;font-size:9px;font-weight:850}
+.acct.mp{background:#009ee3;color:#fff}.acct.nb{background:#820ad1;color:#fff}.acct.in{background:#ff7a00;color:#fff}
+.sum{display:flex;gap:9px;margin-top:14px}
+.sumbox{flex:1;border:1px solid #26324a;border-radius:13px;background:#141d2e;padding:10px;text-align:center}
+.sumbox b{display:block;font-size:17px}.sumbox span{display:block;color:#93a1b8;font-size:10px;font-weight:800;margin-top:3px}
+.sumbox.in b{color:#5fd6a0}.sumbox.out b{color:#ff7a90}.sumbox.dup b{color:#93a1b8}
+.rows{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.row{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:start;border:1px solid #26324a;border-radius:13px;background:#141d2e;padding:11px 12px}
+.row.dup{opacity:.45}
+.row input[type=checkbox]{appearance:none;width:22px;height:22px;border:1.5px solid #93a1b8;border-radius:7px;background:transparent;margin:0}
+.row input[type=checkbox]:checked{background:#4fd1c5;border-color:#4fd1c5}
+.row .t{font-weight:750;font-size:13.5px;line-height:1.3}
+.row .m{color:#93a1b8;font-size:11px;font-weight:700;margin-top:3px}
+.row .v{font-weight:850;white-space:nowrap;font-size:14px}
+.v.in{color:#5fd6a0}.v.out{color:#ff7a90}
+.launch{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));padding:16px;border:0;border-radius:15px;background:linear-gradient(135deg,#0d9488,#2563eb);color:#fff;font-size:16px;font-weight:850;cursor:pointer;box-shadow:0 12px 30px rgba(0,0,0,.5);max-width:608px;margin:auto}
+.launch:disabled{opacity:.5}
+.status{margin-top:14px;min-height:20px;font-size:13.5px;text-align:center;color:#93a1b8}
+.status.ok{color:#4fd1c5;font-weight:800}.status.err{color:#ff7a90;font-weight:700}
+.help{margin-top:16px;border:1px solid #26324a;border-radius:14px;background:#0e1626;padding:13px 15px}
+.help h3{margin:0 0 7px;font-size:11px;color:#4fd1c5;letter-spacing:.05em}
+.help li{font-size:12px;color:#93a1b8;line-height:1.6;margin-bottom:3px}.help ul{margin:0;padding-left:17px}
+</style></head><body>
+<script>
+(function(){function h(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||"null");var s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return true;}}catch(_){}return false;}if(!h()){location.replace("./?locked=1");}})();
+</script>
+<main class="app">
+<header class="head"><a class="back" href="./financeiro.html" aria-label="Voltar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></a><div><p class="ey">FINANCEIRO</p><h1>Importar extrato</h1><p class="muted">OFX ou CSV · Pix, compras e tudo que passou na conta</p></div></header>
+
+<div class="step">
+  <h3>1 · DE QUAL CONTA É ESTE EXTRATO?</h3>
+  <select id="banco">
+    <option value="mp">Mercado Pago (conta) — saídas descontam do saldo MP</option>
+    <option value="nb">Nubank (conta) — saídas descontam do saldo Nubank</option>
+    <option value="inter">Cartão Inter (fatura) — compras vão para a fatura</option>
+  </select>
+</div>
+
+<div class="step">
+  <h3>2 · ESCOLHA O ARQUIVO DO EXTRATO</h3>
+  <label class="filebtn" for="file">📄 Tocar para escolher (.ofx ou .csv)</label>
+  <input id="file" type="file" accept=".ofx,.csv,.txt,.qfx">
+</div>
+
+<div class="sum" id="sum" hidden>
+  <div class="sumbox in"><b id="nIn">0</b><span>ENTRADAS</span></div>
+  <div class="sumbox out"><b id="nOut">0</b><span>SAÍDAS</span></div>
+  <div class="sumbox dup"><b id="nDup">0</b><span>JÁ LANÇADAS</span></div>
+</div>
+
+<div class="status" id="status"></div>
+<div class="rows" id="rows"></div>
+
+<div class="help">
+  <h3>COMO EXPORTAR O EXTRATO</h3>
+  <ul>
+    <li><b>Nubank:</b> app → conta → ícone de extrato → Exportar extrato → OFX (ou CSV).</li>
+    <li><b>Inter:</b> app → extrato (conta ou fatura do cartão) → compartilhar → OFX/CSV.</li>
+    <li><b>Mercado Pago:</b> app/site → Atividade → baixar extrato.</li>
+    <li>Pode importar o mesmo período mais de uma vez: o que já foi lançado não repete.</li>
+    <li>Os lançamentos importados entram no extrato/estatísticas do mês, mas <b>não mexem no saldo em conta</b> (o saldo você ajusta pelo valor real do banco — evita contar duas vezes).</li>
+  </ul>
+</div>
+</main>
+<button class="launch" id="launch" type="button" disabled>Lançar transações</button>
+<script>
+(()=>{
+'use strict';
+const TK='agenda_lagares_v3',NK='agenda_notas_v1';
+const j=(k,f)=>{try{return JSON.parse(localStorage.getItem(k)||'')||f}catch(_){return f}};
+const money=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n||0);
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const uuid=()=>(crypto.randomUUID?crypto.randomUUID():String(Date.now())+'-'+Math.random().toString(36).slice(2,9));
+const statusEl=document.getElementById('status');
+const say=(m,c)=>{statusEl.textContent=m;statusEl.className='status'+(c?' '+c:'');};
+let parsed=[]; // {key, date, time, desc, valor, tipo:'in'|'out', dup}
+
+// ---------- parsers ----------
+function parseOfxDate(v){const m=/^(\d{4})(\d{2})(\d{2})(?:(\d{2})(\d{2}))?/.exec(String(v||'').trim());if(!m)return null;return{date:m[1]+'-'+m[2]+'-'+m[3],time:(m[4]&&m[5])?(m[4]+':'+m[5]):''};}
+function parseOFX(text){
+  const out=[];
+  const blocks=text.split(/<STMTTRN>/i).slice(1);
+  for(const b of blocks){
+    const seg=b.split(/<\/STMTTRN>/i)[0];
+    const f={};let m;const re=/<(TRNTYPE|DTPOSTED|TRNAMT|FITID|NAME|MEMO)>([^<\r\n]*)/gi;
+    while((m=re.exec(seg)))f[m[1].toUpperCase()]=m[2].trim();
+    const d=parseOfxDate(f.DTPOSTED);if(!d)continue;
+    const amt=Number(String(f.TRNAMT||'').replace(',','.'));if(!Number.isFinite(amt)||amt===0)continue;
+    const desc=(f.MEMO||f.NAME||'Lançamento').slice(0,90);
+    const key=f.FITID?('IMP:'+f.FITID):('IMP:'+d.date+'|'+amt+'|'+desc.slice(0,30));
+    out.push({key,date:d.date,time:d.time,desc,valor:Math.abs(amt),tipo:(amt<0||/^DEBIT$/i.test(f.TRNTYPE||''))?'out':'in'});
+  }
+  return out;
+}
+function brNumber(s){
+  s=String(s||'').trim().replace(/[R$\s]/g,'');
+  if(/,\d{1,2}$/.test(s))s=s.replace(/\./g,'').replace(',','.');
+  else s=s.replace(/,/g,'');
+  const n=Number(s);return Number.isFinite(n)?n:NaN;
+}
+function parseDateAny(s){
+  s=String(s||'').trim();
+  let m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s);if(m)return m[1]+'-'+m[2]+'-'+m[3];
+  m=/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/.exec(s);if(m)return m[3]+'-'+m[2]+'-'+m[1];
+  return null;
+}
+function parseCSV(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  if(!lines.length)return[];
+  const delim=(lines[0].split(';').length>lines[0].split(',').length)?';':',';
+  const split=l=>{const out=[];let cur='',q=false;for(const ch of l){if(ch==='"'){q=!q;continue;}if(ch===delim&&!q){out.push(cur);cur='';}else cur+=ch;}out.push(cur);return out.map(s=>s.trim());};
+  const head=split(lines[0]).map(h=>h.toLowerCase());
+  const idx=names=>head.findIndex(h=>names.some(n=>h.includes(n)));
+  const iData=idx(['data','date']),iVal=idx(['valor','amount','value']),iDesc=idx(['descri','histor','título','titulo','estabelecimento','memo']),iId=idx(['identificador','id','transaction']);
+  if(iData<0||iVal<0)return[];
+  const out=[];
+  for(let i=1;i<lines.length;i++){
+    const c=split(lines[i]);if(c.length<2)continue;
+    const date=parseDateAny(c[iData]);if(!date)continue;
+    const amt=brNumber(c[iVal]);if(!Number.isFinite(amt)||amt===0)continue;
+    const desc=String(iDesc>=0?(c[iDesc]||''):'Lançamento').slice(0,90)||'Lançamento';
+    const key=(iId>=0&&c[iId])?('IMP:'+c[iId]):('IMP:'+date+'|'+amt+'|'+desc.slice(0,30));
+    out.push({key,date,time:'',desc,valor:Math.abs(amt),tipo:amt<0?'out':'in'});
+  }
+  return out;
+}
+
+// ---------- dedup contra o que já existe ----------
+function knownKeys(){
+  const notes=j(NK,{}),set=new Set();
+  for(const k of Object.keys(notes)){const m=/IMP:([^\s]+)/.exec(String(notes[k]&&notes[k].detail||''));if(m)set.add('IMP:'+m[1]);}
+  return set;
+}
+
+function render(){
+  const rows=document.getElementById('rows');rows.innerHTML='';
+  let nIn=0,nOut=0,nDup=0;
+  parsed.forEach((t,i)=>{
+    if(t.dup)nDup++;else if(t.tipo==='in')nIn++;else nOut++;
+    const d=t.date.split('-');
+    const el=document.createElement('label');
+    el.className='row'+(t.dup?' dup':'');
+    el.innerHTML='<input type="checkbox" data-i="'+i+'" '+(t.dup?'disabled':'checked')+'>'+
+      '<span><span class="t">'+esc(t.desc)+'</span><span class="m">'+d[2]+'/'+d[1]+'/'+d[0]+(t.time?' '+t.time:'')+(t.dup?' · já lançada':'')+'</span></span>'+
+      '<span class="v '+(t.tipo==='in'?'in':'out')+'">'+(t.tipo==='in'?'+ ':'− ')+money(t.valor)+'</span>';
+    rows.appendChild(el);
+  });
+  document.getElementById('nIn').textContent=nIn;
+  document.getElementById('nOut').textContent=nOut;
+  document.getElementById('nDup').textContent=nDup;
+  document.getElementById('sum').hidden=false;
+  document.getElementById('launch').disabled=!(nIn+nOut);
+  say(parsed.length?'Confira e toque em "Lançar transações".':'Nenhuma transação reconhecida no arquivo.','');
+}
+
+document.getElementById('file').addEventListener('change',async e=>{
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  say('Lendo '+f.name+'…');
+  try{
+    const text=await f.text();
+    let list=/OFX/i.test(text)&&/<STMTTRN>/i.test(text)?parseOFX(text):parseCSV(text);
+    if(!list.length&&/<STMTTRN>/i.test(text))list=parseOFX(text);
+    // dedup interno + contra os já lançados
+    const seen=new Set(),known=knownKeys();
+    parsed=list.filter(t=>{if(seen.has(t.key))return false;seen.add(t.key);return true;})
+               .map(t=>({...t,dup:known.has(t.key)}))
+               .sort((a,b)=>(b.date+(b.time||'')).localeCompare(a.date+(a.time||'')));
+    render();
+  }catch(err){say('Não consegui ler o arquivo: '+((err&&err.message)||err),'err');}
+});
+
+document.getElementById('launch').addEventListener('click',()=>{
+  const banco=document.getElementById('banco').value; // mp | nb | inter
+  const checks=[...document.querySelectorAll('input[type=checkbox][data-i]:checked')];
+  if(!checks.length)return;
+  const tasks=j(TK,[]),notes=j(NK,{});
+  const nomeBanco=banco==='mp'?'Mercado Pago':banco==='nb'?'Nubank':'Cartão Inter';
+  let count=0;
+  for(const c of checks){
+    const t=parsed[Number(c.dataset.i)];if(!t||t.dup)continue;
+    const id=uuid();
+    const isOut=t.tipo==='out';
+    const note={
+      movimento:isOut?'saida':'entrada',
+      valor:String(t.valor),
+      forma:isOut?(banco==='inter'?'inter':'pix'):'',
+      vence:'',valorJuros:'',durationMin:null,
+      detail:'Extrato importado ('+nomeBanco+') · '+t.key,
+      subs:[],importado:true
+    };
+    if(isOut&&banco!=='inter')note.conta=banco; // pix: desconta viria da conta certa — mas importado não mexe no saldo
+    tasks.push({id,text:t.desc,date:t.date,time:t.time||'',tag:'financeiro',reminder:-1,done:!isOut});
+    notes[id]=note;
+    count++;
+  }
+  localStorage.setItem(TK,JSON.stringify(tasks));
+  localStorage.setItem(NK,JSON.stringify(notes));
+  try{const DK='agenda_supabase_dirty_v1';const d=j(DK,{});d.tasks=Date.now();d.notes=Date.now();localStorage.setItem(DK,JSON.stringify(d));}catch(_){}
+  say(count+' transaç'+(count===1?'ão lançada':'ões lançadas')+'! Já estão no financeiro e sincronizando.','ok');
+  document.getElementById('launch').disabled=true;
+  const known=knownKeys();parsed=parsed.map(t=>({...t,dup:known.has(t.key)}));render();
+  say(count+' lançadas com sucesso ✓ Pode importar outro arquivo.','ok');
+});
+})();
+</script>
+<script src="./supabase-project-config.js?v=1"></script>
+</body></html>
