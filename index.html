@@ -113,7 +113,7 @@
       ['2026-06-28','Criação do usuário da Maria Eduarda no SGM','trabalho'],['2026-06-28','Criação das limpezas de faixa de Ponte Alta das duas chaves','trabalho'],['2026-06-28','Passar roupas sociais','casa'],['2026-06-28','Secar e dobrar roupas','casa'],['2026-06-28','Anunciar iPhone 13 Polícia Militar','pessoal'],['2026-06-28','Conversar com fornecedor sobre entrega do carregador portátil do Nicolas (portaria Energisa)','trabalho'],['2026-06-28','Depois do almoço: incluir rota de Porto Nacional (KML Sandro T1/T2)','trabalho'],['2026-06-28','Simular machine learning com KML do Sandro','trabalho'],['2026-06-29','Manhã: revisar casos Allan (equipamentos SCADA com SS pendentes DCMD)','trabalho'],['2026-06-29','Manhã: realocar 2 reguladores 400 kVA (caso São Bento)','trabalho'],['2026-06-29','Manhã: treinamento/workshop com campo','trabalho'],['2026-06-29','Almoço: devolver pedido ML (código com papai) e avaliar delta + R$ 1.000 da mesa','pessoal'],['2026-06-29','Almoço: trocar carregador portátil do Nicolas com fornecedor','pessoal'],['2026-06-29','Tarde: iniciar plano de ação de equipamentos especiais','trabalho'],['2026-06-29','Reservar 30 min no final do expediente para organização dos arquivos','trabalho'],['2026-07-16','Cobrar mamãe para pagar o tênis','financeiro'],['2026-07-17','Buscar tênis (nota no porta-luvas)','pessoal']
     ].map(([date,text,tag],index)=>({id:`seed-${index+1}`,text,date,time:'',tag,reminder:-1,done:false}));
     const $=s=>document.querySelector(s),el={root:document.documentElement,themeColor:$('#themeColor'),themeToggle:$('#themeToggle'),alertsBtn:$('#alertsBtn'),moreMenuBtn:$('#moreMenuBtn'),quickMenu:$('#quickMenu'),currentDate:$('#currentDate'),progressLabel:$('#progressLabel'),progressText:$('#progressText'),progressBar:$('#progressBar'),progressMessage:$('#progressMessage'),viewTabs:$('#viewTabs'),filters:$('#filters'),viewContent:$('#viewContent'),taskDialog:$('#taskDialog'),alertsDialog:$('#alertsDialog'),rescheduleDialog:$('#rescheduleDialog'),rescheduleForm:$('#rescheduleForm'),rescheduleTaskName:$('#rescheduleTaskName'),rescheduleDate:$('#rescheduleDate'),rescheduleTime:$('#rescheduleTime'),taskForm:$('#taskForm'),taskText:$('#taskText'),taskDate:$('#taskDate'),taskTime:$('#taskTime'),taskTag:$('#taskTag'),taskReminder:$('#taskReminder'),taskRepeat:$('#taskRepeat'),alertsStatus:$('#alertsStatus'),toast:$('#toast')};
-    let filter='all',view='month',toastTimer,listLimit=60,tasks=loadTasks(),selectedDate=initialDate(),monthCursor=dateAtNoon(initialDate()),monthMotion=0,viewMotion=0,calendarZoomOrigin=null,listShowsPrevious=false,monthSwipeStartX=null,monthSwipePointer=null,suppressCalendarClick=false,monthWheelLocked=false,rescheduleTargetId=null,taskSwipeState=null,openTaskSwipe=null,suppressTaskClick=false;
+    let filter='all',view='month',toastTimer,listLimit=60,tasks=dedupeTasks(loadTasks()),selectedDate=initialDate(),monthCursor=dateAtNoon(initialDate()),monthMotion=0,viewMotion=0,calendarZoomOrigin=null,listShowsPrevious=false,monthSwipeStartX=null,monthSwipePointer=null,suppressCalendarClick=false,monthWheelLocked=false,rescheduleTargetId=null,taskSwipeState=null,openTaskSwipe=null,suppressTaskClick=false;
     (()=>{const p=new URLSearchParams(location.search),date=p.get('date');if(p.get('view')==='day'){view='day';if(/^\d{4}-\d{2}-\d{2}$/.test(date||'')){selectedDate=date;monthCursor=dateAtNoon(date)}try{history.replaceState(null,'',location.pathname)}catch(_){}}})();
     function json(value){try{return JSON.parse(value)}catch(_){return null}}
     function id(){return `${Date.now()}-${Math.random().toString(36).slice(2,9)}`}
@@ -124,10 +124,32 @@
     function prepareBlankWorkspace(){const config=json(localStorage.getItem('agenda_supabase_config_v1'))||{},owner=String(config.workspaceOwnerId||'');if(!owner||isPrimaryAgenda()||localStorage.getItem('agenda_local_workspace_owner_v1')===owner)return;const docs={agenda_lagares_v3:[],agenda_notas_v1:{},agenda_lagares_rules_v1:[],agenda_treino_logs_v1:{},agenda_treino_meta_v1:{},agenda_lagares_config_v1:{},agenda_lixeira_v1:[],agenda_historico_v1:[]};Object.entries(docs).forEach(([key,value])=>localStorage.setItem(key,JSON.stringify(value)));localStorage.setItem('agenda_local_workspace_owner_v1',owner)}
     function loadTasks(){prepareBlankWorkspace();const hasReal=a=>Array.isArray(a)&&a.some(t=>t&&t.text&&!/^(?:🏋|Treino [ABC])/.test(t.text));const saved=json(localStorage.getItem(TASK_KEY));const savedArr=Array.isArray(saved)?saved.map(normalise).filter(Boolean):null;if(!isPrimaryAgenda())return savedArr||[];if(hasReal(savedArr))return savedArr;const treino=(savedArr||[]).filter(t=>/^(?:🏋|Treino [ABC])/.test(t.text||''));const merge=arr=>{const conv=arr.map(normalise).filter(Boolean);if(!conv.some(t=>!/^(?:🏋|Treino [ABC])/.test(t.text)))return null;const m=conv.concat(treino.filter(tt=>!conv.some(c=>c.id===tt.id)));localStorage.setItem(TASK_KEY,JSON.stringify(m));return m;};for(const key of['agenda_profissional_iphone_v1','agenda_tasks']){const old=json(localStorage.getItem(key));if(Array.isArray(old)){const r=merge(old);if(r)return r;}}const pre=json(localStorage.getItem('agenda_lagares_backup_pre_sync_v1'));if(pre&&Array.isArray(pre.tarefas)){const r=merge(pre.tarefas);if(r)return r;}return savedArr||seed}
     function save(){localStorage.setItem(TASK_KEY,JSON.stringify(tasks))}
+    // Dedup defensivo: colapsa tarefas idênticas (mesmo texto+data+hora+tag) que
+    // versões antigas do app pudessem ter duplicado (ex.: tarefa compartilhada
+    // recriada a cada sync sem a chave sharedFrom). Mantém uma cópia, preferindo
+    // a que tem sharedFrom (para o compartilhamento continuar reconhecendo) e a
+    // concluída. Tarefas em datas/horas diferentes nunca são afetadas.
+    function dedupeTasks(arr){
+      if(!Array.isArray(arr))return Array.isArray(arr)?arr:[];
+      const seen=new Map(),out=[];let removed=0;
+      for(const t of arr){
+        if(!t||!t.text){out.push(t);continue;}
+        const key=`${t.text}|${t.date||''}|${t.time||''}|${t.tag||''}`;
+        const idx=seen.get(key);
+        if(idx===undefined){seen.set(key,out.length);out.push(t);continue;}
+        removed++;
+        const kept=out[idx];
+        const replace=(!!t.sharedFrom!==!!kept.sharedFrom)?!!t.sharedFrom:((!!t.done!==!!kept.done)?!!t.done:false);
+        if(replace){ if(kept.done)t.done=true; if(kept.sharedFrom&&!t.sharedFrom)t.sharedFrom=kept.sharedFrom; out[idx]=t; }
+        else { if(t.done)kept.done=true; if(t.sharedFrom&&!kept.sharedFrom)kept.sharedFrom=t.sharedFrom; }
+      }
+      if(removed>0){try{localStorage.setItem(TASK_KEY,JSON.stringify(out));}catch(_){}}
+      return out;
+    }
     let remoteSyncRenderTimer=0;
     window.addEventListener('agenda:remote-sync',()=>{
       clearTimeout(remoteSyncRenderTimer);
-      remoteSyncRenderTimer=setTimeout(()=>{try{tasks=loadTasks();render()}catch(_){}},60);
+      remoteSyncRenderTimer=setTimeout(()=>{try{tasks=dedupeTasks(loadTasks());render()}catch(_){}},60);
     });
     const RULES_KEY='agenda_lagares_rules_v1',RECUR_HORIZON=120,RECUR_REGEN=75;
     function loadRules(){const v=json(localStorage.getItem(RULES_KEY));return Array.isArray(v)?v:[]}
