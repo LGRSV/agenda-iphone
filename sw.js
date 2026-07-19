@@ -1,6 +1,6 @@
-const CACHE = 'agenda-lagares-v198-treino-ana';
+const CACHE = 'agenda-lagares-v199-treino-multi';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
-const TREINO_SCRIPT = '<script src="./treino.js?v=10" defer><\/script>';
+const TREINO_SCRIPT = '<script src="./treino.js?v=11" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
 const GAME_SCRIPT = '<script src="./gamificacao.js?v=4" defer><\/script>';
 const FINANCEIRO_SCRIPT = '<script src="./financeiro.js?v=2" defer><\/script>';

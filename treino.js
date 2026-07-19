@@ -15,7 +15,7 @@
   const STYLE_ID = 'treinoStyles';
   const HORIZON = 90;   // gera treinos para os próximos 90 dias
   const REGEN = 60;     // regera quando a cobertura cair abaixo de 60 dias
-  const META_VERSION = 5; // sobe p/ forçar regeneração dos treinos de dia útil (recupera treinos que sumiram)
+  const META_VERSION = 6; // sobe p/ forçar regeneração (v6: planos por conta — Lagares A/B/C e Ana 5 dias)
   const TIME_KEY = 'agenda_treino_time_v1'; // horário do treino, ajustável pelo editor ("aplicar a todos os próximos")
   const pageMode = document.body && document.body.dataset.treinoPage === '1';
   const isPrimaryAgenda = () => {
@@ -27,6 +27,26 @@
     } catch (_) { return true; }
   };
   const treinoTime = () => { try { const t = localStorage.getItem(TIME_KEY); return /^\d{2}:\d{2}$/.test(t || '') ? t : '05:30'; } catch (_) { return '05:30'; } };
+  // ---- plano por conta: Lagares (A/B/C) e Ana Carolina (5 dias, emagrecimento) ----
+  const ANA_EMAIL = 'anacarolina.social123@gmail.com';
+  function accountEmail() {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!/^sb-.*-auth-token$/.test(k || '')) continue;
+        const r = JSON.parse(localStorage.getItem(k) || 'null');
+        const s = r && (r.currentSession || r.session || r);
+        const em = s && s.user && s.user.email;
+        if (em) return String(em).trim().toLowerCase();
+      }
+    } catch (_) {}
+    return '';
+  }
+  function planId() {
+    if (accountEmail() === ANA_EMAIL) return 'ana';
+    if (isPrimaryAgenda()) return 'lagares';
+    return '';
+  }
 
   /* ---------- animações dos exercícios (SVG + SMIL, tudo offline) --------
      Bonequinho articulado: os membros dobram no cotovelo/joelho e o
@@ -127,7 +147,13 @@
     a4: 'Dumbbell_Shoulder_Press', a5: 'Side_Lateral_Raise', a6: 'Triceps_Pushdown_-_Rope_Attachment', a7: 'Lying_Triceps_Press',
     b1: 'Wide-Grip_Lat_Pulldown', b2: 'Seated_Cable_Rows', b3: 'Bent_Over_Two-Dumbbell_Row', b4: 'Full_Range-Of-Motion_Lat_Pulldown',
     b5: 'Barbell_Curl', b6: 'Alternate_Incline_Dumbbell_Curl', b7: 'Hammer_Curls',
-    c1: 'Barbell_Full_Squat', c2: 'Leg_Press', c3: 'Leg_Extensions', c4: 'Lying_Leg_Curls', c5: 'Standing_Calf_Raises', c6: 'Crunches'
+    c1: 'Barbell_Full_Squat', c2: 'Leg_Press', c3: 'Leg_Extensions', c4: 'Lying_Leg_Curls', c5: 'Standing_Calf_Raises', c6: 'Crunches',
+    // Ana Carolina (validados na free-exercise-db)
+    an_a1: 'Smith_Machine_Squat', an_a2: 'Leg_Press', an_a3: 'Barbell_Hip_Thrust', an_a4: 'Leg_Extensions', an_a5: 'Thigh_Abductor', an_a6: 'Standing_Calf_Raises',
+    an_b1: 'Wide-Grip_Lat_Pulldown', an_b2: 'Seated_Cable_Rows', an_b3: 'Dumbbell_Bench_Press', an_b4: 'Dumbbell_Shoulder_Press', an_b5: 'Side_Lateral_Raise', an_b6: 'Hammer_Curls', an_b7: 'Triceps_Pushdown_-_Rope_Attachment',
+    an_c1: 'Plank', an_c2: 'Crunches', an_c3: 'Flat_Bench_Lying_Leg_Raise', an_c4: 'Russian_Twist',
+    an_d1: 'Romanian_Deadlift', an_d2: 'Lying_Leg_Curls', an_d3: 'Dumbbell_Lunges', an_d4: 'Glute_Kickback', an_d5: 'Barbell_Glute_Bridge', an_d6: 'Standing_Calf_Raises',
+    an_e1: 'Dumbbell_Squat', an_e2: 'Bent_Over_Two-Dumbbell_Row', an_e3: 'Thigh_Adductor', an_e4: 'Bodyweight_Squat'
   };
   function demoHtml(ex) {
     const svg = animFor(ex.mov);
@@ -180,6 +206,48 @@
     }
   };
 
+  /* --- plano da Ana Carolina: 5 dias (Seg–Sex), foco emagrecimento --------
+     Indexado pelo dia da semana (1=segunda … 5=sexta).                      */
+  const WORKOUTS_ANA = {
+    1: { muscles: 'Inferiores A · Glúteo e Quadríceps', label: 'Inferiores A', exercises: [
+      { k: 'an_a1', name: 'Agachamento no Smith', muscle: 'Glúteo / Quadríceps', sets: 3, reps: '12', mov: 'squat' },
+      { k: 'an_a2', name: 'Leg press 45°', muscle: 'Pernas', sets: 3, reps: '12-15', mov: 'legpress' },
+      { k: 'an_a3', name: 'Elevação de quadril (hip thrust)', muscle: 'Glúteo', sets: 3, reps: '12', mov: 'squat' },
+      { k: 'an_a4', name: 'Cadeira extensora', muscle: 'Quadríceps', sets: 3, reps: '15', mov: 'legext' },
+      { k: 'an_a5', name: 'Cadeira abdutora', muscle: 'Glúteo médio', sets: 3, reps: '15-20', mov: 'legext' },
+      { k: 'an_a6', name: 'Panturrilha em pé', muscle: 'Panturrilha', sets: 4, reps: '20', mov: 'calf' }
+    ] },
+    2: { muscles: 'Superiores · Costas, Peito, Ombro e Braço', label: 'Superiores', exercises: [
+      { k: 'an_b1', name: 'Puxada frontal (pulldown)', muscle: 'Costas', sets: 3, reps: '12', mov: 'pulldown' },
+      { k: 'an_b2', name: 'Remada baixa (máquina)', muscle: 'Costas', sets: 3, reps: '12', mov: 'row' },
+      { k: 'an_b3', name: 'Supino com halteres', muscle: 'Peito', sets: 3, reps: '12', mov: 'press' },
+      { k: 'an_b4', name: 'Desenvolvimento com halteres', muscle: 'Ombro', sets: 3, reps: '12', mov: 'press' },
+      { k: 'an_b5', name: 'Elevação lateral', muscle: 'Ombro', sets: 3, reps: '15', mov: 'lateral' },
+      { k: 'an_b6', name: 'Rosca martelo', muscle: 'Bíceps', sets: 3, reps: '12-15', mov: 'curl' },
+      { k: 'an_b7', name: 'Tríceps na corda', muscle: 'Tríceps', sets: 3, reps: '15', mov: 'pushdown' }
+    ] },
+    3: { muscles: 'Cardio e Core', label: 'Cardio + Core', exercises: [
+      { k: 'an_c1', name: 'Prancha isométrica', muscle: 'Core', sets: 3, reps: '30-45s', mov: 'abs' },
+      { k: 'an_c2', name: 'Abdominal crunch', muscle: 'Abdômen', sets: 3, reps: '15-20', mov: 'abs' },
+      { k: 'an_c3', name: 'Elevação de pernas deitada', muscle: 'Abdômen inferior', sets: 3, reps: '12-15', mov: 'abs' },
+      { k: 'an_c4', name: 'Russian twist', muscle: 'Oblíquos', sets: 3, reps: '20', mov: 'abs' }
+    ] },
+    4: { muscles: 'Inferiores B · Posterior e Glúteo', label: 'Inferiores B', exercises: [
+      { k: 'an_d1', name: 'Levantamento terra romeno', muscle: 'Posterior / Glúteo', sets: 3, reps: '12', mov: 'squat' },
+      { k: 'an_d2', name: 'Mesa flexora', muscle: 'Posterior de coxa', sets: 3, reps: '12-15', mov: 'legext' },
+      { k: 'an_d3', name: 'Afundo com halteres', muscle: 'Glúteo / Quadríceps', sets: 3, reps: '10/perna', mov: 'squat' },
+      { k: 'an_d4', name: 'Coice na polia (glúteo)', muscle: 'Glúteo', sets: 3, reps: '15/perna', mov: 'legext' },
+      { k: 'an_d5', name: 'Elevação de quadril na barra', muscle: 'Glúteo', sets: 3, reps: '15', mov: 'squat' },
+      { k: 'an_d6', name: 'Panturrilha em pé', muscle: 'Panturrilha', sets: 4, reps: '20', mov: 'calf' }
+    ] },
+    5: { muscles: 'Full Body + HIIT', label: 'Full Body + HIIT', exercises: [
+      { k: 'an_e1', name: 'Agachamento goblet (halter)', muscle: 'Pernas / Glúteo', sets: 3, reps: '12', mov: 'squat' },
+      { k: 'an_e2', name: 'Remada curvada com halteres', muscle: 'Costas', sets: 3, reps: '12', mov: 'row' },
+      { k: 'an_e3', name: 'Cadeira adutora', muscle: 'Parte interna da coxa', sets: 3, reps: '15-20', mov: 'legext' },
+      { k: 'an_e4', name: 'Agachamento livre', muscle: 'Pernas', sets: 3, reps: '15', mov: 'squat' }
+    ] }
+  };
+
   /* --------------------------- utilidades base --------------------------- */
   const readJSON = (key, fallback) => {
     try { const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }
@@ -212,6 +280,29 @@
     return weeks * 5 + Math.min(rem, 4);
   }
   const workoutForDate = dstr => ['A', 'B', 'C'][(((weekdayIndex(dstr) % 3) + 3) % 3)];
+  const weekdayOf = dstr => new Date(dstr + 'T12:00:00').getDay();
+  // resolve o treino do dia conforme o plano ativo (ou null em dia de descanso)
+  function planWorkout(dstr) {
+    const p = planId();
+    if (p === 'lagares') {
+      if (isWeekend(dstr)) return null;
+      const w = workoutForDate(dstr);
+      return { plan: 'lagares', key: w, label: 'Treino ' + w, muscles: WORKOUTS[w].muscles, exercises: WORKOUTS[w].exercises };
+    }
+    if (p === 'ana') {
+      const g = weekdayOf(dstr);
+      if (g < 1 || g > 5) return null; // treina seg–sex
+      const wo = WORKOUTS_ANA[g];
+      return { plan: 'ana', key: 'AN' + g, label: wo.label, muscles: wo.muscles, exercises: wo.exercises };
+    }
+    return null;
+  }
+  // texto do card na agenda para o dia (respeita o plano)
+  function cardTextFor(dstr) {
+    const wo = planWorkout(dstr);
+    if (!wo) return '';
+    return wo.plan === 'lagares' ? `Treino ${wo.key} · ${wo.muscles}` : `🏋️ Treino · ${wo.muscles}`;
+  }
   const esc = v => { const d = document.createElement('div'); d.textContent = v; return d.innerHTML; };
   function prettyDate(dstr) {
     try { return new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(dstr + 'T12:00:00')); }
@@ -232,28 +323,30 @@
     const tasks = readTasks();
     let changed = false;
 
-    // 1) reconcilia treinos já existentes: remove os de fim de semana (não
-    //    concluídos) e corrige a letra/horário dos de dia útil que mudaram
+    // 1) reconcilia treinos já existentes: remove os de dia de descanso (não
+    //    concluídos) e corrige o texto/horário dos dias de treino que mudaram.
+    //    "Dia de descanso" = planWorkout(data) nulo (fim de semana no plano
+    //    Lagares; sáb/dom no plano da Ana).
     for (let i = tasks.length - 1; i >= 0; i--) {
       const tk = tasks[i];
       if (!String(tk.id).startsWith('treino-')) continue;
-      if (isWeekend(tk.date)) {
+      const wo = planWorkout(tk.date);
+      if (!wo) {
         if (!tk.done) { tasks.splice(i, 1); changed = true; }
         continue;
       }
       if (!tk.done) {
-        const text = workoutText(workoutForDate(tk.date));
-        if (tk.text !== text) { tk.text = text; changed = true; }
+        const text = cardTextFor(tk.date);
+        if (text && tk.text !== text) { tk.text = text; changed = true; }
         if (tk.time !== treinoTime()) { tk.time = treinoTime(); changed = true; }
       }
     }
 
-    // 2) cria os treinos de dia útil que faltam na janela
+    // 2) cria os treinos que faltam na janela (só nos dias de treino do plano)
     const have = new Set(tasks.filter(x => String(x.id).startsWith('treino-')).map(x => x.date));
     for (let d = t0; d <= target; d = addDays(d, 1)) {
-      if (isWeekend(d) || have.has(d)) continue;
-      const w = workoutForDate(d);
-      tasks.push({ id: 'treino-' + d, text: workoutText(w), date: d, time: treinoTime(), tag: 'saude', reminder: 0, done: false });
+      if (have.has(d) || !planWorkout(d)) continue;
+      tasks.push({ id: 'treino-' + d, text: cardTextFor(d), date: d, time: treinoTime(), tag: 'saude', reminder: 0, done: false });
       changed = true;
     }
 
@@ -346,7 +439,7 @@
   }
 
   /* ------------------------------ dialog --------------------------------- */
-  let dialogEl = null, currentDate = null, currentW = null;
+  let dialogEl = null, currentDate = null, currentW = null, currentLabel = '';
 
   /* ----------------------- cronômetro de descanso ------------------------ */
   const RING_C = 2 * Math.PI * 23; // circunferência do anel (r=23)
@@ -556,16 +649,16 @@
   function openModal(taskId) {
     const task = readTasks().find(t => String(t.id) === String(taskId));
     if (!task) return;
-    const m = /treino\s+([abc])/i.exec(task.text || '');
     currentDate = String(task.id).replace('treino-', '');
-    currentW = (m && m[1] ? m[1] : workoutForDate(currentDate)).toUpperCase();
-    const plan = WORKOUTS[currentW];
+    const plan = planWorkout(currentDate);
     if (!plan) return;
+    currentW = plan.key;
+    currentLabel = plan.label;
 
     ensureStyles();
     const dlg = ensureDialog();
     const logs = loadLogs();
-    dlg.querySelector('#trEyebrow').textContent = `Treino ${currentW} · Nível iniciante`;
+    dlg.querySelector('#trEyebrow').textContent = `${plan.label} · Nível iniciante`;
     dlg.querySelector('#trTitle').textContent = plan.muscles;
     dlg.querySelector('#trSub').textContent = prettyDate(currentDate);
     dlg.querySelector('#trDone').textContent = task.done ? 'Concluído ✓' : 'Salvar e concluir ✓';
@@ -601,7 +694,7 @@
       const task = tasks.find(t => String(t.id) === 'treino-' + currentDate);
       if (task) { task.done = true; writeTasks(tasks); }
       if (!pageMode) dialogEl.close();
-      toast(`Treino ${currentW} concluído! ${count} carga${count === 1 ? '' : 's'} salva${count === 1 ? '' : 's'}.`);
+      toast(`${currentLabel} concluído! ${count} carga${count === 1 ? '' : 's'} salva${count === 1 ? '' : 's'}.`);
       setTimeout(() => pageMode ? location.href='./?view=day&date='+encodeURIComponent(currentDate) : window.location.reload(), 350);
       return;
     }
@@ -701,9 +794,9 @@
 
   /* -------------------------------- init --------------------------------- */
   function init() {
-    if (isPrimaryAgenda() && ensureTasks()) { window.location.reload(); return; }
+    if (planId() && ensureTasks()) { window.location.reload(); return; }
     ensureStyles();
-    if (!pageMode && isPrimaryAgenda()) ensureCardioUI();
+    if (!pageMode && planId()) ensureCardioUI();
     installButtons();
 
     let frame = 0;
