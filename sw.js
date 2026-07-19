@@ -1,10 +1,10 @@
-const CACHE = 'agenda-lagares-v189-investimentos';
+const CACHE = 'agenda-lagares-v194-revisao';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=10" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
 const GAME_SCRIPT = '<script src="./gamificacao.js?v=4" defer><\/script>';
 const FINANCEIRO_SCRIPT = '<script src="./financeiro.js?v=2" defer><\/script>';
-const NOTAS_SCRIPT = '<script src="./notas.js?v=7" defer><\/script>';
+const NOTAS_SCRIPT = '<script src="./notas.js?v=8" defer><\/script>';
 const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3" defer><\/script>';
 const SUPABASE_CONFIG_SCRIPT = '<script src="./supabase-project-config.js?v=1" defer><\/script>';
 const SUPABASE_SCRIPT = '<script src="./supabase-shared-storage.js?v=5" defer><\/script>';
