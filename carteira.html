@@ -1,0 +1,117 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><meta name="theme-color" content="#050506"><title>Carteira</title><meta name="app-page" content="carteira.html"><style>
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:#17181c}*{box-sizing:border-box}body{margin:0;background:#17181c;color:#f7f8fb;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.app{max-width:760px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 16px 40px}.head{display:flex;gap:13px;align-items:center}.back,.nav,button{border:1px solid #3b404a;background:#202228;color:#f7f8fb;border-radius:13px}.back,.nav{width:44px;height:44px;display:grid;place-items:center;text-decoration:none;font-size:25px}.back svg{width:22px}.ey{margin:0;color:#6ec9ff;font-size:11px;font-weight:800;letter-spacing:.12em}.head h1{margin:4px 0;font-size:27px;letter-spacing:-.04em}.muted{margin:0;color:#a6acb8;font-size:13px}
+.bar,.list{border:1px solid #3b404a;border-radius:18px;background:#202228}.bar{padding:16px;background:linear-gradient(135deg,#123a5c,#202228);margin-top:18px}.bar b{display:block;color:#6ec9ff;font-size:32px;margin-top:6px;letter-spacing:-.02em}
+h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:22px 0 8px}
+.sec{border:1px solid #3b404a;border-radius:18px;background:#202228;padding:14px 16px}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:9px 0;border-top:1px solid #2b2e35;font-size:14px;font-weight:700}
+.row:first-child{border-top:0}
+.row small{display:block;color:#a6acb8;font-weight:600;font-size:10px;margin-top:2px}
+.row .v{font-weight:850;white-space:nowrap}
+.v.pos{color:#78d88b}.v.neg{color:#ff7f91}.v.info{color:#6ec9ff}
+.tot{border-top:1.5px solid #3b404a;margin-top:4px;padding-top:11px}
+.acct{display:inline-block;vertical-align:1px;margin-right:6px;padding:1px 6px 2px;border-radius:6px;font-size:9px;font-weight:850;letter-spacing:.02em;line-height:1.2}
+.acct.mp{background:#009ee3;color:#fff}.acct.nb{background:#820ad1;color:#fff}
+.tagf{display:inline-block;margin-left:6px;padding:1px 7px 2px;border-radius:999px;font-size:9px;font-weight:800;background:#2a2d35;color:#a6acb8;border:1px solid #3b404a}
+.month{display:grid;grid-template-columns:44px 1fr 44px;gap:8px;align-items:center;margin:20px 0 10px}.month strong{text-align:center;text-transform:capitalize}
+.saida-row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:11px 3px;border-bottom:1px solid #2b2e35;align-items:start}
+.saida-row:last-child{border-bottom:0}
+.saida-row .title{font-weight:750;line-height:1.3;font-size:14px}
+.saida-row .meta{margin-top:4px;color:#a6acb8;font-size:11px;font-weight:700}
+.saida-row .value{font-weight:850;white-space:nowrap;color:#ff7f91}
+.list{padding:4px 13px}
+.empty{padding:22px;text-align:center;color:#a6acb8}
+.prog{color:#ffb74d;font-weight:850}
+</style></head><body><script>(function(){function h(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||"null");var s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return true;}}catch(_){}return false;}if(!h()){location.replace("./?locked=1");}})();</script><main class="app">
+<header class="head"><a class="back" href="./financeiro.html" aria-label="Voltar ao Financeiro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></a><div><p class="ey">CARTEIRA</p><h1>Patrimônio</h1><p class="muted">Contas, investimentos e aposentadoria</p></div></header>
+
+<section class="bar"><span class="muted">Patrimônio total</span><b id="patrimonio">R$ 0,00</b><span class="muted" id="patrisub"></span></section>
+
+<h2>CONTAS · SALDO ATUAL E PREVISTO</h2>
+<section class="sec" id="contas"></section>
+
+<h2>INVESTIMENTOS &amp; APOSENTADORIA</h2>
+<section class="sec" id="invests"></section>
+
+<nav class="month"><button class="nav" id="prev">‹</button><strong id="mn"></strong><button class="nav" id="next">›</button></nav>
+
+<h2>SAÍDAS · VISÃO GERAL</h2>
+<section class="sec" id="resumoSaidas"></section>
+
+<h2>TODAS AS SAÍDAS DO MÊS</h2>
+<section class="list" id="saidas"></section>
+</main>
+<script>(()=>{
+'use strict';
+const TK='agenda_lagares_v3',NK='agenda_notas_v1',CK='agenda_contas_v1',IK='agenda_investimentos_v1';
+const j=(k,f)=>{try{return JSON.parse(localStorage.getItem(k)||'')||f}catch(_){return f}};
+const money=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n||0);
+const num=v=>{const n=Number(String(v??'').replace(',','.'));return Number.isFinite(n)?n:0};
+const pd=x=>String(x).padStart(2,'0');
+const dstr=d=>d.getFullYear()+'-'+pd(d.getMonth()+1)+'-'+pd(d.getDate());
+const FORMA_LBL={inter:'Cartão Inter',pix:'Pix',dinheiro:'Dinheiro',mp:'Mercado Pago'};
+const acctTag=c=>'<span class="acct '+(c==='nb'?'nb':'mp')+'">'+(c==='nb'?'nu':'MP')+'</span>';
+// mesma classificação do painel financeiro
+const kind=(t,n)=>n.movimento||(/cobrar|sal[aá]rio|receber/i.test(t.text)?'entrada':/mesada|mayara/i.test(t.text)?'saida':(num(n.valor)>0?'entrada':'sem valor'));
+const atrasada=(t,n)=>kind(t,n)==='entrada'&&!t.done&&!!n.vence&&dstr(new Date())>n.vence;
+const efval=(t,n)=>{const base=num(n.valor);return(atrasada(t,n)&&num(n.valorJuros)>0)?Math.max(base,num(n.valorJuros)):base;};
+const loadCon=()=>{const v=j(CK,null);return v&&typeof v.mp==='number'?v:{mp:0,nb:0}};
+const loadInv=()=>{const v=j(IK,null);return v&&Array.isArray(v.cofres)?v:{cofres:[]}};
+const today=new Date(),st={y:today.getFullYear(),m:today.getMonth()};
+const finItems=(y,m)=>{
+  const notes=j(NK,{}),key=y+'-'+pd(m+1);
+  return j(TK,[]).filter(t=>t?.text&&String(t.date||'').startsWith(key)&&(t.tag==='financeiro'||(notes[t.id]||{}).movimento)&&!/equipamentos? especiais/i.test(t.text)).map(t=>({...t,n:notes[t.id]||{}}));
+};
+function renderTopo(){
+  const con=loadCon(),inv=loadInv();
+  const contas=(con.mp||0)+(con.nb||0);
+  const cofres=inv.cofres.reduce((s,c)=>s+(c.saldo||0),0);
+  const prev=inv.energisaPrev&&inv.energisaPrev.saldo||0;
+  document.querySelector('#patrimonio').textContent=money(contas+cofres+prev);
+  document.querySelector('#patrisub').textContent='Contas '+money(contas)+' · Investido '+money(cofres)+' · Aposentadoria '+money(prev);
+  // contas + previsto do mês corrente (mesma fórmula do painel financeiro)
+  const it=finItems(today.getFullYear(),today.getMonth());
+  const fe=t=>/fernanda/i.test(t.text||'');
+  const pe=it.filter(t=>!t.done&&kind(t,t.n)==='entrada'&&num(t.n.valor)>0&&!fe(t)).reduce((s,t)=>s+efval(t,t.n),0);
+  const pp=it.filter(t=>!t.done&&kind(t,t.n)==='saida'&&t.n.programada&&num(t.n.valor)>0&&(t.n.forma==='pix'||t.n.forma==='dinheiro')).reduce((s,t)=>s+num(t.n.valor),0);
+  document.querySelector('#contas').innerHTML=
+    '<div class="row"><span>'+acctTag('mp')+'Mercado Pago</span><span class="v">'+money(con.mp)+'</span></div>'+
+    '<div class="row"><span>'+acctTag('nb')+'Nubank<small>105% CDI · dias úteis</small></span><span class="v">'+money(con.nb)+'</span></div>'+
+    '<div class="row tot"><span>Saldo atual (contas)</span><span class="v info">'+money(contas)+'</span></div>'+
+    '<div class="row"><span>A receber no mês<small>cobranças pendentes'+(pe?'':' — nenhuma')+'</small></span><span class="v pos">+ '+money(pe)+'</span></div>'+
+    '<div class="row"><span>Saídas programadas<small>ainda não pagas'+(pp?'':' — nenhuma')+'</small></span><span class="v neg">− '+money(pp)+'</span></div>'+
+    '<div class="row tot"><span>Saldo previsto no mês</span><span class="v info">'+money(contas+pe-pp)+'</span></div>';
+  const rows=inv.cofres.map(c=>'<div class="row"><span>'+String(c.nome||'Cofre').replace(/[&<>]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[x]))+(c.meta?'<small>meta '+money(c.meta)+'</small>':'')+'</span><span class="v">'+money(c.saldo)+'</span></div>').join('');
+  document.querySelector('#invests').innerHTML=rows+
+    '<div class="row"><span>EnergisaPrev<small>previdência · aposentadoria</small></span><span class="v">'+money(prev)+'</span></div>'+
+    '<div class="row tot"><span>Total investido + aposentadoria</span><span class="v info">'+money(cofres+prev)+'</span></div>';
+}
+function renderSaidas(){
+  document.querySelector('#mn').textContent=new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric'}).format(new Date(st.y,st.m,1));
+  const saidas=finItems(st.y,st.m).filter(t=>kind(t,t.n)==='saida'&&num(t.n.valor)>0)
+    .sort((a,b)=>((b.date+(b.time||''))).localeCompare(a.date+(a.time||'')));
+  const efetivadas=saidas.filter(t=>!t.n.programada||t.done);
+  const pendentes=saidas.filter(t=>t.n.programada&&!t.done);
+  const sum=a=>a.reduce((s,t)=>s+num(t.n.valor),0);
+  // soma geral primeiro
+  const porForma={};
+  saidas.forEach(t=>{const f=t.n.forma||'outros';const kk=f==='pix'?('pix_'+(t.n.conta==='nb'?'nb':'mp')):f;porForma[kk]=(porForma[kk]||0)+num(t.n.valor);});
+  const FLBL={inter:'Cartão Inter',pix_mp:'Pix · Mercado Pago',pix_nb:'Pix · Nubank',dinheiro:'Dinheiro',mp:'Mercado Pago',outros:'Sem forma'};
+  document.querySelector('#resumoSaidas').innerHTML=
+    '<div class="row tot" style="border-top:0;padding-top:2px"><span>Total de saídas do mês</span><span class="v neg">− '+money(sum(saidas))+'</span></div>'+
+    '<div class="row"><span>Já efetivadas</span><span class="v">'+money(sum(efetivadas))+'</span></div>'+
+    '<div class="row"><span>Programadas (a pagar)</span><span class="v" style="color:#ffb74d">'+money(sum(pendentes))+'</span></div>'+
+    Object.keys(porForma).sort((a,b)=>porForma[b]-porForma[a]).map(f=>'<div class="row"><span>'+(FLBL[f]||f)+(f==='pix_mp'?' '+acctTag('mp'):f==='pix_nb'?' '+acctTag('nb'):'')+'</span><span class="v">'+money(porForma[f])+'</span></div>').join('');
+  // depois a visão detalhada
+  document.querySelector('#saidas').innerHTML=saidas.length?saidas.map(t=>{
+    const d=t.date.split('-');
+    return '<article class="saida-row"><div><div class="title">'+t.text.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))+'</div><div class="meta">'+d[2]+'/'+d[1]+(t.time?' '+t.time:'')+' · '+(FORMA_LBL[t.n.forma]||'—')+(t.n.forma==='pix'?acctTag(t.n.conta):'')+(t.n.programada?(t.done?' · <b style="color:#78d88b">PAGA</b>':' · <b class="prog">PROGRAMADA</b>'):'')+'</div></div><div class="value">− '+money(num(t.n.valor))+'</div></article>';
+  }).join(''):'<div class="empty">Nenhuma saída neste mês.</div>';
+}
+function shift(x){st.m+=x;if(st.m<0){st.m=11;st.y--}if(st.m>11){st.m=0;st.y++}renderSaidas()}
+document.querySelector('#prev').onclick=()=>shift(-1);
+document.querySelector('#next').onclick=()=>shift(1);
+renderTopo();renderSaidas();
+window.addEventListener('storage',()=>{renderTopo();renderSaidas();});
+})();</script>
+<script src="./supabase-project-config.js?v=1"></script>
+</body></html>
