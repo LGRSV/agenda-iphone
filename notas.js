@@ -26,8 +26,15 @@
   function taskTag(id){try{const a=JSON.parse(localStorage.getItem('agenda_lagares_v3')||'[]');const t=Array.isArray(a)?a.find(x=>String(x.id)===String(id)):null;return t&&t.tag||'';}catch(_){return '';}}
   function setNote(id, note) {
     const all = load();
+    // Preserva campos gravados por outros módulos na mesma nota (financeiro:
+    // movimento/forma/vence/valorJuros/programada) — salvar pela caixinha não
+    // pode apagar um lançamento financeiro nem destravar sua regra de saldo.
+    const prev = all[id] && typeof all[id] === 'object' ? all[id] : {};
+    const merged = { ...prev, ...note };
+    const OWN = ['prio', 'durationMin', 'detail', 'valor', 'parcPagas', 'parcRest', 'cond', 'subs'];
+    const hasForeign = Object.keys(merged).some(k => !OWN.includes(k) && merged[k] != null && merged[k] !== '');
     const empty = !note.prio && !note.durationMin && !note.detail.trim() && !note.valor && !note.parcPagas && !note.parcRest && !hasCond(note.cond) && (!note.subs || !note.subs.length);
-    if (empty) delete all[id]; else all[id] = note;
+    if (empty && !hasForeign) delete all[id]; else all[id] = merged;
     saveAll(all);
   }
   const escAttr = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

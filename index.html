@@ -666,9 +666,9 @@
 
     window.AgendaAPI={
       addTask(o){o=o||{};const text=String(o.text||'').trim();const date=String(o.date||'');if(!text||!/^\d{4}-\d{2}-\d{2}$/.test(date))return false;const time=/^\d{2}:\d{2}$/.test(String(o.time||''))?String(o.time):'';tasks.push({id:id(),text,date,time,tag:tagKey(o.tag||'pessoal'),reminder:time?15:-1,done:false});save();render();showToast('Jarvis adicionou: '+text);return true},
-      completeTask(query){const q=String(query||'').toLowerCase().trim();if(!q)return false;const t=tasks.find(t=>!t.done&&t.text.toLowerCase().includes(q));if(!t)return false;t.done=true;save();render();showToast('Jarvis concluiu: '+t.text);return t.text},
-      deleteTask(query){const q=String(query||'').toLowerCase().trim();if(!q)return false;const i=tasks.findIndex(t=>t.text.toLowerCase().includes(q));if(i<0)return false;const rem=tasks.splice(i,1)[0];trashPush(rem);save();render();showToast('Jarvis removeu: '+rem.text);return rem.text},
-      editTask(query,ch){const q=String(query||'').toLowerCase().trim();if(!q)return false;const t=tasks.find(t=>!t.done&&t.text.toLowerCase().includes(q));if(!t)return false;ch=ch||{};const nt=String(ch.text||'').trim();if(nt)t.text=nt;if(/^\d{4}-\d{2}-\d{2}$/.test(String(ch.date||'')))t.date=String(ch.date);if(/^\d{2}:\d{2}$/.test(String(ch.time||''))){t.time=String(ch.time);if(t.reminder<0)t.reminder=15;}if(ch.tag)t.tag=tagKey(ch.tag);save();render();showToast('Jarvis atualizou: '+t.text);return t.text},
+      completeTask(query){const q=String(query||'').toLowerCase().trim();if(!q)return false;const t=tasks.find(t=>!t.done&&!isManualFinancialOutput(t)&&t.text.toLowerCase().includes(q));if(!t)return false;t.done=true;save();render();showToast('Jarvis concluiu: '+t.text);return t.text},
+      deleteTask(query){const q=String(query||'').toLowerCase().trim();if(!q)return false;const i=tasks.findIndex(t=>!isManualFinancialOutput(t)&&t.text.toLowerCase().includes(q));if(i<0)return false;const rem=tasks.splice(i,1)[0];trashPush(rem);save();render();showToast('Jarvis removeu: '+rem.text);return rem.text},
+      editTask(query,ch){const q=String(query||'').toLowerCase().trim();if(!q)return false;const t=tasks.find(t=>!t.done&&!isManualFinancialOutput(t)&&t.text.toLowerCase().includes(q));if(!t)return false;ch=ch||{};const nt=String(ch.text||'').trim();if(nt)t.text=nt;if(/^\d{4}-\d{2}-\d{2}$/.test(String(ch.date||'')))t.date=String(ch.date);if(/^\d{2}:\d{2}$/.test(String(ch.time||''))){t.time=String(ch.time);if(t.reminder<0)t.reminder=15;}if(ch.tag)t.tag=tagKey(ch.tag);save();render();showToast('Jarvis atualizou: '+t.text);return t.text},
       getTasks(){return tasks.filter(t=>!isManualFinancialOutput(t)).map(t=>({text:t.text,date:t.date,time:t.time,tag:t.tag,done:t.done}))},
       getTasksFull(){return tasks.filter(t=>!isManualFinancialOutput(t)).map(t=>({id:t.id,text:t.text,date:t.date,time:t.time,tag:t.tag,done:t.done}))},
       completeById(taskId){const t=tasks.find(t=>String(t.id)===String(taskId));if(!t||t.done)return false;t.done=true;save();render();return true},
@@ -806,9 +806,11 @@
     'use strict';
     const E1='sk_ae425b5b0814a4',E2='7afc9161ee024e257',E3='e6eebc052067bfac9';const ELKEY=[E1,E2,E3].join('');
     const MODELS=['gemini-2.5-flash-lite','gemini-2.5-flash','gemini-flash-latest'];
-    const SEARCH_MODELS=['gemini-2.5-flash','gemini-flash-latest','gemini-2.5-flash-lite'];
-    // fetch com prazo: se um modelo/rota travar, aborta e cai para o proximo em vez de congelar o Jarvis
-    function jfetch(url,opts,ms){const c=new AbortController();const timer=setTimeout(()=>{try{c.abort();}catch(_){}} ,ms||12000);return fetch(url,Object.assign({},opts,{signal:c.signal})).finally(()=>clearTimeout(timer));}
+    const SEARCH_MODELS=['gemini-2.5-flash','gemini-flash-latest'];
+    // fetch com prazo: se um modelo/rota travar, aborta e cai para o proximo em vez de congelar o Jarvis.
+    // O timer NAO e cancelado quando os cabecalhos chegam: o abort precisa cobrir tambem a leitura do
+    // corpo (r.json()/r.blob()), que pode travar em rede instavel. Abortar apos concluir e inofensivo.
+    function jfetch(url,opts,ms){const c=new AbortController();setTimeout(()=>{try{c.abort();}catch(_){}} ,ms||12000);return fetch(url,Object.assign({},opts,{signal:c.signal}));}
     const VOICE_KEY='jarvis_voice_on';
     const q=s=>document.getElementById(s);
     const panel=q('jarvis-panel'),btn=q('jarvis-btn'),closeBtn=q('jarvis-close'),
@@ -852,9 +854,13 @@
           // Primeira abertura: entrega o briefing do dia e fala (só ao tocar no ícone).
           // Usa o cache pré-carregado no primeiro toque; senão calcula na hora.
           jarvisBriefed=true;
-          const brief=briefingCache||agendaBriefing();
+          const brief=agendaBriefing(); // sempre recalculado: nunca dá "bom dia" à noite nem anuncia tarefa já concluída
           addMsg('bot',brief+'Como posso ajudar?');
-          if(voiceOn){speak(brief,briefAudioPromise);briefAudioPromise=null;}
+          if(voiceOn){
+            const pre=(brief===briefingCache)?briefAudioPromise:null; // áudio pré-gerado só vale se o texto não mudou
+            if(pre)briefAudioPromise=null;else dropBriefAudio();
+            speak(brief,pre);
+          }else dropBriefAudio();
         }
       }
     }
@@ -942,29 +948,48 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       }
       return new Blob([data],{type:'audio/wav'});
     }
-    async function jarvisTimbre(blob){
+    async function renderJarvis(buf){
+      // Renderiza o timbre (EQ + compressao) num OfflineAudioContext e devolve o WAV pronto
+      const OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+      const ctx=new OAC(buf.numberOfChannels,buf.length,buf.sampleRate);
+      const src=ctx.createBufferSource();src.buffer=buf;
+      const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=95;
+      const body=ctx.createBiquadFilter();body.type='lowshelf';body.frequency.value=180;body.gain.value=3;
+      const pres=ctx.createBiquadFilter();pres.type='peaking';pres.frequency.value=2600;pres.Q.value=1;pres.gain.value=6;
+      const soft=ctx.createBiquadFilter();soft.type='highshelf';soft.frequency.value=7600;soft.gain.value=-2;
+      const comp=ctx.createDynamicsCompressor();comp.threshold.value=-26;comp.ratio.value=6;comp.attack.value=0.003;comp.release.value=0.16;
+      src.connect(hp);hp.connect(body);body.connect(pres);pres.connect(soft);soft.connect(comp);comp.connect(ctx.destination);
+      src.start(0);
+      return bufToWav(await ctx.startRendering());
+    }
+    async function jarvisTimbrePcm(pcm,rate){
+      // Caminho principal (Gemini): o PCM 16-bit mono ja esta em maos — vira
+      // AudioBuffer direto, sem codificar WAV so para decodificar em seguida
       try{
         const OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+        if(!OAC)return pcmToWav(pcm,rate);
+        const n=Math.max(1,pcm.length>>1),i16=new Int16Array(pcm.buffer,pcm.byteOffset,n);
+        let buf;
+        try{buf=new AudioBuffer({numberOfChannels:1,length:n,sampleRate:rate});}
+        catch(_){buf=new OAC(1,n,rate).createBuffer(1,n,rate);}
+        const ch=buf.getChannelData(0);
+        for(let i=0;i<n;i++)ch[i]=i16[i]/32768;
+        return await renderJarvis(buf);
+      }catch(_){return pcmToWav(pcm,rate);} // falhou: toca o audio original sem timbre
+    }
+    let jDecCtx=null; // contexto de decodificacao UNICO e reutilizado (iOS limita ~4 AudioContexts)
+    async function jarvisTimbre(blob){
+      // Reserva (ElevenLabs, mp3): precisa decodificar; usa o contexto compartilhado
+      try{
         const AC=window.AudioContext||window.webkitAudioContext;
-        if(!OAC||!AC)return blob;
+        const OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+        if(!AC||!OAC)return blob;
+        if(!jDecCtx||jDecCtx.state==='closed')jDecCtx=new AC();
         const raw=await blob.arrayBuffer();
-        const dec=new AC();
-        const src0=await new Promise((res,rej)=>dec.decodeAudioData(raw.slice(0),res,rej));
-        try{dec.close();}catch(_){}
-        const ctx=new OAC(src0.numberOfChannels,src0.length,src0.sampleRate);
-        const src=ctx.createBufferSource();src.buffer=src0;
-        const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=95;
-        const body=ctx.createBiquadFilter();body.type='lowshelf';body.frequency.value=180;body.gain.value=3;
-        const pres=ctx.createBiquadFilter();pres.type='peaking';pres.frequency.value=2600;pres.Q.value=1;pres.gain.value=6;
-        const soft=ctx.createBiquadFilter();soft.type='highshelf';soft.frequency.value=7600;soft.gain.value=-2;
-        const comp=ctx.createDynamicsCompressor();comp.threshold.value=-26;comp.ratio.value=6;comp.attack.value=0.003;comp.release.value=0.16;
-        src.connect(hp);hp.connect(body);body.connect(pres);pres.connect(soft);soft.connect(comp);comp.connect(ctx.destination);
-        src.start(0);
-        const out=await ctx.startRendering();
-        return bufToWav(out);
+        const buf=await new Promise((res,rej)=>jDecCtx.decodeAudioData(raw,res,rej));
+        return await renderJarvis(buf);
       }catch(_){return blob;} // qualquer falha: toca o audio original sem timbre
     }
-    function resumeVoice(){}
     function animOn(){avatarEl.classList.add('speaking');eq.classList.add('on');statusEl.textContent='FALANDO\u2026';}
     function animOff(){avatarEl.classList.remove('speaking');eq.classList.remove('on');statusEl.textContent='ASSISTENTE PESSOAL \u00B7 ONLINE';}
     function stopSpeech(){speakGen++;try{jAudio.pause();jAudio.currentTime=0;}catch(_){}if(jUrl){URL.revokeObjectURL(jUrl);jUrl=null;}if('speechSynthesis'in window)window.speechSynthesis.cancel();animOff();}
@@ -1036,7 +1061,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
               body:JSON.stringify({
                 contents:[{parts:[{text:'Narre em portugues brasileiro neutro com voz grave, calma e elegante, diccao precisa e confiante, num tom levemente eletronico e sofisticado como o assistente J.A.R.V.I.S do Homem de Ferro. Ritmo fluido, sem pressa e sem pausas artificiais: '+t}]}],
                 generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:'Charon'}}}}
-              })},22000);
+              })},12000);
             const d=await r.json();
             const p=d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0];
             const b64=p&&p.inlineData&&p.inlineData.data;
@@ -1045,7 +1070,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
               const bin=atob(b64),pcm=new Uint8Array(bin.length);
               for(let i=0;i<bin.length;i++)pcm[i]=bin.charCodeAt(i);
               markKey(idx);markTtsModel(ti);
-              return URL.createObjectURL(await jarvisTimbre(pcmToWav(pcm,rm?+rm[1]:24000)));
+              return URL.createObjectURL(await jarvisTimbrePcm(pcm,rm?+rm[1]:24000));
             }
             const em=(d&&d.error&&(((d.error.code||'')+' '+(d.error.status||'')+' '+(d.error.message||'')).trim()))||('http '+r.status);
             lastErr='TTS '+model+': '+String(em).slice(0,90);
@@ -1056,7 +1081,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
     }
     function playUrl(url){
       return new Promise(res=>{
-        jUrl=url;jAudio.src=url;resumeVoice();
+        jUrl=url;jAudio.src=url;
         jAudio.onended=()=>{URL.revokeObjectURL(url);jUrl=null;res(true);};
         jAudio.onerror=()=>{URL.revokeObjectURL(url);jUrl=null;res(false);};
         jAudio.play().catch(()=>res(false));
@@ -1079,7 +1104,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
     async function elFetch(t){
       const r=await jfetch('https://api.elevenlabs.io/v1/text-to-speech/onwK4e9ZLuTAKqWW03F9?output_format=mp3_44100_128',{
         method:'POST',headers:{'xi-api-key':ELKEY,'Content-Type':'application/json'},
-        body:JSON.stringify({text:t,model_id:'eleven_flash_v2_5',voice_settings:{stability:0.5,similarity_boost:0.8}})},18000);
+        body:JSON.stringify({text:t,model_id:'eleven_flash_v2_5',voice_settings:{stability:0.5,similarity_boost:0.8}})},12000);
       if(!r.ok)throw new Error('el '+r.status);
       const blob=await r.blob();
       if(!blob||blob.size<800)throw new Error('el vazio');
@@ -1110,9 +1135,11 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
         return;
       }catch(e2){lastVoiceErr=String((e2&&e2.message)||e2||'');}
       if(gen!==speakGen)return;
-      // Camada 2: ElevenLabs (reserva de boa qualidade quando a cota de voz do Google esgota; tambem passa pelo modulador)
+      // Camada 2: ElevenLabs (reserva quando a voz do Google falha). Retoma do
+      // trecho que falhou — nao repete o que ja foi falado pela camada 1.
       try{
-        const elChunks=chunkText(t);
+        const elChunks=chunks.slice(idx);
+        if(!elChunks.length)return;
         let elPlayed=false,elNext=elFetch(elChunks[0]);
         for(let j=0;j<elChunks.length;j++){
           const url=await elNext;
@@ -1156,23 +1183,32 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       const h=new Date().getHours(),g=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
       return `${g}, Lagares. J.A.R.V.I.S online. ${todayPhrase()} `;
     }
-    // O J.A.R.V.I.S NÃO fala mais sozinho ao abrir a Agenda. No primeiro toque
-    // (gesto do usuário) PRÉ-AQUECEMOS a voz, deixamos o briefing do dia pronto
-    // em cache e JÁ GERAMOS o áudio do primeiro trecho — assim, ao tocar no
-    // ícone, a fala sai praticamente instantânea.
+    // O J.A.R.V.I.S NÃO fala mais sozinho ao abrir a Agenda. O primeiro toque em
+    // qualquer lugar só destrava o áudio (barato, sem rede). A pré-geração do
+    // ÁUDIO do briefing acontece apenas no pointerdown do ÍCONE do Jarvis — o
+    // gesto que antecede o click de abrir — para não gastar cota de voz toda vez
+    // que o usuário abre o app só para olhar a agenda.
     let briefAudioPromise=null;
+    function dropBriefAudio(){ // libera áudio pré-gerado que não vai ser usado
+      if(!briefAudioPromise)return;
+      briefAudioPromise.then(u=>{try{URL.revokeObjectURL(u);}catch(_){}}).catch(()=>{});
+      briefAudioPromise=null;
+    }
     function prewarmJarvis(){
-      unlockTTS();                 // destrava o áudio e monta o modulador de voz
-      try{ briefingCache=agendaBriefing(); }catch(_){}   // pendências do dia já prontas
-      if(voiceOn&&!jarvisBriefed&&!briefAudioPromise&&jarvisKeys().length){
-        try{
-          const t0=stripForSpeech(briefingCache).trim();
-          if(t0){briefAudioPromise=ttsFetch(chunkText(t0)[0]);briefAudioPromise.catch(()=>{briefAudioPromise=null;});}
-        }catch(_){briefAudioPromise=null;}
-      }
+      unlockTTS();
+      try{ briefingCache=agendaBriefing(); }catch(_){}
     }
     document.addEventListener('pointerdown',prewarmJarvis,{once:true});
     document.addEventListener('touchend',prewarmJarvis,{once:true});
+    btn.addEventListener('pointerdown',()=>{
+      unlockTTS();
+      if(!voiceOn||jarvisBriefed||briefAudioPromise||!jarvisKeys().length)return;
+      try{
+        briefingCache=agendaBriefing(); // texto fresco: o áudio pré-gerado corresponde exatamente a ele
+        const t0=stripForSpeech(briefingCache).trim();
+        if(t0){briefAudioPromise=ttsFetch(chunkText(t0)[0]);briefAudioPromise.catch(()=>{briefAudioPromise=null;});}
+      }catch(_){briefAudioPromise=null;}
+    });
 
     function extractJson(t){
       const s=t.indexOf('{');
@@ -1257,6 +1293,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       let lastErr='';
       const keys=orderedKeys();
       if(!keys.length)throw new Error('NO_KEY');
+      const sys=systemPrompt(); // montado UMA vez: a agenda nao muda entre as tentativas da mesma chamada
       const QUOTA=/quota|resource_exhausted|exhausted|rate.?limit|exceeded|credit|deplet|billing|prepay|\b429\b/;
       for(const {key:apiKey,idx} of keys){
         let quota=false;
@@ -1265,7 +1302,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
             const res=await jfetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,{
               method:'POST',headers:{'Content-Type':'application/json'},
               body:JSON.stringify({
-                system_instruction:{parts:[{text:systemPrompt()}]},
+                system_instruction:{parts:[{text:sys}]},
                 contents,
                 generationConfig:{temperature:0.6,maxOutputTokens:1600,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0},responseSchema:{type:'OBJECT',properties:{action:{type:'STRING',enum:['none','add_task','complete_task','delete_task','edit_task','web_search']},task:{type:'OBJECT',properties:{text:{type:'STRING'},date:{type:'STRING'},time:{type:'STRING'},tag:{type:'STRING'}}},query:{type:'STRING'},transcript:{type:'STRING'},reply:{type:'STRING'}},required:['action','reply']}}
               })
@@ -1288,7 +1325,9 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       const keys=orderedKeys();
       if(!keys.length)throw new Error('NO_KEY');
       let lastErr='';
+      const QUOTA=/quota|resource_exhausted|exhausted|rate.?limit|exceeded|credit|deplet|billing|prepay|\b429\b/;
       for(const {key:apiKey,idx} of keys){
+        let quota=false;
         for(const model of SEARCH_MODELS){
           try{
             const res=await jfetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,{
@@ -1299,14 +1338,16 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
                 tools:[{google_search:{}}],
                 generationConfig:{temperature:0.4,maxOutputTokens:1024}
               })
-            },16000);
+            },12000);
             const data=await res.json();
             const parts=data&&data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts;
             const txt=parts&&parts.map(p=>p.text||'').join(' ').trim();
             if(txt){markKey(idx);return txt;}
             lastErr=(data&&data.error&&(((data.error.code||'')+' '+(data.error.status||'')+' '+(data.error.message||'')).trim()))||(res&&!res.ok?('http '+res.status):'resposta vazia');
+            if(QUOTA.test(lastErr.toLowerCase())){quota=true;break;} // chave esgotada: pula direto para a proxima
           }catch(e){lastErr=String(e);}
         }
+        if(quota)continue;
       }
       throw new Error(lastErr);
     }
@@ -1321,24 +1362,24 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
         let reply=j.reply||'Feito.';
         if(j.transcript&&userBubble)userBubble.textContent=j.transcript;
         history.push({role:'user',parts:[{text:j.transcript||fallbackUserText}]});
-        if(j.action==='web_search'&&j.query){
-          // Etapa 2: pesquisa com dados atuais da web (Google Search grounding)
-          typing.textContent=reply;typing.classList.remove('typing');
+        typing.textContent=reply;typing.classList.remove('typing');
+        let modelTurn=raw,actionNote=null;
+        if(j.action==='web_search'){
+          // Etapa 2: pesquisa com dados atuais da web (Google Search grounding).
+          // Query vazia nao deixa o usuario no vacuo: pesquisa o proprio pedido dele.
           statusEl.textContent='PESQUISANDO NA WEB\u2026';
-          try{reply=await webSearch(j.query);}
+          const q=String(j.query||'').trim()||j.transcript||fallbackUserText;
+          try{reply=await webSearch(q);}
           catch(_){reply='Nao consegui completar a pesquisa agora, Senhor. Verifique a conexao e tente novamente.';}
           addMsg('bot',reply);
-          history.push({role:'model',parts:[{text:reply}]});
-          if(history.length>30)history=history.slice(-30);
-          speak(reply);
+          modelTurn=reply;
         }else{
-          history.push({role:'model',parts:[{text:raw}]});
-          if(history.length>30)history=history.slice(-30);
-          typing.textContent=reply;typing.classList.remove('typing');
-          speak(reply); // a geracao da voz parte primeiro; a acao na agenda roda logo em seguida
-          const actionNote=runAction(j);
-          if(actionNote)addMsg('action','\u2713 '+actionNote);
+          actionNote=runAction(j);
         }
+        history.push({role:'model',parts:[{text:modelTurn}]});
+        if(history.length>30)history=history.slice(-30);
+        speak(reply);
+        if(actionNote)addMsg('action','\u2713 '+actionNote);
       }catch(e){
         const emsg=String((e&&e.message)||e||'').toLowerCase();
         const semChave=/no_key/.test(emsg);
@@ -1431,7 +1472,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
   <script src="./treino.js?v=10" defer></script>
   <script src="./painel.js?v=2" defer></script>
   <script src="./gamificacao.js?v=4" defer></script>
-  <script src="./notas.js?v=7" defer></script>
+  <script src="./notas.js?v=8" defer></script>
   <script src="./condicional.js?v=3" defer></script>
   <script src="./agenda-notas-rapidas.js?v=5" defer></script>
   <script src="./calendario-cheio.js?v=3" defer></script>
