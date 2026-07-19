@@ -15,7 +15,7 @@
   const STYLE_ID = 'treinoStyles';
   const HORIZON = 90;   // gera treinos para os próximos 90 dias
   const REGEN = 60;     // regera quando a cobertura cair abaixo de 60 dias
-  const META_VERSION = 6; // sobe p/ forçar regeneração (v6: planos por conta — Lagares A/B/C e Ana 5 dias)
+  const META_VERSION = 7; // v7: auto-cura — regenera se os cards de treino sumiram (pull/limpeza)
   const TIME_KEY = 'agenda_treino_time_v1'; // horário do treino, ajustável pelo editor ("aplicar a todos os próximos")
   const pageMode = document.body && document.body.dataset.treinoPage === '1';
   const isPrimaryAgenda = () => {
@@ -316,11 +316,16 @@
   function ensureTasks() {
     const meta = readJSON(META_KEY, {}) || {};
     const t0 = today();
-    const upgrade = meta.version !== META_VERSION;
-    if (!upgrade && meta.generatedUntil && meta.generatedUntil >= addDays(t0, REGEN)) return false;
-
     const target = addDays(t0, HORIZON);
     const tasks = readTasks();
+    const upgrade = meta.version !== META_VERSION;
+    // Auto-cura: se não houver NENHUM treino futuro na agenda (ex.: foram
+    // apagados por um pull/limpeza enquanto o meta ainda dizia "já gerei"),
+    // não confia no meta — regenera. Antes, o meta.generatedUntil sozinho
+    // fazia o app pular a geração e os cards nunca voltavam.
+    const haveTreino = tasks.some(t => t && String(t.id).startsWith('treino-') && !t.done && t.date >= t0);
+    if (!upgrade && haveTreino && meta.generatedUntil && meta.generatedUntil >= addDays(t0, REGEN)) return false;
+
     let changed = false;
 
     // 1) reconcilia treinos já existentes: remove os de dia de descanso (não
