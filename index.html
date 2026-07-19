@@ -792,7 +792,7 @@
       <button class="j-chip" type="button" data-p="Resumo da minha semana: o que tenho nos próximos 7 dias?"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>Semana</button>
       <button class="j-chip" type="button" data-p="Analise minhas tarefas pendentes e sugira uma ordem de prioridade."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.4c.6.6 1 1.4 1 2.6h6c0-1.2.4-2 1-2.6A6 6 0 0 0 12 3z"/></svg>Organizar</button>
       <button class="j-chip" type="button" data-p="Como está o clima em Palmas, Tocantins, agora e nas próximas horas?"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>Clima</button>
-      <button class="j-chip" type="button" data-p="Quais são as principais notícias do Brasil neste momento?"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h13a2 2 0 0 1 2 2v11a2 2 0 0 0 2-2V7"/><rect x="4" y="5" width="13" height="15" rx="2"/><path d="M7.5 9h6M7.5 12.5h6M7.5 16h4"/></svg>Notícias</button>
+      <button class="j-chip" type="button" data-p="Me dê as principais manchetes e notícias do InfoMoney agora, em tópicos."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h13a2 2 0 0 1 2 2v11a2 2 0 0 0 2-2V7"/><rect x="4" y="5" width="13" height="15" rx="2"/><path d="M7.5 9h6M7.5 12.5h6M7.5 16h4"/></svg>Notícias</button>
     </div>
     <div id="jarvis-form">
       <button id="jarvis-mic" type="button" aria-label="Falar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="21.5"/><line x1="8.5" y1="21.5" x2="15.5" y2="21.5"/></svg></button>
@@ -804,7 +804,6 @@
   <script>
   (()=>{
     'use strict';
-    const E1='sk_ae425b5b0814a4',E2='7afc9161ee024e257',E3='e6eebc052067bfac9';const ELKEY=[E1,E2,E3].join('');
     const MODELS=['gemini-2.5-flash-lite','gemini-2.5-flash','gemini-flash-latest'];
     const SEARCH_MODELS=['gemini-2.5-flash','gemini-flash-latest'];
     // fetch com prazo: se um modelo/rota travar, aborta e cai para o proximo em vez de congelar o Jarvis.
@@ -845,6 +844,10 @@
     function togglePanel(){
       unlockTTS();
       isOpen=!isOpen;panel.classList.toggle('open',isOpen);btn.classList.toggle('pulse',!isOpen);
+      // Ao abrir: puxa o mais recente do Supabase para o Jarvis nunca responder
+      // com uma copia velha das tarefas (o evento agenda:remote-sync recarrega
+      // o AgendaAPI assim que o pull chega).
+      if(isOpen){try{const S=window.SupabaseAgenda;if(S&&S.getUser&&S.getUser()&&(S.pullAll||S.syncNow))(S.pullAll||S.syncNow)();}catch(_){}}
       if(isOpen&&!voiceOn)statusEl.textContent='VOZ DESLIGADA · TOQUE NO ALTO-FALANTE ACIMA';
       if(isOpen&&!msgs.children.length){
         if(jarvisBriefed){
@@ -923,10 +926,7 @@ VOCE CONTROLA A AGENDA. Responda SEMPRE e SOMENTE com um JSON puro (sem markdown
 Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (preencha task; se nao houver horario, deixe time vazio; escolha a tag mais adequada). Use complete_task quando disserem que concluiram algo, e delete_task para remover/cancelar (preencha query com palavras-chave exatas do texto da tarefa). Use edit_task para mudar data, horario, nome ou tag de uma tarefa existente: query = palavras do texto ATUAL da tarefa; task = SOMENTE os campos novos (deixe vazio o que nao muda). Use web_search quando o usuario pedir informacao do mundo real que nao esta na agenda (noticias, clima, precos, cotacoes, resultados, fatos atuais): preencha query com a pergunta completa e em reply diga algo curto como "Um instante, Senhor, consultando." Use none para conversas e perguntas sobre a propria agenda. Quando receber AUDIO, preencha transcript com a transcricao exata em PT-BR do que o usuario falou. Calcule datas relativas (amanha, segunda que vem) a partir da data atual. No reply, confirme a acao naturalmente. Seja conciso: reply com no maximo 2-3 frases diretas, salvo quando o usuario pedir detalhes.`;
     }
 
-    function stripForSpeech(t){return t.replace(/J\.?A\.?R\.?V\.?I\.?S\.?/gi,'Jarvis').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,'').replace(/\*/g,'');}
-    let voicesCache=[];
-    function loadVoices(){voicesCache=window.speechSynthesis?window.speechSynthesis.getVoices():[];}
-    if('speechSynthesis'in window){loadVoices();window.speechSynthesis.onvoiceschanged=loadVoices;}
+    function stripForSpeech(t){return t.replace(/J\.?A\.?R\.?V\.?I\.?S\.?/gi,'Jarvis').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,'').replace(/\*/g,'').replace(/^[\s]*[-•]\s+/gm,'');}
     const jAudio=new Audio();let jUrl=null;let speakGen=0;
     // ---- Timbre "Jarvis": EQ + compressao renderizados OFFLINE antes de tocar ----
     // O audio processado sai pelo <audio> comum: sem grafo Web Audio ao vivo,
@@ -977,70 +977,12 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
         return await renderJarvis(buf);
       }catch(_){return pcmToWav(pcm,rate);} // falhou: toca o audio original sem timbre
     }
-    let jDecCtx=null; // contexto de decodificacao UNICO e reutilizado (iOS limita ~4 AudioContexts)
-    async function jarvisTimbre(blob){
-      // Reserva (ElevenLabs, mp3): precisa decodificar; usa o contexto compartilhado
-      try{
-        const AC=window.AudioContext||window.webkitAudioContext;
-        const OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
-        if(!AC||!OAC)return blob;
-        if(!jDecCtx||jDecCtx.state==='closed')jDecCtx=new AC();
-        const raw=await blob.arrayBuffer();
-        const buf=await new Promise((res,rej)=>jDecCtx.decodeAudioData(raw,res,rej));
-        return await renderJarvis(buf);
-      }catch(_){return blob;} // qualquer falha: toca o audio original sem timbre
-    }
     function animOn(){avatarEl.classList.add('speaking');eq.classList.add('on');statusEl.textContent='FALANDO\u2026';}
     function animOff(){avatarEl.classList.remove('speaking');eq.classList.remove('on');statusEl.textContent='ASSISTENTE PESSOAL \u00B7 ONLINE';}
     function stopSpeech(){speakGen++;try{jAudio.pause();jAudio.currentTime=0;}catch(_){}if(jUrl){URL.revokeObjectURL(jUrl);jUrl=null;}if('speechSynthesis'in window)window.speechSynthesis.cancel();animOff();}
     jAudio.onplay=animOn;jAudio.onended=()=>{animOff();if(jUrl){URL.revokeObjectURL(jUrl);jUrl=null;}};jAudio.onerror=()=>animOff();
     function pcmToWav(pcm,rate){const n=pcm.length,buf=new ArrayBuffer(44+n),v=new DataView(buf);const ws=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};ws(0,'RIFF');v.setUint32(4,36+n,true);ws(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);ws(36,'data');v.setUint32(40,n,true);new Uint8Array(buf,44).set(pcm);return new Blob([buf],{type:'audio/wav'});}
-    function pickPtVoice(){
-      const vs=voicesCache||[];
-      const ptBR=vs.filter(v=>/pt[-_]?BR/i.test(v.lang));
-      const pt=ptBR.length?ptBR:vs.filter(v=>/^pt/i.test(v.lang));
-      const enh=v=>/enhanced|premium|siri|neural|melhorad|aprimorad/i.test((v.name||'')+' '+(v.voiceURI||''));
-      const male=v=>/felipe|daniel|ricardo|male|masc/i.test(v.name||'');
-      return (
-        pt.find(v=>/felipe/i.test(v.name)&&enh(v)) ||   // Felipe aprimorado (melhor)
-        pt.find(v=>/felipe/i.test(v.name)) ||           // Felipe padrao
-        pt.find(v=>male(v)&&enh(v)) ||                   // outro masculino aprimorado
-        pt.find(male) ||                                // qualquer masculino PT
-        pt.find(enh) ||                                 // qualquer PT aprimorado
-        pt[0] || null                                   // qualquer PT
-      );
-    }
-    // agrupa frases em trechos de ate ~180 chars: evita o corte de fala longa no
-    // iOS/WebKit sem separar siglas (J.A.R.V.I.S) nem horarios em letras soltas
-    function ptChunks(t){
-      const sents=t.match(/[^.!?\n]+[.!?…]*\s*/g)||[t];
-      const out=[];let cur='';
-      for(const s of sents){
-        if((cur+s).length>180 && cur.trim()){out.push(cur.trim());cur=s;}
-        else cur+=s;
-        while(cur.length>180){let cut=cur.lastIndexOf(' ',180);if(cut<80)cut=180;out.push(cur.slice(0,cut).trim());cur=cur.slice(cut);}
-      }
-      if(cur.trim())out.push(cur.trim());
-      return out.length?out:[t];
-    }
-    function browserSpeak(t){
-      if(!('speechSynthesis'in window))return;
-      const synth=window.speechSynthesis;
-      try{loadVoices();}catch(_){}                       // recarrega o cache de vozes (iOS as vezes vem vazio)
-      try{synth.cancel();}catch(_){}
-      const voice=pickPtVoice();
-      const parts=ptChunks(t);
-      parts.forEach((p,i)=>{
-        const u=new SpeechSynthesisUtterance(p);
-        u.lang='pt-BR';u.pitch=0.82;u.rate=0.95;u.volume=1; // tom mais grave e calmo, quase natural
-        if(voice)u.voice=voice;
-        if(i===0)u.onstart=animOn;
-        if(i===parts.length-1)u.onend=animOff;
-        u.onerror=animOff;
-        try{synth.speak(u);}catch(_){}
-      });
-    }
-    function nativeMale(){return pickPtVoice();}
+    // (vozes alternativas removidas: o Jarvis fala SEMPRE com a mesma voz Charon)
     // Modelos de voz do Gemini: Pro primeiro (prosodia bem melhor), Flash como
     // reserva. Rodizio com memoria: se um modelo cair/esgotar, o proximo que
     // funcionar vira o padrao — inclusive se o preview for descontinuado.
@@ -1101,9 +1043,13 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       });
     }
     function chunkText(t){
-      // 1o trecho ate ~240 chars (a fala comeca bem mais cedo, pois gerar audio
-      // curto e rapido); os seguintes ate ~600 e pre-buscados DURANTE a fala do
-      // anterior, entao nao ha pausa "picada" entre trechos.
+      // Ate ~700 chars: UMA geracao de voz so \u2014 fala completa, voz unica e uma
+      // requisicao de cota por resposta. So textos maiores sao divididos: 1o
+      // trecho ~240 (fala comeca cedo) e os demais ate ~600, pre-buscados
+      // DURANTE a fala do anterior (sem pausa picada).
+      t=String(t||'').trim();
+      if(!t)return[];
+      if(t.length<=700)return[t];
       const sents=t.match(/[^.!?\n]+[.!?\u2026]*\s*/g)||[t];
       const chunks=[];let cur='';
       for(let i=0;i<sents.length;i++){
@@ -1114,15 +1060,6 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       if(cur.trim())chunks.push(cur.trim());
       return chunks.filter(Boolean);
     }
-    async function elFetch(t){
-      const r=await jfetch('https://api.elevenlabs.io/v1/text-to-speech/onwK4e9ZLuTAKqWW03F9?output_format=mp3_44100_128',{
-        method:'POST',headers:{'xi-api-key':ELKEY,'Content-Type':'application/json'},
-        body:JSON.stringify({text:t,model_id:'eleven_flash_v2_5',voice_settings:{stability:0.5,similarity_boost:0.8}})},Math.min(25000,10000+Math.round(t.length*30)));
-      if(!r.ok)throw new Error('el '+r.status);
-      const blob=await r.blob();
-      if(!blob||blob.size<800)throw new Error('el vazio');
-      return URL.createObjectURL(await jarvisTimbre(blob));
-    }
     async function speak(text,prefetch){
       if(!voiceOn)return;
       stopSpeech();
@@ -1130,53 +1067,38 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       let t=stripForSpeech(text).trim();
       if(!t)return;
       statusEl.textContent='GERANDO VOZ\u2026';
-      // Camada 1: Google (Gemini Charon) em trechos; aceita audio pre-gerado do 1o trecho
+      // VOZ UNICA: somente o Charon (Gemini) com o timbre Jarvis. Sem camadas
+      // reservas com outras vozes — se um trecho falhar, tentamos DE NOVO o
+      // mesmo trecho na mesma voz (rodizio completo de chaves/modelos);
+      // persistindo a falha, avisamos por texto e paramos. Nunca troca de voz.
       const chunks=chunkText(t);
-      let idx=0,next=(prefetch||ttsFetch(chunks[0])),lastVoiceErr='',played=false;
-      try{
-        for(;idx<chunks.length;idx++){
-          const url=await next;
-          if(gen!==speakGen){URL.revokeObjectURL(url);return;}
-          if(idx+1<chunks.length)next=ttsFetch(chunks[idx+1]);
-          animOn();
-          const ok=await playUrl(url);
-          if(ok)played=true;
+      let played=false,lastVoiceErr='';
+      let next=(prefetch||ttsFetch(chunks[0]));
+      for(let idx=0;idx<chunks.length;idx++){
+        let url=null;
+        try{url=await next;}
+        catch(_e1){
           if(gen!==speakGen)return;
-          // Entre trechos: sem fingir fala — mostra que o proximo audio esta sendo gerado
-          if(idx+1<chunks.length){animOff();statusEl.textContent='GERANDO VOZ…';}
+          statusEl.textContent='GERANDO VOZ…';
+          try{url=await ttsFetch(chunks[idx]);}
+          catch(e2){lastVoiceErr=String((e2&&e2.message)||e2||'');break;}
         }
-        animOff();
-        if(!played)addMsg('action','diagnóstico de voz: o áudio foi gerado, mas o iPhone bloqueou a reprodução (play).');
-        return;
-      }catch(e2){lastVoiceErr=String((e2&&e2.message)||e2||'');}
-      if(gen!==speakGen)return;
-      // Camada 2: ElevenLabs (reserva quando a voz do Google falha). Retoma do
-      // trecho que falhou — nao repete o que ja foi falado pela camada 1.
-      try{
-        const elChunks=chunks.slice(idx);
-        if(!elChunks.length)return;
-        let elPlayed=false,elNext=elFetch(elChunks[0]);
-        for(let j=0;j<elChunks.length;j++){
-          const url=await elNext;
-          if(gen!==speakGen){URL.revokeObjectURL(url);return;}
-          if(j+1<elChunks.length)elNext=elFetch(elChunks[j+1]);
-          animOn();
-          const ok=await playUrl(url);
-          if(ok)elPlayed=true;
-          if(gen!==speakGen)return;
-          if(j+1<elChunks.length){animOff();statusEl.textContent='GERANDO VOZ…';}
-        }
-        animOff();
-        if(elPlayed)return;
-      }catch(e3){lastVoiceErr+=' | EL: '+String((e3&&e3.message)||e3||'');}
-      if(gen!==speakGen)return;
-      // Reserva final: voz nativa do aparelho
+        if(gen!==speakGen){try{URL.revokeObjectURL(url);}catch(_){}return;}
+        if(idx+1<chunks.length)next=ttsFetch(chunks[idx+1]);
+        animOn();
+        const ok=await playUrl(url);
+        if(ok)played=true;
+        if(gen!==speakGen)return;
+        // Entre trechos: sem fingir fala — mostra que o proximo audio esta sendo gerado
+        if(idx+1<chunks.length){animOff();statusEl.textContent='GERANDO VOZ…';}
+      }
       animOff();
-      loadVoices();
-      const temChave=jarvisKeys().length>0;
-      const nativa=('speechSynthesis'in window)&&voicesCache.length>0;
-      addMsg('action','diagnóstico de voz: '+(lastVoiceErr||'falha desconhecida')+' · chave '+(temChave?'ok':'ausente')+' · voz nativa '+(nativa?'ok':'indisponível'));
-      browserSpeak(t);
+      if(lastVoiceErr){
+        const temChave=jarvisKeys().length>0;
+        addMsg('action','voz indisponível agora ('+(temChave?String(lastVoiceErr).slice(0,90):'chave de API ausente')+') — a resposta segue por texto.');
+      }else if(!played){
+        addMsg('action','diagnóstico de voz: o áudio foi gerado, mas o iPhone bloqueou a reprodução (play).');
+      }
     }
 
     let jarvisBriefed=false,briefingCache='';
@@ -1342,6 +1264,13 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       if(!keys.length)throw new Error('NO_KEY');
       let lastErr='';
       const QUOTA=/quota|resource_exhausted|exhausted|rate.?limit|exceeded|credit|deplet|billing|prepay|\b429\b/;
+      // Noticias vem do InfoMoney: quando o pedido e sobre noticias/manchetes,
+      // ancoramos a pesquisa no site infomoney.com.br e listamos os topicos de la.
+      const ehNoticia=/not[ií]cia|manchete|infomoney|mercado financeiro|economia hoje|acontecendo/i.test(query);
+      const instr=ehNoticia
+        ?'Voce e o J.A.R.V.I.S, assistente de Lagares. Consulte o portal InfoMoney (site:infomoney.com.br) e responda em portugues brasileiro com os PRINCIPAIS TOPICOS/MANCHETES do momento publicados la. Liste de 4 a 6 topicos, cada um em uma frase curta e direta, um por linha comecando com "- ". Priorize o que esta em destaque no InfoMoney agora.'
+        :'Voce e o J.A.R.V.I.S, assistente pessoal de Lagares (Palmas-TO, Brasil). Pesquise na web e responda em portugues brasileiro, direto e conciso (no maximo 4 frases), com os dados mais atuais que encontrar. Sem markdown, sem listas: texto corrido natural para ser falado em voz alta.';
+      const qBusca=ehNoticia?('Principais manchetes e noticias de hoje no InfoMoney site:infomoney.com.br — '+query):query;
       for(const {key:apiKey,idx} of keys){
         let quota=false;
         for(const model of SEARCH_MODELS){
@@ -1349,8 +1278,8 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
             const res=await jfetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,{
               method:'POST',headers:{'Content-Type':'application/json'},
               body:JSON.stringify({
-                system_instruction:{parts:[{text:'Voce e o J.A.R.V.I.S, assistente pessoal de Lagares (Palmas-TO, Brasil). Pesquise na web e responda em portugues brasileiro, direto e conciso (no maximo 4 frases), com os dados mais atuais que encontrar. Sem markdown, sem listas: texto corrido natural para ser falado em voz alta.'}]},
-                contents:[{role:'user',parts:[{text:query}]}],
+                system_instruction:{parts:[{text:instr}]},
+                contents:[{role:'user',parts:[{text:qBusca}]}],
                 tools:[{google_search:{}}],
                 generationConfig:{temperature:0.4,maxOutputTokens:1024}
               })
@@ -1407,7 +1336,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
           :'Falha de conexão com meus servidores, Senhor. Verifique a internet e tente novamente.';
         typing.textContent=reply;
         typing.classList.remove('typing');
-        if(voiceOn)browserSpeak(reply);
+        if(voiceOn)speak(reply);
       }
       busy=false;send.disabled=false;
       if(/PROCESSANDO|PESQUISANDO/.test(statusEl.textContent))statusEl.textContent='ASSISTENTE PESSOAL \u00B7 ONLINE';
