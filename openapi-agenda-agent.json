@@ -1,0 +1,95 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Agenda Lagares — Agent API",
+    "description": "Operacoes compactas de tarefas na Agenda Lagares. Sempre chame 'brief' antes de escrever, para obter a 'version' atual, e envie essa mesma version em expected_version. Nao expoe SQL nem outras tabelas.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    { "url": "https://uabpevnjfcwidbjscowq.supabase.co/functions/v1" }
+  ],
+  "paths": {
+    "/agenda-agent": {
+      "post": {
+        "operationId": "agendaAgent",
+        "summary": "Ler (brief) ou editar tarefas (create, complete, patch)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action"],
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": ["brief", "create", "complete", "patch"],
+                    "description": "brief = ler estado e version; create = nova tarefa; complete = concluir; patch = editar/reagendar."
+                  },
+                  "expected_version": {
+                    "type": "integer",
+                    "description": "Obrigatorio em create/complete/patch. Use a 'version' devolvida pelo brief mais recente."
+                  },
+                  "id": {
+                    "type": "string",
+                    "description": "id da tarefa (complete/patch)."
+                  },
+                  "task": {
+                    "type": "object",
+                    "description": "Dados da nova tarefa (create).",
+                    "properties": {
+                      "text": { "type": "string" },
+                      "date": { "type": "string", "description": "YYYY-MM-DD" },
+                      "time": { "type": "string", "description": "HH:MM ou vazio" },
+                      "tag": { "type": "string", "enum": ["trabalho", "pessoal", "casa", "faculdade", "saude", "financeiro", "outros"] },
+                      "reminder": { "type": "integer", "description": "minutos antes; -1 = sem lembrete" }
+                    }
+                  },
+                  "patch": {
+                    "type": "object",
+                    "description": "Campos a alterar (patch): text, date, time, tag, reminder, done, flag.",
+                    "properties": {
+                      "text": { "type": "string" },
+                      "date": { "type": "string" },
+                      "time": { "type": "string" },
+                      "tag": { "type": "string" },
+                      "reminder": { "type": "integer" },
+                      "done": { "type": "boolean" },
+                      "flag": { "type": "string" }
+                    }
+                  },
+                  "note": {
+                    "type": "object",
+                    "description": "Opcional. Campos financeiros/extra da tarefa.",
+                    "properties": {
+                      "valor": { "type": "string" },
+                      "detail": { "type": "string" },
+                      "durationMin": { "type": "integer" },
+                      "parcPagas": { "type": "string" },
+                      "parcRest": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "401": { "description": "Chave invalida" },
+          "409": { "description": "Conflito de versao — refaca o brief e tente de novo" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "AgentKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-agenda-agent-key"
+      }
+    }
+  },
+  "security": [ { "AgentKey": [] } ]
+}
