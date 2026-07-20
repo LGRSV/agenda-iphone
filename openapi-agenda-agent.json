@@ -60,13 +60,19 @@
                   },
                   "note": {
                     "type": "object",
-                    "description": "Opcional. Campos financeiros/extra da tarefa.",
+                    "description": "Opcional. Extras da tarefa e, para lancamentos do Painel Financeiro, os campos abaixo. Financeiro = tag 'financeiro' + note com movimento/valor/forma.",
                     "properties": {
-                      "valor": { "type": "string" },
+                      "movimento": { "type": "string", "enum": ["entrada", "saida"], "description": "Direcao do dinheiro (obrigatorio para o financeiro)." },
+                      "valor": { "type": "string", "description": "Valor em reais como texto, ex. '141.80'." },
+                      "forma": { "type": "string", "enum": ["inter", "pix", "dinheiro", "mp"], "description": "Forma de pagamento da saida. inter=cartao Inter, pix/dinheiro=descontam do saldo, mp=Mercado Pago." },
+                      "conta": { "type": "string", "enum": ["mp", "nb"], "description": "Conta de origem quando forma=pix (mp=Mercado Pago, nb=Nubank)." },
+                      "programada": { "type": "boolean", "description": "true = saida futura ainda nao paga (mantem checkbox e nao desconta o saldo ate ser marcada)." },
+                      "vence": { "type": "string", "description": "Data de vencimento de uma cobranca (entrada), YYYY-MM-DD." },
+                      "valorJuros": { "type": "string", "description": "Valor com juros se a cobranca atrasar." },
                       "detail": { "type": "string" },
                       "durationMin": { "type": "integer" },
-                      "parcPagas": { "type": "string" },
-                      "parcRest": { "type": "string" }
+                      "parcPagas": { "type": "string", "description": "Numero da parcela paga (ex. '2')." },
+                      "parcRest": { "type": "string", "description": "Parcelas restantes (ex. '5')." }
                     }
                   }
                 }
