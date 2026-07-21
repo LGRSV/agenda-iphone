@@ -112,7 +112,17 @@
     const byId = new Map();
     (Array.isArray(serverArr) ? serverArr : []).forEach(it => { if (it && it.id != null && !drop.has(String(it.id))) byId.set(String(it.id), it); });
     (Array.isArray(localArr) ? localArr : []).forEach(it => { if (it && it.id != null) byId.set(String(it.id), it); }); // edições locais vencem
-    return Array.from(byId.values());
+    // Colapsa cópias de uma mesma tarefa compartilhada que ficaram com ids
+    // diferentes mas o mesmo sharedFrom (senão a união por id as multiplicaria).
+    const byShare = new Map(); const out = [];
+    for (const it of byId.values()) {
+      const sf = it && it.sharedFrom ? String(it.sharedFrom) : '';
+      if (!sf) { out.push(it); continue; }
+      const prev = byShare.get(sf);
+      if (!prev) { byShare.set(sf, it); out.push(it); }
+      else if (it.done && !prev.done) { prev.done = true; } // mantém uma, preservando conclusão
+    }
+    return out;
   }
   async function reconcileForPush(sb, key, localPayload) {
     try {
