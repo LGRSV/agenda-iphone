@@ -237,9 +237,13 @@
       el.viewContent.innerHTML=`<section class="view-shell">${header}<div class="seq-timeline">${rows}</div></section>`;
     }
     function render(){renderSummary();document.querySelectorAll('[data-view]').forEach(button=>button.classList.toggle('active',button.dataset.view===view));document.querySelectorAll('[data-filter]').forEach(button=>button.classList.toggle('active',button.dataset.filter===filter));if(view==='day')renderDay();else if(view==='month')renderMonth();else if(view==='sequencia')renderSequencia();else renderList();const shell=el.viewContent.firstElementChild;if(calendarZoomOrigin){shell?.style.setProperty('--calendar-zoom-x',calendarZoomOrigin.x+'%');shell?.style.setProperty('--calendar-zoom-y',calendarZoomOrigin.y+'%');shell?.classList.add('view-calendar-zoom-in');calendarZoomOrigin=null}if(viewMotion){shell?.classList.add(viewMotion>0?'view-roll-next':'view-roll-prev');viewMotion=0}}
+    const recentToggle=new Map();
+    function localToggleFresh(taskId){const t=recentToggle.get(String(taskId));return !!t&&(Date.now()-t<12000)}
     function toggleTask(taskId){
       const task=tasks.find(t=>t.id===taskId);if(!task)return;
       task.done=!task.done;
+      recentToggle.set(String(task.id),Date.now());
+      try{window.AgendaShareSync&&window.AgendaShareSync.onToggle(task)}catch(_){}
       const finish=()=>{save();requestAnimationFrame(()=>{render();showToast(task.done?'Tarefa concluída':'Tarefa reaberta')})};
       const card=document.querySelector('.task-card .check[data-id="'+String(taskId).replace(/"/g,'')+'"]')?.closest('.task-card');
       if(task.done&&card){
@@ -709,10 +713,11 @@
         const time=/^\d{2}:\d{2}$/.test(String(payload.time||''))?String(payload.time):'';
         const tag=tagKey(payload.tag||'pessoal');
         if(t.text!==text||t.date!==date||t.time!==time||t.tag!==tag){t.text=text;t.date=date;t.time=time;t.tag=tag;changed=true}
-        if(payload.done&&!t.done){t.done=true;changed=true}
+        if(!!payload.done!==!!t.done&&!localToggleFresh(t.id)){t.done=!!payload.done;changed=true}
         if(changed){save();render()}
         return true
-      }
+      },
+      setSharedDone(taskId,done){const t=tasks.find(t=>String(t.id)===String(taskId));if(!t)return false;if(!!t.done===!!done)return false;if(localToggleFresh(taskId))return false;t.done=!!done;save();render();return true}
     };
   })();
   </script>

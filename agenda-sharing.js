@@ -199,14 +199,19 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installButtons);
   else installButtons();
 
-  // Traz para a agenda de verdade (Dia/Mês/Lista) as tarefas que outra pessoa
-  // compartilhou com este usuário — antes elas só apareciam na caixa separada
-  // de "Tarefas compartilhadas". Nunca desmarca uma tarefa que a pessoa já
-  // tenha concluído localmente, só atualiza texto/data/hora/tag e promove
-  // para concluída se a origem já estiver concluída.
+  // Sincroniza tarefas compartilhadas nos DOIS sentidos:
+  // - recebidas (sou recipient): traz para a agenda como cópia (sharedFrom) e
+  //   espelha o "concluído" gravado no compartilhamento;
+  // - enviadas (sou owner): espelha de volta, na minha tarefa original, o
+  //   "concluído" que a outra pessoa marcou.
+  // O estado compartilhado mora em task_payload.done (sem coluna nova). Como o
+  // RLS só deixa o dono escrever na linha, a marcação passa pela função
+  // agenda-share-complete, que também dispara o push para a outra pessoa.
+  const outgoing = new Map(); // task_id (minha tarefa original) -> shareId
+  let myUserId = null;
   let syncingShares = false;
-  async function syncIncomingShares() {
-    if (syncingShares || !window.AgendaAPI || typeof window.AgendaAPI.upsertShared !== 'function') return;
+  async function syncShares() {
+    if (syncingShares || !window.AgendaAPI) return;
     syncingShares = true;
     try {
       const config = cfg();
@@ -216,17 +221,67 @@
       if (!sessionData?.session) return;
       const { data: userData, error: userError } = await sb.auth.getUser();
       if (userError || !userData?.user) return;
+      myUserId = userData.user.id;
       const { data: shares, error } = await sb.from('agenda_task_shares')
-        .select('id,task_payload')
-        .eq('recipient_user_id', userData.user.id);
+        .select('id,owner_user_id,recipient_user_id,task_id,task_payload');
       if (error || !shares) return;
-      shares.forEach(share => { window.AgendaAPI.upsertShared({ shareId: share.id, payload: share.task_payload || {} }); });
+      shares.forEach(share => {
+        const payload = share.task_payload || {};
+        if (share.recipient_user_id === myUserId) {
+          if (typeof window.AgendaAPI.upsertShared === 'function')
+            window.AgendaAPI.upsertShared({ shareId: share.id, payload });
+        } else if (share.owner_user_id === myUserId) {
+          outgoing.set(String(share.task_id), share.id);
+          if (typeof window.AgendaAPI.setSharedDone === 'function')
+            window.AgendaAPI.setSharedDone(share.task_id, !!payload.done);
+        }
+      });
     } catch (_) { /* silencioso: tenta de novo no próximo ciclo */ }
     finally { syncingShares = false; }
   }
-  const scheduleShareSync = () => setTimeout(syncIncomingShares, 1200);
+
+  // Empurra a conclusão/reabertura de uma tarefa compartilhada para o outro
+  // lado (que recebe um push). shareId vem do sharedFrom (recebidas) ou do
+  // mapa outgoing (enviadas).
+  async function pushCompletion(shareId, done) {
+    try {
+      const config = cfg();
+      if (!config.url || !config.publishableKey) return;
+      const sb = await getClient();
+      const { data: sessionData } = await sb.auth.getSession();
+      if (!sessionData?.session) return;
+      await fetch(`${String(config.url).replace(/\/$/, '')}/functions/v1/agenda-share-complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: config.publishableKey, Authorization: `Bearer ${sessionData.session.access_token}` },
+        body: JSON.stringify({ shareId: String(shareId), done: !!done })
+      });
+    } catch (_) { /* silencioso: será reconciliado no próximo ciclo */ }
+  }
+
+  function resolveShareId(task) {
+    const sf = String(task && task.sharedFrom || '');
+    if (sf.indexOf('shr:') === 0) return sf.slice(4);
+    if (task && outgoing.has(String(task.id))) return outgoing.get(String(task.id));
+    return '';
+  }
+
+  window.AgendaShareSync = {
+    onToggle(task) {
+      if (!task) return;
+      const shareId = resolveShareId(task);
+      if (shareId) { pushCompletion(shareId, !!task.done); return; }
+      // Tarefa enviada cujo mapa ainda não carregou: sincroniza e tenta de novo.
+      if (!String(task.sharedFrom || '')) {
+        const wanted = !!task.done, tid = String(task.id);
+        syncShares().then(() => { if (outgoing.has(tid)) pushCompletion(outgoing.get(tid), wanted); });
+      }
+    },
+    sync: syncShares
+  };
+
+  const scheduleShareSync = () => setTimeout(syncShares, 1200);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scheduleShareSync);
   else scheduleShareSync();
-  setInterval(() => { if (!document.hidden) syncIncomingShares(); }, 45000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) syncIncomingShares(); });
+  setInterval(() => { if (!document.hidden) syncShares(); }, 45000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) syncShares(); });
 })();
