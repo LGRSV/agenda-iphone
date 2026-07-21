@@ -22,7 +22,7 @@
   var ICON_NOTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v4M16 2.5v4"/><rect x="4" y="5" width="16" height="16.5" rx="2.4"/><path d="M8 11h8M8 15h5"/></svg>';
   // religador (recloser): simbolo de chave seccionadora aberta
   var ICON_RECLOSER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12H7M17 12h4.5"/><circle cx="7" cy="12" r="1.6"/><circle cx="17" cy="12" r="1.6"/><path d="M8.4 11.3 16 6.6"/></svg>';
-  var EQUIP_URL = 'https://lgrsv.github.io/equipamentos-especiais-v0/';
+  var EQUIP_URL = './equipamentos-especiais.html';
   var ICON_HEART_OUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.3S3.5 15 3.5 8.8C3.5 5.9 5.7 4 8.1 4c1.7 0 3.1.9 3.9 2.2C12.8 4.9 14.2 4 15.9 4c2.4 0 4.6 1.9 4.6 4.8 0 6.2-8.5 11.5-8.5 11.5z"/></svg>';
   var ICON_HEART_FILL = '<svg viewBox="0 0 24 24" fill="#ff5a6a" stroke="#ff5a6a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.3S3.5 15 3.5 8.8C3.5 5.9 5.7 4 8.1 4c1.7 0 3.1.9 3.9 2.2C12.8 4.9 14.2 4 15.9 4c2.4 0 4.6 1.9 4.6 4.8 0 6.2-8.5 11.5-8.5 11.5z"/></svg>';
   function _todayStr(){var d=new Date(),p=function(x){return String(x).padStart(2,'0');};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
