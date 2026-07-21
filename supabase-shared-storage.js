@@ -90,6 +90,40 @@
     return isEmptyPayload(payload);
   }
 
+  // Documentos que devem ser MESCLADOS com o servidor antes de enviar, em vez
+  // de sobrescritos. Sem isso, um aparelho com a cópia antiga apagava do
+  // servidor as tarefas que outra pessoa (ou um lançamento no servidor) tinha
+  // adicionado — porque o envio era um overwrite total do array local.
+  // Só tasks e notes: rules não entra (senão uma regra recorrente apagada de
+  // propósito ressuscitaria a cada envio).
+  const MERGE_KEYS = new Set(['tasks', 'notes']);
+  async function serverPayload(sb, key) {
+    const { data, error } = await sb.from('agenda_documents')
+      .select('payload').eq('user_id', ownerId()).eq('document_key', key).maybeSingle();
+    if (error) throw error;
+    return data ? data.payload : undefined;
+  }
+  function trashIdSet() {
+    const t = read('trash');
+    return new Set((Array.isArray(t) ? t : []).map(x => String(x && x.id)));
+  }
+  function mergeTasks(localArr, serverArr) {
+    const drop = trashIdSet();
+    const byId = new Map();
+    (Array.isArray(serverArr) ? serverArr : []).forEach(it => { if (it && it.id != null && !drop.has(String(it.id))) byId.set(String(it.id), it); });
+    (Array.isArray(localArr) ? localArr : []).forEach(it => { if (it && it.id != null) byId.set(String(it.id), it); }); // edições locais vencem
+    return Array.from(byId.values());
+  }
+  async function reconcileForPush(sb, key, localPayload) {
+    try {
+      const server = await serverPayload(sb, key);
+      if (server == null) return localPayload;
+      if (key === 'tasks' && Array.isArray(localPayload)) return mergeTasks(localPayload, server);
+      if (key === 'notes' && server && typeof server === 'object' && !Array.isArray(server) && localPayload && typeof localPayload === 'object' && !Array.isArray(localPayload)) return { ...server, ...localPayload };
+    } catch (_) { /* em caso de falha, envia o local mesmo (comportamento antigo) */ }
+    return localPayload;
+  }
+
   async function pushDocs(keys = Object.keys(DOCUMENTS), silent = false) {
     const sb = await requireAccess();
     syncing = true; render('Enviando…');
@@ -97,8 +131,13 @@
     let recovered = false;
     try {
       for (const key of keys) {
-        const payload = read(key);
+        let payload = read(key);
         if (isSuspiciouslyEmpty(key, payload)) { recovered = true; continue; }
+        if (MERGE_KEYS.has(key)) {
+          const merged = await reconcileForPush(sb, key, payload);
+          if (JSON.stringify(merged) !== JSON.stringify(payload)) { write(key, merged); notifySync(key); }
+          payload = merged;
+        }
         const { error } = await sb.from('agenda_documents').upsert({
           user_id: ownerId(), document_key: key, payload, device_id: deviceId()
         }, { onConflict: 'user_id,document_key' });
