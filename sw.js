@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v210-equipamentos-especiais';
+const CACHE = 'agenda-lagares-v211-amazon-fora-da-fatura';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=12" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
