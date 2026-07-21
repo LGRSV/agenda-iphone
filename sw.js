@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v208-conclusao-compartilhada';
+const CACHE = 'agenda-lagares-v209-sync-merge';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=12" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -7,7 +7,7 @@ const FINANCEIRO_SCRIPT = '<script src="./financeiro.js?v=2" defer><\/script>';
 const NOTAS_SCRIPT = '<script src="./notas.js?v=8" defer><\/script>';
 const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3" defer><\/script>';
 const SUPABASE_CONFIG_SCRIPT = '<script src="./supabase-project-config.js?v=1" defer><\/script>';
-const SUPABASE_SCRIPT = '<script src="./supabase-shared-storage.js?v=5" defer><\/script>';
+const SUPABASE_SCRIPT = '<script src="./supabase-shared-storage.js?v=6" defer><\/script>';
 const SUPABASE_LOGIN_SCRIPT = '<script src="./supabase-login-ui.js?v=4" defer><\/script>';
 const SIMPLE_ACCESS_SCRIPT = '<script src="./supabase-simple-access.js?v=5" defer><\/script>';
 const SHARING_SCRIPT = '<script src="./agenda-sharing.js?v=4" defer><\/script>';
