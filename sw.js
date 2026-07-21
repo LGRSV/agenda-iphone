@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v206-fix-notif-404';
+const CACHE = 'agenda-lagares-v207-calendario-status';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=12" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
