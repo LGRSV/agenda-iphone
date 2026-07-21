@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v205-lembretes';
+const CACHE = 'agenda-lagares-v206-fix-notif-404';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=12" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -127,10 +127,14 @@ self.addEventListener('push', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const target = new URL(event.notification.data?.url || './', self.location.origin).href;
+  // Resolve relative URLs (o worker manda './?alert=1&task=...') contra o SCOPE do SW
+  // — ex.: https://lgrsv.github.io/agenda-iphone/ — e não contra a origin nua
+  // (https://lgrsv.github.io/), que jogava o clique para a raiz do domínio → 404.
+  const scope = self.registration.scope || self.location.href;
+  const target = new URL(event.notification.data?.url || './', scope).href;
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    const current = windows.find(client => client.url.startsWith(self.location.origin));
+    const current = windows.find(client => client.url.startsWith(scope)) || windows.find(client => client.url.startsWith(self.location.origin));
     if (current) {
       await current.focus();
       if ('navigate' in current) await current.navigate(target);
