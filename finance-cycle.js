@@ -280,11 +280,13 @@
     const bounds = cycleBounds(cursor);
 
     const title = document.querySelector('#mn');
-    if (title) title.textContent = `Fatura de ${labelFor(cursor)}`;
+    if (title) title.textContent = labelFor(cursor);
     const saldoLabel = document.querySelector('.bar .muted');
-    if (saldoLabel) saldoLabel.textContent = 'Total da fatura Inter';
-    const saldo = document.querySelector('#saldo');
-    if (saldo) saldo.textContent = money(total);
+    if (saldoLabel) {
+      const today = new Date();
+      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      saldoLabel.textContent = `Saldo total previsto até ${formatShort(dateFor(lastDay.getFullYear(), lastDay.getMonth() + 1, lastDay.getDate()))}`;
+    }
     const entradas = document.querySelector('#in');
     if (entradas) entradas.textContent = money(totalGeneralCredits);
     const saidas = document.querySelector('#out');
