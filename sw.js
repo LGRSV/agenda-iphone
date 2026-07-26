@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v220-reemb-filter';
+const CACHE = 'agenda-lagares-v221-parceiro';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=12" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -13,7 +13,7 @@ const SIMPLE_ACCESS_SCRIPT = '<script src="./supabase-simple-access.js?v=5" defe
 const SHARING_SCRIPT = '<script src="./agenda-sharing.js?v=4" defer><\/script>';
 const WEB_PUSH_SCRIPT = '<script src="./web-push.js?v=1" defer><\/script>';
 const VIEWMODE_SCRIPT = '<script src="./viewmode.js?v=2" defer><\/script>';
-const HEADER_CLEANUP_SCRIPT = '<script src="./header-cleanup.js?v=4" defer><\/script>';
+const HEADER_CLEANUP_SCRIPT = '<script src="./header-cleanup.js?v=5" defer><\/script>';
 const UNDO_SCRIPT = '<script src="./undo.js?v=1" defer><\/script>';
 const LIXEIRA_SCRIPT = '<script src="./lixeira.js?v=1" defer><\/script>';
 const INTEL_SCRIPT = '<script src="./agenda-intelligence.js?v=2" defer><\/script>';
@@ -25,6 +25,7 @@ const POLISH_SCRIPT = '<script src="./interface-polish.js?v=2" defer><\/script>'
 const REG_FIN_SCRIPT = '<script src="./registros-financeiros.js?v=1" defer><\/script>';
 const AUTH_GATE_SCRIPT = '<script src="./auth-gate.js?v=1" defer><\/script>';
 const SEQ_SCRIPT = '<script src="./sequencial.js?v=3" defer><\/script>';
+const PARCEIRO_SCRIPT = '<script src="./parceiro.js?v=1" defer><\/script>';
 
 const STATIC_ASSET_RE = /\.(?:js|css|png|jpg|jpeg|svg|webp|woff2?)$/;
 
@@ -82,6 +83,7 @@ self.addEventListener('fetch', event => {
       if (!isAuxPage && !html.includes('auth-gate.js')) html = html.replace('</body>', `${AUTH_GATE_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('agenda-sharing.js')) html = html.replace('</body>', `${SHARING_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('sequencial.js')) html = html.replace('</body>', `${SEQ_SCRIPT}</body>`);
+      if (!isAuxPage && !html.includes('parceiro.js')) html = html.replace('</body>', `${PARCEIRO_SCRIPT}</body>`);
       const headers = new Headers(response.headers);
       headers.delete('content-length');
       headers.delete('content-encoding');
