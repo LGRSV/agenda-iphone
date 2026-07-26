@@ -20,6 +20,13 @@
     investments: ['agenda_investimentos_v1', {}],
     accounts: ['agenda_contas_v1', {}]
   };
+  // A tabela antiga aceita apenas as chaves históricas. Dados financeiros
+  // adicionais ficam aninhados em "settings" para sincronizar sem exigir uma
+  // migração destrutiva no banco já em produção.
+  const NESTED_IN_SETTINGS = {
+    investments: 'investments',
+    accounts: 'accounts'
+  };
   const LOCAL_TO_DOC = new Map(Object.entries(DOCUMENTS).map(([doc, [key]]) => [key, doc]));
   const originalSetItem = Storage.prototype.setItem;
   const originalRemoveItem = Storage.prototype.removeItem;
@@ -148,8 +155,18 @@
           if (JSON.stringify(merged) !== JSON.stringify(payload)) { write(key, merged); notifySync(key); }
           payload = merged;
         }
+        let dbKey = key;
+        let dbPayload = payload;
+        if (key === 'settings' || NESTED_IN_SETTINGS[key]) {
+          const current = await serverPayload(sb, 'settings');
+          const base = current && typeof current === 'object' && !Array.isArray(current) ? current : {};
+          dbKey = 'settings';
+          dbPayload = NESTED_IN_SETTINGS[key]
+            ? { ...base, [NESTED_IN_SETTINGS[key]]: payload }
+            : { ...base, ...(payload && typeof payload === 'object' ? payload : {}) };
+        }
         const { error } = await sb.from('agenda_documents').upsert({
-          user_id: ownerId(), document_key: key, payload, device_id: deviceId()
+          user_id: ownerId(), document_key: dbKey, payload: dbPayload, device_id: deviceId()
         }, { onConflict: 'user_id,document_key' });
         if (error) throw error;
         pushed.push(key);
@@ -171,6 +188,14 @@
       let changed = false;
       for (const row of data || []) {
         if (!DOCUMENTS[row.document_key]) continue;
+        if (row.document_key === 'settings' && row.payload && typeof row.payload === 'object') {
+          for (const [virtualDoc, field] of Object.entries(NESTED_IN_SETTINGS)) {
+            if (!Object.prototype.hasOwnProperty.call(row.payload, field)) continue;
+            if (JSON.stringify(read(virtualDoc)) !== JSON.stringify(row.payload[field])) {
+              write(virtualDoc, row.payload[field]); changed = true;
+            }
+          }
+        }
         const before = JSON.stringify(read(row.document_key));
         const after = JSON.stringify(row.payload ?? DOCUMENTS[row.document_key][1]);
         if (before !== after) { write(row.document_key, row.payload); changed = true; }
@@ -218,8 +243,14 @@
       const row = payload.new?.document_key ? payload.new : payload.old;
       if (!row || !DOCUMENTS[row.document_key] || dirty()[row.document_key]) return;
       if (String(row.device_id || '') === deviceId()) return;
-      write(row.document_key, payload.eventType === 'DELETE' ? DOCUMENTS[row.document_key][1] : row.payload);
-      notifySync(row.document_key);
+      const nextPayload = payload.eventType === 'DELETE' ? DOCUMENTS[row.document_key][1] : row.payload;
+      write(row.document_key, nextPayload);
+      if (row.document_key === 'settings' && nextPayload && typeof nextPayload === 'object') {
+        for (const [virtualDoc, field] of Object.entries(NESTED_IN_SETTINGS)) {
+          if (Object.prototype.hasOwnProperty.call(nextPayload, field)) write(virtualDoc, nextPayload[field]);
+        }
+      }
+      notifySync(row.document_key === 'settings' ? 'all' : row.document_key);
     }).subscribe();
   }
 

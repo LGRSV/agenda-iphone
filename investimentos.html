@@ -26,12 +26,18 @@ h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 9px;text-tran
 .row .vl small{display:block;color:#a6acb8;font-weight:600;font-size:10px;text-decoration:none}
 .eprev{border:1px solid #ffb74d55;background:linear-gradient(135deg,#3a2f16,#202228)}
 .eprev .ep-b{color:#ffb74d;font-size:24px;font-weight:850}
+.ep-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
+.ep-stat{border:1px solid #ffb74d2e;background:#17181c88;border-radius:12px;padding:10px}
+.ep-stat span{display:block;color:#a6acb8;font-size:10px;font-weight:700;line-height:1.25}
+.ep-stat b{display:block;color:#f7f8fb;font-size:14px;margin-top:4px}
 .editbtn{background:#2a2d35;border:1px solid #3b404a;color:#f7f8fb;font-weight:800;font-size:11px;padding:7px 13px;border-radius:999px;cursor:pointer}
 .editbtn:active{transform:scale(.95)}
 .sim label{display:block;color:#a6acb8;font-size:11px;font-weight:800;margin:12px 0 6px;letter-spacing:.04em}
 .sim input{width:100%;min-height:44px;padding:10px 12px;border-radius:11px;border:1px solid #3b404a;background:#17181c;color:#f7f8fb;font-size:16px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .simout{margin-top:16px;border-top:1px solid #3b404a;padding-top:14px}
+.sim-auto{margin-top:13px;border:1px solid #ffb74d55;background:#3a2f1666;border-radius:13px;padding:11px 12px;color:#ffd58d;font-size:11px;font-weight:700;line-height:1.5}
+.sim-auto b{color:#fff}
 .simout .big{font-size:12px;color:#a6acb8;font-weight:700}
 .simout .big b{display:block;color:#6ec9ff;font-size:30px;font-weight:850;margin-top:4px;letter-spacing:-.03em}
 .simline{display:flex;justify-content:space-between;gap:10px;font-size:13px;font-weight:700;padding:7px 0;border-top:1px solid #3b404a}
@@ -76,16 +82,17 @@ h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 9px;text-tran
   <h2>Simulador de aportes</h2>
   <div class="card sim">
     <div class="grid2">
-      <div><label for="sInit">Saldo inicial (R$)</label><input id="sInit" type="number" step="0.01" inputmode="decimal"></div>
-      <div><label for="sAporte">Aporte mensal (R$)</label><input id="sAporte" type="number" step="0.01" inputmode="decimal" value="500"></div>
+      <div><label for="sInit">Saldo inicial — outros (R$)</label><input id="sInit" type="number" step="0.01" inputmode="decimal"></div>
+      <div><label for="sAporte">Aporte mensal — outros (R$)</label><input id="sAporte" type="number" step="0.01" inputmode="decimal" value="500"></div>
     </div>
     <div class="grid2">
       <div><label for="sRate">Rentabilidade (% ao ano)</label><input id="sRate" type="number" step="0.01" inputmode="decimal"></div>
       <div><label for="sMonths">Prazo (meses)</label><input id="sMonths" type="number" step="1" inputmode="numeric" value="60"></div>
     </div>
+    <div class="sim-auto" id="eprevAuto"></div>
     <div class="simout" id="simOut"></div>
     <table class="simtable" id="simTable"></table>
-    <p class="hint">Juros compostos com aportes ao fim de cada mês. A rentabilidade padrão usa 120% do CDI atual — ajuste à vontade para simular cenários.</p>
+    <p class="hint">Juros compostos com aportes ao fim de cada mês. Os campos acima controlam os outros investimentos; a Energisa Prev é incluída separadamente e de forma automática.</p>
   </div>
 
   <h2>Metas de recebimento</h2>
@@ -116,27 +123,44 @@ h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 9px;text-tran
   const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
   const money=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n||0);
   const money0=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}).format(n||0);
-  const num=v=>{const n=Number(String(v??'').replace(/\./g,'').replace(',','.'));return Number.isFinite(n)?n:(Number(v)||0)};
+  const num=v=>{let s=String(v??'').trim();if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=Number(s);return Number.isFinite(n)?n:0};
   const numRaw=v=>{const n=Number(String(v??'').replace(',','.'));return Number.isFinite(n)?n:0};
   const mark=()=>{const d=j(DK,{});d.tasks=Date.now();d.notes=Date.now();d['agenda_investimentos_v1']=Date.now();save(DK,d)};
-  const invDefault=()=>({cdi:0.1095,upd:'',cofres:[{id:'lagares',nome:'Cofrinho Lagares',saldo:0},{id:'giro',nome:'Giro mensal',saldo:0}]});
-  const loadInv=()=>{const v=j(IK,null);return v&&Array.isArray(v.cofres)?v:invDefault()};
+  const invDefault=()=>({cdi:0.1095,upd:'',cofres:[{id:'lagares',nome:'Cofrinho Lagares',saldo:45539.43},{id:'giro',nome:'Giro mensal',saldo:8941.99,meta:12830}]});
+  const loadInv=()=>{const base=invDefault(),v=j(IK,null);return v&&typeof v==='object'?{...base,...v,cofres:Array.isArray(v.cofres)?v.cofres:base.cofres}:base};
   const saveInv=v=>save(IK,v);
   const cdiOf=inv=>inv.cdi>0?inv.cdi:0.1095;
+  const prevOf=inv=>{
+    const p=inv.energisaPrev||{};
+    const proprio=numRaw(p.aporteUsuario);
+    const patrocinadora=numRaw(p.aportePatrocinadora);
+    return {
+      saldo:numRaw(p.saldo),
+      proprio,
+      patrocinadora,
+      aporte:numRaw(p.aporteMensal)||(proprio+patrocinadora),
+      cdiPercent:numRaw(p.cdiPercent)||1,
+      upd:p.upd||''
+    };
+  };
 
   // ---------- Saldos dos cofres + Energisa Prev ----------
   function renderSaldos(){
     const inv=loadInv();
     const cofresTot=inv.cofres.reduce((s,c)=>s+(c.saldo||0),0);
-    const eprev=(inv.energisaPrev&&num(inv.energisaPrev.saldo))||0;
-    document.querySelector('#totGeral').textContent=money(cofresTot+eprev);
+    const ep=prevOf(inv);
+    document.querySelector('#totGeral').textContent=money(cofresTot+ep.saldo);
     document.querySelector('#cofresBox').innerHTML=inv.cofres.map((c,i)=>
       '<div class="row"><div class="nm">'+c.nome+'</div><div class="vl">'+money(c.saldo||0)+
       ' <button class="editbtn" data-cofre="'+i+'">Ajustar</button></div></div>').join('')+
       '<div class="row"><div class="nm" style="color:#a6acb8">CDI de referência</div><div class="vl">'+(cdiOf(inv)*100).toFixed(2).replace('.',',')+'% a.a. <button class="editbtn" data-cdi="1">Ajustar</button></div></div>';
     document.querySelector('#eprevBox').innerHTML=
-      '<div class="row"><div class="nm">Energisa Prev <small>Previdência privada</small></div>'+
-      '<div class="vl"><span class="ep-b">'+money(eprev)+'</span><br><button class="editbtn" data-eprev="1">Ajustar saldo</button></div></div>';
+      '<div class="row"><div class="nm">Energisa Prev <small>Previdência privada'+(ep.upd?' · saldo em '+ep.upd.split('-').reverse().join('/'):'')+'</small></div>'+
+      '<div class="vl"><span class="ep-b">'+money(ep.saldo)+'</span><br><button class="editbtn" data-eprev="1">Ajustar plano</button></div></div>'+
+      '<div class="ep-grid"><div class="ep-stat"><span>Seu aporte mensal</span><b>'+money(ep.proprio)+'</b></div>'+
+      '<div class="ep-stat"><span>Aporte da Energisa</span><b>'+money(ep.patrocinadora)+'</b></div>'+
+      '<div class="ep-stat"><span>Total por mês</span><b>'+money(ep.aporte)+'</b></div>'+
+      '<div class="ep-stat"><span>Rentabilidade estimada</span><b>≈ '+(ep.cdiPercent*100).toFixed(0)+'% do CDI</b></div></div>';
   }
 
   document.addEventListener('click',e=>{
@@ -144,7 +168,16 @@ h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 9px;text-tran
     const cofBtn=e.target.closest('[data-cofre]');
     if(cofBtn){const i=+cofBtn.dataset.cofre;const v=prompt('Saldo de '+inv.cofres[i].nome+' (R$):',inv.cofres[i].saldo);if(v===null)return;inv.cofres[i].saldo=num(v);saveInv(inv);mark();renderSaldos();refillSim();return;}
     if(e.target.closest('[data-cdi]')){const v=prompt('CDI anual (%):',(cdiOf(inv)*100).toFixed(2));if(v===null)return;inv.cdi=numRaw(v)/100;saveInv(inv);mark();renderSaldos();refillSim();return;}
-    if(e.target.closest('[data-eprev]')){const cur=(inv.energisaPrev&&inv.energisaPrev.saldo)||'';const v=prompt('Saldo na Energisa Prev (R$):',cur);if(v===null)return;inv.energisaPrev={saldo:num(v),upd:new Date().toISOString().slice(0,10)};saveInv(inv);mark();renderSaldos();return;}
+    if(e.target.closest('[data-eprev]')){
+      const ep=prevOf(inv);
+      const saldo=prompt('Saldo na Energisa Prev (R$):',ep.saldo.toFixed(2));if(saldo===null)return;
+      const proprio=prompt('Seu aporte mensal (R$):',ep.proprio.toFixed(2));if(proprio===null)return;
+      const patrocinadora=prompt('Aporte mensal da Energisa (R$):',ep.patrocinadora.toFixed(2));if(patrocinadora===null)return;
+      const cdi=prompt('Rentabilidade aproximada (% do CDI):',(ep.cdiPercent*100).toFixed(0));if(cdi===null)return;
+      const apUsuario=num(proprio),apPatrocinadora=num(patrocinadora);
+      inv.energisaPrev={...(inv.energisaPrev||{}),saldo:num(saldo),aporteUsuario:apUsuario,aportePatrocinadora:apPatrocinadora,aporteMensal:apUsuario+apPatrocinadora,cdiPercent:numRaw(cdi)/100,upd:new Date().toISOString().slice(0,10)};
+      saveInv(inv);mark();renderSaldos();refillSim();return;
+    }
   });
 
   // ---------- Simulador de aportes (juros compostos) ----------
@@ -157,15 +190,25 @@ h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 9px;text-tran
     runSim();
   }
   function runSim(){
+    const inv=loadInv();
+    const ep=prevOf(inv);
     const P=numRaw(document.querySelector('#sInit').value);
     const A=numRaw(document.querySelector('#sAporte').value);
     const annual=numRaw(document.querySelector('#sRate').value)/100;
     const n=Math.max(0,Math.min(600,Math.round(numRaw(document.querySelector('#sMonths').value))));
     const i=Math.pow(1+annual,1/12)-1;
+    const epAnnual=cdiOf(inv)*ep.cdiPercent;
+    const epI=Math.pow(1+epAnnual,1/12)-1;
     const pow=Math.pow(1+i,n);
-    const fv=P*pow+(i>0?A*((pow-1)/i):A*n);
-    const invested=P+A*n;
+    const epPow=Math.pow(1+epI,n);
+    const fvOutros=P*pow+(i>0?A*((pow-1)/i):A*n);
+    const fvPrev=ep.saldo*epPow+(epI>0?ep.aporte*((epPow-1)/epI):ep.aporte*n);
+    const fv=fvOutros+fvPrev;
+    const invested=P+A*n+ep.saldo+ep.aporte*n;
     const juros=fv-invested;
+    document.querySelector('#eprevAuto').innerHTML=
+      '<b>Energisa Prev incluída automaticamente</b><br>Saldo '+money(ep.saldo)+' + '+money(ep.aporte)+'/mês ('+
+      money(ep.proprio)+' seu + '+money(ep.patrocinadora)+' da Energisa) · ≈ '+(ep.cdiPercent*100).toFixed(0)+'% do CDI';
     document.querySelector('#simOut').innerHTML=
       '<div class="big">Valor projetado em '+n+' '+(n===1?'mês':'meses')+'<b>'+money(fv)+'</b></div>'+
       '<div class="simline"><span>Total aportado</span><span>'+money(invested)+'</span></div>'+
@@ -178,8 +221,9 @@ h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 9px;text-tran
     for(let y=1;y<=years;y++){
       const upto=Math.min(y*12,n);
       const powY=Math.pow(1+i,upto);
-      const balY=P*powY+(i>0?A*((powY-1)/i):A*upto);
-      const investedY=P+A*upto;
+      const epPowY=Math.pow(1+epI,upto);
+      const balY=P*powY+(i>0?A*((powY-1)/i):A*upto)+ep.saldo*epPowY+(epI>0?ep.aporte*((epPowY-1)/epI):ep.aporte*upto);
+      const investedY=P+A*upto+ep.saldo+ep.aporte*upto;
       rows+='<tr><td>'+y+'º</td><td>'+money0(investedY)+'</td><td>'+money0(balY)+'</td><td class="j">'+money0(balY-investedY)+'</td></tr>';
     }
     document.querySelector('#simTable').innerHTML=years>0?head+rows:'';
@@ -241,8 +285,10 @@ h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 9px;text-tran
   // ---------- Boot + re-render em sync remoto ----------
   function boot(){renderSaldos();refillSim();renderMetas();}
   boot();
-  window.addEventListener('agenda:remote-sync',()=>{renderSaldos();renderMetas();});
+  window.addEventListener('agenda:remote-sync',()=>{renderSaldos();refillSim();renderMetas();});
 })();
 </script>
+<script src="./supabase-project-config.js?v=1"></script>
+<script src="./supabase-shared-storage.js?v=5"></script>
 </body>
 </html>
