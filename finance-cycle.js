@@ -220,11 +220,18 @@
     const sign = movement === 'entrada' ? '+' : '−';
     const marker = movement === 'entrada' ? '+' : '−';
     const installment = /\((\d+\/\d+)\)/.exec(item.text || '');
+    const paymentLabel = movement === 'entrada'
+      ? 'Entrada/crédito'
+      : item.n.forma === 'inter'
+        ? 'Cartão Inter'
+        : item.n.forma === 'pix'
+          ? `Pix${item.n.conta === 'nb' ? ' · Nubank' : item.n.conta === 'mp' ? ' · Mercado Pago' : ''}`
+          : item.n.forma === 'dinheiro' ? 'Dinheiro' : 'Saída';
     return `<article class="row invoice-row${cancelled ? ' is-cancelled' : ''}">
       <span class="paidmark" aria-hidden="true">${marker}</span>
       <div>
         <div class="title">${esc(item.text)}${cancelled ? '<span class="cancel-badge">Cancelado</span>' : ''}</div>
-        <div class="meta">${formatLong(item.date)}${item.time ? ` ${esc(item.time)}` : ''} · ${movement === 'entrada' ? 'Crédito/estorno' : 'Cartão Inter'}${installment ? ` · Parcela ${installment[1]}` : ''}</div>
+        <div class="meta">${formatLong(item.date)}${item.time ? ` ${esc(item.time)}` : ''} · ${paymentLabel}${installment ? ` · Parcela ${installment[1]}` : ''}</div>
         ${detailsHtml(item)}
       </div>
       <div class="value ${movement === 'entrada' ? 'entrada' : 'saida'}">${sign} ${money(value)}</div>
@@ -313,17 +320,17 @@
       </div>
       <div class="ct-val">${money(total)}</div>
       <div class="ct-cardbot">
-        <span class="ct-sub">Ciclo ${formatShort(bounds.start)}–${formatShort(bounds.end)} · fecha ${formatShort(bounds.end)} · ${active.length} lançamento${active.length === 1 ? '' : 's'}</span>
+        <span class="ct-sub">Ciclo ${formatShort(bounds.start)}–${formatShort(bounds.end)} · ${active.length} lançamento${active.length === 1 ? '' : 's'} · toque para ver extrato ›</span>
         <span class="mc"><i></i><i></i></span>
       </div>`;
     }
 
     const heading = document.querySelector('#list')?.previousElementSibling;
-    if (heading?.tagName === 'H2') heading.textContent = 'LANÇAMENTOS DO CARTÃO INTER';
+    if (heading?.tagName === 'H2') heading.textContent = 'LANÇAMENTOS DO PERÍODO';
     document.querySelectorAll('.filters [data-f]').forEach(button => {
       button.classList.toggle('on', button.dataset.f === filter);
     });
-    renderList(items);
+    renderList(financialItems);
   }
 
   function markDirty(documentKey) {
