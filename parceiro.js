@@ -75,7 +75,7 @@
     const y = cursor.getFullYear(), m = cursor.getMonth();
     const key = y + '-' + pad(m + 1);
     const items = partner.tasks
-      .filter(t => t && t.text && String(t.date || '').startsWith(key))
+      .filter(t => t && !t.hidden && t.text && String(t.date || '').startsWith(key))
       .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
     dialog.querySelector('.pc-month').textContent = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(cursor);
     const body = dialog.querySelector('.pc-body');

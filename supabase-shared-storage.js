@@ -18,14 +18,16 @@
     trash: ['agenda_lixeira_v1', []],
     history: ['agenda_historico_v1', []],
     investments: ['agenda_investimentos_v1', {}],
-    accounts: ['agenda_contas_v1', {}]
+    accounts: ['agenda_contas_v1', {}],
+    refaturamentos: ['agenda_refaturamentos_v1', []]
   };
   // A tabela antiga aceita apenas as chaves históricas. Dados financeiros
   // adicionais ficam aninhados em "settings" para sincronizar sem exigir uma
   // migração destrutiva no banco já em produção.
   const NESTED_IN_SETTINGS = {
     investments: 'investments',
-    accounts: 'accounts'
+    accounts: 'accounts',
+    refaturamentos: 'refaturamentos'
   };
   const LOCAL_TO_DOC = new Map(Object.entries(DOCUMENTS).map(([doc, [key]]) => [key, doc]));
   const originalSetItem = Storage.prototype.setItem;

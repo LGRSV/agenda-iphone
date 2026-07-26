@@ -111,10 +111,13 @@
     const notes = read(NOTES_KEY, {});
     const source = read(TASKS_KEY, []).map(task => ({...task,n:notes[task.id] || {}}))
       .filter(task => task?.tag === 'financeiro' && !task.n.excludeFromInvoice && task.n.forma === 'inter' && kind(task,task.n) === 'saida' && !cancelled(task,task.n));
+    const credits = read(TASKS_KEY, []).map(task => ({...task,n:notes[task.id] || {},credit:true}))
+      .filter(task => task?.tag === 'financeiro' && !task.n.excludeFromInvoice && task.n.forma === 'inter' && kind(task,task.n) === 'entrada' && task.n.refaturamentoType === 'refund' && !cancelled(task,task.n))
+      .filter(task => invoiceKey(task.date,task.n) === cursor);
     const { plans, regular } = installmentPlans(source);
     const projected = [...plans.values()].map(projectPlan).filter(Boolean);
     const oneTime = regular.filter(task => invoiceKey(task.date,task.n) === cursor);
-    return oneTime.concat(projected).sort((a,b) => `${b.date}${b.time || ''}`.localeCompare(`${a.date}${a.time || ''}`));
+    return oneTime.concat(projected,credits).sort((a,b) => `${b.date}${b.time || ''}`.localeCompare(`${a.date}${a.time || ''}`));
   }
 
   function detailsHtml(item) {
@@ -126,7 +129,7 @@
   }
 
   function render() {
-    const data = items(), total = data.reduce((sum,item) => sum + amount(item.n.valor),0), bounds = cycleBounds(cursor);
+    const data = items(), total = data.reduce((sum,item) => sum + (item.credit ? -1 : 1) * amount(item.n.valor),0), bounds = cycleBounds(cursor);
     document.querySelector('#invoiceMonth').textContent = label();
     document.querySelector('#due').textContent = `Vence 02/${cursor.slice(5,7)}/${cursor.slice(0,4)}`;
     document.querySelector('#total').textContent = money(total);
@@ -135,9 +138,9 @@
     const groups = {};
     data.forEach(item => { (groups[item.date] ||= []).push(item); });
     document.querySelector('#list').innerHTML = data.length ? Object.keys(groups).sort().reverse().map(date => {
-      const rows = groups[date], subtotal = rows.reduce((sum,item) => sum + amount(item.n.valor),0), weekday = WEEKDAYS[new Date(`${date}T12:00:00`).getDay()];
-      return `<section class="day"><header class="day-head"><span>${short(date)} · ${weekday}</span><b>− ${money(subtotal)}</b></header>${rows.map(item => `<article class="row"><i class="dot"></i><div><div class="title">${esc(item.n.invoiceLabel || item.text)}</div><div class="meta">${item.time ? `${esc(item.time)} · ` : ''}Cartão de crédito Inter</div>${detailsHtml(item)}</div><strong class="value">− ${money(amount(item.n.valor))}</strong></article>`).join('')}</section>`;
-    }).join('') : '<div class="empty">Nenhuma saída do cartão Inter nesta fatura.</div>';
+      const rows = groups[date], subtotal = rows.reduce((sum,item) => sum + (item.credit ? -1 : 1) * amount(item.n.valor),0), weekday = WEEKDAYS[new Date(`${date}T12:00:00`).getDay()];
+      return `<section class="day"><header class="day-head"><span>${short(date)} · ${weekday}</span><b>${subtotal < 0 ? '+ ' : '− '}${money(Math.abs(subtotal))}</b></header>${rows.map(item => `<article class="row ${item.credit ? 'credit' : ''}"><i class="dot"></i><div><div class="title">${esc(item.n.invoiceLabel || item.text)}</div><div class="meta">${item.time ? `${esc(item.time)} · ` : ''}${item.credit ? 'Crédito na fatura Inter' : 'Cartão de crédito Inter'}</div>${detailsHtml(item)}</div><strong class="value">${item.credit ? '+ ' : '− '}${money(amount(item.n.valor))}</strong></article>`).join('')}</section>`;
+    }).join('') : '<div class="empty">Nenhum lançamento do cartão Inter nesta fatura.</div>';
     document.querySelector('#updated').textContent = `Fatura ${label()} · atualização automática pela agenda`;
   }
 

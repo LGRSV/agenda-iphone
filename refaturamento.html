@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#050506">
+  <meta name="app-page" content="refaturamento.html">
+  <title>Refaturamento</title>
+  <style>
+    :root{color-scheme:dark;--bg:#111216;--surface:#1c1e23;--soft:#24272e;--line:#343943;--text:#f7f8fb;--muted:#9da5b3;--blue:#69c8ff;--green:#78d88b;--red:#ff7f91;--orange:#ffb45f}
+    *{box-sizing:border-box}html{-webkit-text-size-adjust:100%;background:var(--bg)}body{margin:0;background:var(--bg);color:var(--text);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    button,input,select{font:inherit}.app{max-width:760px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(34px + env(safe-area-inset-bottom))}
+    .head{display:flex;align-items:center;gap:12px}.back,.smark{width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:13px;background:var(--surface);text-decoration:none;color:var(--text);flex:0 0 auto}.back{font-size:28px}.smark{border-color:var(--blue);color:var(--blue);font-size:22px;font-weight:900;box-shadow:inset 0 0 0 1px rgba(105,200,255,.12)}
+    .ey{margin:0;color:var(--blue);font-size:11px;font-weight:850;letter-spacing:.12em}.head h1{margin:3px 0;font-size:27px;letter-spacing:-.04em}.muted{margin:0;color:var(--muted);font-size:12px;line-height:1.4}
+    .summary{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:20px 0 12px}.metric{min-height:99px;padding:14px;border:1px solid var(--line);border-radius:17px;background:var(--surface)}.metric span{display:block;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}.metric b{display:block;margin-top:9px;font-size:20px}.metric small{display:block;margin-top:5px;color:var(--muted);font-size:10px;line-height:1.3}.metric.inter b{color:var(--red)}.metric.mp b{color:var(--green)}.metric.fee b{color:var(--orange)}.metric.result b{color:var(--blue)}
+    h2{margin:22px 0 9px;color:var(--muted);font-size:11px;font-weight:850;letter-spacing:.09em}.panel,.operation{border:1px solid var(--line);border-radius:18px;background:var(--surface)}.panel{padding:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:grid;gap:6px}.field.wide{grid-column:1/-1}.field label{color:#cbd0d8;font-size:11px;font-weight:780}.field input,.field select{width:100%;min-height:44px;padding:10px 11px;border:1px solid var(--line);border-radius:11px;background:#141519;color:var(--text);outline:0}.field input:focus,.field select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(105,200,255,.1)}.help{color:var(--muted);font-size:10px;line-height:1.35}
+    .preview{margin-top:12px;padding:12px;border:1px solid rgba(105,200,255,.28);border-radius:14px;background:#151c23}.preview-row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid rgba(255,255,255,.07);font-size:12px}.preview-row:first-child{border-top:0}.preview-row b{text-align:right}.positive{color:var(--green)}.negative{color:var(--red)}.neutral{color:var(--blue)}
+    .actions{display:flex;gap:9px;margin-top:12px}.actions button{min-height:44px;flex:1;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--text);font-weight:850}.actions .primary{border-color:var(--blue);background:var(--blue);color:#07131a}.error{min-height:18px;margin:9px 0 0;color:var(--red);font-size:11px;font-weight:750}
+    .list{display:grid;gap:10px}.operation{padding:13px;animation:enter .3s ease-out both}.op-head{display:flex;justify-content:space-between;gap:10px}.op-title{font-weight:850;line-height:1.3}.badge{align-self:flex-start;padding:4px 8px;border-radius:999px;border:1px solid var(--line);font-size:9px;font-weight:850;white-space:nowrap}.badge.realizada{color:var(--green);border-color:rgba(120,216,139,.5)}.badge.parcial{color:var(--orange);border-color:rgba(255,180,95,.5)}.badge.total{color:var(--blue);border-color:rgba(105,200,255,.5)}.op-meta{margin-top:4px;color:var(--muted);font-size:10px}.ledger{display:grid;grid-template-columns:1fr auto;gap:7px 12px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:11px}.ledger strong{text-align:right}.edit{margin-top:11px;padding:7px 12px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--text);font-size:11px;font-weight:800}.empty{padding:30px 18px;text-align:center;border:1px solid var(--line);border-radius:18px;color:var(--muted);background:var(--surface)}
+    .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,20px);padding:11px 15px;border-radius:12px;background:#effaff;color:#06131b;font-size:12px;font-weight:850;opacity:0;pointer-events:none;transition:.24s;z-index:20}.toast.show{opacity:1;transform:translate(-50%,0)}
+    @keyframes enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}@media(max-width:390px){.grid{grid-template-columns:1fr}.field.wide{grid-column:auto}.summary{grid-template-columns:1fr 1fr}.metric{padding:12px}.metric b{font-size:17px}}@media(prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  </style>
+</head>
+<body>
+  <script>(function(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null'),s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return;}}catch(_){}location.replace('./?locked=1');})();</script>
+  <main class="app">
+    <header class="head"><a class="back" href="financeiro.html" aria-label="Voltar ao painel financeiro">‹</a><span class="smark" aria-hidden="true">S</span><div><p class="ey">INTER ↔ MERCADO PAGO</p><h1>Refaturamento</h1><p class="muted">Venda, taxa e estorno registrados separadamente.</p></div></header>
+    <section class="summary" aria-live="polite">
+      <article class="metric inter"><span>Fatura Inter</span><b id="sumInter">R$ 0,00</b><small>venda menos crédito de estorno</small></article>
+      <article class="metric mp"><span>Mercado Pago</span><b id="sumMp">R$ 0,00</b><small>valor líquido no saldo</small></article>
+      <article class="metric fee"><span>Taxa líquida</span><b id="sumFee">R$ 0,00</b><small>taxa cobrada menos devolvida</small></article>
+      <article class="metric result"><span>Resultado total</span><b id="sumResult">R$ 0,00</b><small>operações totalmente estornadas zeram</small></article>
+    </section>
+    <h2 id="formTitle">NOVA OPERAÇÃO</h2>
+    <form class="panel" id="form">
+      <div class="grid">
+        <div class="field wide"><label for="description">Descrição</label><input id="description" maxlength="120" placeholder="Ex.: Refaturamento Mercado Pago" required></div>
+        <div class="field"><label for="gross">Venda no cartão Inter</label><input id="gross" inputmode="decimal" placeholder="R$ 0,00" required></div>
+        <div class="field"><label for="fee">Taxa da maquininha</label><input id="fee" inputmode="decimal" placeholder="R$ 0,00" required></div>
+        <div class="field"><label for="date">Data</label><input id="date" type="date" required></div>
+        <div class="field"><label for="status">Status</label><select id="status"><option value="realizada">Realizada</option><option value="parcial">Estornada parcialmente</option><option value="total">Estornada totalmente</option></select></div>
+        <div class="field" id="refundField"><label for="refund">Valor estornado</label><input id="refund" inputmode="decimal" placeholder="R$ 0,00"><small class="help">Nunca pode ultrapassar o valor original.</small></div>
+        <div class="field" id="feeModeField"><label for="feeMode">Taxa devolvida no estorno</label><select id="feeMode"><option value="proportional">Proporcional</option><option value="none">Não devolvida</option><option value="full">Integral</option><option value="manual">Valor manual</option></select></div>
+        <div class="field" id="refundedFeeField"><label for="refundedFee">Valor da taxa devolvida</label><input id="refundedFee" inputmode="decimal" placeholder="R$ 0,00"></div>
+      </div>
+      <div class="preview" id="preview"></div>
+      <p class="error" id="error" role="alert"></p>
+      <div class="actions"><button type="button" id="reset">Limpar</button><button class="primary" type="submit">Salvar operação</button></div>
+    </form>
+    <h2>OPERAÇÕES REGISTRADAS</h2>
+    <section class="list" id="list"></section>
+  </main>
+  <div class="toast" id="toast"></div>
+  <script src="./supabase-project-config.js?v=1"></script>
+  <script src="./supabase-shared-storage.js?v=7"></script>
+  <script src="./refaturamento.js?v=2"></script>
+  <script src="./finance-sharing.js?v=4"></script>
+</body>
+</html>
