@@ -209,8 +209,9 @@ dialog,
   opacity: .72;
 }
 
-/* Entrada discreta a cada renderização da lista, sem depender de observador. */
-.group .task-card {
+/* Entrada discreta só na primeira pintura — depois de `agenda-animated` a lista
+   não re-anima a cada re-render (clique em ícone, filtro, toggle etc.). */
+html:not(.agenda-animated) .group .task-card {
   animation: uiTaskEnter .24s var(--ui-motion) both;
   animation-delay: min(calc(var(--task-index, 0) * 18ms), 150ms);
 }
@@ -220,7 +221,7 @@ dialog,
   animation: uiTaskComplete .18s var(--ui-motion) forwards;
 }
 
-.task-card.done {
+html:not(.agenda-animated) .task-card.done {
   animation: uiTaskDone .32s var(--ui-spring) both;
 }
 
@@ -247,7 +248,7 @@ dialog,
   box-shadow: 0 8px 22px var(--ui-glow);
 }
 
-.check:checked::after {
+html:not(.agenda-animated) .check:checked::after {
   animation: uiCheckPop .22s var(--ui-spring);
 }
 
