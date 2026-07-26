@@ -280,7 +280,7 @@
         <div class="title">${esc(displayText)}${statusBadge}</div>
         <div class="meta">${formatLong(item.date)}${item.time ? ` ${esc(item.time)}` : ''} · ${paymentLabel}${installment ? ` · Parcela ${installment[1]}` : ''}</div>
         ${detailsHtml(item)}
-        ${pendingReceive ? `<div class="receive-actions"><span>Recebi em:</span><button type="button" data-receive="${esc(item.id)}" data-receive-account="mp">Mercado Pago</button><button type="button" data-receive="${esc(item.id)}" data-receive-account="nb">Nubank</button></div>` : ''}
+        ${pendingReceive ? `<div class="receive-actions"><button type="button" data-receive-open="${esc(item.id)}">✓ Marcar como recebido</button></div>` : ''}
       </div>
       <div class="value ${movement === 'entrada' ? 'entrada' : 'saida'}">${sign} ${money(value)}</div>
     </article>`;
@@ -502,10 +502,9 @@
     .invoice-row.is-processing{background:linear-gradient(90deg,rgba(255,164,70,.15),transparent)}
     .cancel-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #ff4a5b;border-radius:999px;background:rgba(255,74,91,.14);color:#ff7180;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
     .processing-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #ffae55;border-radius:999px;background:rgba(255,164,70,.15);color:#ffc06f;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
-    .pending-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #7dd6ff;border-radius:999px;background:rgba(110,201,255,.14);color:#8bdcff;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
+    .pending-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #ff5d73;border-radius:999px;background:rgba(255,93,115,.14);color:#ff7f91;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
     .receive-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:8px;color:#aeb5c1;font-size:10px;font-weight:800}
-    .receive-actions button{border:1px solid #4e8bad;border-radius:8px;background:#193042;color:#8bdcff;padding:5px 7px;font:inherit;cursor:pointer}
-    .receive-actions button:last-child{border-color:#7852ae;background:#281c3c;color:#c29aff}
+    .receive-actions button{border:1px solid #ff5d73;border-radius:999px;background:rgba(255,93,115,.12);color:#ff7f91;padding:7px 11px;font:inherit;cursor:pointer}
     .invoice-details{display:grid;gap:5px;margin-top:8px;padding:8px 9px;border:1px solid #343841;border-radius:10px;background:#181a1f}
     .invoice-details>span{color:#8f96a3;font-size:9px;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
     .invoice-detail-boxes{display:flex;flex-wrap:wrap;gap:6px}

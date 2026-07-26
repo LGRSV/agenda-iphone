@@ -206,8 +206,8 @@
   }, true);
 
   document.addEventListener('click', event => {
-    const receive = event.target.closest('[data-receive-id]');
-    if (receive) { openLayer(receive.dataset.receiveId); return; }
+    const receive = event.target.closest('[data-receive-id],[data-receive-open]');
+    if (receive) { openLayer(receive.dataset.receiveId || receive.dataset.receiveOpen); return; }
     if (event.target.closest('[data-receive-close]') || event.target === layer) {
       closeLayer(); return;
     }
