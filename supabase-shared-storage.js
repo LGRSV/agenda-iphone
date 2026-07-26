@@ -118,7 +118,13 @@
     const drop = trashIdSet();
     const byId = new Map();
     (Array.isArray(serverArr) ? serverArr : []).forEach(it => { if (it && it.id != null && !drop.has(String(it.id))) byId.set(String(it.id), it); });
-    (Array.isArray(localArr) ? localArr : []).forEach(it => { if (it && it.id != null) byId.set(String(it.id), it); }); // edições locais vencem
+    (Array.isArray(localArr) ? localArr : []).forEach(it => {
+      if (!it || it.id == null) return;
+      const id = String(it.id);
+      const serverItem = byId.get(id);
+      if (serverItem && Number(serverItem.syncRev || 0) > Number(it.syncRev || 0)) return;
+      byId.set(id, it); // edição mais nova vence
+    });
     // Colapsa cópias de uma mesma tarefa compartilhada que ficaram com ids
     // diferentes mas o mesmo sharedFrom (senão a união por id as multiplicaria).
     const byShare = new Map(); const out = [];

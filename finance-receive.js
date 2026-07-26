@@ -244,6 +244,7 @@
     accounts.autoAccrual = false;
     accounts.balanceRevision = Date.now();
     task.done = true;
+    task.syncRev = Date.now();
     note.movimento = 'entrada';
     note.conta = bank;
     note.recebidoEm = new Date().toISOString();
