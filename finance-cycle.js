@@ -202,7 +202,7 @@
       .filter(task => task && task.text)
       .map(task => ({ ...task, n: notes[task.id] || {} }))
       .filter(task => task.tag === 'financeiro'
-        && !task.n.excludeFromInvoice
+        && (!task.n.excludeFromInvoice || task.n.processando)
         && (kind(task, task.n) === 'saida' || kind(task, task.n) === 'entrada')
         && invoiceKey(task.date, task.n) === cursor);
     return dedupeInstallments(matches)
@@ -237,7 +237,11 @@
     const movement = kind(item, item.n);
     const value = amount(item.n.valor);
     const cancelled = isCancelled(item, item.n);
+    const processing = Boolean(item.n.processando);
     const displayText = item.n.invoiceLabel || item.text;
+    const statusBadge = cancelled
+      ? '<span class="cancel-badge">Cancelado</span>'
+      : processing ? '<span class="processing-badge">Em processamento</span>' : '';
     const sign = movement === 'entrada' ? '+' : '−';
     const marker = movement === 'entrada' ? '+' : '−';
     const installment = /\((\d+\/\d+)\)/.exec(displayText || '');
@@ -248,10 +252,10 @@
         : item.n.forma === 'pix'
           ? `Pix${item.n.conta === 'nb' ? ' · Nubank' : item.n.conta === 'mp' ? ' · Mercado Pago' : ''}`
           : item.n.forma === 'dinheiro' ? 'Dinheiro' : 'Saída';
-    return `<article class="row invoice-row${cancelled ? ' is-cancelled' : ''}">
+    return `<article class="row invoice-row${cancelled ? ' is-cancelled' : ''}${processing ? ' is-processing' : ''}">
       <span class="paidmark" aria-hidden="true">${marker}</span>
       <div>
-        <div class="title">${esc(displayText)}${cancelled ? '<span class="cancel-badge">Cancelado</span>' : ''}</div>
+        <div class="title">${esc(displayText)}${statusBadge}</div>
         <div class="meta">${formatLong(item.date)}${item.time ? ` ${esc(item.time)}` : ''} · ${paymentLabel}${installment ? ` · Parcela ${installment[1]}` : ''}</div>
         ${detailsHtml(item)}
       </div>
@@ -273,7 +277,7 @@
       const day = utcDate(date);
       const rows = byDate[date];
       const net = rows.reduce((total, item) => {
-        if (isCancelled(item, item.n)) return total;
+        if (isCancelled(item, item.n) || item.n.processando) return total;
         const value = amount(item.n.valor);
         return total + (kind(item, item.n) === 'entrada' ? -value : value);
       }, 0);
@@ -290,8 +294,8 @@
   function render() {
     const items = invoiceItems();
     const financialItems = financialInvoiceItems();
-    const active = items.filter(item => !isCancelled(item, item.n));
-    const activeFinancial = financialItems.filter(item => !isCancelled(item, item.n));
+    const active = items.filter(item => !isCancelled(item, item.n) && !item.n.processando);
+    const activeFinancial = financialItems.filter(item => !isCancelled(item, item.n) && !item.n.processando);
     const charges = active
       .filter(item => kind(item, item.n) === 'saida')
       .reduce((sum, item) => sum + amount(item.n.valor), 0);
@@ -423,7 +427,9 @@
     #cartao[role="link"]:active{transform:scale(.985)}
     #cartao[role="link"]:focus-visible{outline:2px solid #6ec9ff;outline-offset:3px}
     .invoice-row.is-cancelled{opacity:.82;background:linear-gradient(90deg,rgba(255,74,91,.12),transparent)}
+    .invoice-row.is-processing{background:linear-gradient(90deg,rgba(255,164,70,.15),transparent)}
     .cancel-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #ff4a5b;border-radius:999px;background:rgba(255,74,91,.14);color:#ff7180;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
+    .processing-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #ffae55;border-radius:999px;background:rgba(255,164,70,.15);color:#ffc06f;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
     .invoice-details{display:grid;gap:5px;margin-top:8px;padding:8px 9px;border:1px solid #343841;border-radius:10px;background:#181a1f}
     .invoice-details>span{color:#8f96a3;font-size:9px;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
     .invoice-detail-boxes{display:flex;flex-wrap:wrap;gap:6px}
