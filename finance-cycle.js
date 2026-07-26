@@ -387,12 +387,38 @@
     write(DIRTY_KEY, dirty);
   }
 
+  // O painel financeiro antigo ainda renderiza o mesmo #cartao usando o mês
+  // do calendário. A fatura usa o ciclo de fechamento, então os dois valores
+  // competiam a cada sincronização. Esta trava deixa somente esta rotina
+  // escrever o cartão Inter; o restante do painel antigo segue funcionando.
+  function guardLegacyInterCard() {
+    const card = document.querySelector('#cartao');
+    if (!card || card.dataset.invoiceCardGuard === '1') return;
+    card.dataset.invoiceCardGuard = '1';
+    const descriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+    const isLegacyMarkup = value => String(value || '').includes('neste mês · fatura');
+    if (descriptor?.get && descriptor?.set) {
+      Object.defineProperty(card, 'innerHTML', {
+        configurable: true,
+        get: () => descriptor.get.call(card),
+        set: value => { if (!isLegacyMarkup(value)) descriptor.set.call(card, value); }
+      });
+      return;
+    }
+    // Fallback para navegadores que não expõem o descritor de innerHTML.
+    new MutationObserver(() => {
+      if (isLegacyMarkup(card.innerHTML)) requestAnimationFrame(render);
+    }).observe(card, { childList: true, subtree: true });
+  }
+
   function install() {
     const previous = document.querySelector('#prev');
     const next = document.querySelector('#next');
     const filters = document.querySelector('.filters');
     const list = document.querySelector('#list');
     if (!previous || !next || !filters || !list) return;
+
+    guardLegacyInterCard();
 
     previous.onclick = () => {
       cursor = shiftKey(cursor, -1);
