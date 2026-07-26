@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#050506">
+  <meta name="app-page" content="extrato-saldo.html">
+  <title>Extrato do saldo previsto</title>
+  <style>
+    :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#17181c;color:#f7f8fb;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.app{max-width:760px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom))}.head{display:flex;gap:13px;align-items:center}.back{display:grid;place-items:center;width:44px;height:44px;border:1px solid #3b404a;border-radius:13px;background:#202228;color:#f7f8fb;text-decoration:none;font-size:28px;line-height:1}.ey{margin:0;color:#6ec9ff;font-size:11px;font-weight:850;letter-spacing:.12em}.head h1{margin:4px 0;font-size:26px;letter-spacing:-.04em}.muted{margin:0;color:#a6acb8;font-size:13px}.summary{margin:22px 0 16px;padding:16px;border:1px solid #3b404a;border-radius:18px;background:linear-gradient(135deg,#16304a,#202228);box-shadow:0 12px 26px rgba(0,0,0,.25)}.summary span{display:block;color:#b9c5d4;font-size:12px;font-weight:750}.summary b{display:block;color:#6ec9ff;font:850 30px ui-serif,Georgia,serif;letter-spacing:-.03em;margin-top:5px}.summary small{display:block;color:#a6acb8;font-size:11px;font-weight:650;margin-top:6px;line-height:1.4}.formula{display:grid;grid-template-columns:1fr auto;gap:7px 12px;margin-top:14px;padding-top:12px;border-top:1px solid #3b404a;font-size:12px;font-weight:750}.formula span:nth-child(2n){text-align:right}.plus{color:#78d88b}.minus{color:#ff8c9d}h2{margin:24px 0 9px;color:#a6acb8;font-size:11px;font-weight:850;letter-spacing:.09em}.list{overflow:hidden;border:1px solid #3b404a;border-radius:18px;background:#202228}.row{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:start;padding:13px;border-bottom:1px solid #343840}.row:last-child{border-bottom:0}.dot{width:9px;height:9px;border-radius:50%;margin-top:5px;background:#78d88b}.dot.minus{background:#ff7f91}.title{font-weight:800;line-height:1.35}.meta{margin-top:4px;color:#a6acb8;font-size:11px;font-weight:650}.value{font-weight:900;white-space:nowrap}.empty{padding:28px 16px;color:#a6acb8;text-align:center}.updated{padding-top:18px;text-align:center;color:#777e8b;font-size:11px;font-weight:650}
+  </style>
+</head>
+<body>
+  <script>(function(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null'),s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return;}}catch(_){}location.replace('./?locked=1');})();</script>
+  <main class="app">
+    <header class="head"><a class="back" href="financeiro.html" aria-label="Voltar ao painel financeiro">‹</a><div><p class="ey">SALDO PREVISTO</p><h1>Extrato do mês</h1><p class="muted" id="month"></p></div></header>
+    <section class="summary"><span>Saldo previsto até o fim do mês</span><b id="total">R$ 0,00</b><small>Saldo atual em conta + entradas pendentes − saídas programadas.</small><div class="formula" id="formula"></div></section>
+    <h2>ENTRADAS RECEBIDAS NO MÊS</h2><section class="list" id="received"></section>
+    <h2>ENTRADAS PREVISTAS</h2><section class="list" id="expected"></section>
+    <h2>SAÍDAS PROGRAMADAS</h2><section class="list" id="scheduled"></section>
+    <footer class="updated">Atualização automática pela agenda</footer>
+  </main>
+  <script src="./supabase-project-config.js?v=1"></script>
+  <script src="./supabase-shared-storage.js?v=4"></script>
+  <script src="./extrato-saldo.js?v=1"></script>
+</body>
+</html>
