@@ -50,23 +50,25 @@
 
   function publishSnapshot() {
     const tasks=read(TASKS_KEY,[]), notes=read(NOTES_KEY,{});
+    const existing=tasks.find(task=>task?.id===SNAPSHOT_ID);
+    const previous=decodeSnapshot(existing)||{};
+    const previousSummary=previous.summary||{};
     const financialTasks=tasks.filter(task=>task&&task.id!==SNAPSHOT_ID&&task.tag==='financeiro');
     const financialNotes={};
     financialTasks.forEach(task=>{if(notes[task.id])financialNotes[task.id]=notes[task.id];});
     const summary={
-      currentInvoice:document.querySelector('#cartao .ct-val')?.textContent||'',
-      currentInvoiceDetail:document.querySelector('#cartao .ct-sub')?.textContent||'',
-      month:document.querySelector('#mn')?.textContent||'',
-      income:document.querySelector('#in')?.textContent||'',
-      expenses:document.querySelector('#out')?.textContent||'',
-      projectedBalance:document.querySelector('#saldo')?.textContent||''
+      currentInvoice:document.querySelector('#cartao .ct-val')?.textContent||previousSummary.currentInvoice||'',
+      currentInvoiceDetail:document.querySelector('#cartao .ct-sub')?.textContent||previousSummary.currentInvoiceDetail||'',
+      month:document.querySelector('#mn')?.textContent||previousSummary.month||'',
+      income:document.querySelector('#in')?.textContent||previousSummary.income||'',
+      expenses:document.querySelector('#out')?.textContent||previousSummary.expenses||'',
+      projectedBalance:document.querySelector('#saldo')?.textContent||previousSummary.projectedBalance||''
     };
     const source={
       tasks:financialTasks, notes:financialNotes, accounts:read(ACCOUNTS_KEY,{}),
       investments:read(INVESTMENTS_KEY,{}), refaturamentos:read(REFACTOR_KEY,[]), summary
     };
     const sourceHash=stableHash(source);
-    const existing=tasks.find(task=>task?.id===SNAPSHOT_ID);
     if(decodeSnapshot(existing)?.sourceHash===sourceHash)return;
     const financeSnapshot={...source,sourceHash,generatedAt:new Date().toISOString(),ownerUserId:JOAO,viewerUserId:ANA};
     const snapshot={

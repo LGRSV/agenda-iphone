@@ -4,7 +4,13 @@
   const TASKS_KEY = 'agenda_lagares_v3';
   const NOTES_KEY = 'agenda_notas_v1';
   const ACCOUNTS_KEY = 'agenda_contas_v1';
+  const INVESTMENTS_KEY = 'agenda_investimentos_v1';
   const DIRTY_KEY = 'agenda_supabase_dirty_v1';
+  const SNAPSHOT_ID = '__shared_finance_snapshot_v2__';
+  const SNAPSHOT_PREFIX = '__FINANCE_SNAPSHOT_V1__';
+  const SIM_REFUND_CENTS = 850000;
+  const SIM_FEE_RETURN_CENTS = 26265;
+  const FALLBACK_INVOICE_CENTS = 1466440;
   const ANCHOR_START = '2026-06-26';
   const ANCHOR_END = '2026-07-26';
   const ANCHOR_INVOICE = '2026-08';
@@ -30,6 +36,7 @@
   };
   const uuid = () => globalThis.crypto?.randomUUID?.() || `refat-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   let editingId = '';
+  let simulationActive = false;
 
   const el = id => document.getElementById(id);
   const fields = {
@@ -68,6 +75,56 @@
   function signed(value, positiveLabel = '+') {
     if (!value) return money(0);
     return `${value > 0 ? positiveLabel : '−'}${money(Math.abs(value))}`;
+  }
+
+  function currencyTextToCents(value) {
+    const normalized=String(value||'').replace(/[^\d,.-]/g,'').replace(/\.(?=\d{3}(?:\D|$))/g,'').replace(',','.');
+    const parsed=Number(normalized);
+    return Number.isFinite(parsed)?Math.round(parsed*100):0;
+  }
+
+  function sharedSnapshot() {
+    const task=read(TASKS_KEY,[]).find(item=>item?.id===SNAPSHOT_ID);
+    if(task?.financeSnapshot)return task.financeSnapshot;
+    const text=String(task?.text||'');
+    if(!text.startsWith(SNAPSHOT_PREFIX))return null;
+    try{return JSON.parse(text.slice(SNAPSHOT_PREFIX.length))}catch(_){return null}
+  }
+
+  function simulationBase() {
+    const snapshot=sharedSnapshot();
+    const accounts=read(ACCOUNTS_KEY,snapshot?.accounts||{});
+    const localInvestments=read(INVESTMENTS_KEY,{});
+    const investments=Array.isArray(localInvestments?.cofres)?localInvestments:(snapshot?.investments||{});
+    const giro=(Array.isArray(investments?.cofres)?investments.cofres:[]).find(item=>item?.id==='giro'||/giro mensal/i.test(item?.nome||''));
+    const invoiceFromSnapshot=currencyTextToCents(snapshot?.summary?.currentInvoice);
+    return {
+      invoiceCents:invoiceFromSnapshot||FALLBACK_INVOICE_CENTS,
+      mpCents:Math.round(Number(accounts?.mp||snapshot?.accounts?.mp||0)*100),
+      giroCents:Math.round(Number(giro?.saldo||0)*100)
+    };
+  }
+
+  function renderSimulator() {
+    const base=simulationBase();
+    const invoice=simulationActive?Math.max(0,base.invoiceCents-SIM_REFUND_CENTS):base.invoiceCents;
+    const mp=simulationActive?base.mpCents+SIM_FEE_RETURN_CENTS:base.mpCents;
+    const combined=mp+base.giroCents;
+    el('simulateRefund').setAttribute('aria-pressed',String(simulationActive));
+    el('simulateLabel').textContent=simulationActive?'Simulação ativa ✓':'Devolver R$ 8.500';
+    el('simInvoice').textContent=money(invoice);
+    el('simMp').textContent=money(mp);
+    el('simGiro').textContent=money(base.giroCents);
+    el('simCombined').textContent=money(combined);
+    el('simInvoiceHint').textContent=simulationActive?`Antes: ${money(base.invoiceCents)}`:'Antes do crédito de estorno';
+    el('simMpHint').textContent=simulationActive?`Antes: ${money(base.mpCents)}`:'Saldo atual em conta';
+    el('simCombinedHint').textContent=simulationActive?`Antes: ${money(base.mpCents+base.giroCents)}`:'Disponível somando apenas os dois saldos';
+    el('simInvoiceDelta').textContent=simulationActive?`−${money(SIM_REFUND_CENTS)}`:'sem abatimento';
+    el('simMpDelta').textContent=simulationActive?`+${money(SIM_FEE_RETURN_CENTS)}`:'sem devolução da taxa';
+    el('simNote').textContent=simulationActive
+      ? `Projeção: a fatura cai para ${money(invoice)} e Mercado Pago + Giro sobe para ${money(combined)}. Nenhum valor foi lançado.`
+      : 'A simulação não altera sua fatura nem seus saldos reais.';
+    ['simInvoiceCard','simMpCard','simCombinedCard'].forEach(id=>el(id).classList.toggle('changed',simulationActive));
   }
 
   function renderPreview() {
@@ -161,14 +218,7 @@
 
   function render() {
     const operations = read(OPS_KEY,[]).filter(Boolean).sort((a,b)=>`${b.date}${b.updatedAt||''}`.localeCompare(`${a.date}${a.updatedAt||''}`));
-    const totals = operations.reduce((sum,op) => {
-      sum.inter += Number(op.interCents||0); sum.mp += Number(op.mpCents||0); sum.fee += Number(op.netFeeCents||0);
-      return sum;
-    },{inter:0,mp:0,fee:0});
-    el('sumInter').textContent=money(totals.inter);
-    el('sumMp').textContent=money(totals.mp);
-    el('sumFee').textContent=money(totals.fee);
-    el('sumResult').textContent=money(totals.inter+totals.mp);
+    renderSimulator();
     const labels={realizada:'Realizada',parcial:'Estorno parcial',total:'Estorno total'};
     el('list').innerHTML=operations.length?operations.map(op=>`
       <article class="operation">
@@ -194,6 +244,10 @@
   });
 
   el('reset').addEventListener('click',reset);
+  el('simulateRefund').addEventListener('click',()=>{
+    simulationActive=!simulationActive;
+    renderSimulator();
+  });
   ['input','change'].forEach(name=>el('form').addEventListener(name,syncFields));
   el('list').addEventListener('click',event=>{
     const button=event.target.closest('[data-edit]'); if(!button)return;
@@ -204,6 +258,7 @@
     fields.refundedFee.value=decimal(op.refundedFeeCents).replace('.',','); el('formTitle').textContent='EDITAR OPERAÇÃO';
     syncFields(); scrollTo({top:el('form').offsetTop-18,behavior:'smooth'});
   });
-  window.addEventListener('agenda:remote-sync',event=>{if(['all','settings','refaturamentos','accounts','tasks','notes'].includes(event.detail?.documentKey))render();});
+  window.addEventListener('agenda:remote-sync',event=>{if(['all','settings','refaturamentos','accounts','investments','tasks','notes'].includes(event.detail?.documentKey))render();});
+  window.addEventListener('storage',event=>{if([TASKS_KEY,ACCOUNTS_KEY,INVESTMENTS_KEY].includes(event.key))renderSimulator();});
   reset(); render();
 })();
