@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v216-fin-redesign';
+const CACHE = 'agenda-lagares-v217-anim-once';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=12" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -20,8 +20,8 @@ const INTEL_SCRIPT = '<script src="./agenda-intelligence.js?v=2" defer><\/script
 const LIST_STATUS_SCRIPT = '<script src="./agenda-list-status.js?v=2" defer><\/script>';
 const EXPORT_SCRIPT = '<script src="./export-localstorage.js?v=2" defer><\/script>';
 const REALTIME_SCRIPT = '<script src="./realtime-refresh.js?v=1" defer><\/script>';
-const POLISH_STYLE = '<link rel="stylesheet" href="./interface-polish.css?v=4">';
-const POLISH_SCRIPT = '<script src="./interface-polish.js?v=1" defer><\/script>';
+const POLISH_STYLE = '<link rel="stylesheet" href="./interface-polish.css?v=5">';
+const POLISH_SCRIPT = '<script src="./interface-polish.js?v=2" defer><\/script>';
 const REG_FIN_SCRIPT = '<script src="./registros-financeiros.js?v=1" defer><\/script>';
 const AUTH_GATE_SCRIPT = '<script src="./auth-gate.js?v=1" defer><\/script>';
 const SEQ_SCRIPT = '<script src="./sequencial.js?v=3" defer><\/script>';

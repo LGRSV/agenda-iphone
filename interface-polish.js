@@ -7,6 +7,11 @@
 
   root.classList.add('ui-polished');
 
+  // Trava as animações de estado da lista após a primeira pintura: sem isso,
+  // como render() reconstrói a lista inteira, todo clique em ícone/filtro/toggle
+  // re-disparava uiTaskEnter/uiTaskDone/uiCheckPop em todos os cards.
+  requestAnimationFrame(() => setTimeout(() => root.classList.add('agenda-animated'), reduceMotion ? 0 : 550));
+
   const setScrolledState = () => {
     body.classList.toggle('ui-scrolled', window.scrollY > 8);
   };
