@@ -49,28 +49,72 @@
 
   const query = new URLSearchParams(location.search);
   const requested = query.get('fatura');
-  const cursor = parseKey(requested) ? requested : activeInvoice();
+  let cursor = parseKey(requested) ? requested : activeInvoice();
   const label = () => { const p = parseKey(cursor); return p ? `${MONTHS[p.month-1]} de ${p.year}` : cursor; };
   const short = value => { const p = String(value || '').split('-'); return p.length === 3 ? `${p[2]}/${p[1]}` : value; };
 
-  function dedupeInstallments(data) {
-    const regular = [], grouped = new Map();
-    data.forEach(item => {
-      const group = item.n.installmentGroup;
-      if (!group) { regular.push(item); return; }
-      const previous = grouped.get(group);
-      const explicit = item.n.invoiceMonth === cursor ? 1 : 0;
-      const previousExplicit = previous?.n.invoiceMonth === cursor ? 1 : 0;
-      if (!previous || explicit > previousExplicit || (explicit === previousExplicit && String(item.date) < String(previous.date))) grouped.set(group,item);
+  function installment(item) {
+    const display = String(item.n.invoiceLabel || item.text || '');
+    const match = /\((\d+)\s*\/\s*(\d+)\)/.exec(display);
+    if (match) return { current:Number(match[1]), total:Number(match[2]) };
+    const paid = Number(item.n.parcPagas), rest = Number(item.n.parcRest);
+    return Number.isFinite(paid) && paid > 0 && Number.isFinite(rest) && rest >= 0 ? { current:paid, total:paid + rest } : null;
+  }
+
+  const normalizedInstallmentName = item => String(item.n.invoiceLabel || item.text || '')
+    .replace(/\s*\(\d+\s*\/\s*\d+\)\s*$/,'').trim().toLocaleLowerCase('pt-BR');
+
+  function installmentPlans(source) {
+    const parsed = source.map(item => ({...item, installment:installment(item)}));
+    const autoCounts = new Map();
+    parsed.filter(item => item.installment && !item.n.installmentGroup && !item.n.invoiceMonth).forEach(item => {
+      const signature = `${normalizedInstallmentName(item)}|${item.installment.total}|${amount(item.n.valor).toFixed(2)}`;
+      autoCounts.set(signature,(autoCounts.get(signature) || 0) + 1);
     });
-    return regular.concat([...grouped.values()]);
+    const plans = new Map(), regular = [];
+    parsed.forEach(item => {
+      if (!item.installment) { regular.push(item); return; }
+      const signature = `${normalizedInstallmentName(item)}|${item.installment.total}|${amount(item.n.valor).toFixed(2)}`;
+      const key = item.n.installmentGroup
+        ? `group:${item.n.installmentGroup}`
+        : item.n.invoiceMonth || (autoCounts.get(signature) || 0) > 1
+          ? `series:${signature}`
+          : `item:${item.id}`;
+      (plans.get(key) || plans.set(key,[]).get(key)).push(item);
+    });
+    return { plans, regular };
+  }
+
+  function projectPlan(entries) {
+    const base = entries.slice().sort((a,b) => {
+      const explicit = Number(Boolean(b.n.invoiceMonth)) - Number(Boolean(a.n.invoiceMonth));
+      return explicit || a.installment.current - b.installment.current || String(a.date).localeCompare(String(b.date));
+    })[0];
+    const anchor = base.n.invoiceMonth || invoiceKey(base.date,base.n);
+    const projectedNumber = base.installment.current + keyDistance(anchor,cursor);
+    if (projectedNumber < 1 || projectedNumber > base.installment.total) return null;
+    const original = entries.slice().sort((a,b) => String(a.date).localeCompare(String(b.date)))[0];
+    const installmentEntry = entries.find(item => item.installment.current === projectedNumber) || base;
+    const originalDate = String(original.date);
+    const baseLabel = String(base.n.invoiceLabel || base.text || '').replace(/\s*\(\d+\s*\/\s*\d+\)\s*$/,'');
+    const projectedLabel = `${baseLabel} (${projectedNumber}/${base.installment.total})`;
+    return {
+      ...original,
+      date:originalDate,
+      time:original.time || '',
+      text:projectedLabel,
+      n:{...original.n,...installmentEntry.n,invoiceLabel:projectedLabel,parcPagas:String(projectedNumber),parcRest:String(base.installment.total-projectedNumber)}
+    };
   }
 
   function items() {
     const notes = read(NOTES_KEY, {});
-    const matches = read(TASKS_KEY, []).map(task => ({...task,n:notes[task.id] || {}}))
-      .filter(task => task?.tag === 'financeiro' && !task.n.excludeFromInvoice && task.n.forma === 'inter' && kind(task,task.n) === 'saida' && !cancelled(task,task.n) && invoiceKey(task.date,task.n) === cursor)
-    return dedupeInstallments(matches).sort((a,b) => `${b.date}${b.time || ''}`.localeCompare(`${a.date}${a.time || ''}`));
+    const source = read(TASKS_KEY, []).map(task => ({...task,n:notes[task.id] || {}}))
+      .filter(task => task?.tag === 'financeiro' && !task.n.excludeFromInvoice && task.n.forma === 'inter' && kind(task,task.n) === 'saida' && !cancelled(task,task.n));
+    const { plans, regular } = installmentPlans(source);
+    const projected = [...plans.values()].map(projectPlan).filter(Boolean);
+    const oneTime = regular.filter(task => invoiceKey(task.date,task.n) === cursor);
+    return oneTime.concat(projected).sort((a,b) => `${b.date}${b.time || ''}`.localeCompare(`${a.date}${a.time || ''}`));
   }
 
   function detailsHtml(item) {
@@ -83,6 +127,7 @@
 
   function render() {
     const data = items(), total = data.reduce((sum,item) => sum + amount(item.n.valor),0), bounds = cycleBounds(cursor);
+    document.querySelector('#invoiceMonth').textContent = label();
     document.querySelector('#due').textContent = `Vence 02/${cursor.slice(5,7)}/${cursor.slice(0,4)}`;
     document.querySelector('#total').textContent = money(total);
     document.querySelector('#period').textContent = `Fatura de ${label()} · ciclo ${short(bounds.start)}–${short(bounds.end)}`;
@@ -96,6 +141,20 @@
     document.querySelector('#updated').textContent = `Fatura ${label()} · atualização automática pela agenda`;
   }
 
+  function moveInvoice(delta) {
+    cursor = shiftKey(cursor,delta);
+    const url = new URL(location.href);
+    url.searchParams.set('fatura',cursor);
+    history.replaceState(null,'',url);
+    const card = document.querySelector('#invoiceCard');
+    card.classList.remove('changing');
+    void card.offsetWidth;
+    card.classList.add('changing');
+    render();
+  }
+
+  document.querySelector('#prevInvoice').addEventListener('click',() => moveInvoice(-1));
+  document.querySelector('#nextInvoice').addEventListener('click',() => moveInvoice(1));
   window.addEventListener('agenda:remote-sync', render);
   window.addEventListener('storage', event => { if (event.key === TASKS_KEY || event.key === NOTES_KEY) render(); });
   render();
