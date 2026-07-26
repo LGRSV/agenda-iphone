@@ -64,9 +64,13 @@
       expenses:document.querySelector('#out')?.textContent||previousSummary.expenses||'',
       projectedBalance:document.querySelector('#saldo')?.textContent||previousSummary.projectedBalance||''
     };
+    const localAccounts=read(ACCOUNTS_KEY,{});
+    const localInvestments=read(INVESTMENTS_KEY,{});
     const source={
-      tasks:financialTasks, notes:financialNotes, accounts:read(ACCOUNTS_KEY,{}),
-      investments:read(INVESTMENTS_KEY,{}), refaturamentos:read(REFACTOR_KEY,[]), summary
+      tasks:financialTasks, notes:financialNotes,
+      accounts:Object.keys(localAccounts).length?localAccounts:(previous.accounts||{}),
+      investments:Array.isArray(localInvestments?.cofres)?localInvestments:(previous.investments||{}),
+      refaturamentos:read(REFACTOR_KEY,previous.refaturamentos||[]), summary
     };
     const sourceHash=stableHash(source);
     if(decodeSnapshot(existing)?.sourceHash===sourceHash)return;

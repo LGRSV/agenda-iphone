@@ -11,6 +11,7 @@
   const SIM_REFUND_CENTS = 850000;
   const SIM_FEE_RETURN_CENTS = 26265;
   const FALLBACK_INVOICE_CENTS = 1466440;
+  const FALLBACK_GIRO_CENTS = 898404;
   const ANCHOR_START = '2026-06-26';
   const ANCHOR_END = '2026-07-26';
   const ANCHOR_INVOICE = '2026-08';
@@ -101,7 +102,7 @@
     return {
       invoiceCents:invoiceFromSnapshot||FALLBACK_INVOICE_CENTS,
       mpCents:Math.round(Number(accounts?.mp||snapshot?.accounts?.mp||0)*100),
-      giroCents:Math.round(Number(giro?.saldo||0)*100)
+      giroCents:giro?.saldo!=null?Math.round(Number(giro.saldo)*100):FALLBACK_GIRO_CENTS
     };
   }
 
