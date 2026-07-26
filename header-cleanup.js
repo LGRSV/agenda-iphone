@@ -5,7 +5,7 @@
 (() => {
   'use strict';
 
-  const ALLOWED_IDS = new Set(['moreMenuBtn', 'quickMenu', 'supabaseStorageBtn', 'painelBtn', 'financeiroBtn', 'lixBtn', 'alertsBtn', 'themeToggle', 'atualizarBtn', 'notaRapidaBtn', 'equipamentosBtn', 'calFullBtn', 'seqTimerBtn']);
+  const ALLOWED_IDS = new Set(['moreMenuBtn', 'quickMenu', 'supabaseStorageBtn', 'painelBtn', 'financeiroBtn', 'lixBtn', 'alertsBtn', 'themeToggle', 'atualizarBtn', 'notaRapidaBtn', 'equipamentosBtn', 'calFullBtn', 'seqTimerBtn', 'parceiroBtn']);
   const STYLE_ID = 'agendaHeaderCleanupStyles';
 
   const ensureStyles = () => {
@@ -32,7 +32,7 @@
       const menu = actions.querySelector('#quickMenu');
       if (menu) {
         [...actions.children].forEach(child => {
-          if (child !== menu && child.id !== 'moreMenuBtn' && child.id !== 'seqTimerBtn') menu.appendChild(child);
+          if (child !== menu && child.id !== 'moreMenuBtn' && child.id !== 'seqTimerBtn' && child.id !== 'parceiroBtn') menu.appendChild(child);
         });
       }
       [...actions.children].forEach(child => {
