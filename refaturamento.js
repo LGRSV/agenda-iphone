@@ -10,6 +10,8 @@
   const SNAPSHOT_PREFIX = '__FINANCE_SNAPSHOT_V1__';
   const SIM_REFUND_CENTS = 850000;
   const SIM_FEE_RETURN_CENTS = 26265;
+  const LORENA_REFUND_CENTS = 600000;
+  const LORENA_FEE_RETURN_CENTS = 66300;
   const FALLBACK_INVOICE_CENTS = 1466440;
   const FALLBACK_GIRO_CENTS = 898404;
   const ANCHOR_START = '2026-06-26';
@@ -38,6 +40,7 @@
   const uuid = () => globalThis.crypto?.randomUUID?.() || `refat-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   let editingId = '';
   let simulationActive = false;
+  let lorenaSimulationActive = false;
 
   const el = id => document.getElementById(id);
   const fields = {
@@ -108,26 +111,31 @@
 
   function renderSimulator() {
     const base=simulationBase();
-    const invoice=simulationActive?Math.max(0,base.invoiceCents-SIM_REFUND_CENTS):base.invoiceCents;
-    const mp=simulationActive?base.mpCents-SIM_REFUND_CENTS+SIM_FEE_RETURN_CENTS:base.mpCents;
+    const refundTotal=(simulationActive?SIM_REFUND_CENTS:0)+(lorenaSimulationActive?LORENA_REFUND_CENTS:0);
+    const feeReturnTotal=(simulationActive?SIM_FEE_RETURN_CENTS:0)+(lorenaSimulationActive?LORENA_FEE_RETURN_CENTS:0);
+    const anySimulation=simulationActive||lorenaSimulationActive;
+    const invoice=Math.max(0,base.invoiceCents-refundTotal);
+    const mp=base.mpCents-refundTotal+feeReturnTotal;
     const combined=mp+base.giroCents;
     el('simulateRefund').setAttribute('aria-pressed',String(simulationActive));
-    el('simulateLabel').textContent=simulationActive?'Simulação ativa ✓':'Devolver R$ 8.500';
+    el('simulateLabel').textContent=simulationActive?'R$ 8.500 ativo ✓':'Devolver R$ 8.500';
+    el('simulateLorena').setAttribute('aria-pressed',String(lorenaSimulationActive));
+    el('simulateLorenaLabel').textContent=lorenaSimulationActive?'Lorena ativo ✓':'Lorena · devolver R$ 6.000';
     el('simInvoice').textContent=money(invoice);
     el('simMp').textContent=money(mp);
     el('simGiro').textContent=money(base.giroCents);
     el('simCombined').textContent=money(combined);
-    el('simInvoiceHint').textContent=simulationActive?`Antes: ${money(base.invoiceCents)}`:'Antes do crédito de estorno';
-    el('simMpHint').textContent=simulationActive?`Antes: ${money(base.mpCents)}`:'Saldo atual em conta';
-    el('simCombinedHint').textContent=simulationActive?`Antes: ${money(base.mpCents+base.giroCents)}`:'Disponível somando apenas os dois saldos';
-    el('simInvoiceDelta').textContent=simulationActive?`−${money(SIM_REFUND_CENTS)}`:'sem abatimento';
-    el('simMpDelta').textContent=simulationActive
-      ? `−${money(SIM_REFUND_CENTS)} + ${money(SIM_FEE_RETURN_CENTS)} = −${money(SIM_REFUND_CENTS-SIM_FEE_RETURN_CENTS)}`
+    el('simInvoiceHint').textContent=anySimulation?`Antes: ${money(base.invoiceCents)}`:'Antes do crédito de estorno';
+    el('simMpHint').textContent=anySimulation?`Antes: ${money(base.mpCents)}`:'Saldo atual em conta';
+    el('simCombinedHint').textContent=anySimulation?`Antes: ${money(base.mpCents+base.giroCents)}`:'Disponível somando apenas os dois saldos';
+    el('simInvoiceDelta').textContent=anySimulation?`−${money(refundTotal)}`:'sem abatimento';
+    el('simMpDelta').textContent=anySimulation
+      ? `−${money(refundTotal)} + ${money(feeReturnTotal)} = −${money(refundTotal-feeReturnTotal)}`
       :'sem devolução da taxa';
-    el('simNote').textContent=simulationActive
+    el('simNote').textContent=anySimulation
       ? `Projeção: a fatura cai para ${money(invoice)} e Mercado Pago + Giro fica em ${money(combined)}. Nenhum valor foi lançado.`
       : 'A simulação não altera sua fatura nem seus saldos reais.';
-    ['simInvoiceCard','simMpCard','simCombinedCard'].forEach(id=>el(id).classList.toggle('changed',simulationActive));
+    ['simInvoiceCard','simMpCard','simCombinedCard'].forEach(id=>el(id).classList.toggle('changed',anySimulation));
     el('simMpCard').classList.toggle('negative-balance',mp<0);
   }
 
@@ -250,6 +258,10 @@
   el('reset').addEventListener('click',reset);
   el('simulateRefund').addEventListener('click',()=>{
     simulationActive=!simulationActive;
+    renderSimulator();
+  });
+  el('simulateLorena').addEventListener('click',()=>{
+    lorenaSimulationActive=!lorenaSimulationActive;
     renderSimulator();
   });
   ['input','change'].forEach(name=>el('form').addEventListener(name,syncFields));

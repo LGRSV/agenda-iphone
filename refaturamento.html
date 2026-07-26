@@ -20,7 +20,7 @@
     .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,20px);padding:11px 15px;border-radius:12px;background:#effaff;color:#06131b;font-size:12px;font-weight:850;opacity:0;pointer-events:none;transition:.24s;z-index:20}.toast.show{opacity:1;transform:translate(-50%,0)}
     @keyframes enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}@media(max-width:390px){.grid{grid-template-columns:1fr}.field.wide{grid-column:auto}.sim-head{align-items:stretch;flex-direction:column}.sim-toggle{justify-content:space-between}.sim-card{padding:11px}.sim-card b{font-size:17px}}@media(prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
   </style>
-  <style>.sim-card.mp.negative-balance b{color:var(--red)}</style>
+  <style>.sim-card.mp.negative-balance b{color:var(--red)}.sim-actions{display:grid;gap:7px;min-width:190px}.sim-actions .sim-toggle{justify-content:space-between}@media(max-width:390px){.sim-actions{width:100%;min-width:0}}</style>
 </head>
 <body>
   <script>(function(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null'),s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return;}}catch(_){}location.replace('./?locked=1');})();</script>
@@ -29,7 +29,10 @@
     <section class="simulator" id="refundSimulator" aria-live="polite">
       <div class="sim-head">
         <div><span class="yellow-tag">Refaturamento</span><h2>Simulação de devolução</h2><p class="muted">Veja o impacto antes de registrar qualquer estorno.</p></div>
-        <button class="sim-toggle" id="simulateRefund" type="button" aria-pressed="false"><span id="simulateLabel">Devolver R$ 8.500</span><i class="track" aria-hidden="true"></i></button>
+        <div class="sim-actions">
+          <button class="sim-toggle" id="simulateRefund" type="button" aria-pressed="false"><span id="simulateLabel">Devolver R$ 8.500</span><i class="track" aria-hidden="true"></i></button>
+          <button class="sim-toggle" id="simulateLorena" type="button" aria-pressed="false"><span id="simulateLorenaLabel">Lorena · devolver R$ 6.000</span><i class="track" aria-hidden="true"></i></button>
+        </div>
       </div>
       <div class="sim-grid">
         <article class="sim-card invoice" id="simInvoiceCard"><div class="label"><span>Fatura Inter atual</span><em class="mini-tag">Refaturamento</em></div><b id="simInvoice">R$ 0,00</b><small id="simInvoiceHint">Antes do crédito de estorno</small></article>
@@ -62,7 +65,7 @@
   <div class="toast" id="toast"></div>
   <script src="./supabase-project-config.js?v=1"></script>
   <script src="./supabase-shared-storage.js?v=7"></script>
-  <script src="./refaturamento.js?v=5"></script>
+  <script src="./refaturamento.js?v=6"></script>
   <script src="./finance-sharing.js?v=6"></script>
 </body>
 </html>
