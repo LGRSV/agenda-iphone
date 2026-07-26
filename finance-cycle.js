@@ -228,11 +228,9 @@
   function detailsHtml(item) {
     const subs = Array.isArray(item.n.subs) ? item.n.subs : [];
     if (!subs.length) return '';
-    return `<div class="invoice-details"><span>Detalhamento da compra</span>${subs.map((sub, index) => `
-      <label>
-        <input type="checkbox" data-detail-task="${esc(item.id)}" data-detail-index="${index}" ${sub.done ? 'checked' : ''}>
-        <i>${esc(sub.text || '')}</i>
-      </label>`).join('')}</div>`;
+    return `<div class="invoice-details"><span>Itens desta saída</span><div class="invoice-detail-boxes">${subs.map(sub =>
+      `<span class="invoice-detail-box">${esc(sub.text || '')}</span>`
+    ).join('')}</div></div>`;
   }
 
   function rowHtml(item) {
@@ -385,7 +383,6 @@
     };
     list.onchange = event => {
       const taskId = event.target.dataset.i;
-      const detailTask = event.target.dataset.detailTask;
       if (taskId) {
         const tasks = read(TASKS_KEY, []);
         const task = tasks.find(item => String(item.id) === String(taskId));
@@ -393,15 +390,6 @@
           task.done = event.target.checked;
           write(TASKS_KEY, tasks);
           markDirty('tasks');
-        }
-      } else if (detailTask) {
-        const notes = read(NOTES_KEY, {});
-        const note = notes[detailTask];
-        const index = Number(event.target.dataset.detailIndex);
-        if (note && Array.isArray(note.subs) && note.subs[index]) {
-          note.subs[index].done = event.target.checked;
-          write(NOTES_KEY, notes);
-          markDirty('notes');
         }
       }
       render();
@@ -438,10 +426,8 @@
     .cancel-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #ff4a5b;border-radius:999px;background:rgba(255,74,91,.14);color:#ff7180;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
     .invoice-details{display:grid;gap:5px;margin-top:8px;padding:8px 9px;border:1px solid #343841;border-radius:10px;background:#181a1f}
     .invoice-details>span{color:#8f96a3;font-size:9px;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
-    .invoice-details label{display:flex;align-items:center;gap:7px;color:#d8dbe2;font-size:11px;line-height:1.3}
-    .invoice-details input{width:16px;height:16px;margin:0;accent-color:#6ec9ff}
-    .invoice-details i{font-style:normal}
-    .invoice-details input:checked+i{text-decoration:line-through;color:#747b87}
+    .invoice-detail-boxes{display:flex;flex-wrap:wrap;gap:6px}
+    .invoice-detail-box{display:inline-flex;align-items:center;min-height:28px;padding:5px 8px;border:1px solid #3a414d;border-radius:8px;background:#20242c;color:#d8dbe2;font-size:11px;line-height:1.3}
   `;
   document.head.appendChild(style);
 

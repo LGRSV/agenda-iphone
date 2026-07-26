@@ -73,6 +73,14 @@
     return dedupeInstallments(matches).sort((a,b) => `${b.date}${b.time || ''}`.localeCompare(`${a.date}${a.time || ''}`));
   }
 
+  function detailsHtml(item) {
+    const subs = Array.isArray(item.n.subs) ? item.n.subs : [];
+    if (!subs.length) return item.n.detail ? `<div class="detail">${esc(item.n.detail)}</div>` : '';
+    return `<div class="detail invoice-details"><span>Itens desta saída</span><div class="invoice-detail-boxes">${subs.map(sub =>
+      `<span class="invoice-detail-box">${esc(sub.text || '')}</span>`
+    ).join('')}</div></div>`;
+  }
+
   function render() {
     const data = items(), total = data.reduce((sum,item) => sum + amount(item.n.valor),0), bounds = cycleBounds(cursor);
     document.querySelector('#due').textContent = `Vence 02/${cursor.slice(5,7)}/${cursor.slice(0,4)}`;
@@ -83,7 +91,7 @@
     data.forEach(item => { (groups[item.date] ||= []).push(item); });
     document.querySelector('#list').innerHTML = data.length ? Object.keys(groups).sort().reverse().map(date => {
       const rows = groups[date], subtotal = rows.reduce((sum,item) => sum + amount(item.n.valor),0), weekday = WEEKDAYS[new Date(`${date}T12:00:00`).getDay()];
-      return `<section class="day"><header class="day-head"><span>${short(date)} · ${weekday}</span><b>− ${money(subtotal)}</b></header>${rows.map(item => `<article class="row"><i class="dot"></i><div><div class="title">${esc(item.n.invoiceLabel || item.text)}</div><div class="meta">${item.time ? `${esc(item.time)} · ` : ''}Cartão de crédito Inter</div>${item.n.detail ? `<div class="detail">${esc(item.n.detail)}</div>` : ''}</div><strong class="value">− ${money(amount(item.n.valor))}</strong></article>`).join('')}</section>`;
+      return `<section class="day"><header class="day-head"><span>${short(date)} · ${weekday}</span><b>− ${money(subtotal)}</b></header>${rows.map(item => `<article class="row"><i class="dot"></i><div><div class="title">${esc(item.n.invoiceLabel || item.text)}</div><div class="meta">${item.time ? `${esc(item.time)} · ` : ''}Cartão de crédito Inter</div>${detailsHtml(item)}</div><strong class="value">− ${money(amount(item.n.valor))}</strong></article>`).join('')}</section>`;
     }).join('') : '<div class="empty">Nenhuma saída do cartão Inter nesta fatura.</div>';
     document.querySelector('#updated').textContent = `Fatura ${label()} · atualização automática pela agenda`;
   }
