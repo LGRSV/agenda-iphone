@@ -116,7 +116,7 @@
     ].map(([date,text,tag],index)=>({id:`seed-${index+1}`,text,date,time:'',tag,reminder:-1,done:false}));
     const $=s=>document.querySelector(s),el={root:document.documentElement,themeColor:$('#themeColor'),themeToggle:$('#themeToggle'),alertsBtn:$('#alertsBtn'),moreMenuBtn:$('#moreMenuBtn'),quickMenu:$('#quickMenu'),currentDate:$('#currentDate'),progressLabel:$('#progressLabel'),progressText:$('#progressText'),progressBar:$('#progressBar'),progressMessage:$('#progressMessage'),viewTabs:$('#viewTabs'),filters:$('#filters'),viewContent:$('#viewContent'),taskDialog:$('#taskDialog'),alertsDialog:$('#alertsDialog'),rescheduleDialog:$('#rescheduleDialog'),rescheduleForm:$('#rescheduleForm'),rescheduleTaskName:$('#rescheduleTaskName'),rescheduleDate:$('#rescheduleDate'),rescheduleTime:$('#rescheduleTime'),taskForm:$('#taskForm'),taskText:$('#taskText'),taskDate:$('#taskDate'),taskTime:$('#taskTime'),taskTag:$('#taskTag'),taskReminder:$('#taskReminder'),taskRepeat:$('#taskRepeat'),taskLembrete:$('#taskLembrete'),alertsStatus:$('#alertsStatus'),toast:$('#toast')};
     let filter='all',view='month',toastTimer,listLimit=60,tasks=dedupeTasks(loadTasks()),selectedDate=initialDate(),monthCursor=dateAtNoon(initialDate()),monthMotion=0,viewMotion=0,calendarZoomOrigin=null,listShowsPrevious=false,monthSwipeStartX=null,monthSwipePointer=null,suppressCalendarClick=false,monthWheelLocked=false,rescheduleTargetId=null,taskSwipeState=null,openTaskSwipe=null,suppressTaskClick=false;
-    let _psY=null,_psT=0,_lastRV='';document.addEventListener('click',function(){_psY=window.pageYOffset||document.documentElement.scrollTop||0;_psT=Date.now();},true);
+    let _psY=null,_psT=0,_lastRV='',_suppressAutoScroll=false;document.addEventListener('click',function(){_psY=window.pageYOffset||document.documentElement.scrollTop||0;_psT=Date.now();},true);
     (()=>{const p=new URLSearchParams(location.search),date=p.get('date');if(p.get('view')==='day'){view='day';if(/^\d{4}-\d{2}-\d{2}$/.test(date||'')){selectedDate=date;monthCursor=dateAtNoon(date)}try{history.replaceState(null,'',location.pathname)}catch(_){}}})();
     function json(value){try{return JSON.parse(value)}catch(_){return null}}
     function id(){return `${Date.now()}-${Math.random().toString(36).slice(2,9)}`}
@@ -132,7 +132,7 @@
     // recriada a cada sync sem a chave sharedFrom). Mantém uma cópia, preferindo
     // a que tem sharedFrom (para o compartilhamento continuar reconhecendo) e a
     // concluída. Tarefas em datas/horas diferentes nunca são afetadas.
-    function dedupeTasks(arr){
+    function dedupeTasks(arr,persist){
       if(!Array.isArray(arr))return Array.isArray(arr)?arr:[];
       const seen=new Map(),out=[];let removed=0;
       for(const t of arr){
@@ -146,13 +146,21 @@
         if(replace){ if(kept.done)t.done=true; if(kept.sharedFrom&&!t.sharedFrom)t.sharedFrom=kept.sharedFrom; out[idx]=t; }
         else { if(t.done)kept.done=true; if(t.sharedFrom&&!kept.sharedFrom)kept.sharedFrom=t.sharedFrom; }
       }
-      if(removed>0){try{localStorage.setItem(TASK_KEY,JSON.stringify(out));}catch(_){}}
+      if(removed>0&&persist!==false){try{localStorage.setItem(TASK_KEY,JSON.stringify(out));}catch(_){}}
       return out;
     }
-    let remoteSyncRenderTimer=0;
+    let remoteSyncRenderTimer=0,_syncSig=null;
     window.addEventListener('agenda:remote-sync',()=>{
       clearTimeout(remoteSyncRenderTimer);
-      remoteSyncRenderTimer=setTimeout(()=>{try{tasks=dedupeTasks(loadTasks());render()}catch(_){}},60);
+      remoteSyncRenderTimer=setTimeout(()=>{try{
+        // dedupe SEM gravar: gravar aqui realimentava um loop de sync (servidor
+        // devolvia duplicatas com ids diferentes → dedupe removia → gravava → push → …).
+        const fresh=dedupeTasks(loadTasks(),false);
+        const sig=fresh.map(t=>t&&t.id?(t.id+(t.done?'1':'0')):'').join('|');
+        if(sig===_syncSig)return; // conjunto visível idêntico → não re-renderiza
+        _syncSig=sig;tasks=fresh;
+        _suppressAutoScroll=true;try{render()}finally{_suppressAutoScroll=false}
+      }catch(_){}},150);
     });
     const RULES_KEY='agenda_lagares_rules_v1',RECUR_HORIZON=120,RECUR_REGEN=75;
     function loadRules(){const v=json(localStorage.getItem(RULES_KEY));return Array.isArray(v)?v:[]}
@@ -217,7 +225,7 @@
       const dates=Object.keys(groups).sort();
       const body=dates.map(date=>{const items=groups[date];return`<section class="group" id="list-date-${date}"><div class="group-title"><strong>${dateShort(date)}</strong><span>${items.filter(t=>t.done&&!isLembrete(t)).length}/${items.filter(t=>!isLembrete(t)).length}</span></div>${items.length?items.map(taskCard).join(''):'<p class="day-empty" style="padding:12px 5px">Sem tarefas neste dia.</p>'}</section>`}).join('');
       el.viewContent.innerHTML=`<section class="view-shell">${heading}<div class="list-body">${body}</div></section>`;
-      requestAnimationFrame(()=>document.getElementById(`list-date-${anchorDate}`)?.scrollIntoView({block:'start'}));
+      if(!_suppressAutoScroll)requestAnimationFrame(()=>document.getElementById(`list-date-${anchorDate}`)?.scrollIntoView({block:'start'}));
     }
     const SEQ_XP_TAGS={trabalho:25,faculdade:30,saude:20,financeiro:15,pessoal:10,casa:10,outros:10};
     function seqXpFor(task){const text=String(task.text||'').toLowerCase();if(text.includes('jarvis'))return 50;if(text.includes('vera'))return 40;if(text.includes('equipamento especial'))return 35;return SEQ_XP_TAGS[task.tag]||10}
