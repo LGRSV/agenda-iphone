@@ -126,11 +126,21 @@
   }
 
   function activeInvoice(date = new Date()) {
-    return invoiceKey([
+    const today = [
       date.getFullYear(),
       String(date.getMonth() + 1).padStart(2, '0'),
       String(date.getDate()).padStart(2, '0')
-    ].join('-'));
+    ].join('-');
+
+    // Entre o fechamento (dia 27) e o vencimento (dia 02), a fatura que
+    // acabou de fechar permanece como principal. Depois do dia 02, a tela
+    // troca automaticamente para a próxima fatura em aberto.
+    const computed = invoiceKey(today);
+    const day = date.getDate();
+    if (today >= ANCHOR_START && (day >= 27 || day <= 2)) {
+      return shiftKey(computed, -1);
+    }
+    return computed;
   }
 
   const formatShort = value => {
@@ -166,13 +176,19 @@
   let cursor = activeInvoice();
   let filter = 'todos';
 
-  function invoiceItems() {
+  function financialInvoiceItems() {
     const notes = read(NOTES_KEY, {});
     return read(TASKS_KEY, [])
       .filter(task => task && task.text)
       .map(task => ({ ...task, n: notes[task.id] || {} }))
-      .filter(task => isInter(task, task.n) && invoiceKey(task.date, task.n) === cursor)
+      .filter(task => task.tag === 'financeiro'
+        && (kind(task, task.n) === 'saida' || kind(task, task.n) === 'entrada')
+        && invoiceKey(task.date, task.n) === cursor)
       .sort((a, b) => `${a.date}${a.time || ''}`.localeCompare(`${b.date}${b.time || ''}`));
+  }
+
+  function invoiceItems() {
+    return financialInvoiceItems().filter(task => isInter(task, task.n));
   }
 
   function filteredItems(items) {
@@ -245,11 +261,19 @@
 
   function render() {
     const items = invoiceItems();
+    const financialItems = financialInvoiceItems();
     const active = items.filter(item => !isCancelled(item, item.n));
+    const activeFinancial = financialItems.filter(item => !isCancelled(item, item.n));
     const charges = active
       .filter(item => kind(item, item.n) === 'saida')
       .reduce((sum, item) => sum + amount(item.n.valor), 0);
     const credits = active
+      .filter(item => kind(item, item.n) === 'entrada')
+      .reduce((sum, item) => sum + amount(item.n.valor), 0);
+    const totalGeneralExpenses = activeFinancial
+      .filter(item => kind(item, item.n) === 'saida')
+      .reduce((sum, item) => sum + amount(item.n.valor), 0);
+    const totalGeneralCredits = activeFinancial
       .filter(item => kind(item, item.n) === 'entrada')
       .reduce((sum, item) => sum + amount(item.n.valor), 0);
     const total = Math.max(0, charges - credits);
@@ -258,13 +282,17 @@
     const title = document.querySelector('#mn');
     if (title) title.textContent = `Fatura de ${labelFor(cursor)}`;
     const saldoLabel = document.querySelector('.bar .muted');
-    if (saldoLabel) saldoLabel.textContent = 'Total da fatura';
+    if (saldoLabel) saldoLabel.textContent = 'Total da fatura Inter';
     const saldo = document.querySelector('#saldo');
     if (saldo) saldo.textContent = money(total);
     const entradas = document.querySelector('#in');
-    if (entradas) entradas.textContent = money(credits);
+    if (entradas) entradas.textContent = money(totalGeneralCredits);
     const saidas = document.querySelector('#out');
-    if (saidas) saidas.textContent = money(charges);
+    if (saidas) saidas.textContent = money(totalGeneralExpenses);
+    const entriesLabel = entradas?.nextElementSibling;
+    if (entriesLabel) entriesLabel.textContent = 'Entradas gerais';
+    const expensesLabel = saidas?.nextElementSibling;
+    if (expensesLabel) expensesLabel.textContent = 'Saídas gerais';
     const semValor = document.querySelector('#nv');
     if (semValor) semValor.textContent = String(items.filter(item => !amount(item.n.valor)).length);
     const abertos = document.querySelector('#ct');
@@ -285,7 +313,7 @@
     }
 
     const heading = document.querySelector('#list')?.previousElementSibling;
-    if (heading?.tagName === 'H2') heading.textContent = 'LANÇAMENTOS DA FATURA';
+    if (heading?.tagName === 'H2') heading.textContent = 'LANÇAMENTOS DO CARTÃO INTER';
     document.querySelectorAll('.filters [data-f]').forEach(button => {
       button.classList.toggle('on', button.dataset.f === filter);
     });
