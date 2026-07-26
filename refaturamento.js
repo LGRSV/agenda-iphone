@@ -109,7 +109,7 @@
   function renderSimulator() {
     const base=simulationBase();
     const invoice=simulationActive?Math.max(0,base.invoiceCents-SIM_REFUND_CENTS):base.invoiceCents;
-    const mp=simulationActive?base.mpCents+SIM_FEE_RETURN_CENTS:base.mpCents;
+    const mp=simulationActive?base.mpCents-SIM_REFUND_CENTS+SIM_FEE_RETURN_CENTS:base.mpCents;
     const combined=mp+base.giroCents;
     el('simulateRefund').setAttribute('aria-pressed',String(simulationActive));
     el('simulateLabel').textContent=simulationActive?'Simulação ativa ✓':'Devolver R$ 8.500';
@@ -121,11 +121,14 @@
     el('simMpHint').textContent=simulationActive?`Antes: ${money(base.mpCents)}`:'Saldo atual em conta';
     el('simCombinedHint').textContent=simulationActive?`Antes: ${money(base.mpCents+base.giroCents)}`:'Disponível somando apenas os dois saldos';
     el('simInvoiceDelta').textContent=simulationActive?`−${money(SIM_REFUND_CENTS)}`:'sem abatimento';
-    el('simMpDelta').textContent=simulationActive?`+${money(SIM_FEE_RETURN_CENTS)}`:'sem devolução da taxa';
+    el('simMpDelta').textContent=simulationActive
+      ? `−${money(SIM_REFUND_CENTS)} + ${money(SIM_FEE_RETURN_CENTS)} = −${money(SIM_REFUND_CENTS-SIM_FEE_RETURN_CENTS)}`
+      :'sem devolução da taxa';
     el('simNote').textContent=simulationActive
-      ? `Projeção: a fatura cai para ${money(invoice)} e Mercado Pago + Giro sobe para ${money(combined)}. Nenhum valor foi lançado.`
+      ? `Projeção: a fatura cai para ${money(invoice)} e Mercado Pago + Giro fica em ${money(combined)}. Nenhum valor foi lançado.`
       : 'A simulação não altera sua fatura nem seus saldos reais.';
     ['simInvoiceCard','simMpCard','simCombinedCard'].forEach(id=>el(id).classList.toggle('changed',simulationActive));
+    el('simMpCard').classList.toggle('negative-balance',mp<0);
   }
 
   function renderPreview() {
