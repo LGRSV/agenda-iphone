@@ -301,6 +301,10 @@
     const card = document.querySelector('#cartao');
     if (card) {
       card.hidden = false;
+      card.setAttribute('role', 'link');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('aria-label', `Abrir lançamentos do cartão Inter da fatura de ${labelFor(cursor)}`);
+      card.title = 'Ver lançamentos do cartão Inter';
       card.innerHTML = `<div class="ct-top">
         <span class="ct-brand">Inter Black</span>
         <span class="ct-due">Vence ${dueLabel(cursor)}</span>
@@ -371,6 +375,18 @@
       render();
     };
 
+    const openInvoiceDetails = () => {
+      location.href = `fatura-inter.html?fatura=${encodeURIComponent(cursor)}`;
+    };
+    const card = document.querySelector('#cartao');
+    card?.addEventListener('click', openInvoiceDetails);
+    card?.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openInvoiceDetails();
+      }
+    });
+
     const form = document.querySelector('#form');
     form?.addEventListener('submit', () => setTimeout(render, 80));
     window.addEventListener('agenda:remote-sync', () => setTimeout(render, 0));
@@ -382,6 +398,10 @@
 
   const style = document.createElement('style');
   style.textContent = `
+    #cartao[role="link"]{cursor:pointer;transition:transform .18s ease,filter .18s ease}
+    #cartao[role="link"]:hover{filter:brightness(1.08)}
+    #cartao[role="link"]:active{transform:scale(.985)}
+    #cartao[role="link"]:focus-visible{outline:2px solid #6ec9ff;outline-offset:3px}
     .invoice-row.is-cancelled{opacity:.82;background:linear-gradient(90deg,rgba(255,74,91,.12),transparent)}
     .cancel-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #ff4a5b;border-radius:999px;background:rgba(255,74,91,.14);color:#ff7180;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
     .invoice-details{display:grid;gap:5px;margin-top:8px;padding:8px 9px;border:1px solid #343841;border-radius:10px;background:#181a1f}

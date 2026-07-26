@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#050506">
+  <meta name="app-page" content="fatura-inter.html">
+  <title>Fatura Inter</title>
+  <style>
+    :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#17181c;color:#f7f8fb;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.app{max-width:760px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom))}.head{display:flex;align-items:center;gap:13px}.back{display:grid;place-items:center;width:44px;height:44px;border:1px solid #3b404a;border-radius:13px;background:#202228;color:#f7f8fb;text-decoration:none;font-size:28px;line-height:1}.ey{margin:0;color:#ff9a4e;font-size:11px;font-weight:850;letter-spacing:.12em}.head h1{margin:4px 0 0;font-size:26px;letter-spacing:-.04em}.muted{margin:0;color:#a6acb8;font-size:13px}.bill{margin:22px 0 18px;padding:17px;border:1px solid rgba(255,255,255,.11);border-radius:19px;background:linear-gradient(140deg,#09090b,#1c1c20 55%,#2b2b30);box-shadow:0 14px 30px rgba(0,0,0,.42);position:relative;overflow:hidden}.bill:before{content:"";position:absolute;right:-45px;top:-45px;width:170px;height:170px;border-radius:50%;background:radial-gradient(circle,rgba(255,122,0,.26),transparent 68%)}.bill-top,.bill-bottom{position:relative;display:flex;justify-content:space-between;gap:12px;align-items:center}.brand{font-size:12px;font-weight:850;letter-spacing:.04em}.brand:before{content:"";display:inline-block;width:8px;height:8px;margin-right:7px;border-radius:2px;background:#ff7a00}.due{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.12);font-size:11px;font-weight:800}.total{position:relative;margin:13px 0 4px;font-size:31px;font-weight:900;letter-spacing:-.045em}.period{position:relative;color:#d0d3da;font-size:12px;font-weight:650}.bill-bottom{margin-top:14px;color:#a6acb8;font-size:11px;font-weight:700}h2{margin:24px 0 9px;color:#a6acb8;font-size:11px;font-weight:850;letter-spacing:.09em}.list{border:1px solid #3b404a;border-radius:18px;background:#202228;overflow:hidden}.day{border-bottom:1px solid #3b404a}.day:last-child{border-bottom:0}.day-head{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;background:#24262c;color:#dfe2e8;font-size:12px;font-weight:850}.day-head b{color:#ff8c9d;font-size:13px}.row{display:grid;grid-template-columns:20px 1fr auto;gap:10px;align-items:start;padding:13px;border-bottom:1px solid #343840}.row:last-child{border-bottom:0}.dot{display:block;width:9px;height:9px;border-radius:50%;margin-top:5px;background:#ff7f91}.title{font-weight:800;line-height:1.35}.meta{margin-top:4px;color:#a6acb8;font-size:11px;font-weight:650}.value{color:#ff8c9d;font-size:14px;font-weight:900;white-space:nowrap}.detail{margin-top:8px;padding:7px 8px;border:1px solid #363a43;border-radius:9px;color:#b9bfca;font-size:11px;line-height:1.4}.empty{padding:34px 18px;text-align:center;color:#a6acb8}.updated{padding-top:18px;text-align:center;color:#777e8b;font-size:11px;font-weight:650}@media(prefers-reduced-motion:no-preference){.bill{animation:enter .3s ease-out both}@keyframes enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}}
+  </style>
+</head>
+<body>
+  <script>(function(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null'),s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return;}}catch(_){}location.replace('./?locked=1');})();</script>
+  <main class="app">
+    <header class="head"><a class="back" href="financeiro.html" aria-label="Voltar ao painel financeiro">‹</a><div><p class="ey">CARTÃO DE CRÉDITO</p><h1>Fatura Inter</h1><p class="muted">Somente saídas no cartão</p></div></header>
+    <section class="bill" aria-live="polite"><div class="bill-top"><span class="brand">Inter Black</span><span class="due" id="due"></span></div><div class="total" id="total">R$ 0,00</div><p class="period" id="period"></p><div class="bill-bottom"><span id="count">0 lançamentos</span><span>Toque em voltar para o painel</span></div></section>
+    <h2>LANÇAMENTOS DA FATURA</h2>
+    <section class="list" id="list"></section>
+    <footer class="updated" id="updated"></footer>
+  </main>
+  <script src="./supabase-project-config.js?v=1"></script>
+  <script src="./supabase-shared-storage.js?v=4"></script>
+  <script src="./fatura-inter.js?v=1"></script>
+</body>
+</html>
