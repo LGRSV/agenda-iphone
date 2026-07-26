@@ -182,6 +182,7 @@
       .filter(task => task && task.text)
       .map(task => ({ ...task, n: notes[task.id] || {} }))
       .filter(task => task.tag === 'financeiro'
+        && !task.n.excludeFromInvoice
         && (kind(task, task.n) === 'saida' || kind(task, task.n) === 'entrada')
         && invoiceKey(task.date, task.n) === cursor)
       .sort((a, b) => `${a.date}${a.time || ''}`.localeCompare(`${b.date}${b.time || ''}`));
@@ -217,9 +218,10 @@
     const movement = kind(item, item.n);
     const value = amount(item.n.valor);
     const cancelled = isCancelled(item, item.n);
+    const displayText = item.n.invoiceLabel || item.text;
     const sign = movement === 'entrada' ? '+' : '−';
     const marker = movement === 'entrada' ? '+' : '−';
-    const installment = /\((\d+\/\d+)\)/.exec(item.text || '');
+    const installment = /\((\d+\/\d+)\)/.exec(displayText || '');
     const paymentLabel = movement === 'entrada'
       ? 'Entrada/crédito'
       : item.n.forma === 'inter'
@@ -230,7 +232,7 @@
     return `<article class="row invoice-row${cancelled ? ' is-cancelled' : ''}">
       <span class="paidmark" aria-hidden="true">${marker}</span>
       <div>
-        <div class="title">${esc(item.text)}${cancelled ? '<span class="cancel-badge">Cancelado</span>' : ''}</div>
+        <div class="title">${esc(displayText)}${cancelled ? '<span class="cancel-badge">Cancelado</span>' : ''}</div>
         <div class="meta">${formatLong(item.date)}${item.time ? ` ${esc(item.time)}` : ''} · ${paymentLabel}${installment ? ` · Parcela ${installment[1]}` : ''}</div>
         ${detailsHtml(item)}
       </div>
