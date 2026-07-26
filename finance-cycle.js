@@ -176,15 +176,36 @@
   let cursor = activeInvoice();
   let filter = 'todos';
 
+  function dedupeInstallments(items) {
+    const regular = [];
+    const grouped = new Map();
+    items.forEach(item => {
+      const group = item.n.installmentGroup;
+      if (!group) {
+        regular.push(item);
+        return;
+      }
+      const previous = grouped.get(group);
+      const explicit = item.n.invoiceMonth === cursor ? 1 : 0;
+      const previousExplicit = previous?.n.invoiceMonth === cursor ? 1 : 0;
+      if (!previous || explicit > previousExplicit
+        || (explicit === previousExplicit && String(item.date) < String(previous.date))) {
+        grouped.set(group, item);
+      }
+    });
+    return regular.concat([...grouped.values()]);
+  }
+
   function financialInvoiceItems() {
     const notes = read(NOTES_KEY, {});
-    return read(TASKS_KEY, [])
+    const matches = read(TASKS_KEY, [])
       .filter(task => task && task.text)
       .map(task => ({ ...task, n: notes[task.id] || {} }))
       .filter(task => task.tag === 'financeiro'
         && !task.n.excludeFromInvoice
         && (kind(task, task.n) === 'saida' || kind(task, task.n) === 'entrada')
-        && invoiceKey(task.date, task.n) === cursor)
+        && invoiceKey(task.date, task.n) === cursor);
+    return dedupeInstallments(matches)
       .sort((a, b) => `${a.date}${a.time || ''}`.localeCompare(`${b.date}${b.time || ''}`));
   }
 

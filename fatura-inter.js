@@ -53,11 +53,24 @@
   const label = () => { const p = parseKey(cursor); return p ? `${MONTHS[p.month-1]} de ${p.year}` : cursor; };
   const short = value => { const p = String(value || '').split('-'); return p.length === 3 ? `${p[2]}/${p[1]}` : value; };
 
+  function dedupeInstallments(data) {
+    const regular = [], grouped = new Map();
+    data.forEach(item => {
+      const group = item.n.installmentGroup;
+      if (!group) { regular.push(item); return; }
+      const previous = grouped.get(group);
+      const explicit = item.n.invoiceMonth === cursor ? 1 : 0;
+      const previousExplicit = previous?.n.invoiceMonth === cursor ? 1 : 0;
+      if (!previous || explicit > previousExplicit || (explicit === previousExplicit && String(item.date) < String(previous.date))) grouped.set(group,item);
+    });
+    return regular.concat([...grouped.values()]);
+  }
+
   function items() {
     const notes = read(NOTES_KEY, {});
-    return read(TASKS_KEY, []).map(task => ({...task,n:notes[task.id] || {}}))
+    const matches = read(TASKS_KEY, []).map(task => ({...task,n:notes[task.id] || {}}))
       .filter(task => task?.tag === 'financeiro' && !task.n.excludeFromInvoice && task.n.forma === 'inter' && kind(task,task.n) === 'saida' && !cancelled(task,task.n) && invoiceKey(task.date,task.n) === cursor)
-      .sort((a,b) => `${b.date}${b.time || ''}`.localeCompare(`${a.date}${a.time || ''}`));
+    return dedupeInstallments(matches).sort((a,b) => `${b.date}${b.time || ''}`.localeCompare(`${a.date}${a.time || ''}`));
   }
 
   function render() {
