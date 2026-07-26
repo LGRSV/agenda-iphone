@@ -213,6 +213,26 @@
     return financialInvoiceItems().filter(task => isInter(task, task.n));
   }
 
+  // A tela inicial também precisa mostrar cobranças ainda abertas do mês em
+  // curso, mesmo quando elas não caem em uma regra específica da fatura.
+  function pendingReceivables() {
+    const notes = read(NOTES_KEY, {});
+    const calendarKey = cycleBounds(cursor).end.slice(0, 7);
+    return read(TASKS_KEY, [])
+      .filter(task => task && task.text && !task.done && String(task.date || '').startsWith(calendarKey))
+      .map(task => ({ ...task, n: notes[task.id] || {} }))
+      .filter(task => task.tag === 'financeiro'
+        && kind(task, task.n) === 'entrada'
+        && !isCancelled(task, task.n))
+      .sort((a, b) => `${a.date}${a.time || ''}`.localeCompare(`${b.date}${b.time || ''}`));
+  }
+
+  function visibleFinancialItems(items) {
+    const byId = new Map(items.map(item => [String(item.id), item]));
+    pendingReceivables().forEach(item => byId.set(String(item.id), item));
+    return [...byId.values()].sort((a, b) => `${a.date}${a.time || ''}`.localeCompare(`${b.date}${b.time || ''}`));
+  }
+
   function filteredItems(items) {
     if (filter === 'entrada') return items.filter(item => kind(item, item.n) === 'entrada');
     if (filter === 'saida') return items.filter(item => kind(item, item.n) === 'saida');
@@ -238,15 +258,17 @@
     const value = amount(item.n.valor);
     const cancelled = isCancelled(item, item.n);
     const processing = Boolean(item.n.processando);
+    const pendingReceive = movement === 'entrada' && !item.done && !cancelled;
     const displayText = item.n.invoiceLabel || item.text;
     const statusBadge = cancelled
       ? '<span class="cancel-badge">Cancelado</span>'
-      : processing ? '<span class="processing-badge">Em processamento</span>' : '';
+      : processing ? '<span class="processing-badge">Em processamento</span>'
+        : pendingReceive ? '<span class="pending-badge">Pendente</span>' : '';
     const sign = movement === 'entrada' ? '+' : '−';
     const marker = movement === 'entrada' ? '+' : '−';
     const installment = /\((\d+\/\d+)\)/.exec(displayText || '');
     const paymentLabel = movement === 'entrada'
-      ? 'Entrada/crédito'
+      ? `Entrada/crédito${item.n.conta === 'nb' ? ' · Nubank' : item.n.conta === 'mp' ? ' · Mercado Pago' : ''}`
       : item.n.forma === 'inter'
         ? 'Cartão Inter'
         : item.n.forma === 'pix'
@@ -258,6 +280,7 @@
         <div class="title">${esc(displayText)}${statusBadge}</div>
         <div class="meta">${formatLong(item.date)}${item.time ? ` ${esc(item.time)}` : ''} · ${paymentLabel}${installment ? ` · Parcela ${installment[1]}` : ''}</div>
         ${detailsHtml(item)}
+        ${pendingReceive ? `<div class="receive-actions"><span>Recebi em:</span><button type="button" data-receive="${esc(item.id)}" data-receive-account="mp">Mercado Pago</button><button type="button" data-receive="${esc(item.id)}" data-receive-account="nb">Nubank</button></div>` : ''}
       </div>
       <div class="value ${movement === 'entrada' ? 'entrada' : 'saida'}">${sign} ${money(value)}</div>
     </article>`;
@@ -277,7 +300,7 @@
       const day = utcDate(date);
       const rows = byDate[date];
       const net = rows.reduce((total, item) => {
-        if (isCancelled(item, item.n) || item.n.processando) return total;
+        if (isCancelled(item, item.n) || item.n.processando || (kind(item, item.n) === 'entrada' && !item.done)) return total;
         const value = amount(item.n.valor);
         return total + (kind(item, item.n) === 'entrada' ? -value : value);
       }, 0);
@@ -355,7 +378,7 @@
     document.querySelectorAll('.filters [data-f]').forEach(button => {
       button.classList.toggle('on', button.dataset.f === filter);
     });
-    renderList(financialItems);
+    renderList(visibleFinancialItems(financialItems));
   }
 
   function markDirty(documentKey) {
@@ -398,6 +421,29 @@
       }
       render();
     };
+    list.onclick = event => {
+      const button = event.target.closest('[data-receive]');
+      if (!button) return;
+      const taskId = String(button.dataset.receive || '');
+      const account = button.dataset.receiveAccount === 'nb' ? 'nb' : 'mp';
+      const tasks = read(TASKS_KEY, []);
+      const task = tasks.find(item => String(item.id) === taskId);
+      if (!task || task.done) return;
+      const notes = read(NOTES_KEY, {});
+      notes[taskId] = {
+        ...(notes[taskId] || {}),
+        movimento: 'entrada',
+        forma: 'pix',
+        conta: account,
+        recebidoEm: new Date().toISOString()
+      };
+      task.done = true;
+      write(TASKS_KEY, tasks);
+      write(NOTES_KEY, notes);
+      markDirty('tasks');
+      markDirty('notes');
+      render();
+    };
 
     const openInvoiceDetails = () => {
       location.href = `fatura-inter.html?fatura=${encodeURIComponent(cursor)}`;
@@ -430,6 +476,10 @@
     .invoice-row.is-processing{background:linear-gradient(90deg,rgba(255,164,70,.15),transparent)}
     .cancel-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #ff4a5b;border-radius:999px;background:rgba(255,74,91,.14);color:#ff7180;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
     .processing-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #ffae55;border-radius:999px;background:rgba(255,164,70,.15);color:#ffc06f;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
+    .pending-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #7dd6ff;border-radius:999px;background:rgba(110,201,255,.14);color:#8bdcff;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
+    .receive-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:8px;color:#aeb5c1;font-size:10px;font-weight:800}
+    .receive-actions button{border:1px solid #4e8bad;border-radius:8px;background:#193042;color:#8bdcff;padding:5px 7px;font:inherit;cursor:pointer}
+    .receive-actions button:last-child{border-color:#7852ae;background:#281c3c;color:#c29aff}
     .invoice-details{display:grid;gap:5px;margin-top:8px;padding:8px 9px;border:1px solid #343841;border-radius:10px;background:#181a1f}
     .invoice-details>span{color:#8f96a3;font-size:9px;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
     .invoice-detail-boxes{display:flex;flex-wrap:wrap;gap:6px}
