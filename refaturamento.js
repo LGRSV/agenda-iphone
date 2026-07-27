@@ -12,6 +12,8 @@
   const SIM_FEE_RETURN_CENTS = 26265;
   const LORENA_REFUND_CENTS = 600000;
   const LORENA_FEE_RETURN_CENTS = 66300;
+  const MATHEUS_REFUND_CENTS = 250000;
+  const MATHEUS_FEE_RETURN_CENTS = 27625;
   const FALLBACK_INVOICE_CENTS = 1466440;
   const FALLBACK_GIRO_CENTS = 898404;
   const ANCHOR_START = '2026-06-26';
@@ -41,6 +43,7 @@
   let editingId = '';
   let simulationActive = false;
   let lorenaSimulationActive = false;
+  let matheusSimulationActive = false;
 
   const el = id => document.getElementById(id);
   const fields = {
@@ -111,16 +114,18 @@
 
   function renderSimulator() {
     const base=simulationBase();
-    const refundTotal=(simulationActive?SIM_REFUND_CENTS:0)+(lorenaSimulationActive?LORENA_REFUND_CENTS:0);
-    const feeReturnTotal=(simulationActive?SIM_FEE_RETURN_CENTS:0)+(lorenaSimulationActive?LORENA_FEE_RETURN_CENTS:0);
-    const anySimulation=simulationActive||lorenaSimulationActive;
-    const invoice=Math.max(0,base.invoiceCents-refundTotal);
+    const refundTotal=(simulationActive?SIM_REFUND_CENTS:0)+(lorenaSimulationActive?LORENA_REFUND_CENTS:0)+(matheusSimulationActive?MATHEUS_REFUND_CENTS:0);
+    const feeReturnTotal=(simulationActive?SIM_FEE_RETURN_CENTS:0)+(lorenaSimulationActive?LORENA_FEE_RETURN_CENTS:0)+(matheusSimulationActive?MATHEUS_FEE_RETURN_CENTS:0);
+    const anySimulation=simulationActive||lorenaSimulationActive||matheusSimulationActive;
+    const invoice=base.invoiceCents-refundTotal;
     const mp=base.mpCents-refundTotal+feeReturnTotal;
     const combined=mp+base.giroCents;
     el('simulateRefund').setAttribute('aria-pressed',String(simulationActive));
     el('simulateLabel').textContent=simulationActive?'R$ 8.500 ativo ✓':'Devolver R$ 8.500';
     el('simulateLorena').setAttribute('aria-pressed',String(lorenaSimulationActive));
     el('simulateLorenaLabel').textContent=lorenaSimulationActive?'Lorena ativo ✓':'Lorena · devolver R$ 6.000';
+    el('simulateMatheus').setAttribute('aria-pressed',String(matheusSimulationActive));
+    el('simulateMatheusLabel').textContent=matheusSimulationActive?'Matheus ativo ✓':'Matheus Gracia · devolver R$ 2.500';
     el('simInvoice').textContent=money(invoice);
     el('simMp').textContent=money(mp);
     el('simGiro').textContent=money(base.giroCents);
@@ -136,6 +141,7 @@
       ? `Projeção: a fatura cai para ${money(invoice)} e Mercado Pago + Giro fica em ${money(combined)}. Nenhum valor foi lançado.`
       : 'A simulação não altera sua fatura nem seus saldos reais.';
     ['simInvoiceCard','simMpCard','simCombinedCard'].forEach(id=>el(id).classList.toggle('changed',anySimulation));
+    el('simInvoiceCard').classList.toggle('credit-balance',invoice<0);
     el('simMpCard').classList.toggle('negative-balance',mp<0);
   }
 
@@ -262,6 +268,10 @@
   });
   el('simulateLorena').addEventListener('click',()=>{
     lorenaSimulationActive=!lorenaSimulationActive;
+    renderSimulator();
+  });
+  el('simulateMatheus').addEventListener('click',()=>{
+    matheusSimulationActive=!matheusSimulationActive;
     renderSimulator();
   });
   ['input','change'].forEach(name=>el('form').addEventListener(name,syncFields));
