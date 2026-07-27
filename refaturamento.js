@@ -127,22 +127,19 @@
     el('simulateMatheus').setAttribute('aria-pressed',String(matheusSimulationActive));
     el('simulateMatheusLabel').textContent=matheusSimulationActive?'Matheus ativo ✓':'Matheus Gracia · devolver R$ 2.500';
     el('simInvoice').textContent=money(invoice);
-    el('simMp').textContent=money(mp);
-    el('simGiro').textContent=money(base.giroCents);
     el('simCombined').textContent=money(combined);
     el('simInvoiceHint').textContent=anySimulation?`Antes: ${money(base.invoiceCents)}`:'Antes do crédito de estorno';
-    el('simMpHint').textContent=anySimulation?`Antes: ${money(base.mpCents)}`:'Saldo atual em conta';
-    el('simCombinedHint').textContent=anySimulation?`Antes: ${money(base.mpCents+base.giroCents)}`:'Disponível somando apenas os dois saldos';
+    el('simCombinedHint').textContent=anySimulation?`Antes: ${money(base.mpCents+base.giroCents)}`:'Saldo global disponível';
     el('simInvoiceDelta').textContent=anySimulation?`−${money(refundTotal)}`:'sem abatimento';
-    el('simMpDelta').textContent=anySimulation
+    el('simCombinedDelta').textContent=anySimulation
       ? `−${money(refundTotal)} + ${money(feeReturnTotal)} = −${money(refundTotal-feeReturnTotal)}`
       :'sem devolução da taxa';
     el('simNote').textContent=anySimulation
-      ? `Projeção: a fatura cai para ${money(invoice)} e Mercado Pago + Giro fica em ${money(combined)}. Nenhum valor foi lançado.`
+      ? `Projeção: a fatura cai para ${money(invoice)} e o saldo global Mercado Pago + Giro fica em ${money(combined)}. Nenhum valor foi lançado.`
       : 'A simulação não altera sua fatura nem seus saldos reais.';
-    ['simInvoiceCard','simMpCard','simCombinedCard'].forEach(id=>el(id).classList.toggle('changed',anySimulation));
+    ['simInvoiceCard','simCombinedCard'].forEach(id=>el(id).classList.toggle('changed',anySimulation));
     el('simInvoiceCard').classList.toggle('credit-balance',invoice<0);
-    el('simMpCard').classList.toggle('negative-balance',mp<0);
+    el('simCombinedCard').classList.toggle('negative-balance',combined<0);
   }
 
   function renderPreview() {

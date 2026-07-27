@@ -20,7 +20,7 @@
     .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,20px);padding:11px 15px;border-radius:12px;background:#effaff;color:#06131b;font-size:12px;font-weight:850;opacity:0;pointer-events:none;transition:.24s;z-index:20}.toast.show{opacity:1;transform:translate(-50%,0)}
     @keyframes enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}@media(max-width:390px){.grid{grid-template-columns:1fr}.field.wide{grid-column:auto}.sim-head{align-items:stretch;flex-direction:column}.sim-toggle{justify-content:space-between}.sim-card{padding:11px}.sim-card b{font-size:17px}}@media(prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
   </style>
-  <style>.sim-card.mp.negative-balance b{color:var(--red)}.sim-card.invoice.credit-balance b{color:var(--green)}.sim-actions{display:grid;gap:7px;min-width:190px}.sim-actions .sim-toggle{justify-content:space-between}@media(max-width:390px){.sim-actions{width:100%;min-width:0}}</style>
+  <style>.sim-card.combined.negative-balance b{color:var(--red)}.sim-card.invoice.credit-balance b{color:var(--green)}.sim-actions{display:grid;gap:7px;min-width:190px}.sim-actions .sim-toggle{justify-content:space-between}@media(max-width:390px){.sim-actions{width:100%;min-width:0}}</style>
 </head>
 <body>
   <script>(function(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null'),s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return;}}catch(_){}location.replace('./?locked=1');})();</script>
@@ -37,11 +37,9 @@
       </div>
       <div class="sim-grid">
         <article class="sim-card invoice" id="simInvoiceCard"><div class="label"><span>Fatura Inter atual</span><em class="mini-tag">Refaturamento</em></div><b id="simInvoice">R$ 0,00</b><small id="simInvoiceHint">Antes do crédito de estorno</small></article>
-        <article class="sim-card mp" id="simMpCard"><div class="label"><span>Mercado Pago</span><em class="mini-tag">Refaturamento</em></div><b id="simMp">R$ 0,00</b><small id="simMpHint">Saldo atual em conta</small></article>
-        <article class="sim-card giro"><div class="label"><span>Giro mensal</span></div><b id="simGiro">R$ 0,00</b><small>Saldo do cofrinho · não muda na simulação</small></article>
-        <article class="sim-card combined" id="simCombinedCard"><div class="label"><span>Mercado Pago + Giro</span><em class="mini-tag">Resultado</em></div><b id="simCombined">R$ 0,00</b><small id="simCombinedHint">Disponível somando apenas os dois saldos</small></article>
+        <article class="sim-card combined" id="simCombinedCard"><div class="label"><span>Saldo global Mercado Pago + Giro</span><em class="mini-tag">Refaturamento</em></div><b id="simCombined">R$ 0,00</b><small id="simCombinedHint">Saldo global disponível</small></article>
       </div>
-      <div class="sim-flow"><span class="sim-impact">Fatura <strong id="simInvoiceDelta">sem abatimento</strong></span><span class="sim-impact">Mercado Pago <strong id="simMpDelta">sem devolução da taxa</strong></span></div>
+      <div class="sim-flow"><span class="sim-impact">Fatura <strong id="simInvoiceDelta">sem abatimento</strong></span><span class="sim-impact">Saldo global <strong id="simCombinedDelta">sem devolução da taxa</strong></span></div>
       <p class="sim-note" id="simNote">A simulação não altera sua fatura nem seus saldos reais.</p>
     </section>
     <h2 id="formTitle">NOVA OPERAÇÃO</h2>
@@ -66,7 +64,7 @@
   <div class="toast" id="toast"></div>
   <script src="./supabase-project-config.js?v=1"></script>
   <script src="./supabase-shared-storage.js?v=7"></script>
-  <script src="./refaturamento.js?v=7"></script>
+  <script src="./refaturamento.js?v=8"></script>
   <script src="./finance-sharing.js?v=6"></script>
 </body>
 </html>
