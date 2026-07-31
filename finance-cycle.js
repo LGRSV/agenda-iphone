@@ -229,6 +229,14 @@
 
   function visibleFinancialItems(items) {
     const byId = new Map(items.map(item => [String(item.id), item]));
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const notes = read(NOTES_KEY, {});
+    read(TASKS_KEY, [])
+      .filter(task => task && task.tag === 'financeiro' && String(task.date || '').startsWith(currentMonth))
+      .map(task => ({ ...task, n: notes[task.id] || {} }))
+      .filter(task => task.n.forma !== 'inter')
+      .forEach(item => byId.set(String(item.id), item));
     pendingReceivables().forEach(item => byId.set(String(item.id), item));
     return [...byId.values()].sort((a, b) => `${a.date}${a.time || ''}`.localeCompare(`${b.date}${b.time || ''}`));
   }
@@ -260,10 +268,15 @@
     const processing = Boolean(item.n.processando);
     const pendingReceive = movement === 'entrada' && !item.done && !cancelled;
     const displayText = item.n.invoiceLabel || item.text;
-    const statusBadge = cancelled
+    const lifecycleBadge = cancelled
       ? '<span class="cancel-badge">Cancelado</span>'
       : processing ? '<span class="processing-badge">Em processamento</span>'
         : pendingReceive ? '<span class="pending-badge">Pendente</span>' : '';
+    const subscriptionBadge = item.n.assinatura
+      ? '<span class="subscription-badge">Assinatura</span>' : '';
+    const refundBadge = item.n.estornado
+      ? '<span class="refund-badge">Estorno aceito</span>' : '';
+    const statusBadge = lifecycleBadge + subscriptionBadge + refundBadge;
     const sign = movement === 'entrada' ? '+' : '−';
     const marker = movement === 'entrada' ? '+' : '−';
     const installment = /\((\d+\/\d+)\)/.exec(displayText || '');
@@ -273,7 +286,8 @@
         ? 'Cartão Inter'
         : item.n.forma === 'pix'
           ? `Pix${item.n.conta === 'nb' ? ' · Nubank' : item.n.conta === 'mp' ? ' · Mercado Pago' : ''}`
-          : item.n.forma === 'dinheiro' ? 'Dinheiro' : 'Saída';
+          : item.n.forma === 'dinheiro' ? 'Dinheiro'
+            : item.n.forma === 'pluxee' ? 'Pluxee Alimentação' : 'Saída';
     return `<article class="row invoice-row${cancelled ? ' is-cancelled' : ''}${processing ? ' is-processing' : ''}">
       <span class="paidmark" aria-hidden="true">${marker}</span>
       <div>
@@ -318,7 +332,8 @@
     const items = invoiceItems();
     const financialItems = financialInvoiceItems();
     const active = items.filter(item => !isCancelled(item, item.n) && !item.n.processando);
-    const activeFinancial = financialItems.filter(item => !isCancelled(item, item.n) && !item.n.processando);
+    const visibleFinancial = visibleFinancialItems(financialItems);
+    const activeFinancial = visibleFinancial.filter(item => !isCancelled(item, item.n) && !item.n.processando);
     const charges = active
       .filter(item => kind(item, item.n) === 'saida')
       .reduce((sum, item) => sum + amount(item.n.valor), 0);
@@ -378,7 +393,7 @@
     document.querySelectorAll('.filters [data-f]').forEach(button => {
       button.classList.toggle('on', button.dataset.f === filter);
     });
-    renderList(visibleFinancialItems(financialItems));
+    renderList(visibleFinancial);
   }
 
   function markDirty(documentKey) {
@@ -503,6 +518,8 @@
     .cancel-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #ff4a5b;border-radius:999px;background:rgba(255,74,91,.14);color:#ff7180;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
     .processing-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #ffae55;border-radius:999px;background:rgba(255,164,70,.15);color:#ffc06f;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
     .pending-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #ff5d73;border-radius:999px;background:rgba(255,93,115,.14);color:#ff7f91;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
+    .subscription-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #6ec9ff;border-radius:999px;background:rgba(110,201,255,.13);color:#82d2ff;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
+    .refund-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #78d88b;border-radius:999px;background:rgba(120,216,139,.13);color:#8ce59d;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
     .receive-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:8px;color:#aeb5c1;font-size:10px;font-weight:800}
     .receive-actions button{border:1px solid #ff5d73;border-radius:999px;background:rgba(255,93,115,.12);color:#ff7f91;padding:7px 11px;font:inherit;cursor:pointer}
     .invoice-details{display:grid;gap:5px;margin-top:8px;padding:8px 9px;border:1px solid #343841;border-radius:10px;background:#181a1f}

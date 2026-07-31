@@ -19,6 +19,10 @@
   const dateFor = (year, month, day) => `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
   const kind = (task, note) => note.movimento || (/cobrar|sal[aá]rio|receber/i.test(task.text || '') ? 'entrada' : /mesada|mayara/i.test(task.text || '') ? 'saida' : amount(note.valor) > 0 ? 'entrada' : 'sem valor');
   const cancelled = (task, note) => Boolean(note.cancelado || task.flag === 'cancelado' || /cancelad[oa]/i.test(task.text || ''));
+  const badges = item => [
+    item.n.assinatura ? '<span class="invoice-badge subscription">Assinatura</span>' : '',
+    item.n.estornado ? '<span class="invoice-badge refunded">Estorno aceito</span>' : ''
+  ].join('');
 
   function invoiceKey(dateValue, note = {}) {
     if (/^\d{4}-\d{2}$/.test(String(note.invoiceMonth || ''))) return note.invoiceMonth;
@@ -139,7 +143,7 @@
     data.forEach(item => { (groups[item.date] ||= []).push(item); });
     document.querySelector('#list').innerHTML = data.length ? Object.keys(groups).sort().reverse().map(date => {
       const rows = groups[date], subtotal = rows.reduce((sum,item) => sum + (item.credit ? -1 : 1) * amount(item.n.valor),0), weekday = WEEKDAYS[new Date(`${date}T12:00:00`).getDay()];
-      return `<section class="day"><header class="day-head"><span>${short(date)} · ${weekday}</span><b>${subtotal < 0 ? '+ ' : '− '}${money(Math.abs(subtotal))}</b></header>${rows.map(item => `<article class="row ${item.credit ? 'credit' : ''}"><i class="dot"></i><div><div class="title">${esc(item.n.invoiceLabel || item.text)}</div><div class="meta">${item.time ? `${esc(item.time)} · ` : ''}${item.credit ? 'Crédito na fatura Inter' : 'Cartão de crédito Inter'}</div>${detailsHtml(item)}</div><strong class="value">${item.credit ? '+ ' : '− '}${money(amount(item.n.valor))}</strong></article>`).join('')}</section>`;
+      return `<section class="day"><header class="day-head"><span>${short(date)} · ${weekday}</span><b>${subtotal < 0 ? '+ ' : '− '}${money(Math.abs(subtotal))}</b></header>${rows.map(item => `<article class="row ${item.credit ? 'credit' : ''}"><i class="dot"></i><div><div class="title">${esc(item.n.invoiceLabel || item.text)}${badges(item)}</div><div class="meta">${item.time ? `${esc(item.time)} · ` : ''}${item.credit ? 'Crédito na fatura Inter' : 'Cartão de crédito Inter'}</div>${detailsHtml(item)}</div><strong class="value">${item.credit ? '+ ' : '− '}${money(amount(item.n.valor))}</strong></article>`).join('')}</section>`;
     }).join('') : '<div class="empty">Nenhum lançamento do cartão Inter nesta fatura.</div>';
     document.querySelector('#updated').textContent = `Fatura ${label()} · atualização automática pela agenda`;
   }
@@ -160,5 +164,8 @@
   document.querySelector('#nextInvoice').addEventListener('click',() => moveInvoice(1));
   window.addEventListener('agenda:remote-sync', render);
   window.addEventListener('storage', event => { if (event.key === TASKS_KEY || event.key === NOTES_KEY) render(); });
+  const badgeStyle = document.createElement('style');
+  badgeStyle.textContent = '.invoice-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border-radius:999px;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}.invoice-badge.subscription{border:1px solid #6ec9ff;background:rgba(110,201,255,.13);color:#82d2ff}.invoice-badge.refunded{border:1px solid #78d88b;background:rgba(120,216,139,.13);color:#8ce59d}';
+  document.head.appendChild(badgeStyle);
   render();
 })();
