@@ -1,4 +1,4 @@
-/* Recebimentos financeiros explícitos + proteção de saldos manuais. */
+/* Recebimentos financeiros explícitos + saldos automáticos com ajuste manual. */
 (() => {
   'use strict';
 
@@ -12,8 +12,11 @@
     updNb: '2026-07-26',
     mp: 8106.91,
     nb: 0,
-    manualBalance: true,
-    autoAccrual: false,
+    manualBalance: false,
+    autoAccrual: true,
+    autoBalanceMode: true,
+    manualAdjustmentMp: 0,
+    manualAdjustmentNb: 0,
     balanceRevision: BASE_REVISION,
     receivedEntries: {}
   };
@@ -38,14 +41,14 @@
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
   };
 
-  // Bloqueia os recálculos legados, mas permite ajustes e recebimentos
-  // explícitos, além de versões mais novas vindas do Supabase.
+  // Instalações antigas podem continuar em saldo manual, mas as novas usam
+  // lançamentos concluídos para atualizar cada conta automaticamente.
   function protectedSetItem(key, value) {
     if (this === localStorage && String(key) === CK && !window.__allowManualAccountWrite) {
       const current = read(CK, null);
       let incoming = null;
       try { incoming = JSON.parse(value); } catch (_) {}
-      if (current?.manualBalance && incoming &&
+      if (current?.manualBalance && incoming && !incoming.autoAccrual &&
           Number(incoming.balanceRevision || 0) <= Number(current.balanceRevision || 0)) {
         incoming.mp = current.mp;
         incoming.nb = current.nb;
@@ -65,8 +68,7 @@
   Storage.prototype.setItem = protectedSetItem;
 
   const currentAccounts = read(CK, null);
-  if (!currentAccounts?.manualBalance ||
-      Number(currentAccounts.balanceRevision || 0) < BASE_REVISION) {
+  if (!currentAccounts || Number(currentAccounts.balanceRevision || 0) < BASE_REVISION) {
     window.__allowManualAccountWrite = true;
     nativeSetItem.call(localStorage, CK, JSON.stringify({
       ...(currentAccounts || {}),
@@ -199,10 +201,36 @@
   });
   scheduleDecorations();
 
+  function saveAccounts(accounts) {
+    window.__allowManualAccountWrite = true;
+    localStorage.setItem(CK, JSON.stringify(accounts));
+    window.__allowManualAccountWrite = false;
+  }
+
+  // O ajuste é um delta de saldo, nunca uma alteração nos lançamentos.
   document.addEventListener('click', event => {
     if (!event.target.closest('#conedit')) return;
-    window.__allowManualAccountWrite = true;
-    setTimeout(() => { window.__allowManualAccountWrite = false; }, 0);
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const accounts = read(CK, { ...BASE_ACCOUNTS });
+    const mp = prompt('Saldo Mercado Pago (R$):', String(accounts.mp || 0));
+    if (mp === null) return;
+    const nb = prompt('Saldo Nubank (R$):', String(accounts.nb || 0));
+    if (nb === null) return;
+    const nextMp = num(mp), nextNb = num(nb);
+    accounts.manualAdjustmentMp = round((accounts.manualAdjustmentMp || 0) + nextMp - (accounts.mp || 0));
+    accounts.manualAdjustmentNb = round((accounts.manualAdjustmentNb || 0) + nextNb - (accounts.nb || 0));
+    accounts.mp = nextMp;
+    accounts.nb = nextNb;
+    accounts.upd = today();
+    accounts.updMp = accounts.upd;
+    accounts.updNb = accounts.upd;
+    accounts.manualBalance = false;
+    accounts.autoAccrual = true;
+    accounts.autoBalanceMode = true;
+    accounts.balanceRevision = Date.now();
+    saveAccounts(accounts);
+    window.dispatchEvent(new CustomEvent('agenda:remote-sync', { detail: { documentKey: 'accounts' } }));
   }, true);
 
   document.addEventListener('click', event => {
@@ -210,15 +238,6 @@
     if (receive) { openLayer(receive.dataset.receiveId || receive.dataset.receiveOpen); return; }
     if (event.target.closest('[data-receive-close]') || event.target === layer) {
       closeLayer(); return;
-    }
-    if (event.target.closest('#conedit')) {
-      const accounts = read(CK, { ...BASE_ACCOUNTS });
-      accounts.manualBalance = true;
-      accounts.autoAccrual = false;
-      accounts.balanceRevision = Date.now();
-      localStorage.setItem(CK, JSON.stringify(accounts));
-      window.__allowManualAccountWrite = false;
-      return;
     }
     const bankButton = event.target.closest('[data-receive-bank]');
     if (!bankButton || !selectedId) return;
@@ -231,17 +250,24 @@
     const value = num(note.valor);
     const accounts = read(CK, { ...BASE_ACCOUNTS });
     accounts.receivedEntries = accounts.receivedEntries || {};
+    const appliedKey = bank === 'nb' ? 'appliedNb' : 'applied';
+    accounts[appliedKey] = accounts[appliedKey] || {};
     if (!accounts.receivedEntries[selectedId]) {
       accounts[bank] = round((accounts[bank] || 0) + value);
       accounts.receivedEntries[selectedId] = {
         bank, value, receivedAt: new Date().toISOString()
       };
     }
+    // Registra o lançamento no livro automático para o reconcile não somar
+    // o mesmo recebimento duas vezes na próxima sincronização.
+    accounts[appliedKey][selectedId] = value;
+    accounts.appliedV = 2;
     const date = today();
     accounts.upd = date;
     accounts[bank === 'nb' ? 'updNb' : 'updMp'] = date;
-    accounts.manualBalance = true;
-    accounts.autoAccrual = false;
+    accounts.manualBalance = false;
+    accounts.autoAccrual = true;
+    accounts.autoBalanceMode = true;
     accounts.balanceRevision = Date.now();
     task.done = true;
     task.syncRev = Date.now();
