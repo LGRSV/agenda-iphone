@@ -10,13 +10,16 @@
     upd: '2026-07-26',
     updMp: '2026-07-26',
     updNb: '2026-07-26',
+    updPluxee: '',
     mp: 8106.91,
     nb: 0,
+    pluxee: 0,
     manualBalance: false,
     autoAccrual: true,
     autoBalanceMode: true,
     manualAdjustmentMp: 0,
     manualAdjustmentNb: 0,
+    manualAdjustmentPluxee: 0,
     balanceRevision: BASE_REVISION,
     receivedEntries: {}
   };
@@ -55,6 +58,11 @@
         incoming.upd = current.upd;
         incoming.updMp = current.updMp;
         incoming.updNb = current.updNb;
+        incoming.pluxee = current.pluxee;
+        incoming.updPluxee = current.updPluxee;
+        incoming.manualAdjustmentPluxee = current.manualAdjustmentPluxee;
+        incoming.appliedPluxee = current.appliedPluxee || {};
+        incoming.pluxeeReconcileV1 = current.pluxeeReconcileV1;
         incoming.manualBalance = true;
         incoming.autoAccrual = false;
         incoming.balanceRevision = current.balanceRevision;
@@ -97,6 +105,7 @@
     .receive-bank{width:100%;display:flex;justify-content:space-between;align-items:center;padding:12px 13px;
       margin-top:8px;border-radius:13px!important;font-weight:850;cursor:pointer}
     .receive-bank.mp{border-color:#009ee3!important;color:#77d6ff!important}.receive-bank.nb{border-color:#9b44e5!important;color:#c98cff!important}
+    .receive-bank.pluxee{border-color:#69e884!important;color:#8af59e!important}
     .receive-cancel{width:100%;padding:10px;margin-top:10px;border:0!important;background:transparent!important;color:#a6acb8!important;font-weight:800}
     @keyframes receiveFade{from{opacity:0}to{opacity:1}}@keyframes receivePop{from{opacity:0;transform:scale(.9) translateY(12px)}to{opacity:1;transform:none}}
     @media(prefers-reduced-motion:reduce){.receive-layer,.receive-panel{animation:none!important}}
@@ -116,6 +125,7 @@
       <p>Em qual conta o dinheiro entrou?</p>
       <button type="button" class="receive-bank mp" data-receive-bank="mp"><span>Mercado Pago</span><span>MP</span></button>
       <button type="button" class="receive-bank nb" data-receive-bank="nb"><span>Nubank</span><span>Nu</span></button>
+      <button type="button" class="receive-bank pluxee" data-receive-bank="pluxee"><span>Pluxee Alimentação</span><span>Pluxee</span></button>
       <button type="button" class="receive-cancel" data-receive-close>Cancelar</button>
     </section>`;
   document.body.appendChild(layer);
@@ -241,7 +251,8 @@
     }
     const bankButton = event.target.closest('[data-receive-bank]');
     if (!bankButton || !selectedId) return;
-    const bank = bankButton.dataset.receiveBank === 'nb' ? 'nb' : 'mp';
+    const requestedBank = bankButton.dataset.receiveBank;
+    const bank = requestedBank === 'nb' || requestedBank === 'pluxee' ? requestedBank : 'mp';
     const tasks = read(TK, []);
     const notes = read(NK, {});
     const task = tasks.find(item => String(item.id) === selectedId);
@@ -250,7 +261,7 @@
     const value = num(note.valor);
     const accounts = read(CK, { ...BASE_ACCOUNTS });
     accounts.receivedEntries = accounts.receivedEntries || {};
-    const appliedKey = bank === 'nb' ? 'appliedNb' : 'applied';
+    const appliedKey = bank === 'nb' ? 'appliedNb' : bank === 'pluxee' ? 'appliedPluxee' : 'applied';
     accounts[appliedKey] = accounts[appliedKey] || {};
     if (!accounts.receivedEntries[selectedId]) {
       accounts[bank] = round((accounts[bank] || 0) + value);
@@ -264,7 +275,7 @@
     accounts.appliedV = 2;
     const date = today();
     accounts.upd = date;
-    accounts[bank === 'nb' ? 'updNb' : 'updMp'] = date;
+    accounts[bank === 'nb' ? 'updNb' : bank === 'pluxee' ? 'updPluxee' : 'updMp'] = date;
     accounts.manualBalance = false;
     accounts.autoAccrual = true;
     accounts.autoBalanceMode = true;
