@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v223-financeiro-setembro';
+const CACHE = 'agenda-lagares-v224-parceiro-mensal';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=12" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -25,7 +25,7 @@ const POLISH_SCRIPT = '<script src="./interface-polish.js?v=2" defer><\/script>'
 const REG_FIN_SCRIPT = '<script src="./registros-financeiros.js?v=1" defer><\/script>';
 const AUTH_GATE_SCRIPT = '<script src="./auth-gate.js?v=1" defer><\/script>';
 const SEQ_SCRIPT = '<script src="./sequencial.js?v=3" defer><\/script>';
-const PARCEIRO_SCRIPT = '<script src="./parceiro.js?v=1" defer><\/script>';
+const PARCEIRO_SCRIPT = '<script src="./parceiro.js?v=2" defer><\/script>';
 
 const STATIC_ASSET_RE = /\.(?:js|css|png|jpg|jpeg|svg|webp|woff2?)$/;
 
