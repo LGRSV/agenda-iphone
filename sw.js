@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v225-mesada-sync';
+const CACHE = 'agenda-lagares-v226-lembrete-persistente';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=12" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -27,6 +27,7 @@ const AUTH_GATE_SCRIPT = '<script src="./auth-gate.js?v=1" defer><\/script>';
 const SEQ_SCRIPT = '<script src="./sequencial.js?v=3" defer><\/script>';
 const PARCEIRO_SCRIPT = '<script src="./parceiro.js?v=2" defer><\/script>';
 const MESADA_SCRIPT = '<script src="./mesada-sync.js?v=1" defer><\/script>';
+const LEMBRETE_SCRIPT = '<script src="./lembrete-persistente.js?v=1" defer><\/script>';
 
 const STATIC_ASSET_RE = /\.(?:js|css|png|jpg|jpeg|svg|webp|woff2?)$/;
 
@@ -86,6 +87,7 @@ self.addEventListener('fetch', event => {
       if (!isAuxPage && !html.includes('sequencial.js')) html = html.replace('</body>', `${SEQ_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('parceiro.js')) html = html.replace('</body>', `${PARCEIRO_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('mesada-sync.js')) html = html.replace('</body>', `${MESADA_SCRIPT}</body>`);
+      if (!isAuxPage && !html.includes('lembrete-persistente.js')) html = html.replace('</body>', `${LEMBRETE_SCRIPT}</body>`);
       const headers = new Headers(response.headers);
       headers.delete('content-length');
       headers.delete('content-encoding');
