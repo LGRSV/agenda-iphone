@@ -6,7 +6,9 @@
   --ui-radius-xl: 28px;
   --ui-radius-lg: 22px;
   --ui-radius-md: 16px;
-  --ui-motion: cubic-bezier(.2,.8,.2,1);
+  --ui-motion: cubic-bezier(.23,1,.32,1);
+  --ui-motion-inout: cubic-bezier(.77,0,.175,1);
+  --ui-motion-drawer: cubic-bezier(.32,.72,0,1);
   --ui-spring: cubic-bezier(.18,.89,.32,1.28);
   --ui-blur: saturate(1.45) blur(18px);
   --ui-card-border: color-mix(in srgb, var(--line) 76%, transparent);
@@ -105,15 +107,17 @@ h1 {
     color .18s var(--ui-motion);
 }
 
-.icon-btn:hover,
-.nav-btn:hover,
-.today-btn:hover,
-.secondary:hover,
-.primary:hover,
-.chip:hover,
-.view-tab:hover,
-.appswitch a:hover {
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .icon-btn:hover,
+  .nav-btn:hover,
+  .today-btn:hover,
+  .secondary:hover,
+  .primary:hover,
+  .chip:hover,
+  .view-tab:hover,
+  .appswitch a:hover {
+    transform: translateY(-1px);
+  }
 }
 
 .icon-btn:focus-visible,
@@ -201,8 +205,10 @@ dialog,
   transition: background .18s var(--ui-motion), transform .18s var(--ui-motion), opacity .18s var(--ui-motion);
 }
 
-.task-card:hover {
-  background: color-mix(in srgb, var(--soft) 44%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .task-card:hover {
+    background: color-mix(in srgb, var(--soft) 44%, transparent);
+  }
 }
 
 .task-card:has(.check:checked) {
@@ -262,9 +268,11 @@ html:not(.agenda-animated) .check:checked::after {
   transition: transform .16s var(--ui-spring), border-color .18s var(--ui-motion), background .18s var(--ui-motion), box-shadow .18s var(--ui-motion), opacity .18s var(--ui-motion);
 }
 
-.calendar-day:hover {
-  transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
+@media (hover: hover) and (pointer: fine) {
+  .calendar-day:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
+  }
 }
 
 .calendar-day.selected {
@@ -277,9 +285,11 @@ html:not(.agenda-animated) .check:checked::after {
   transition: transform .18s var(--ui-spring), box-shadow .18s var(--ui-motion), filter .18s var(--ui-motion);
 }
 
-.fab:hover {
-  transform: translateY(-2px) scale(1.01);
-  filter: saturate(1.08);
+@media (hover: hover) and (pointer: fine) {
+  .fab:hover {
+    transform: translateY(-2px) scale(1.01);
+    filter: saturate(1.08);
+  }
 }
 
 .toast {
