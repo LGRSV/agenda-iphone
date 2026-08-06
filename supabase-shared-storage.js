@@ -137,6 +137,51 @@
       if (!prev) { byShare.set(sf, it); out.push(it); }
       else if (it.done && !prev.done) { prev.done = true; } // mantém uma, preservando conclusão
     }
+    return collapseDuplicates(out);
+  }
+  // A união por id acima só sabe crescer: se um aparelho tem 770 tarefas e o
+  // servidor tem 845 (75 cópias antigas com ids diferentes mas mesmo texto/data),
+  // o resultado volta a ser 845 e as duplicatas nunca somem do servidor. Aqui a
+  // lista é colapsada de verdade antes de subir — com a mesma regra da agenda:
+  // a cópia que tem nota vence, e duas cópias com notas diferentes sobrevivem,
+  // porque são lançamentos distintos e não repetição.
+  function noteSig(id) {
+    try {
+      const n = (read('notes') || {})[String(id)];
+      if (!n || typeof n !== 'object') return '';
+      const keep = {};
+      Object.keys(n).sort().forEach(k => {
+        const v = n[k];
+        if (v === '' || v == null || (Array.isArray(v) && !v.length) || v === false) return;
+        keep[k] = v;
+      });
+      const s = JSON.stringify(keep);
+      return s === '{}' ? '' : s;
+    } catch (_) { return ''; }
+  }
+  function collapseDuplicates(arr) {
+    if (!Array.isArray(arr)) return arr;
+    const seen = new Map(), sig = new Map(), out = [];
+    for (const t of arr) {
+      if (!t || !t.text) { out.push(t); continue; }
+      const mine = noteSig(t.id);
+      const key = `${t.text}|${t.date || ''}|${t.time || ''}|${t.tag || ''}`;
+      const idx = seen.get(key);
+      if (idx === undefined) { seen.set(key, out.length); sig.set(key, mine); out.push(t); continue; }
+      const kept = out[idx], keptSig = sig.get(key) || '';
+      if (mine && keptSig && mine !== keptSig) { out.push(t); continue; }
+      const replace = (!!mine !== !!keptSig) ? !!mine
+        : ((!!t.sharedFrom !== !!kept.sharedFrom) ? !!t.sharedFrom
+        : ((!!t.done !== !!kept.done) ? !!t.done : false));
+      if (replace) {
+        if (kept.done) t.done = true;
+        if (kept.sharedFrom && !t.sharedFrom) t.sharedFrom = kept.sharedFrom;
+        out[idx] = t; sig.set(key, mine || keptSig);
+      } else {
+        if (t.done) kept.done = true;
+        if (t.sharedFrom && !kept.sharedFrom) kept.sharedFrom = t.sharedFrom;
+      }
+    }
     return out;
   }
   async function reconcileForPush(sb, key, localPayload) {
