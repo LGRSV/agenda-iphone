@@ -141,18 +141,34 @@
     // recriada a cada sync sem a chave sharedFrom). Mantém uma cópia, preferindo
     // a que tem sharedFrom (para o compartilhamento continuar reconhecendo) e a
     // concluída. Tarefas em datas/horas diferentes nunca são afetadas.
+    // Assinatura da nota de uma tarefa: '' quando não há nota com conteúdo.
+    // Duas cópias com o mesmo texto/data/hora mas notas DIFERENTES não são
+    // duplicatas — são dois lançamentos distintos (ex.: duas compras no mesmo
+    // dia no mesmo estabelecimento, com valores diferentes) e precisam sobreviver.
+    function noteSig(id){
+      try{
+        const n=(JSON.parse(localStorage.getItem('agenda_notas_v1')||'{}')||{})[String(id)];
+        if(!n||typeof n!=='object')return '';
+        const keep={};Object.keys(n).sort().forEach(k=>{const v=n[k];if(v===''||v==null||(Array.isArray(v)&&!v.length)||v===false)return;keep[k]=v});
+        const s=JSON.stringify(keep);return s==='{}'?'':s;
+      }catch(_){return ''}
+    }
     function dedupeTasks(arr,persist){
       if(!Array.isArray(arr))return Array.isArray(arr)?arr:[];
-      const seen=new Map(),out=[];let removed=0;
+      const seen=new Map(),out=[],sig=new Map();let removed=0;
       for(const t of arr){
         if(!t||!t.text){out.push(t);continue;}
+        const mine=noteSig(t.id);
         const key=`${t.text}|${t.date||''}|${t.time||''}|${t.tag||''}`;
         const idx=seen.get(key);
-        if(idx===undefined){seen.set(key,out.length);out.push(t);continue;}
+        if(idx===undefined){seen.set(key,out.length);sig.set(key,mine);out.push(t);continue;}
+        const kept=out[idx],keptSig=sig.get(key)||'';
+        // notas diferentes e ambas com conteúdo -> lançamentos distintos, mantém os dois
+        if(mine&&keptSig&&mine!==keptSig){out.push(t);continue;}
         removed++;
-        const kept=out[idx];
-        const replace=(!!t.sharedFrom!==!!kept.sharedFrom)?!!t.sharedFrom:((!!t.done!==!!kept.done)?!!t.done:false);
-        if(replace){ if(kept.done)t.done=true; if(kept.sharedFrom&&!t.sharedFrom)t.sharedFrom=kept.sharedFrom; out[idx]=t; }
+        // a cópia que carrega a nota vence; nunca descarta o lado que tem os dados
+        const replace=(!!mine!==!!keptSig)?!!mine:((!!t.sharedFrom!==!!kept.sharedFrom)?!!t.sharedFrom:((!!t.done!==!!kept.done)?!!t.done:false));
+        if(replace){ if(kept.done)t.done=true; if(kept.sharedFrom&&!t.sharedFrom)t.sharedFrom=kept.sharedFrom; out[idx]=t; sig.set(key,mine||keptSig); }
         else { if(t.done)kept.done=true; if(t.sharedFrom&&!kept.sharedFrom)kept.sharedFrom=t.sharedFrom; }
       }
       if(removed>0&&persist!==false){try{localStorage.setItem(TASK_KEY,JSON.stringify(out));}catch(_){}}
