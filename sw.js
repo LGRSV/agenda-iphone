@@ -1,8 +1,8 @@
-const CACHE = 'agenda-lagares-v226-lembrete-persistente';
+const CACHE = 'agenda-lagares-v227-motion-craft';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=12" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
-const GAME_SCRIPT = '<script src="./gamificacao.js?v=4" defer><\/script>';
+const GAME_SCRIPT = '<script src="./gamificacao.js?v=5" defer><\/script>';
 const FINANCEIRO_SCRIPT = '<script src="./financeiro.js?v=2" defer><\/script>';
 const NOTAS_SCRIPT = '<script src="./notas.js?v=8" defer><\/script>';
 const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3" defer><\/script>';
@@ -20,7 +20,7 @@ const INTEL_SCRIPT = '<script src="./agenda-intelligence.js?v=2" defer><\/script
 const LIST_STATUS_SCRIPT = '<script src="./agenda-list-status.js?v=2" defer><\/script>';
 const EXPORT_SCRIPT = '<script src="./export-localstorage.js?v=2" defer><\/script>';
 const REALTIME_SCRIPT = '<script src="./realtime-refresh.js?v=1" defer><\/script>';
-const POLISH_STYLE = '<link rel="stylesheet" href="./interface-polish.css?v=5">';
+const POLISH_STYLE = '<link rel="stylesheet" href="./interface-polish.css?v=6">';
 const POLISH_SCRIPT = '<script src="./interface-polish.js?v=2" defer><\/script>';
 const REG_FIN_SCRIPT = '<script src="./registros-financeiros.js?v=1" defer><\/script>';
 const AUTH_GATE_SCRIPT = '<script src="./auth-gate.js?v=1" defer><\/script>';
