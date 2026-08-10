@@ -15,8 +15,14 @@
   const STYLE_ID = 'treinoStyles';
   const HORIZON = 90;   // gera treinos para os próximos 90 dias
   const REGEN = 60;     // regera quando a cobertura cair abaixo de 60 dias
-  const META_VERSION = 7; // v7: auto-cura — regenera se os cards de treino sumiram (pull/limpeza)
+  const META_VERSION = 8; // v8: o cardio virou tarefa própria e o treino foi para a noite
   const TIME_KEY = 'agenda_treino_time_v1'; // horário do treino, ajustável pelo editor ("aplicar a todos os próximos")
+  // O cardio deixou de ser uma seção de aquecimento dentro do treino e passou a
+  // ser uma atividade separada, com card, horário e conclusão próprios.
+  const CARDIO_TIME_KEY = 'agenda_cardio_time_v1';
+  const CARDIO_DUR_KEY = 'agenda_cardio_dur_v1'; // duração em minutos
+  const CARDIO_PREFIX = 'cardiodia-';            // não colide com o 'cardio-<timestamp>' do avulso
+  const NIGHT_MIGRATION_KEY = 'agenda_treino_noite_v1';
   const pageMode = document.body && document.body.dataset.treinoPage === '1';
   const isPrimaryAgenda = () => {
     try {
@@ -26,7 +32,22 @@
       return !username || username === 'jalms2';
     } catch (_) { return true; }
   };
-  const treinoTime = () => { try { const t = localStorage.getItem(TIME_KEY); return /^\d{2}:\d{2}$/.test(t || '') ? t : '05:30'; } catch (_) { return '05:30'; } };
+  const treinoTime = () => { try { const t = localStorage.getItem(TIME_KEY); return /^\d{2}:\d{2}$/.test(t || '') ? t : '18:00'; } catch (_) { return '18:00'; } };
+  const cardioTime = () => { try { const t = localStorage.getItem(CARDIO_TIME_KEY); return /^\d{2}:\d{2}$/.test(t || '') ? t : '05:00'; } catch (_) { return '05:00'; } };
+  const cardioDur = () => { const n = Number(localStorage.getItem(CARDIO_DUR_KEY)); return Number.isFinite(n) && n > 0 && n <= 300 ? n : 60; };
+  const durLabel = min => (min >= 60 ? (min % 60 ? Math.floor(min / 60) + 'h' + String(min % 60).padStart(2, '0') : Math.floor(min / 60) + 'h') : min + ' min');
+  const cardioText = () => `🏃 Cardio · ${durLabel(cardioDur())}`;
+  const usaCardioSeparado = () => planId() === 'lagares';
+  // O horário do treino estava gravado como 05:30 (manhã) desde antes de o cardio
+  // sair de dentro dele. Agora o cardio ocupa a manhã e o treino vai para a noite:
+  // reescreve a preferência uma única vez, sem mexer se o horário for alterado depois.
+  function migrateNightTraining() {
+    try {
+      if (localStorage.getItem(NIGHT_MIGRATION_KEY)) return;
+      localStorage.setItem(TIME_KEY, '18:00');
+      localStorage.setItem(NIGHT_MIGRATION_KEY, '1');
+    } catch (_) {}
+  }
   // ---- plano por conta: Lagares (A/B/C) e Ana Carolina (5 dias, emagrecimento) ----
   const ANA_EMAIL = 'anacarolina.social123@gmail.com';
   function accountEmail() {
@@ -323,7 +344,8 @@
     // apagados por um pull/limpeza enquanto o meta ainda dizia "já gerei"),
     // não confia no meta — regenera. Antes, o meta.generatedUntil sozinho
     // fazia o app pular a geração e os cards nunca voltavam.
-    const haveTreino = tasks.some(t => t && String(t.id).startsWith('treino-') && !t.done && t.date >= t0);
+    const haveTreino = tasks.some(t => t && String(t.id).startsWith('treino-') && !t.done && t.date >= t0)
+      && (!usaCardioSeparado() || tasks.some(t => t && String(t.id).startsWith(CARDIO_PREFIX) && !t.done && t.date >= t0));
     if (!upgrade && haveTreino && meta.generatedUntil && meta.generatedUntil >= addDays(t0, REGEN)) return false;
 
     let changed = false;
@@ -334,25 +356,34 @@
     //    Lagares; sáb/dom no plano da Ana).
     for (let i = tasks.length - 1; i >= 0; i--) {
       const tk = tasks[i];
-      if (!String(tk.id).startsWith('treino-')) continue;
+      const isCardio = String(tk.id).startsWith(CARDIO_PREFIX);
+      if (!isCardio && !String(tk.id).startsWith('treino-')) continue;
       const wo = planWorkout(tk.date);
       if (!wo) {
         if (!tk.done) { tasks.splice(i, 1); changed = true; }
         continue;
       }
       if (!tk.done) {
-        const text = cardTextFor(tk.date);
+        const text = isCardio ? cardioText() : cardTextFor(tk.date);
+        const hora = isCardio ? cardioTime() : treinoTime();
         if (text && tk.text !== text) { tk.text = text; changed = true; }
-        if (tk.time !== treinoTime()) { tk.time = treinoTime(); changed = true; }
+        if (tk.time !== hora) { tk.time = hora; changed = true; }
       }
     }
 
     // 2) cria os treinos que faltam na janela (só nos dias de treino do plano)
     const have = new Set(tasks.filter(x => String(x.id).startsWith('treino-')).map(x => x.date));
+    const haveCardio = new Set(tasks.filter(x => String(x.id).startsWith(CARDIO_PREFIX)).map(x => x.date));
     for (let d = t0; d <= target; d = addDays(d, 1)) {
-      if (have.has(d) || !planWorkout(d)) continue;
-      tasks.push({ id: 'treino-' + d, text: cardTextFor(d), date: d, time: treinoTime(), tag: 'saude', reminder: 0, done: false });
-      changed = true;
+      if (!planWorkout(d)) continue;
+      if (!have.has(d)) {
+        tasks.push({ id: 'treino-' + d, text: cardTextFor(d), date: d, time: treinoTime(), tag: 'saude', reminder: 0, done: false });
+        changed = true;
+      }
+      if (usaCardioSeparado() && !haveCardio.has(d)) {
+        tasks.push({ id: CARDIO_PREFIX + d, text: cardioText(), date: d, time: cardioTime(), tag: 'saude', reminder: 0, done: false });
+        changed = true;
+      }
     }
 
     meta.version = META_VERSION;
@@ -370,8 +401,8 @@
     style.textContent = `
       .tr-open{margin-left:auto;display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border:1px solid var(--accent);border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);font-size:11px;font-weight:800;line-height:1;transition:transform .13s ease}
       .tr-open:active{transform:scale(.94)}
-      #${DIALOG_ID}{width:min(calc(100% - 24px),520px);max-height:calc(100dvh - 24px);padding:0;border:1px solid var(--line);border-radius:24px;background:var(--bg);color:var(--text);box-shadow:0 30px 90px rgba(0,0,0,.56)}
-      #${DIALOG_ID}::backdrop{background:rgba(0,0,0,.6);backdrop-filter:blur(4px)}
+      #${DIALOG_ID},#cardioDiaDialog{width:min(calc(100% - 24px),520px);max-height:calc(100dvh - 24px);padding:0;border:1px solid var(--line);border-radius:24px;background:var(--bg);color:var(--text);box-shadow:0 30px 90px rgba(0,0,0,.56)}
+      #${DIALOG_ID}::backdrop,#cardioDiaDialog::backdrop{background:rgba(0,0,0,.6);backdrop-filter:blur(4px)}
       .tr-wrap{display:flex;flex-direction:column;max-height:calc(100dvh - 24px)}
       .tr-head{position:sticky;top:0;z-index:2;padding:18px 18px 14px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,var(--surface),var(--soft))}
       .tr-eyebrow{display:block;color:var(--accent);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:5px}
@@ -449,8 +480,11 @@
   /* ----------------------- cronômetro de descanso ------------------------ */
   const RING_C = 2 * Math.PI * 23; // circunferência do anel (r=23)
   let restTotal = 60, restLeft = 60, restInt = null, audioCtx = null;
-  let cardioTotal = 300, cardioLeft = 300, cardioInt = null; // cardio de aquecimento (5 min padrão)
-  const fmtTime = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  let cardioTotal = cardioDur() * 60, cardioLeft = cardioTotal, cardioInt = null;
+  // acima de uma hora mostra h:mm:ss — o cardio de 1h virava "60:00" antes
+  const fmtTime = s => (s >= 3600
+    ? `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+    : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`);
 
   function beep() {
     try {
@@ -504,10 +538,10 @@
     paintTimer();
   }
 
-  /* ----------------------- cardio (aquecimento) ------------------------- */
+  /* --------------- cardio (atividade separada do treino) ---------------- */
   function cardioSection() {
     return `<div class="tr-cardio">` +
-      `<div class="tr-cardio-top"><span class="tr-cardio-label">Cardio (aquecimento)</span><span class="tr-cardio-time" id="trCardioTime">${fmtTime(cardioLeft)}</span></div>` +
+      `<div class="tr-cardio-top"><span class="tr-cardio-label">Cardio</span><span class="tr-cardio-time" id="trCardioTime">${fmtTime(cardioLeft)}</span></div>` +
       `<div class="tr-cardio-presets" id="trCardioPresets">${[5, 10, 15, 20, 30, 45, 60].map(m => `<button class="tr-cpreset ${cardioTotal === m * 60 ? 'on' : ''}" type="button" data-cardio="${m}">${m} min</button>`).join('')}</div>` +
       `<label class="tr-cardio-custom"><span class="tr-cc-label">Personalizado (h:min)</span><input type="time" id="trCardioCustom" class="tr-cc-input" aria-label="Duração personalizada do cardio"></label>` +
       `<div class="tr-cardio-ctrl"><button class="tr-cbtn play" id="trCardioToggle" type="button">${cardioInt ? '⏸ Pausar' : '▶ Iniciar'}</button><button class="tr-cbtn" id="trCardioReset" type="button" aria-label="Zerar">↺</button></div>` +
@@ -529,7 +563,71 @@
     cardioInt = setInterval(() => { cardioLeft--; paintCardio(); if (cardioLeft <= 0) cardioFinished(); }, 1000);
   }
   function resetCardio() { stopCardio(); cardioLeft = cardioTotal; paintCardio(); }
-  function setCardio(min) { cardioTotal = min * 60; cardioLeft = cardioTotal; stopCardio(); syncCardioUI(); }
+  function setCardio(min) {
+    cardioTotal = min * 60; cardioLeft = cardioTotal; stopCardio();
+    // guarda a escolha: os próximos cards de cardio da agenda passam a nascer
+    // com essa duração no texto
+    try { localStorage.setItem(CARDIO_DUR_KEY, String(min)); } catch (_) {}
+    syncCardioUI();
+    const t = document.getElementById('cdDiaDur'); if (t) t.textContent = durLabel(min);
+  }
+
+  /* ---------------- painel do cardio do dia (card da agenda) ------------- */
+  const CARDIO_DAY_ID = 'cardioDiaDialog';
+  let cardioDayDate = null;
+  function openCardioDay(date) {
+    ensureStyles();
+    let dlg = document.getElementById(CARDIO_DAY_ID);
+    if (!dlg) {
+      dlg = document.createElement('dialog');
+      dlg.id = CARDIO_DAY_ID;
+      document.body.appendChild(dlg);
+      dlg.addEventListener('click', e => {
+        if (e.target === dlg) { dlg.close(); return; }
+        const cp = e.target.closest('[data-cardio]');
+        if (cp) { setCardio(Number(cp.dataset.cardio)); return; }
+        if (e.target.closest('#trCardioToggle')) { startCardio(); return; }
+        if (e.target.closest('#trCardioReset')) { resetCardio(); return; }
+        if (e.target.closest('#cdDiaClose')) { dlg.close(); return; }
+        if (e.target.closest('#cdDiaDone')) { concluirCardioDia(); }
+      });
+      dlg.addEventListener('change', e => {
+        if (e.target && e.target.id === 'trCardioCustom') {
+          const p = String(e.target.value || '').split(':');
+          const total = Math.min(300, (Number(p[0]) || 0) * 60 + (Number(p[1]) || 0));
+          if (total > 0) setCardio(total);
+        }
+      });
+      dlg.addEventListener('close', stopCardio);
+    }
+    cardioDayDate = date;
+    const feito = (readTasks().find(t => t.id === CARDIO_PREFIX + date) || {}).done;
+    dlg.innerHTML = `
+      <div class="tr-wrap">
+        <div class="tr-head">
+          <span class="tr-eyebrow">Cardio · atividade separada</span>
+          <h3>Cardio de <span id="cdDiaDur">${durLabel(cardioDur())}</span></h3>
+          <p class="tr-sub">${esc(prettyDate(date))}</p>
+          <button class="tr-close" id="cdDiaClose" type="button" aria-label="Fechar">×</button>
+        </div>
+        <div class="tr-body">${cardioSection()}
+          <p class="tr-tip">O cardio saiu de dentro do treino: ele tem card, horário e conclusão próprios. A duração escolhida aqui vale para os próximos dias.</p>
+        </div>
+        <div class="tr-foot"><button class="tr-btn solid" id="cdDiaDone" type="button">${feito ? 'Concluído ✓' : 'Concluir cardio ✓'}</button></div>
+      </div>`;
+    syncCardioUI();
+    if (!dlg.open) dlg.showModal();
+  }
+  function concluirCardioDia() {
+    if (!cardioDayDate) return;
+    const tasks = readTasks();
+    const t = tasks.find(x => x.id === CARDIO_PREFIX + cardioDayDate);
+    if (t) { t.done = true; t.syncRev = Date.now(); writeTasks(tasks); }
+    stopCardio();
+    const d = document.getElementById(CARDIO_DAY_ID); if (d) d.close();
+    toast('Cardio concluído!');
+    setTimeout(() => window.location.reload(), 400);
+  }
 
   function ensureDialog() {
     if (dialogEl) return dialogEl;
@@ -668,10 +766,8 @@
     dlg.querySelector('#trSub').textContent = prettyDate(currentDate);
     dlg.querySelector('#trDone').textContent = task.done ? 'Concluído ✓' : 'Salvar e concluir ✓';
     dlg.querySelector('#trBody').innerHTML =
-      cardioSection() +
-      `<p class="tr-tip"><strong>Faça o cardio acima</strong> para aquecer e depois os exercícios. Cronômetro de descanso no topo; anote a carga de cada exercício para acompanhar sua evolução.</p>` +
+      `<p class="tr-tip"><strong>O cardio agora é uma atividade à parte</strong>, com card e horário próprios na agenda. Aqui é só a musculação: cronômetro de descanso no topo, e anote a carga de cada exercício para acompanhar sua evolução.</p>` +
       plan.exercises.map(ex => exerciseRow(ex, logs)).join('');
-    syncCardioUI();
     if (!restInt) paintTimer();
     if (!pageMode && !dlg.open) dlg.showModal();
   }
@@ -720,15 +816,16 @@
     document.querySelectorAll('.task-card').forEach(card => {
       const check = card.querySelector('.check[data-id]');
       if (!check) return;
-      const id = check.dataset.id;
-      if (!String(id).startsWith('treino-')) return;
+      const id = String(check.dataset.id);
+      const ehCardio = id.startsWith(CARDIO_PREFIX);
+      if (!ehCardio && !id.startsWith('treino-')) return;
       const footer = card.querySelector('.task-footer');
       if (!footer || footer.querySelector('.tr-open')) return;
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'tr-open';
       b.dataset.treinoId = id;
-      b.innerHTML = 'Abrir treino';
+      b.innerHTML = ehCardio ? 'Abrir cardio' : 'Abrir treino';
       footer.appendChild(b);
     });
   }
@@ -799,6 +896,7 @@
 
   /* -------------------------------- init --------------------------------- */
   function init() {
+    if (planId() === 'lagares') migrateNightTraining();
     if (planId() && ensureTasks()) { window.location.reload(); return; }
     ensureStyles();
     if (!pageMode && planId()) ensureCardioUI();
@@ -812,12 +910,19 @@
 
     document.addEventListener('click', e => {
       const b = e.target.closest('.tr-open');
-      if (b) { e.preventDefault(); e.stopImmediatePropagation(); pageMode ? openModal(b.dataset.treinoId) : location.href='./treino.html?date='+encodeURIComponent(String(b.dataset.treinoId).replace('treino-','')); return; }
+      if (b) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        const bid = String(b.dataset.treinoId);
+        if (bid.startsWith(CARDIO_PREFIX)) { openCardioDay(bid.slice(CARDIO_PREFIX.length)); return; }
+        pageMode ? openModal(bid) : location.href='./treino.html?date='+encodeURIComponent(bid.replace('treino-',''));
+        return;
+      }
       // clicar no título de um card de treino também abre o painel do treino
       const title = e.target.closest('.task-title');
       if (title) {
         const check = title.closest('.task-card') && title.closest('.task-card').querySelector('.check[data-id]');
         const id = check && check.dataset.id;
+        if (id && String(id).startsWith(CARDIO_PREFIX)) { e.preventDefault(); e.stopImmediatePropagation(); openCardioDay(String(id).slice(CARDIO_PREFIX.length)); return; }
         if (id && String(id).startsWith('treino-')) { e.preventDefault(); e.stopImmediatePropagation(); pageMode ? openModal(id) : location.href='./treino.html?date='+encodeURIComponent(String(id).replace('treino-','')); }
       }
     }, true);
