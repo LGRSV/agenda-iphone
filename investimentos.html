@@ -126,7 +126,7 @@ h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 9px;text-tran
   const num=v=>{let s=String(v??'').trim();if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=Number(s);return Number.isFinite(n)?n:0};
   const numRaw=v=>{const n=Number(String(v??'').replace(',','.'));return Number.isFinite(n)?n:0};
   const mark=()=>{const d=j(DK,{});d.tasks=Date.now();d.notes=Date.now();d['agenda_investimentos_v1']=Date.now();save(DK,d)};
-  const invDefault=()=>({cdi:0.1095,upd:'',cofres:[{id:'lagares',nome:'Cofrinho Lagares',saldo:45539.43},{id:'giro',nome:'Giro mensal',saldo:8941.99,meta:12830}]});
+  const invDefault=()=>({cdi:0.1095,upd:'2026-08-30',cofres:[{id:'lagares',nome:'Cofrinho Lagares',saldo:46242.84},{id:'giro',nome:'Giro mensal',saldo:20653.61,meta:12830}]});
   const loadInv=()=>{const base=invDefault(),v=j(IK,null);return v&&typeof v==='object'?{...base,...v,cofres:Array.isArray(v.cofres)?v.cofres:base.cofres}:base};
   const saveInv=v=>save(IK,v);
   const cdiOf=inv=>inv.cdi>0?inv.cdi:0.1095;
