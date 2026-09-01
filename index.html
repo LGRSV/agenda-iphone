@@ -1262,11 +1262,12 @@ Quando receber AUDIO, preencha transcript com a transcricao exata em PT-BR do qu
           }else if(j.action==='edit_task'){
             if(qr){j.query=qr;j.task={text:tx||'',date:dm?dm[1]:'',time:tm?tm[1]:'',tag:tg||''};}
             else j.action='none';
-          }else if(qr)j.query=qr;
+          }else if(qr){j.query=qr;if(j.action==='save_place'&&tm)j.task={text:'',date:'',time:tm[1],tag:''};}
           else if(j.action==='location_on'||j.action==='location_off'){/* nao precisam de query */}
           else if(j.action==='save_place'||j.action==='delete_place'){
             // sem o nome do lugar nao da para agir — e a resposta do modelo ja "confirmou": troca por uma pergunta
-            j.action='none';j.reply=j.action==='delete_place'?'Qual lugar devo esquecer, Senhor?':'Entendi, Senhor. Como devo chamar este lugar?';
+            const pergunta=j.action==='delete_place'?'Qual lugar devo esquecer, Senhor?':'Entendi, Senhor. Como devo chamar este lugar?';
+            j.action='none';j.reply=pergunta;
           }
           else if(j.action!=='none')j.action='none';
         }

@@ -209,6 +209,11 @@
       for (const key of keys) {
         let payload = read(key);
         if (isSuspiciouslyEmpty(key, payload)) { recovered = true; continue; }
+        // Lugares/visitas carimbados por outra conta (troca de conta no mesmo
+        // aparelho com pendência antiga): nunca sobem para a conta atual.
+        if (NESTED_IN_SETTINGS[key] && payload && typeof payload === 'object' && payload.owner != null && String(payload.owner) !== ownerId()) {
+          const d = dirty(); delete d[key]; saveDirty(d); continue;
+        }
         if (MERGE_KEYS.has(key)) {
           const merged = await reconcileForPush(sb, key, payload);
           if (JSON.stringify(merged) !== JSON.stringify(payload)) { write(key, merged); notifySync(key); }
@@ -265,9 +270,17 @@
     } finally { syncing = false; render(); }
   }
 
+  // Envios automáticos em fila: dois pushDocs sobrepostos fazem read-modify-write
+  // da mesma linha "settings" e o segundo regrava o campo do primeiro com o
+  // valor antigo (perda de atualização em rede lenta).
+  let fila = Promise.resolve();
+  function enfileirar(keys) {
+    fila = fila.then(() => (keys.length ? pushDocs(keys, true) : undefined)).catch(handle);
+    return fila;
+  }
   async function syncNow() {
     const keys = Object.keys(dirty()).filter(k => DOCUMENTS[k]);
-    if (keys.length) await pushDocs(keys, true);
+    if (keys.length) await enfileirar(keys);
   }
 
   function markDirty(doc) {
@@ -276,7 +289,7 @@
     // Envia TODAS as chaves sujas, não só a última: duas gravações seguidas
     // (ex.: lugares e depois visitas) cancelavam o timer anterior e a primeira
     // ficava presa em agenda_shared_dirty_v1 até alguém abrir o Jarvis.
-    timer = setTimeout(() => pushDocs(Object.keys(dirty()).filter(k => DOCUMENTS[k]), true).catch(handle), 1400);
+    timer = setTimeout(() => enfileirar(Object.keys(dirty()).filter(k => DOCUMENTS[k])), 1400);
   }
 
   function patchStorage() {

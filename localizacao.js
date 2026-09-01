@@ -119,7 +119,7 @@
   let dentroSeq = null;   // {id, firstTs, lastTs, count, misses}
   let foraSeq = null;     // {firstTs, count, forte, farCount, farFirstTs}
   let trocaSeq = null;    // {id, firstTs, count}
-  let watchId = null, keepAlive = 0, ultimoErro = '', ultimaGravacaoSuave = 0, ultimoStateSave = 0;
+  let watchId = null, keepAlive = 0, ultimoErro = '', ultimoStateSave = 0;
   let gapParaEntrada = null; // gap já usado na saída, guardado para a chegada seguinte herdar o mesmo intervalo
   let errosSeguidos = [];   // timestamps de POSITION_UNAVAILABLE (code 2) recentes
   let fixesGrosseiros = 0;  // fixes seguidos com precisão > 1 km ("Localização Precisa" desligada)
@@ -136,10 +136,12 @@
     lugares = L.itens.filter(l => l && l.id && Number.isFinite(l.lat) && Number.isFinite(l.lng));
     removidos = L.removidos;
     visitas = V.itens.filter(v => v && v.id && Number.isFinite(v.chegada));
+    // reaplica o keep-alive local (ver marcarDentro) na visita gravada
+    const ka = state.keepAlive;
+    if (ka && ka.id) { const v = visitas.find(x => x.id === ka.id); if (v && v.saida == null) v.ultimoDentro = Math.max(v.ultimoDentro || 0, ka.ultimoDentro || 0); }
   }
   function salvarLugares() { gravarWrap(LK, lugares, removidos); }
-  function salvarVisitas() { podar(); gravarWrap(VK, visitas); ultimaGravacaoSuave = Date.now(); }
-  function salvarVisitasSuave() { if (Date.now() - ultimaGravacaoSuave >= PERSIST_SOFT_MS) salvarVisitas(); }
+  function salvarVisitas() { podar(); gravarWrap(VK, visitas); }
   function salvarState(forcar) {
     if (!forcar && Date.now() - ultimoStateSave < 10000) return;
     ultimoStateSave = Date.now();
@@ -147,7 +149,8 @@
   }
   function podar() {
     const limite = Date.now() - RETENCAO_DIAS * 86400000;
-    visitas = visitas.filter(v => v.saida == null || v.chegada >= limite);
+    const limiteDescartadas = Date.now() - 24 * 3600000; // descartadas ficam 24 h só para o merge propagar o descarte
+    visitas = visitas.filter(v => v.saida == null || (v.descartada ? (v.atualizadoEm || 0) >= limiteDescartadas : v.chegada >= limite));
     if (visitas.length > MAX_VISITAS) {
       visitas.sort((a, b) => a.chegada - b.chegada);
       visitas = visitas.slice(visitas.length - MAX_VISITAS);
@@ -160,7 +163,8 @@
   // ---- lugares / visitas ----
   const lugarPorId = id => lugares.find(l => l.id === id) || null;
   const lugarPorNome = nome => { const n = norm(nome); return lugares.find(l => norm(l.nome) === n) || null; };
-  const visitaAberta = () => { const d = dev(); return visitas.find(v => v.saida == null && (v.dev || d) === d) || null; };
+  const minhas = () => { const d = dev(); return visitas.filter(v => !v.descartada && (v.dev || d) === d); };
+  const visitaAberta = () => minhas().find(v => v.saida == null) || null;
   const distLugar = (l, fix) => haversine(fix.lat, fix.lng, l.lat, l.lng);
   const anelEntrada = (l, fix) => l.raio + Math.min(fix.acc, 50);
   const anelSaida = (l, fix) => l.raio + fix.acc + EXIT_BUFFER;
@@ -182,11 +186,12 @@
   function abrirVisita(lugar, ts, opts) {
     opts = opts || {};
     const d = dev();
-    const ultimaFechada = visitas.filter(v => v.saida != null && (v.dev || d) === d).sort((a, b) => b.saida - a.saida)[0];
+    const ultimaFechada = minhas().filter(v => v.saida != null).sort((a, b) => b.saida - a.saida)[0];
     const recente = ultimaFechada && ultimaFechada.lugarId === lugar.id && ts - ultimaFechada.saida <= REOPEN_MS && ts >= ultimaFechada.chegada ? ultimaFechada : null;
     let v;
     if (recente) {
       v = recente; v.saida = null; v.estSaida = false; delete v.saidaMax;
+      v.ultimoDentro = Math.max(v.ultimoDentro || 0, ts); // senão a próxima saída cairia antes da reabertura
       if (opts.afirmada) { v.afirmada = true; v.afirmadaEm = ts; }
     } else {
       v = { id: novoId(), dev: d, lugarId: lugar.id, nome: lugar.nome, chegada: ts, saida: null, estChegada: !!opts.estimada, estSaida: false, atualizadoEm: Date.now() };
@@ -213,7 +218,9 @@
     if (opts.estimada && opts.saidaMax != null) v.saidaMax = Math.max(v.saida, opts.saidaMax); else delete v.saidaMax;
     v.atualizadoEm = Date.now();
     if (!v.afirmada && !v.estChegada && !v.estSaida && v.saida - v.chegada < MIN_VISITA_MS) {
-      visitas = visitas.filter(x => x !== v); // passagem rápida, não é visita
+      // passagem rápida, não é visita. Soft-delete: a abertura já pode ter ido ao
+      // Supabase, e apagar do array faria a união com outro aparelho ressuscitá-la.
+      v.descartada = true;
       salvarVisitas(); salvarState(true); emitir('descartada', { visita: v });
       return;
     }
@@ -231,8 +238,10 @@
     if (desde && agora - desde > GAP_MS) {
       state.gapPendente = state.gapPendente ? { de: Math.min(state.gapPendente.de, desde), ate } : { de: desde, ate };
       dentroSeq = null; foraSeq = null; trocaSeq = null;
-    } else if (state.gapPendente && ate - state.gapPendente.ate > GAP_EXPIRE_MS) {
-      state.gapPendente = null; // já houve tempo de vida ao vivo suficiente: o que vier agora é ao vivo
+    } else if (state.gapPendente && !visitaAberta() && ate - state.gapPendente.ate > GAP_EXPIRE_MS) {
+      // sem visita aberta, já houve vida ao vivo suficiente: o que vier agora é ao vivo.
+      // Com visita aberta ainda indecisa (fixes imprecisos), o gap fica até a decisão.
+      state.gapPendente = null;
     }
     state.ultimoCallbackTs = agora; state.hiddenDesde = 0;
   }
@@ -253,12 +262,13 @@
     else if (fixesGrosseiros || state.precisaoBaixa) { fixesGrosseiros = 0; if (state.precisaoBaixa) { state.precisaoBaixa = false; salvarState(true); emitir('status'); } }
     const movendo = fix.speed != null && fix.speed > SPEED_MOVING;
     const parado = fix.speed == null || fix.speed <= SPEED_STILL;
-    const aberta = visitaAberta();
-    const L = aberta ? lugarPorId(aberta.lugarId) : null;
+    let aberta = visitaAberta();
+    let L = aberta ? lugarPorId(aberta.lugarId) : null;
+    // o lugar foi esquecido em outro aparelho: a visita aberta nele não pode ficar pendurada
+    if (aberta && !L) { fecharVisita(aberta, fix.ts); aberta = null; }
 
-    // fix ruim: não é evidência; se o erro cobre o lugar atual, é "ainda aqui"
+    // fix ruim: não é evidência de nada (e sem transição não há o que gravar)
     if (fix.acc > ACC_MAX) {
-      if (aberta && L && distLugar(L, fix) <= fix.acc + L.raio) { aberta.ultimaConf = fix.ts; salvarVisitasSuave(); }
       state.ultimoFixRuim = fix; salvarState(); emitir('fix-ruim', { fix }); return;
     }
     state.ultimoFix = fix; state.ultimoBom = fix.ts;
@@ -268,7 +278,7 @@
       recentrar(L, fix, dL, aberta);
       const dentroRaio = dL <= L.raio;
       const dentroAnel = dL <= anelSaida(L, fix) || (L.pendenteAte && agora < L.pendenteAte);
-      if (dentroRaio) { aberta.ultimoDentro = fix.ts; aberta.ultimaConf = fix.ts; salvarVisitasSuave(); }
+      if (dentroRaio) marcarDentro(aberta, fix.ts);
       if (dentroAnel) {
         foraSeq = null;
         // voltou de um gap e continua aqui: registra o buraco na visita
@@ -292,19 +302,22 @@
       if (movendo && dL <= anelSaida(L, fix) + 100) { salvarState(); emitir('fix', { fix }); return; } // passando pela borda em movimento: ambíguo
       if (fix.acc > ACC_EXIT_MAX) { salvarState(); emitir('fix', { fix }); return; } // impreciso demais para provar saída
       if (aberta.afirmada && fix.ts - (aberta.afirmadaEm || aberta.chegada) < AFFIRM_GRACE_MS) { salvarState(); emitir('fix', { fix }); return; }
-      if (!foraSeq) foraSeq = { firstTs: fix.ts, count: 0, forte: true, farCount: 0, farFirstTs: 0 };
+      if (!foraSeq) foraSeq = { firstTs: fix.ts, count: 0, forteCount: 0, forteFirstTs: 0, farCount: 0, farFirstTs: 0 };
       foraSeq.count += 1;
-      if (!(fix.acc <= ACC_STRONG && dL - fix.acc > L.raio + EXIT_BUFFER)) foraSeq.forte = false;
+      // evidência forte e "longe" contam em janela deslizante: um fix fraco no meio
+      // zera a janela, mas não trava a saída para sempre
+      const forte = fix.acc <= ACC_STRONG && dL - fix.acc > L.raio + EXIT_BUFFER;
+      if (forte) { if (!foraSeq.forteFirstTs) foraSeq.forteFirstTs = fix.ts; foraSeq.forteCount += 1; } else { foraSeq.forteCount = 0; foraSeq.forteFirstTs = 0; }
       const longe = fix.acc <= ACC_FAR && dL - fix.acc > Math.max(3 * L.raio, L.raio + 300);
       if (longe) { if (!foraSeq.farFirstTs) foraSeq.farFirstTs = fix.ts; foraSeq.farCount += 1; } else { foraSeq.farCount = 0; foraSeq.farFirstTs = 0; }
       const span = fix.ts - foraSeq.firstTs;
-      let confirma = false;
-      if (aberta.afirmada) confirma = foraSeq.forte && foraSeq.count >= EXIT_FIXES && span >= AFFIRM_EXIT_MS;
+      let confirma = false, t0 = foraSeq.firstTs;
+      if (aberta.afirmada) { confirma = foraSeq.forteCount >= EXIT_FIXES && fix.ts - foraSeq.forteFirstTs >= AFFIRM_EXIT_MS; if (confirma) t0 = foraSeq.forteFirstTs; }
       else confirma = (foraSeq.count >= EXIT_FIXES && span >= EXIT_MIN_MS) || (foraSeq.farCount >= FAR_FIXES && fix.ts - foraSeq.farFirstTs >= FAR_MIN_GAP_MS);
       if (confirma) {
-        const t0 = foraSeq.firstTs; foraSeq = null;
+        foraSeq = null;
         const g = state.gapPendente ? consumirGap() : null;
-        if (g) { fecharVisita(aberta, g.de, { estimada: true, saidaMax: g.ate }); gapParaEntrada = g; }
+        if (g) { fecharVisita(aberta, g.de, { estimada: true, saidaMax: g.ate }); gapParaEntrada = { de: g.de, ate: g.ate, desde: fix.ts }; }
         else fecharVisita(aberta, tsSaida(aberta, t0));
         avaliarEntrada(fix, movendo, parado, g);
       }
@@ -320,11 +333,11 @@
       dentroSeq.count += 1; dentroSeq.lastTs = fix.ts;
       if (dentroSeq.count >= ENTER_MIN_FIXES && fix.ts - dentroSeq.firstTs >= ENTER_MIN_MS && parado) {
         const t0 = dentroSeq.firstTs; dentroSeq = null;
-        if (gapParaEntrada && fix.ts - gapParaEntrada.ate > GAP_EXPIRE_MS) gapParaEntrada = null;
+        if (gapParaEntrada && fix.ts - (gapParaEntrada.desde || gapParaEntrada.ate) > GAP_EXPIRE_MS) gapParaEntrada = null; // conta a partir da saída confirmada, não do fim do gap
         const g = gapJaConsumido || (state.gapPendente ? consumirGap() : null) || gapParaEntrada;
         gapParaEntrada = null;
         const v = g ? abrirVisita(cand.lugar, g.ate, { estimada: true, chegadaMin: g.de }) : abrirVisita(cand.lugar, t0);
-        if (cand.dist <= cand.lugar.raio) v.ultimoDentro = fix.ts;
+        if (cand.dist <= cand.lugar.raio) marcarDentro(v, fix.ts);
       }
     } else if (dentroSeq) {
       const P = lugarPorId(dentroSeq.id);
@@ -339,12 +352,24 @@
   function recentrar(L, fix, dL, aberta) {
     if (!L.pendenteAte) return;
     if (Date.now() > L.pendenteAte) { delete L.pendenteAte; salvarLugares(); return; }
-    if (fix.acc <= ACC_FAR && fix.acc + 5 < (L.acc || 999) && (fix.speed == null || fix.speed <= 1)) {
+    // só um fix melhor E compatível com o círculo de erro original pode corrigir
+    // o centro — um fix bom longe dali significa que o usuário se moveu, não
+    // que o lugar estava errado
+    const compativel = dL <= (L.acc || 0) + fix.acc + 20;
+    if (compativel && fix.acc <= ACC_FAR && fix.acc + 5 < (L.acc || 999) && (fix.speed == null || fix.speed <= 1)) {
       L.lat = fix.lat; L.lng = fix.lng; L.acc = fix.acc; L.atualizadoEm = Date.now();
       if (fix.acc <= ACC_STRONG) delete L.pendenteAte;
       salvarLugares(); emitir('lugares', { recentrado: L.nome });
-      if (aberta) { aberta.ultimoDentro = fix.ts; aberta.ultimaConf = fix.ts; }
+      if (aberta) marcarDentro(aberta, fix.ts);
     }
+  }
+  // "Último fix dentro do raio" vive no estado LOCAL (gravado a cada 10 s, não
+  // sincroniza) e só entra na visita gravada nas transições: gravar a visita a
+  // cada fix mandaria a linha settings inteira ao Supabase de 5 em 5 min.
+  function marcarDentro(v, ts) {
+    v.ultimoDentro = Math.max(v.ultimoDentro || 0, ts);
+    state.keepAlive = { id: v.id, ultimoDentro: v.ultimoDentro };
+    salvarState();
   }
   function onErro(e) {
     const code = e && e.code;
@@ -388,12 +413,15 @@
     try { if (watchId != null) navigator.geolocation.clearWatch(watchId); } catch (_) {}
     watchId = null; clearInterval(keepAlive); keepAlive = 0;
   }
+  // Resolve com o fix bom aceito NESTA chamada — ou null. (Devolver state.ultimoFix
+  // faria um fix ruim de agora "virar" o fix bom de horas atrás, e salvarLugar
+  // gravaria o lugar novo na posição antiga sem avisar.)
   function fixAvulso(timeoutMs) {
     return new Promise(res => {
       if (!('geolocation' in navigator)) return res(null);
       const opts = timeoutMs ? Object.assign({}, ONCE_OPTS, { timeout: timeoutMs }) : ONCE_OPTS;
       try {
-        navigator.geolocation.getCurrentPosition(p => { processarFix(p); res(state.ultimoFix); }, e => { onErro(e); res(null); }, opts);
+        navigator.geolocation.getCurrentPosition(p => { const antes = state.ultimoBom || 0; processarFix(p); res(state.ultimoBom > antes ? state.ultimoFix : null); }, e => { onErro(e); res(null); }, opts);
       } catch (_) { res(null); }
     });
   }
@@ -432,21 +460,30 @@
     if (!fix && state.precisaoBaixa) return { ok: false, msg: 'A "Localização Precisa" está desligada para o Safari/Agenda — o GPS só me dá a posição com quilômetros de erro. Ligue em Ajustes › Privacidade e Segurança › Serviços de Localização › Safari (ou Agenda) › Localização Precisa, e repita.' };
     if (!fix) return { ok: false, msg: state.permissao === 'negada' ? 'Sem permissão de localização — libere nos Ajustes e repita.' : 'Não consegui obter sua posição agora (' + (ultimoErro || 'sem GPS') + '). Tente de novo em alguns segundos.' };
     const agora = Date.now();
+    let lugar = lugarPorNome(nome), novo = false, movido = false;
     let chegada = agora;
     if (/^\d{2}:\d{2}$/.test(String(opts.horario || ''))) {
       const [h, m] = opts.horario.split(':').map(Number);
       const d = new Date(); d.setHours(h, m, 0, 0);
       if (d.getTime() <= agora + 5 * MIN && agora - d.getTime() < 20 * 3600000) chegada = Math.min(d.getTime(), agora);
-      // nunca antes do fim da última visita fechada: visitas não podem se sobrepor
-      const dv = dev();
-      const ultimaFechada = visitas.filter(v => v.saida != null && (v.dev || dv) === dv).sort((a, b) => b.saida - a.saida)[0];
+      // visitas não podem se sobrepor: nunca antes do fim da última visita fechada
+      // nem antes do começo da visita aberta em OUTRO lugar (que vai fechar agora)
+      const ultimaFechada = minhas().filter(v => v.saida != null).sort((a, b) => b.saida - a.saida)[0];
       if (ultimaFechada && chegada < ultimaFechada.saida) chegada = ultimaFechada.saida;
+      const abertaOutro = visitaAberta();
+      if (abertaOutro && (!lugar || abertaOutro.lugarId !== lugar.id) && chegada < abertaOutro.chegada) chegada = abertaOutro.chegada;
     }
-    let lugar = lugarPorNome(nome), novo = false, movido = false;
     if (lugar) {
       const d = distLugar(lugar, fix);
-      if (fix.acc <= ACC_STRONG && d - fix.acc > 2 * lugar.raio) { lugar.lat = fix.lat; lugar.lng = fix.lng; lugar.acc = fix.acc; movido = true; }
-      else if (d > lugar.raio) lugar.pendenteAte = agora + RECENTER_WINDOW_MS; // o usuário diz que está aqui: deixa o GPS bom corrigir
+      if (d - fix.acc > 2 * lugar.raio) {
+        // o usuário afirma estar aqui e o GPS diz claramente que "aqui" não é o
+        // centro salvo: o usuário é a verdade — move, e refina se o fix for fraco
+        lugar.lat = fix.lat; lugar.lng = fix.lng; lugar.acc = Math.round(fix.acc); movido = true;
+        if (fix.acc > ACC_STRONG) lugar.pendenteAte = agora + RECENTER_WINDOW_MS; else delete lugar.pendenteAte;
+      } else if (d > lugar.raio) {
+        // perto, mas fora do raio: deixa um fix melhor que este corrigir o centro
+        lugar.acc = Math.max(lugar.acc || 0, Math.round(fix.acc)); lugar.pendenteAte = agora + RECENTER_WINDOW_MS;
+      }
       lugar.atualizadoEm = agora;
     } else {
       lugar = { id: novoId(), nome, lat: fix.lat, lng: fix.lng, raio: RAIO_PADRAO, acc: Math.round(fix.acc), criadoEm: agora, atualizadoEm: agora };
@@ -491,9 +528,11 @@
     if (v) return { lugar: v.nome, desde: v.chegada, desdeMin: v.chegadaMin, estimado: !!v.estChegada, minutos: Math.round((Date.now() - v.chegada) / 60000), afirmada: !!v.afirmada, gaps: v.gaps || [] };
     return null;
   }
+  // Só as visitas DESTE aparelho: na agenda compartilhada, as da parceira não
+  // podem entrar no "quanto tempo fiquei" do usuário.
   function visitasDoDia(iso) {
     const ini = new Date(iso + 'T00:00:00').getTime(), fim = ini + 86400000;
-    return visitas.filter(v => v.chegada < fim && (v.saida == null || v.saida >= ini)).sort((a, b) => a.chegada - b.chegada);
+    return minhas().filter(v => v.chegada < fim && (v.saida == null || v.saida >= ini)).sort((a, b) => a.chegada - b.chegada);
   }
   // Interseção de [chegada, saida ?? agora] com a janela do dia; visita com gaps
   // conta inteira (o mais provável é que ficou) — o Jarvis avisa o intervalo.
@@ -596,6 +635,10 @@
     const tumbas = unirTumbas(removidos, L.removidos);
     const novosL = unir(lugares, L.itens, tumbas).sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0));
     const novasV = unir(visitas, V.itens, null).sort((a, b) => a.chegada - b.chegada);
+    // lugar esquecido em outro aparelho: visita aberta deste aparelho nele fecha agora
+    // (antes da regra "uma aberta por aparelho", senão a órfã fecharia a legítima)
+    const idsL = new Set(novosL.map(l => l.id)), dEste = dev();
+    for (const v of novasV) if (v.saida == null && !v.descartada && (v.dev || dEste) === dEste && !idsL.has(v.lugarId)) { v.saida = Math.max(v.chegada, Date.now()); v.atualizadoEm = Date.now(); }
     // Um mesmo aparelho nunca tem duas visitas abertas: fica a mais recente; as
     // outras fecham na chegada dela. Aparelhos diferentes (agenda compartilhada)
     // podem ter cada um a sua.
@@ -635,9 +678,9 @@
     barTxt = bar.children[1]; barDot = bar.children[2];
     msgs.parentNode.insertBefore(bar, msgs);
     bar.addEventListener('click', async () => {
-      if (state.ativo) { desativar(); toast('Localização desligada.'); return; }
+      if (state.ativo) { desativar(); avisar('Localização desligada.'); return; }
       const r = await ativar();
-      toast(r.msg);
+      avisar(r.msg);
     });
     atualizarUI();
     return true;
@@ -657,10 +700,19 @@
     bar.style.color = cor;
     barDot.style.background = dot;
   }
-  function toast(msg) {
+  // A barra vive dentro do painel do Jarvis (z-index 101); o #toast da Agenda
+  // fica atrás dele (z-index 20). Com o painel aberto, a mensagem entra como
+  // balão do Jarvis; senão, toast elevado.
+  function avisar(msg) {
     try {
+      const msgs = document.getElementById('jarvis-msgs'), panel = document.getElementById('jarvis-panel');
+      if (msgs && panel && panel.classList.contains('open')) {
+        const d = document.createElement('div'); d.className = 'j-msg bot'; d.textContent = msg;
+        msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight; return;
+      }
       let el = document.getElementById('toast') || document.querySelector('.toast');
       if (!el) { el = document.createElement('div'); el.className = 'toast'; document.body.appendChild(el); }
+      el.style.zIndex = '200';
       el.textContent = msg; el.classList.add('show');
       clearTimeout(el.__tLoc); el.__tLoc = setTimeout(() => el.classList.remove('show'), 3200);
     } catch (_) {}
@@ -706,7 +758,7 @@
     ativar, desativar, ativo: () => !!state.ativo, permissao: () => state.permissao || '',
     salvarLugar, removerLugar,
     lugares: () => lugares.map(l => ({ ...l })),
-    visitas: dias => { const lim = Date.now() - (Number(dias) || 7) * 86400000; return visitas.filter(v => v.chegada >= lim || v.saida == null).map(v => ({ ...v })); },
+    visitas: dias => { const lim = Date.now() - (Number(dias) || 7) * 86400000; return visitas.filter(v => !v.descartada && (v.chegada >= lim || v.saida == null)).map(v => ({ ...v })); },
     visitasHoje: () => visitasDoDia(hojeIso()).map(v => ({ ...v })),
     totaisHoje: () => totaisDoDia(hojeIso()),
     onde, ultimoFix: () => (state.ultimoFix ? { ...state.ultimoFix } : null),

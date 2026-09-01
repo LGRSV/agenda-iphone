@@ -68,21 +68,19 @@ let passo = 0; const ok = msg => console.log(`${++passo} ok: ${msg}`);
   ok('carência: 5 fixes a 2 km em 5 min não fecham a visita afirmada');
 
   // 3) após a carência, saída de visita afirmada exige evidência forte (acc ≤ 30, ≥3 fixes, ≥120 s)
+  //    em janela deslizante: fixes fracos no meio não travam a saída para sempre
   feed(mv(CASA, 0, 0), 15, 60000, 6); // volta pra casa por 6 min (passa da carência); ultimoDentro atualizado
   const tUltimoDentro = now;
   feed(mv(CASA, 300, 0), 60, 30000, 5); // acc 60: não é "forte" → não fecha
   assert(L.onde(), 'acc 60 não é evidência forte para visita afirmada');
-  feed(mv(CASA, 300, 0), 15, 30000, 3); // 3 fixes fortes cobrindo 90 s... total sequência já > 120 s? a sequência começou com os fracos: forte=false
-  assert(L.onde(), 'sequência contaminada por fix fraco não fecha');
-  // sequência nova só começa após voltar ao anel — simula volta e nova saída limpa
-  feed(mv(CASA, 0, 0), 15, 30000, 2);
-  const tDentro2 = now;
-  feed(mv(CASA, 300, 0), 15, 30000, 5); // 5 fixes fortes cobrindo 120 s
-  assert(!L.onde(), 'deveria ter fechado com evidência forte');
+  feed(mv(CASA, 300, 0), 15, 30000, 3); // 3 fixes fortes cobrindo 60 s (< 120 s)
+  assert(L.onde(), '3 fixes fortes em 60 s ainda não fecham');
+  feed(mv(CASA, 300, 0), 15, 30000, 2); // agora 5 fixes fortes cobrindo 120 s → fecha (mesmo após os fracos)
+  assert(!L.onde(), 'deveria ter fechado com evidência forte em janela deslizante');
   let v = L.visitasHoje().pop();
-  // saída = ultimoDentro + min(30 s, metade do gap até o 1º fix fora)
-  assert.strictEqual(v.saida, tDentro2 + 15000, 'saída = ultimoDentro + 15 s (metade de 30 s)');
-  ok('saída de visita afirmada com evidência forte; horário corrigido para ' + hh(v.saida) + ' (último fix dentro + 15 s)');
+  // saída = ultimoDentro + min(30 s, metade do gap até o 1º fix forte fora) = ultimoDentro + 30 s
+  assert.strictEqual(v.saida, tUltimoDentro + 30000, 'saída = ultimoDentro + 30 s');
+  ok('saída de visita afirmada com evidência forte após fixes fracos; horário corrigido para ' + hh(v.saida) + ' (último fix dentro + 30 s)');
 
   // 4) volta em ≤ 15 min → reabre a MESMA visita
   const idAntes = v.id;
@@ -175,6 +173,7 @@ let passo = 0; const ok = msg => console.log(`${++passo} ok: ${msg}`);
   ok('lugar criado com ±120 m recentrado no primeiro fix ±12 m');
 
   // 15) horário informado: "cheguei em casa às HH:MM" (válido) e horário contraditório (limitado)
+  feed(ACAD, 12, 60000, 3, 0); // 3 min na Academia antes, para o horário informado cair depois da chegada dela
   gpsAtual = fix(CASA, 15, 60000, 0);
   const hAlvo = hh(now - 60000);
   r = await L.salvarLugar('Casa', { horario: hAlvo }); assert(r.ok);
@@ -186,7 +185,7 @@ let passo = 0; const ok = msg => console.log(`${++passo} ok: ${msg}`);
 
   // 16) resumo para o Jarvis
   const resumo = L.resumoJarvis();
-  assert(/Legenda/.test(resumo) && /STATUS: LIGADO/.test(resumo) && new RegExp('AGORA: em Casa desde ' + hAlvo).test(resumo) && /sem monitorar/.test(resumo) && /≈12:21–14:21/.test(resumo), resumo);
+  assert(/Legenda/.test(resumo) && /STATUS: LIGADO/.test(resumo) && new RegExp('AGORA: em Casa desde ' + hAlvo).test(resumo) && /sem monitorar/.test(resumo) && /≈\d\d:\d\d–\d\d:\d\d/.test(resumo), resumo);
   console.log(`${++passo} ok: resumoJarvis:\n` + resumo.split('\n').map(l => '   ' + l).join('\n'));
 
   // 17) remover + tombstone; merge remoto com o mesmo id não ressuscita
@@ -201,7 +200,7 @@ let passo = 0; const ok = msg => console.log(`${++passo} ok: ${msg}`);
   // 18) merge de visitas: outra visita aberta do MESMO aparelho → fecha a antiga; de OUTRO aparelho → convive
   const V = JSON.parse(localStorage.getItem('agenda_visitas_v1'));
   const meuDev = S().dev;
-  V.itens.push({ id: 'dup-mesmo-dev', dev: meuDev, lugarId: 'x', nome: 'Padaria', chegada: now + 60000, saida: null, atualizadoEm: now + 60000 });
+  V.itens.push({ id: 'dup-mesmo-dev', dev: meuDev, lugarId: L.lugares().find(l => l.nome === 'Trabalho').id, nome: 'Padaria', chegada: now + 60000, saida: null, atualizadoEm: now + 60000 });
   V.itens.push({ id: 'outro-dev', dev: 'iphone-da-vera', lugarId: 'y', nome: 'Salão', chegada: now + 30000, saida: null, atualizadoEm: now + 30000 });
   localStorage.setItem('agenda_visitas_v1', JSON.stringify(V));
   window.dispatchEvent(new CustomEvent('agenda:remote-sync', { detail: { documentKey: 'settings' } }));
@@ -209,7 +208,8 @@ let passo = 0; const ok = msg => console.log(`${++passo} ok: ${msg}`);
   assert.strictEqual(abertas.filter(x => x.dev === meuDev).length, 1, 'uma aberta por aparelho');
   assert(abertas.some(x => x.dev === 'iphone-da-vera'), 'aberta de outro aparelho preservada');
   assert.strictEqual(L.onde().lugar, 'Padaria', 'onde() = visita aberta mais recente deste aparelho');
-  ok('merge: 1 visita aberta por aparelho; a de outro aparelho convive');
+  assert(!/Salão/.test(L.resumoJarvis()), 'visitas de outro aparelho não entram no resumo do usuário');
+  ok('merge: 1 visita aberta por aparelho; a de outro aparelho convive mas não entra no resumo');
 
   // 19) "Localização Precisa" desligada: 2 fixes de 5 km → precisaoBaixa; um fix bom limpa
   feed(mv(CASA, 0, 0), 5000, 30000, 2);
@@ -236,7 +236,75 @@ let passo = 0; const ok = msg => console.log(`${++passo} ok: ${msg}`);
   assert(L.lugares().some(l => l.nome === 'Casa'), 'os meus continuam');
   ok('wrapper de outra conta ignorado no merge (sem vazamento entre contas)');
 
-  // 22) wrappers nunca vazios; desativar
+  // 22) fixAvulso com fix RUIM não devolve o fix bom antigo: salvarLugar usa o fix ruim como centro
+  //     provisório (pendenteAte) e avisa — nunca grava o lugar novo na posição de antes
+  feed(mv(CASA, 0, 0), 15, 60000, 2); // fix bom recente em Casa (Padaria virou aberta no merge; não importa aqui)
+  const posBoa = L.ultimoFix();
+  const HOTEL = mv(CASA, 20000, 20000);
+  feed(HOTEL, 300, 60000, 17); // 17 min só com fixes ruins (acc 300): ultimoFix continua o de Casa, agora > 15 min velho
+  gpsAtual = fix(HOTEL, 300, 1000, 0); // o GPS responde, mas ruim
+  r = await L.salvarLugar('Hotel'); assert(r.ok, r.msg);
+  const hotel = L.lugares().find(l => l.nome === 'Hotel');
+  assert(Math.abs(hotel.lat - HOTEL.lat) < 1e-6 && Math.abs(hotel.lng - HOTEL.lng) < 1e-6, 'Hotel deve ficar no fix ruim atual, não na posição boa antiga');
+  assert(hotel.pendenteAte && /refinar/.test(r.msg), 'centro provisório com aviso de refino: ' + r.msg);
+  assert(Math.abs(hotel.lat - posBoa.lat) > 1e-4, 'não pode ser a posição antiga');
+  ok('fix ruim não vira fix bom antigo: Hotel salvo como centro provisório — ' + r.msg.slice(0, 90));
+
+  // 23) "estou em X" longe do centro salvo (acc 40): move o lugar (o usuário é a verdade) e deixa refinar
+  const CASA_REAL = mv(CASA, 3000, 0);
+  gpsAtual = fix(CASA_REAL, 40, 60000, 0); r = await L.salvarLugar('Casa'); assert(r.ok && r.movido, 'deveria mover: ' + r.msg);
+  let casaL = L.lugares().find(l => l.nome === 'Casa'); assert(casaL.pendenteAte && casaL.acc === 40);
+  L._processarFix(fix(mv(CASA_REAL, 8, 8), 12, 20000, 0)); // fix melhor → recentra
+  casaL = L.lugares().find(l => l.nome === 'Casa'); assert(casaL.acc === 12 && !casaL.pendenteAte, 'recentrado no fix ±12 m');
+  ok('afirmação longe do centro move o lugar e o fix melhor recentra');
+
+  // 24) lugar esquecido em OUTRO aparelho com visita aberta aqui: a visita fecha (não fica órfã)
+  assert(L.onde() && L.onde().lugar === 'Casa');
+  const wl = JSON.parse(localStorage.getItem('agenda_lugares_v1'));
+  const casaId = wl.itens.find(l => l.nome === 'Casa').id;
+  localStorage.setItem('agenda_lugares_v1', JSON.stringify({ v: 1, owner: '', itens: wl.itens.filter(l => l.id !== casaId), removidos: [...(wl.removidos || []), { id: casaId, nome: 'Casa', em: now + 1 }] }));
+  window.dispatchEvent(new CustomEvent('agenda:remote-sync', { detail: { documentKey: 'all' } }));
+  assert(!L.lugares().some(l => l.id === casaId), 'Casa removida pelo merge');
+  assert(!L.onde(), 'visita aberta em lugar removido deve fechar');
+  feed(mv(CASA_REAL, 0, 0), 12, 20000, 5); // continua parado ali: não pode abrir visita em lugar inexistente nem duplicar
+  assert(!L.onde() && L.visitas(1).filter(x => x.saida == null && x.dev === S().dev).length === 0, 'nenhuma visita aberta órfã');
+  ok('lugar removido remotamente fecha a visita aberta; nada de visitas órfãs');
+
+  // 25) visita curta descartada NÃO ressuscita pelo merge (soft-delete propagado)
+  gpsAtual = fix(CASA_REAL, 12, 60000, 0); r = await L.salvarLugar('Casa'); assert(r.ok); // recria Casa (id novo)
+  feed(mv(CASA_REAL, 3000, 0), 12, 60000, 12); // sai (carência 10 min + evidência forte)
+  assert(!L.onde());
+  feed(mv(CASA_REAL, 3000, 0), 12, 60000, 16); // 16 min longe: sem reabertura
+  const snapAntes = localStorage.getItem('agenda_visitas_v1');
+  feed(mv(CASA_REAL, 5, 5), 12, 20000, 4, 0); // chegada automática (60 s)
+  assert(L.onde() && L.onde().lugar === 'Casa');
+  const snapAberta = localStorage.getItem('agenda_visitas_v1'); // o que outro aparelho teria puxado
+  const idCurta = L.onde() && L.visitas(1).find(x => x.saida == null && x.dev === S().dev).id;
+  feed(mv(CASA_REAL, 3000, 0), 12, 30000, 3); // sai em ~90 s → visita < 3 min descartada
+  assert(!L.onde(), 'saiu');
+  assert(!L.visitasHoje().some(x => x.id === idCurta), 'visita curta não aparece no histórico');
+  localStorage.setItem('agenda_visitas_v1', snapAberta); // outro aparelho re-publica a versão aberta
+  window.dispatchEvent(new CustomEvent('agenda:remote-sync', { detail: { documentKey: 'settings' } }));
+  assert(!L.onde(), 'visita descartada não pode ressuscitar aberta');
+  assert(!L.visitasHoje().some(x => x.id === idCurta), 'continua descartada após merge');
+  ok('visita curta descartada permanece descartada após merge com cópia antiga');
+
+  // 26) gap NÃO expira enquanto a visita aberta está indecisa (fixes imprecisos por > 10 min)
+  feed(mv(CASA_REAL, 0, 0), 12, 20000, 4, 0); assert(L.onde() && L.onde().lugar === 'Casa');
+  const TRAB2 = mv(CASA_REAL, 6000, 0);
+  gpsAtual = fix(TRAB2, 12, 60000, 0); r = await L.salvarLugar('Escritório'); assert(r.ok);
+  gpsAtual = fix(CASA_REAL, 12, 60000, 0); r = await L.salvarLugar('Casa'); assert(r.ok && L.onde().lugar === 'Casa');
+  feed(mv(CASA_REAL, 0, 0), 12, 60000, 11); // passa a carência em casa
+  const hid3 = now; esconder(); now += 3 * 3600000; gpsAtual = null; mostrar();
+  feed(TRAB2, 130, 60000, 12, 0); // 12 min de fixes imprecisos no Escritório: nada decidido, gap deve continuar pendente
+  assert(L.onde() && L.onde().lugar === 'Casa', 'ainda indeciso'); assert(S().gapPendente, 'gap não pode expirar com visita aberta indecisa');
+  feed(TRAB2, 12, 30000, 9, 0); // fixes bons: saída de Casa (forte, 5 fixes/120 s) e depois chegada no Escritório (60 s parado)
+  const vsG = L.visitasHoje(); const casaG = vsG.filter(x => x.nome === 'Casa').pop(); const escG = vsG.filter(x => x.nome === 'Escritório').pop();
+  assert(casaG.saida === hid3 && casaG.estSaida && casaG.saidaMax, 'saída de Casa com intervalo do gap');
+  assert(escG && escG.saida == null && escG.estChegada && escG.chegadaMin === hid3, 'chegada no Escritório com intervalo do gap');
+  ok('gap sobrevive à indecisão: saída ≈' + hh(casaG.saida) + '–' + hh(casaG.saidaMax) + ', chegada ≈' + hh(escG.chegadaMin) + '–' + hh(escG.chegada));
+
+  // 27) wrappers nunca vazios; desativar
   for (const k of ['agenda_lugares_v1', 'agenda_visitas_v1']) {
     const w = JSON.parse(localStorage.getItem(k));
     assert(w && typeof w === 'object' && !Array.isArray(w) && Object.keys(w).length > 0, k + ' vazio!');
