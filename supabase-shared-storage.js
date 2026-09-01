@@ -19,7 +19,11 @@
     history: ['agenda_historico_v1', []],
     investments: ['agenda_investimentos_v1', {}],
     accounts: ['agenda_contas_v1', {}],
-    refaturamentos: ['agenda_refaturamentos_v1', []]
+    refaturamentos: ['agenda_refaturamentos_v1', []],
+    // Lugares e visitas do Jarvis (localizacao.js). São objetos {v, itens:[]}
+    // de propósito: um array vazio cairia no guard de "payload vazio" abaixo.
+    lugares: ['agenda_lugares_v1', {}],
+    visitas: ['agenda_visitas_v1', {}]
   };
   // A tabela antiga aceita apenas as chaves históricas. Dados financeiros
   // adicionais ficam aninhados em "settings" para sincronizar sem exigir uma
@@ -27,7 +31,9 @@
   const NESTED_IN_SETTINGS = {
     investments: 'investments',
     accounts: 'accounts',
-    refaturamentos: 'refaturamentos'
+    refaturamentos: 'refaturamentos',
+    lugares: 'lugares',
+    visitas: 'visitas'
   };
   const LOCAL_TO_DOC = new Map(Object.entries(DOCUMENTS).map(([doc, [key]]) => [key, doc]));
   const originalSetItem = Storage.prototype.setItem;
@@ -267,7 +273,10 @@
   function markDirty(doc) {
     const d = dirty(); d[doc] = Date.now(); saveDirty(d);
     clearTimeout(timer);
-    timer = setTimeout(() => pushDocs([doc], true).catch(handle), 1400);
+    // Envia TODAS as chaves sujas, não só a última: duas gravações seguidas
+    // (ex.: lugares e depois visitas) cancelavam o timer anterior e a primeira
+    // ficava presa em agenda_shared_dirty_v1 até alguém abrir o Jarvis.
+    timer = setTimeout(() => pushDocs(Object.keys(dirty()).filter(k => DOCUMENTS[k]), true).catch(handle), 1400);
   }
 
   function patchStorage() {
