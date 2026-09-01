@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v233-receita-70mg';
+const CACHE = 'agenda-lagares-v234-jarvis-localizacao';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=13" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -7,7 +7,7 @@ const FINANCEIRO_SCRIPT = '<script src="./financeiro.js?v=2" defer><\/script>';
 const NOTAS_SCRIPT = '<script src="./notas.js?v=8" defer><\/script>';
 const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3" defer><\/script>';
 const SUPABASE_CONFIG_SCRIPT = '<script src="./supabase-project-config.js?v=1" defer><\/script>';
-const SUPABASE_SCRIPT = '<script src="./supabase-shared-storage.js?v=8" defer><\/script>';
+const SUPABASE_SCRIPT = '<script src="./supabase-shared-storage.js?v=9" defer><\/script>';
 const SUPABASE_LOGIN_SCRIPT = '<script src="./supabase-login-ui.js?v=4" defer><\/script>';
 const SIMPLE_ACCESS_SCRIPT = '<script src="./supabase-simple-access.js?v=5" defer><\/script>';
 const SHARING_SCRIPT = '<script src="./agenda-sharing.js?v=4" defer><\/script>';
@@ -28,6 +28,7 @@ const SEQ_SCRIPT = '<script src="./sequencial.js?v=3" defer><\/script>';
 const PARCEIRO_SCRIPT = '<script src="./parceiro.js?v=2" defer><\/script>';
 const MESADA_SCRIPT = '<script src="./mesada-sync.js?v=1" defer><\/script>';
 const LEMBRETE_SCRIPT = '<script src="./lembrete-persistente.js?v=1" defer><\/script>';
+const LOCAL_SCRIPT = '<script src="./localizacao.js?v=1" defer><\/script>';
 
 const STATIC_ASSET_RE = /\.(?:js|css|png|jpg|jpeg|svg|webp|woff2?)$/;
 
@@ -88,6 +89,7 @@ self.addEventListener('fetch', event => {
       if (!isAuxPage && !html.includes('parceiro.js')) html = html.replace('</body>', `${PARCEIRO_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('mesada-sync.js')) html = html.replace('</body>', `${MESADA_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('lembrete-persistente.js')) html = html.replace('</body>', `${LEMBRETE_SCRIPT}</body>`);
+      if (!isAuxPage && !html.includes('localizacao.js')) html = html.replace('</body>', `${LOCAL_SCRIPT}</body>`);
       const headers = new Headers(response.headers);
       headers.delete('content-length');
       headers.delete('content-encoding');

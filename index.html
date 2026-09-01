@@ -823,7 +823,7 @@
     @media(min-width:480px){#jarvis-panel{left:max(18px,env(safe-area-inset-left));right:auto;width:400px}}
   </style>
 
-  <div id="app-ver"><button id="app-update" type="button" title="Atualizar o app" aria-label="Atualizar o app"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></button><span id="app-ver-num">v63</span></div>
+  <div id="app-ver"><button id="app-update" type="button" title="Atualizar o app" aria-label="Atualizar o app"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></button><span id="app-ver-num">v64</span></div>
   <button id="jarvis-btn" class="pulse" type="button" aria-label="Abrir Jarvis">
     <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="16" cy="16" r="15" stroke="#75cbff" stroke-width="1.5" opacity=".4"/>
@@ -854,6 +854,7 @@
     <div id="jarvis-chips">
       <button class="j-chip" type="button" data-p="Me dê um briefing do meu dia: tarefas de hoje e o que priorizar."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 10h6M9 14h4"/></svg>Meu dia</button>
       <button class="j-chip" type="button" data-p="Escreva uma mensagem curta, educada e pronta para eu enviar no WhatsApp ao Dr. Valmocir. Comece com uma saudação de bom dia. Peça duas receitas: a do Venvanse de 70 mg e a de fracionamento de 35 mg. Pergunte se ele pode deixar as duas separadas para eu buscar no consultório e qual o melhor horário. Não invente nada além disso — nem outro medicamento, nem data, nem quantidade — e responda só com o texto da mensagem, sem comentário antes nem depois."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M8 8h4.5a2.5 2.5 0 0 1 0 5H8V8m0 5v3.5"/><path d="M12.5 13 16 16.5"/></svg>Receita</button>
+      <button class="j-chip" type="button" data-p="Onde estou agora, há quanto tempo estou aqui e por onde passei hoje, com os horários de chegada e saída?"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>Onde estou</button>
       <button class="j-chip" type="button" data-p="Resumo da minha semana: o que tenho nos próximos 7 dias?"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>Semana</button>
       <button class="j-chip" type="button" data-p="Analise minhas tarefas pendentes e sugira uma ordem de prioridade."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.4c.6.6 1 1.4 1 2.6h6c0-1.2.4-2 1-2.6A6 6 0 0 0 12 3z"/></svg>Organizar</button>
       <button class="j-chip" type="button" data-p="Como está o clima em Palmas, Tocantins, agora e nas próximas horas?"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>Clima</button>
@@ -980,15 +981,24 @@
           '\nCONCLUIDAS HOJE: '+feitasHoje;
       }catch(_){return'(indisponivel)';}
     }
+    // Bloco de localizacao vindo de localizacao.js (window.AgendaLocal). Se o
+    // modulo nao carregou, o Jarvis fica sabendo que o recurso esta indisponivel.
+    function localContext(){
+      try{const L=window.AgendaLocal;return L&&L.resumoJarvis?L.resumoJarvis():'LOCALIZACAO: modulo indisponivel nesta versao.';}
+      catch(_){return'LOCALIZACAO: (indisponivel)';}
+    }
     function systemPrompt(){
       const now=nowInfo();
       return `Voce e o J.A.R.V.I.S, assistente pessoal inteligente de Lagares, tecnico da Energisa Tocantins (departamento DCMD), morador de Palmas-TO. Personalidade: prestativo, direto, levemente sofisticado como o Jarvis do Homem de Ferro; trata o usuario como "Senhor" ocasionalmente. Sempre responda em portugues brasileiro, de forma concisa.
 DATA E HORA ATUAL: ${now.human} (ISO: ${now.iso}).
 AGENDA DO USUARIO (dados reais — use como verdade absoluta, nao invente; ao perguntarem "hoje" use a secao HOJE):
 ${agendaContext()}
-VOCE CONTROLA A AGENDA. Responda SEMPRE e SOMENTE com um JSON puro (sem markdown, sem crases) neste formato:
-{"action":"none|add_task|complete_task|delete_task|edit_task|web_search","task":{"text":"","date":"YYYY-MM-DD","time":"HH:MM ou vazio","tag":"trabalho|pessoal|casa|faculdade|saude|financeiro|outros"},"query":"","transcript":"","reply":"sua resposta ao usuario em PT-BR"}
-Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (preencha task; se nao houver horario, deixe time vazio; escolha a tag mais adequada). Use complete_task quando disserem que concluiram algo, e delete_task para remover/cancelar (preencha query com palavras-chave exatas do texto da tarefa). Use edit_task para mudar data, horario, nome ou tag de uma tarefa existente: query = palavras do texto ATUAL da tarefa; task = SOMENTE os campos novos (deixe vazio o que nao muda). Use web_search quando o usuario pedir informacao do mundo real que nao esta na agenda (noticias, clima, precos, cotacoes, resultados, fatos atuais): preencha query com a pergunta completa e em reply diga algo curto como "Um instante, Senhor, consultando." Use none para conversas e perguntas sobre a propria agenda. Quando receber AUDIO, preencha transcript com a transcricao exata em PT-BR do que o usuario falou. Calcule datas relativas (amanha, segunda que vem) a partir da data atual. No reply, confirme a acao naturalmente. Seja conciso: reply com no maximo 2-3 frases diretas, salvo quando o usuario pedir detalhes.`;
+${localContext()}
+VOCE CONTROLA A AGENDA E A LOCALIZACAO. Responda SEMPRE e SOMENTE com um JSON puro (sem markdown, sem crases) neste formato:
+{"action":"none|add_task|complete_task|delete_task|edit_task|web_search|save_place|delete_place|location_on|location_off","task":{"text":"","date":"YYYY-MM-DD","time":"HH:MM ou vazio","tag":"trabalho|pessoal|casa|faculdade|saude|financeiro|outros"},"query":"","transcript":"","reply":"sua resposta ao usuario em PT-BR"}
+Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (preencha task; se nao houver horario, deixe time vazio; escolha a tag mais adequada). Use complete_task quando disserem que concluiram algo, e delete_task para remover/cancelar (preencha query com palavras-chave exatas do texto da tarefa). Use edit_task para mudar data, horario, nome ou tag de uma tarefa existente: query = palavras do texto ATUAL da tarefa; task = SOMENTE os campos novos (deixe vazio o que nao muda). Use web_search quando o usuario pedir informacao do mundo real que nao esta na agenda (noticias, clima, precos, cotacoes, resultados, fatos atuais): preencha query com a pergunta completa e em reply diga algo curto como "Um instante, Senhor, consultando." Use none para conversas e perguntas sobre a propria agenda.
+LOCALIZACAO: use save_place quando o usuario AFIRMAR que esta em um lugar ou pedir para salvar o lugar atual ("estou em casa", "agora estou no trabalho", "cheguei na academia", "salve aqui como Casa"): query = nome curto do lugar com inicial maiuscula (ex.: Casa, Trabalho, Academia, Casa da Vera); se ele disser a hora em que chegou ("cheguei em casa as 18h"), preencha task.time com HH:MM; isso grava a posicao atual do GPS como esse lugar e registra a chegada — no reply confirme de forma curta, sem inventar horarios. Use delete_place para esquecer um lugar (query = nome). Use location_on / location_off quando pedirem para ligar/ativar ou desligar o rastreio de localizacao. Perguntas como "onde estou", "quanto tempo fiquei em casa hoje", "que horas sai do trabalho", "por onde passei" sao respondidas com action none usando SOMENTE a secao LOCALIZACAO (nunca invente horarios ou lugares; respeite a legenda: ≈ e intervalos sao estimativas de quando o app estava fechado — diga isso ao usuario; "sem monitorar" significa que o app ficou fechado e presumiu-se que ele continuou no lugar; se o rastreio estiver desligado ou sem permissao, explique e ofereca ligar).
+Quando receber AUDIO, preencha transcript com a transcricao exata em PT-BR do que o usuario falou. Calcule datas relativas (amanha, segunda que vem) a partir da data atual. No reply, confirme a acao naturalmente. Seja conciso: reply com no maximo 2-3 frases diretas, salvo quando o usuario pedir detalhes.`;
     }
 
     function stripForSpeech(t){return t.replace(/J\.?A\.?R\.?V\.?I\.?S\.?/gi,'Jarvis').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,'').replace(/\*/g,'').replace(/^[\s]*[-•]\s+/gm,'');}
@@ -1241,7 +1251,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       if(reply){
         const j={action:'none',reply};
         const tr=rgxStr(t,'transcript');if(tr)j.transcript=tr;
-        const am=/"action"\s*:\s*"(none|add_task|complete_task|delete_task|edit_task|web_search)"/.exec(t);
+        const am=/"action"\s*:\s*"(none|add_task|complete_task|delete_task|edit_task|web_search|save_place|delete_place|location_on|location_off)"/.exec(t);
         if(am){
           j.action=am[1];
           const tx=rgxStr(t,'text'),dm=/"date"\s*:\s*"(\d{4}-\d{2}-\d{2})"/.exec(t),
@@ -1252,7 +1262,13 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
           }else if(j.action==='edit_task'){
             if(qr){j.query=qr;j.task={text:tx||'',date:dm?dm[1]:'',time:tm?tm[1]:'',tag:tg||''};}
             else j.action='none';
-          }else if(qr)j.query=qr;
+          }else if(qr){j.query=qr;if(j.action==='save_place'&&tm)j.task={text:'',date:'',time:tm[1],tag:''};}
+          else if(j.action==='location_on'||j.action==='location_off'){/* nao precisam de query */}
+          else if(j.action==='save_place'||j.action==='delete_place'){
+            // sem o nome do lugar nao da para agir — e a resposta do modelo ja "confirmou": troca por uma pergunta
+            const pergunta=j.action==='delete_place'?'Qual lugar devo esquecer, Senhor?':'Entendi, Senhor. Como devo chamar este lugar?';
+            j.action='none';j.reply=pergunta;
+          }
           else if(j.action!=='none')j.action='none';
         }
         return j;
@@ -1260,7 +1276,24 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       return{action:'none',reply:'Desculpe, Senhor, tive uma falha ao formatar a resposta. Pode repetir?'};
     }
 
+    // Acoes de localizacao. Devolvem uma Promise que resolve em texto (nota de
+    // sucesso) ou em {erro:'...'} — o erro substitui a resposta do modelo, porque
+    // o Gemini ja confirmou a acao sem saber se o GPS respondeu.
+    function runLocalAction(j){
+      const L=window.AgendaLocal;
+      if(!L)return Promise.resolve({erro:'O modulo de localizacao nao carregou nesta versao, Senhor. Atualize o app e tente de novo.'});
+      const fmt=r=>r&&r.ok?String(r.msg||'Feito.'):{erro:String((r&&r.msg)||'Nao consegui concluir a acao de localizacao.')};
+      if(j.action==='save_place')return j.query?Promise.resolve(L.salvarLugar(j.query,{horario:(j.task&&j.task.time)||''})).then(fmt):Promise.resolve({erro:'Qual o nome do lugar, Senhor?'});
+      if(j.action==='delete_place')return Promise.resolve(fmt(j.query?L.removerLugar(j.query):{ok:false,msg:'Qual lugar devo esquecer, Senhor?'}));
+      if(j.action==='location_on')return Promise.resolve(L.ativar()).then(fmt);
+      if(j.action==='location_off')return Promise.resolve(fmt(L.desativar()));
+      return Promise.resolve(null);
+    }
     function runAction(j){
+      if(/^(save_place|delete_place|location_on|location_off)$/.test(String(j.action||''))){
+        try{return runLocalAction(j).catch(e=>({erro:'Falha na localizacao: '+String((e&&e.message)||e)}));}
+        catch(e){return Promise.resolve({erro:'Falha na localizacao: '+String((e&&e.message)||e)});}
+      }
       if(!window.AgendaAPI)return null;
       try{
         if(j.action==='add_task'&&j.task&&j.task.text){
@@ -1307,7 +1340,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
               body:JSON.stringify({
                 system_instruction:{parts:[{text:sys}]},
                 contents,
-                generationConfig:{temperature:0.6,maxOutputTokens:1600,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0},responseSchema:{type:'OBJECT',properties:{action:{type:'STRING',enum:['none','add_task','complete_task','delete_task','edit_task','web_search']},task:{type:'OBJECT',properties:{text:{type:'STRING'},date:{type:'STRING'},time:{type:'STRING'},tag:{type:'STRING'}}},query:{type:'STRING'},transcript:{type:'STRING'},reply:{type:'STRING'}},required:['action','reply']}}
+                generationConfig:{temperature:0.6,maxOutputTokens:1600,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0},responseSchema:{type:'OBJECT',properties:{action:{type:'STRING',enum:['none','add_task','complete_task','delete_task','edit_task','web_search','save_place','delete_place','location_on','location_off']},task:{type:'OBJECT',properties:{text:{type:'STRING'},date:{type:'STRING'},time:{type:'STRING'},tag:{type:'STRING'}}},query:{type:'STRING'},transcript:{type:'STRING'},reply:{type:'STRING'}},required:['action','reply']}}
               })
             },14000);
             const data=await res.json();
@@ -1385,6 +1418,18 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
           modelTurn=reply;
         }else{
           actionNote=runAction(j);
+          if(actionNote&&typeof actionNote.then==='function'){
+            // acao assincrona (GPS): espera o resultado antes de falar
+            statusEl.textContent='LOCALIZANDO…';
+            try{actionNote=await actionNote;}catch(_){actionNote=null;}
+          }
+          if(actionNote&&typeof actionNote==='object'){
+            // a acao falhou: a resposta do modelo nao vale mais — fala o erro real
+            reply=String(actionNote.erro||'Nao consegui concluir, Senhor.');
+            typing.textContent=reply;
+            modelTurn=JSON.stringify({action:'none',reply});
+            actionNote=null;
+          }
         }
         history.push({role:'model',parts:[{text:modelTurn}]});
         if(history.length>30)history=history.slice(-30);
@@ -1404,7 +1449,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
         if(voiceOn)speak(reply);
       }
       busy=false;send.disabled=false;
-      if(/PROCESSANDO|PESQUISANDO/.test(statusEl.textContent))statusEl.textContent='ASSISTENTE PESSOAL \u00B7 ONLINE';
+      if(/PROCESSANDO|PESQUISANDO|LOCALIZANDO/.test(statusEl.textContent))statusEl.textContent='ASSISTENTE PESSOAL \u00B7 ONLINE';
       msgs.scrollTop=msgs.scrollHeight;
     }
 
@@ -1488,7 +1533,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
   <script src="./calendario-cheio.js?v=3" defer></script>
   <script src="./header-cleanup.js?v=6" defer></script>
   <script src="./supabase-project-config.js?v=1" defer></script>
-  <script src="./supabase-shared-storage.js?v=7" defer></script>
+  <script src="./supabase-shared-storage.js?v=9" defer></script>
   <script src="./supabase-login-ui.js?v=4" defer></script>
   <script src="./supabase-simple-access.js?v=5" defer></script>
   <script src="./auth-gate.js?v=1" defer></script>
@@ -1497,5 +1542,6 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
   <script src="./parceiro.js?v=2" defer></script>
   <script src="./mesada-sync.js?v=1" defer></script>
   <script src="./lembrete-persistente.js?v=1" defer></script>
+  <script src="./localizacao.js?v=1" defer></script>
 </body>
 </html>
