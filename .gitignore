@@ -1,0 +1,6 @@
+# livro-razao do plugin analise-verificada (local, por analise)
+.analise/
+
+# python
+__pycache__/
+*.pyc

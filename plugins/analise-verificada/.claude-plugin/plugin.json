@@ -1,0 +1,11 @@
+{
+  "name": "analise-verificada",
+  "displayName": "Analise Verificada",
+  "version": "1.0.0",
+  "description": "Obriga que todo numero de uma analise tenha origem registrada (calculo executado, fonte citavel ou premissa rotulada), recalcula tudo antes da entrega, exige contra-analise e sobrevive a compactacao de contexto.",
+  "author": { "name": "lgrsv" },
+  "repository": "https://github.com/lgrsv/agenda-iphone",
+  "license": "MIT",
+  "keywords": ["analise", "verificacao", "auditoria", "anti-alucinacao", "financeiro"],
+  "hooks": "./hooks/hooks.json"
+}

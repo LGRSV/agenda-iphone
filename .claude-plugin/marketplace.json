@@ -1,0 +1,15 @@
+{
+  "name": "agenda-tools",
+  "owner": { "name": "lgrsv", "url": "https://github.com/lgrsv" },
+  "description": "Plugins do projeto agenda-iphone",
+  "plugins": [
+    {
+      "name": "analise-verificada",
+      "source": "./plugins/analise-verificada",
+      "description": "Numero sem origem registrada nao sai na resposta.",
+      "version": "1.0.0",
+      "category": "quality",
+      "keywords": ["analise", "verificacao", "auditoria"]
+    }
+  ]
+}
