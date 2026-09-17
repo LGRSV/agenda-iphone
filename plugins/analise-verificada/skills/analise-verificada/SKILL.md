@@ -29,6 +29,13 @@ alias verif='python3 "$CLAUDE_PLUGIN_ROOT/scripts/verif.py"'
 
 ## Procedimento
 
+### 0. Ao retomar, leia o livro antes de lembrar dele
+
+Em conversa que já vem andando, ou depois de qualquer compactação de contexto,
+**rode `verif status` e `verif relatorio` antes de usar qualquer número.** Os
+hooks tentam reinjetar o livro sozinhos, mas essa entrega não é garantida (veja
+"Limites" no README). O arquivo em disco é a fonte; sua lembrança dele não é.
+
 ### 1. Abrir
 
 ```bash

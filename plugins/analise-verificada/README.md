@@ -85,6 +85,28 @@ horas, versões semver, referências `#123`, marcadores de lista e anos
 1900–2100. `R$ 2024` **não** é tratado como ano. `--anos` audita anos também,
 `--ignorar '<regex>'` acrescenta exceções.
 
+## O que foi verificado em sessão real
+
+Testado com o plugin instalado (`claude plugin install`) e sessões `claude -p`
+de verdade, não só em teste unitário:
+
+- **Hook `Stop`: funciona.** Numa sessão real com análise aberta, ele barrou a
+  resposta duas vezes, o contador `bloqueios` foi de 0 a 2 no arquivo do livro,
+  e o modelo mudou o comportamento — parou de afirmar o número e passou a
+  declarar que estava sem verificação. É o mecanismo principal do plugin.
+- **Instalação e registro: funcionam.** `claude plugin details` lista as 3
+  skills e os 3 hooks, com custo fixo de ~488 tokens por sessão.
+- **Hook de contexto: executa e emite corretamente, entrega não confirmada.**
+  O `SessionStart` roda e devolve o `additionalContext` com o livro inteiro
+  (visível no `hook_response` do stream e no transcript). Mas, em modo headless
+  (`claude -p`), dois modelos diferentes perguntados diretamente responderam que
+  não havia análise aberta. O mesmo aconteceu com um teste de controle via
+  `UserPromptSubmit`, o que sugere limitação do modo headless e não do plugin.
+  **Não consegui testar em modo interativo daqui.** Por isso a skill manda rodar
+  `verif status` ao retomar, em vez de confiar na reinjeção.
+- **Hook `PostCompact`: não testado.** Não consegui provocar uma compactação
+  real. O script é o mesmo do `SessionStart`, que comprovadamente executa.
+
 ## Limites honestos
 
 - **Não garante imparcialidade.** Obriga a produzir o artefato da tentativa de
@@ -95,6 +117,10 @@ horas, versões semver, referências `#123`, marcadores de lista e anos
   precisa ser sempre algo que você consiga abrir e conferir.
 - **Falso positivo existe.** Número de contexto (id, código, quantidade) pode
   ser apontado como sem lastro. Use crases, `--ignorar` ou registre como fato.
+- **Skill é instrução, não código.** As 3 skills são Markdown que o modelo lê e
+  segue — o efeito é alto, mas probabilístico, e não dá para testar como se
+  testa uma função. O que é determinístico no plugin é o `verif` (53 testes) e
+  o bloqueio do hook `Stop` (verificado em sessão real). O resto é influência.
 - **O bloqueio tem teto.** Dois bloqueios por análise e depois libera com aviso.
   Sem teto, um falso positivo prenderia a sessão.
 
