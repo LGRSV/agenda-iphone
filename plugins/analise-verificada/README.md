@@ -9,6 +9,20 @@ lastro" — e deixa o rastro em disco para você cobrar.
 
 ## Instalação
 
+**Pessoal, em `~/.claude/`** — vale em todo projeto, sem depender deste repo:
+
+```bash
+git clone https://github.com/lgrsv/agenda-iphone
+./agenda-iphone/plugins/analise-verificada/instalar.sh
+```
+
+Copia as 3 skills e os scripts para `~/.claude/skills/` e acrescenta os hooks ao
+`~/.claude/settings.json`, preservando o que já estiver lá. Rodar de novo
+atualiza sem duplicar. `./instalar.sh --remover` desfaz (os livros-razão dos
+seus projetos ficam).
+
+**Como plugin** — se preferir gerenciar pelo `/plugin`:
+
 ```bash
 /plugin marketplace add lgrsv/agenda-iphone
 /plugin install analise-verificada@agenda-tools

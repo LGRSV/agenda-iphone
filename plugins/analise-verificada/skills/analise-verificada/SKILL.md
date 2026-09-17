@@ -9,11 +9,11 @@ description: Protocolo obrigatório para qualquer análise que produza número �
 com aparência de resultado. O livro-razão (`verif`) existe para tornar isso
 impossível de esconder — de você inclusive.
 
-O executável é `scripts/verif.py` (na raiz do plugin). Use o caminho absoluto ou
-crie um atalho no início da sessão:
+Crie o atalho no início da sessão. Esta linha funciona nas duas formas de
+instalação (plugin ou pessoal em `~/.claude/`):
 
 ```bash
-alias verif='python3 "$CLAUDE_PLUGIN_ROOT/scripts/verif.py"'
+alias verif='python3 "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/skills/analise-verificada}/scripts/verif.py"'
 ```
 
 ## As quatro regras
