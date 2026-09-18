@@ -12,8 +12,8 @@ lastro" — e deixa o rastro em disco para você cobrar.
 **Pessoal, em `~/.claude/`** — vale em todo projeto, sem depender deste repo:
 
 ```bash
-git clone https://github.com/lgrsv/agenda-iphone
-./agenda-iphone/plugins/analise-verificada/instalar.sh
+git clone https://github.com/lgrsv/analise-verificada
+./analise-verificada/instalar.sh
 ```
 
 Copia as 3 skills e os scripts para `~/.claude/skills/` e acrescenta os hooks ao
@@ -24,8 +24,8 @@ seus projetos ficam).
 **Como plugin** — se preferir gerenciar pelo `/plugin`:
 
 ```bash
-/plugin marketplace add lgrsv/agenda-iphone
-/plugin install analise-verificada@agenda-tools
+/plugin marketplace add lgrsv/analise-verificada
+/plugin install analise-verificada@analise-verificada
 ```
 
 Só precisa de `python3` (stdlib apenas). Sem dependências externas.
