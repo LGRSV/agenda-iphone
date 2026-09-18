@@ -137,6 +137,24 @@ desligava o hook, e a resposta final é escrita **depois** do fechamento — foi
 exatamente por ali que a contagem errada passou. Agora a conferência sobrevive
 ao `fechar` por 6 horas e só termina com `verif arquivar`.
 
+## Em ambiente efêmero (Claude Code na web)
+
+O container é reciclado depois de um tempo de inatividade e volta zerado. O
+`.gitignore` sugerido ignora `.analise/` — o que é certo na sua máquina e
+**errado num container descartável**, porque ali o livro-razão evapora junto.
+
+Antes de encerrar uma análise que você quer guardar:
+
+```bash
+verif relatorio --saida procedencia.md   # a tabela de procedência, commitável
+git add -f .analise/ procedencia.md      # -f porque .analise/ está no .gitignore
+git commit -m "livro-razão da análise X" && git push
+```
+
+O `relatorio` sozinho preserva a leitura; só o JSON do livro preserva as
+expressões, que é o que permite o recálculo depois. Se a análise vai ser
+retomada, guarde os dois.
+
 ## Limites honestos
 
 - **Não garante imparcialidade.** Obriga a produzir o artefato da tentativa de

@@ -116,6 +116,14 @@ encerra a vigilância.
 `--forcar` fecha mesmo assim, mas grava as pendências no arquivo — e você
 precisa dizer na resposta o que ficou pendente.
 
+### 6. Se o disco for descartável, exporte antes de sair
+
+Em container efêmero (Claude Code na web), `.analise/` morre com a sessão e o
+`.gitignore` impede que ele suba num push comum. Se a análise precisa sobreviver:
+`verif relatorio --saida procedencia.md` e `git add -f .analise/ procedencia.md`.
+O relatório preserva a leitura; o JSON preserva as expressões, que é o que
+permite recalcular depois.
+
 ## Como a resposta deve sair
 
 Cada número carrega sua origem. Três marcas, sem meio-termo:
