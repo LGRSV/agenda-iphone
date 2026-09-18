@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 
@@ -451,6 +452,83 @@ class TestRegressoes(unittest.TestCase):
             with self.assertRaises(ErroVerif, msg=expr) as c:
                 avaliar(expr, {"x": D(3)})
             self.assertIn("resto(a, b)", str(c.exception), expr)
+
+class TestVigilanciaAposFechar(unittest.TestCase):
+    """Fechar a analise nao pode desligar a conferencia da resposta final.
+
+    Furo encontrado em teste real: o modelo fechou a analise e so depois
+    escreveu a resposta, com um numero inventado que ninguem conferiu.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.cwd = Path(self.tmp.name)
+        self.dir = self.cwd / ".analise"
+        self.env = {k: v for k, v in os.environ.items() if k != "ANALISE_DIR"}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def verif(self, *args):
+        return subprocess.run(VERIF + list(args), capture_output=True, text=True,
+                              cwd=self.tmp.name, env=self.env)
+
+    def stop(self, mensagem):
+        payload = {"hook_event_name": "Stop", "cwd": str(self.cwd),
+                   "last_assistant_message": mensagem}
+        return subprocess.run(HOOK_STOP, input=json.dumps(payload), capture_output=True,
+                              text=True, env=self.env)
+
+    def analise_fechada(self):
+        self.verif("abrir", "T")
+        self.verif("fato", "--rotulo", "total", "--valor", "774029.66", "--fonte", "extrato.csv")
+        self.verif("auditar", "O total e 774.029,66.")
+        self.verif("contra", "--afirmacao", "a", "--teste", "b", "--resultado", "c",
+                   "--veredito", "sustenta")
+        self.assertEqual(self.verif("fechar", "--falseador", "x").returncode, 0)
+
+    def test_numero_novo_apos_fechar_e_barrado(self):
+        self.analise_fechada()
+        r = self.stop("Foram 960 registros validos e o total e R$ 774.029,66.")
+        self.assertEqual(r.returncode, 2, r.stdout)
+        self.assertIn("960", r.stderr)
+
+    def test_resposta_coerente_apos_fechar_passa(self):
+        self.analise_fechada()
+        self.assertEqual(self.stop("O total e R$ 774.029,66.").returncode, 0)
+
+    def test_arquivar_encerra_a_vigilancia(self):
+        self.analise_fechada()
+        self.assertEqual(self.verif("arquivar").returncode, 0)
+        r = self.stop("Foram 960 registros validos e o total e R$ 774.029,66.")
+        self.assertEqual(r.returncode, 0, r.stderr)
+
+    def test_arquivar_recusa_analise_ainda_aberta(self):
+        self.verif("abrir", "T")
+        r = self.verif("arquivar")
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("ainda esta aberta", r.stderr)
+        self.assertEqual(self.verif("arquivar", "--forcar").returncode, 0)
+
+    def test_vigilancia_expira_apos_a_janela(self):
+        self.analise_fechada()
+        caminho = next(self.dir.glob("*.json"))
+        d = json.loads(caminho.read_text())
+        antigo = datetime.now(timezone.utc) - timedelta(hours=verif.JANELA_VIGILANCIA_H + 1)
+        d["fechada_em"] = antigo.isoformat(timespec="seconds")
+        caminho.write_text(json.dumps(d))
+        r = self.stop("Foram 960 registros validos.")
+        self.assertEqual(r.returncode, 0, r.stderr)
+
+    def test_fechar_avisa_que_a_vigilancia_continua(self):
+        self.verif("abrir", "T")
+        self.verif("fato", "--rotulo", "a", "--valor", "1", "--fonte", "f")
+        self.verif("auditar", "vale 1")
+        self.verif("contra", "--afirmacao", "a", "--teste", "b", "--resultado", "c",
+                   "--veredito", "refuta")
+        r = self.verif("fechar", "--falseador", "x")
+        self.assertIn("arquivar", r.stdout)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

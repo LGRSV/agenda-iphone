@@ -19,7 +19,7 @@ try:
         RE_NUMERO,
         auditar_texto,
         dir_para_cwd,
-        livro_aberto,
+        livro_vigiado,
         salvar,
         texto_auditoria,
         _mascarar,
@@ -35,10 +35,10 @@ def analisar(payload: dict) -> int:
     if not mensagem.strip():
         return 0
     base = dir_para_cwd(payload.get("cwd"))
-    aberto = livro_aberto(base)
-    if aberto is None:
+    vigiado = livro_vigiado(base)
+    if vigiado is None:
         return 0
-    caminho, dados = aberto
+    caminho, dados = vigiado
     if not RE_NUMERO.search(_mascarar(mensagem, True)):
         return 0
 
@@ -57,12 +57,19 @@ def analisar(payload: dict) -> int:
         return 0
 
     bloqueios = int(dados.get("bloqueios", 0))
+    fechada = dados.get("status") == "fechada"
+    estado = "ja foi fechada, mas a resposta final" if fechada else "esta aberta e a resposta"
+    saida = (
+        "Se a analise ja acabou de verdade, encerre a conferencia com 'verif arquivar'."
+        if fechada
+        else "Se a analise ja acabou, feche com 'verif fechar'."
+    )
     aviso = (
-        f"[analise-verificada] A analise '{dados['titulo']}' esta aberta e a resposta "
+        f"[analise-verificada] A analise '{dados['titulo']}' {estado} "
         "tem numero sem origem registrada:\n"
         + "\n".join(dict.fromkeys(pendencias))
         + "\n\nRegistre com 'verif calc/fato/premissa', ou rotule explicitamente o que "
-        "for estimativa, ou feche a analise com 'verif fechar'."
+        "for estimativa. " + saida
     )
     if bloqueios >= MAX_BLOQUEIOS:
         print(json.dumps({"systemMessage": aviso + "\n(limite de bloqueios atingido; seguindo)"}))

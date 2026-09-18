@@ -68,6 +68,7 @@ verif auditar rascunho.md          # exit 1 se sobrar número sem lastro
 verif contra --afirmacao "..." --teste "..." --resultado "..." --veredito refuta
 verif fechar --falseador "o que mudaria esta conclusão"
 verif relatorio                    # tabela de procedência em markdown
+verif arquivar                     # encerra a conferência da resposta final
 ```
 
 O livro fica em `./.analise/<titulo>.json` — texto puro, legível, versionável.
@@ -120,6 +121,20 @@ de verdade, não só em teste unitário:
   `verif status` ao retomar, em vez de confiar na reinjeção.
 - **Hook `PostCompact`: não testado.** Não consegui provocar uma compactação
   real. O script é o mesmo do `SessionStart`, que comprovadamente executa.
+- **A skill `contexto-longo`, medida com gabarito.** Extrato de 3.000 linhas com
+  armadilhas plantadas, mesmo modelo, com e sem as skills. Ganho real: só o braço
+  com as skills declarou as 40 linhas descartadas e emitiu o falseador; o
+  controle somou e calou. Os dois agregaram por código e acertaram os totais por
+  categoria. Mas os dois contaram transferência entre contas próprias como
+  despesa, nenhum detectou as 25 duplicatas, a reconciliação de contagens não foi
+  feita, e o braço com skills reportou uma contagem de linhas **errada** sob o
+  rótulo "VERIFICADO". A skill melhora a divulgação do que ficou de fora; não
+  garante que o protocolo seja seguido.
+
+Esse experimento expôs um furo no plugin, desde então corrigido: `fechar`
+desligava o hook, e a resposta final é escrita **depois** do fechamento — foi
+exatamente por ali que a contagem errada passou. Agora a conferência sobrevive
+ao `fechar` por 6 horas e só termina com `verif arquivar`.
 
 ## Limites honestos
 

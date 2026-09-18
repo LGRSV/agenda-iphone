@@ -107,6 +107,11 @@ verif fechar --falseador "Se as 3 parcelas do cartão forem antecipadas, a sobra
 verif relatorio --saida procedencia.md
 ```
 
+**Fechar não desliga a conferência.** A resposta final é escrita depois do
+`fechar`, e é justamente aí que número novo costuma entrar — o hook continua
+conferindo por 6 horas. Quando a análise realmente acabou, `verif arquivar`
+encerra a vigilância.
+
 `fechar` recusa se faltar auditoria limpa, contra-análise ou falseador.
 `--forcar` fecha mesmo assim, mas grava as pendências no arquivo — e você
 precisa dizer na resposta o que ficou pendente.

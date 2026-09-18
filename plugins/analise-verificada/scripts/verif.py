@@ -25,6 +25,7 @@ getcontext().prec = 34
 
 VERSAO_ESQUEMA = 1
 MAX_BLOQUEIOS = 2  # quantas vezes o hook Stop pode barrar antes de so avisar
+JANELA_VIGILANCIA_H = 6  # horas apos fechar em que a resposta final ainda e conferida
 
 # --------------------------------------------------------------------------
 # erros
@@ -101,6 +102,37 @@ def livro_aberto(base: Path) -> tuple[Path, dict] | None:
         return None
     abertos.sort()
     _, c, d = abertos[-1]
+    return c, d
+
+
+def livro_vigiado(base: Path) -> tuple[Path, dict] | None:
+    """Livro que o hook Stop deve conferir.
+
+    Fechar a analise NAO desliga a conferencia: a resposta final e escrita
+    depois do `fechar`, e e justamente ali que numero novo costuma entrar.
+    A vigilancia so acaba com `verif arquivar` ou depois de JANELA_VIGILANCIA_H.
+    """
+    aberto = livro_aberto(base)
+    if aberto is not None:
+        return aberto
+    recentes = []
+    for c in caminhos_livros(base):
+        try:
+            d = carregar(c)
+        except ErroVerif:
+            continue
+        if d.get("status") != "fechada":
+            continue
+        try:
+            fim = datetime.fromisoformat(d.get("fechada_em", ""))
+        except ValueError:
+            continue
+        if (datetime.now(timezone.utc) - fim).total_seconds() <= JANELA_VIGILANCIA_H * 3600:
+            recentes.append((d["fechada_em"], c, d))
+    if not recentes:
+        return None
+    recentes.sort()
+    _, c, d = recentes[-1]
     return c, d
 
 
@@ -892,6 +924,25 @@ def cmd_fechar(args) -> int:
         dados["fechada_forcada"] = faltas
     salvar(caminho, dados)
     print("analise fechada" + (" (FORCADA, com pendencias)" if faltas else ""))
+    print(
+        "A resposta final continua sendo conferida: numero que nao estiver no livro "
+        "sera barrado. Para encerrar a vigilancia, use 'verif arquivar'."
+    )
+    return 0
+
+
+def cmd_arquivar(args) -> int:
+    base = dir_analises(args.dir)
+    alvo = livro_vigiado(base) or livro_atual(base)
+    if alvo is None:
+        raise ErroVerif(f"nenhum livro-razao em {base}")
+    caminho, dados = alvo
+    if dados["status"] == "aberta" and not args.forcar:
+        raise ErroVerif("a analise ainda esta aberta; use 'verif fechar' ou --forcar")
+    dados["status"] = "arquivada"
+    dados["arquivada_em"] = agora()
+    salvar(caminho, dados)
+    print(f"analise arquivada: {dados['titulo']} (o hook para de conferir as respostas)")
     return 0
 
 
@@ -939,6 +990,10 @@ def construir_parser() -> argparse.ArgumentParser:
     s.add_argument("--ignorar", action="append", help="regex extra a ignorar (repetivel)")
     s.add_argument("--json", action="store_true")
     s.set_defaults(func=cmd_auditar)
+
+    s = sub.add_parser("arquivar", help="encerra a vigilancia do hook sobre esta analise")
+    s.add_argument("--forcar", action="store_true", help="arquiva mesmo se ainda estiver aberta")
+    s.set_defaults(func=cmd_arquivar)
 
     s = sub.add_parser("status", help="resumo da analise aberta")
     s.set_defaults(func=cmd_status)

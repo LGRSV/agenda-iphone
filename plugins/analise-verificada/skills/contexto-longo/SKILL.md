@@ -76,6 +76,22 @@ Números registrados com `verif` ficam em disco e voltam ao contexto pelos hooks
 aparece**, não no fim. O que não estiver no livro-razão quando a conversa for
 compactada está perdido, e o que você lembrar dele depois é reconstrução.
 
+## Erros medidos neste protocolo
+
+Rodei este protocolo contra um extrato de 3.000 linhas com armadilhas plantadas.
+O que escapou, e que você precisa conferir explicitamente:
+
+- **Transferência entre contas próprias entrou como despesa.** A categoria se
+  chamava `transferencia` e mesmo assim foi somada ao "total gasto". Antes de
+  responder "quanto gastei", liste as categorias e decida uma a uma se cada uma
+  é despesa.
+- **Duplicatas exatas não foram detectadas.** Rode a contagem de linhas
+  repetidas sempre, mesmo sem suspeita: `sort arquivo | uniq -d | wc -l`.
+- **A contagem de linhas foi reportada errada, com o rótulo de verificada.**
+  Contagem é número: registre `linhas_total`, `linhas_lidas` e
+  `linhas_descartadas` com `verif`, e feche a conta. Se você digitou uma
+  contagem que não saiu do livro-razão, ela está errada até prova em contrário.
+
 ## O que a resposta precisa dizer
 
 - Quantas linhas/documentos entraram na conta e quantos ficaram de fora, com o
