@@ -48,8 +48,9 @@ Só precisa de `python3` (stdlib apenas). Sem dependências externas.
 
 - `Stop` — confere cada resposta antes de deixar o turno terminar. Número sem
   lastro, recálculo divergente ou contra-análise ausente devolvem exit 2 e a
-  resposta não sai. Após 2 bloqueios ele libera com aviso, para nunca travar a
-  sessão.
+  resposta não sai. Continua conferindo por 6 horas depois do `fechar`, porque
+  a resposta final é escrita depois dele; `verif arquivar` encerra. Após 2
+  bloqueios ele libera com aviso, para nunca travar a sessão.
 - `SessionStart` e `PostCompact` — reinjetam o livro-razão no contexto. Os
   números verificados moram em disco; sobrevivem à compactação inteiros, em vez
   de virarem lembrança aproximada.
@@ -57,7 +58,7 @@ Só precisa de `python3` (stdlib apenas). Sem dependências externas.
 ## Uso
 
 ```bash
-alias verif='python3 "$CLAUDE_PLUGIN_ROOT/scripts/verif.py"'
+alias verif='python3 "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/skills/analise-verificada}/scripts/verif.py"'
 
 verif abrir "Fatura de setembro"
 verif fato --rotulo salario --valor "7.430,00" --fonte "extrato.html:88"
@@ -148,7 +149,7 @@ ao `fechar` por 6 horas e só termina com `verif arquivar`.
   ser apontado como sem lastro. Use crases, `--ignorar` ou registre como fato.
 - **Skill é instrução, não código.** As 3 skills são Markdown que o modelo lê e
   segue — o efeito é alto, mas probabilístico, e não dá para testar como se
-  testa uma função. O que é determinístico no plugin é o `verif` (53 testes) e
+  testa uma função. O que é determinístico no plugin é o `verif` (59 testes) e
   o bloqueio do hook `Stop` (verificado em sessão real). O resto é influência.
 - **O bloqueio tem teto.** Dois bloqueios por análise e depois libera com aviso.
   Sem teto, um falso positivo prenderia a sessão.
@@ -156,7 +157,7 @@ ao `fechar` por 6 horas e só termina com `verif arquivar`.
 ## Testes
 
 ```bash
-python3 tests/test_verif.py     # 53 testes, stdlib apenas
+python3 tests/test_verif.py     # 59 testes, stdlib apenas
 ```
 
 Cobrem aritmética decimal, recusa de código arbitrário, ambiguidade de
