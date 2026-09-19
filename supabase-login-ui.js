@@ -187,7 +187,7 @@
     document.documentElement.classList.add('agenda-login-open');
     document.body.classList.add('agenda-login-open');
     setStatus('Verificando sua sessão…');
-    setTimeout(() => overlay.querySelector('#agendaLoginEmail').focus(), 120);
+    setTimeout(() => overlay.querySelector('#agendaLoginEmail, #agendaSimpleUsername')?.focus(), 120);
     try {
       const sb = await getClient();
       const { data } = await sb.auth.getSession();

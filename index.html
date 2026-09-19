@@ -51,15 +51,6 @@
     .seq-row.seq-current .task-card{border-color:var(--accent);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent)}
     .seq-row.seq-done .task-card{opacity:.6}
   </style>
-  <style id="agendaAuthVeilStyle">
-    #agendaAuthVeil{position:fixed;inset:0;z-index:90000;display:grid;place-items:center;padding:24px;background:#050506;color:#afb0b8;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-    #agendaAuthVeil .veil-box{max-width:320px;text-align:center}
-    #agendaAuthVeil .veil-spin{width:34px;height:34px;margin:0 auto 16px;border:3px solid rgba(255,255,255,.14);border-top-color:#5ec7fb;border-radius:50%;animation:agVeilSpin 1s linear infinite}
-    @keyframes agVeilSpin{to{transform:rotate(360deg)}}
-    #agendaAuthVeil p{margin:0 0 16px;font-size:14px;line-height:1.5}
-    #agendaAuthVeil button{min-height:46px;padding:0 20px;border:1px solid #56c2fa;border-radius:14px;background:linear-gradient(135deg,#5ec7fb,#42aee9);color:#081018;font-size:15px;font-weight:800}
-    html.agenda-locked{overflow:hidden}
-  </style>
   <style id="agendaHeaderMenuStyles">
     .head-actions{position:relative;display:flex;justify-content:flex-end;flex:0 0 auto;min-width:46px;overflow:visible}
     .menu-toggle{gap:1px;grid-auto-rows:4px;align-content:center}.menu-toggle i{display:block;width:22px;height:4px;border-radius:99px;background:currentColor}
@@ -85,15 +76,6 @@
   </style>
 </head>
 <body>
-  <div id="agendaAuthVeil" role="status" aria-label="Carregando acesso"><div class="veil-box"><div class="veil-spin" aria-hidden="true"></div><p>Preparando seu acesso à Agenda…</p><button type="button" onclick="try{window.AgendaSupabaseLogin&&window.AgendaSupabaseLogin.open()}catch(_){}">Entrar</button></div></div>
-  <script>
-  (function(){
-    function hasSession(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null');var s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return true;}}catch(_){}return false;}
-    function isDesktop(){try{return !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)&&!(navigator.maxTouchPoints>1)&&matchMedia('(hover: hover) and (pointer: fine)').matches;}catch(_){return false;}}
-    if(hasSession()||isDesktop()){var v=document.getElementById('agendaAuthVeil');if(v)v.remove();}
-    else{document.documentElement.classList.add('agenda-locked');}
-  })();
-  </script>
   <main class="app">
     <header class="topbar">
       <div><span class="eyebrow">Organização pessoal</span><h1>Minha agenda</h1><p class="subhead" id="currentDate"></p></div>
@@ -1490,9 +1472,9 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
   <script src="./header-cleanup.js?v=6" defer></script>
   <script src="./supabase-project-config.js?v=1" defer></script>
   <script src="./supabase-shared-storage.js?v=7" defer></script>
-  <script src="./supabase-login-ui.js?v=4" defer></script>
-  <script src="./supabase-simple-access.js?v=6" defer></script>
-  <script src="./auth-gate.js?v=2" defer></script>
+  <script src="./supabase-login-ui.js?v=5" defer></script>
+  <script src="./supabase-simple-access.js?v=7" defer></script>
+  <script src="./auth-gate.js?v=3" defer></script>
   <script src="./agenda-sharing.js?v=4" defer></script>
   <script src="./sequencial.js?v=3" defer></script>
   <script src="./parceiro.js?v=2" defer></script>

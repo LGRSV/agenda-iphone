@@ -116,13 +116,6 @@
     return true;
   };
 
-  const lockCloseWhenRequired = overlay => {
-    const close = overlay?.querySelector('#agendaLoginClose');
-    if (!close) return;
-    const locked = document.documentElement.classList.contains('agenda-locked');
-    close.hidden = locked;
-    close.style.display = locked ? 'none' : '';
-  };
 
   const build = overlay => {
     if (!overlay || overlay.dataset.simpleAccess === '4') return;
@@ -147,8 +140,6 @@
       document.documentElement.classList.remove('agenda-login-open');
       document.body.classList.remove('agenda-login-open');
     });
-    lockCloseWhenRequired(overlay);
-
     overlay.querySelector('#agendaSimpleForm').addEventListener('submit', async event => {
       event.preventDefault();
       const username = overlay.querySelector('#agendaSimpleUsername').value.trim().toLowerCase();
@@ -174,7 +165,7 @@
 
   const install = () => {
     const overlay = document.getElementById(OVERLAY_ID);
-    if (overlay) { build(overlay); lockCloseWhenRequired(overlay); }
+    if (overlay) build(overlay);
   };
 
   window.AgendaSimpleAccess = { performLogin, loginWithSavedProfile };
