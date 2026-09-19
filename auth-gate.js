@@ -9,11 +9,20 @@
    localStorage — não depende de rede, do SDK nem do CDN. Se este módulo
    nem carregar, o dono (que tem token) já foi revelado pelo script inline
    do index; quem não tem token continua coberto (seguro).
+
+   Desktop (mouse/teclado, sem toque): nunca pede usuário/e-mail. Revela o
+   app direto e, se houver perfil salvo de um acesso anterior, entra em
+   silêncio em segundo plano para sincronizar.
    ========================================================================= */
 (() => {
   'use strict';
 
   const VEIL_ID = 'agendaAuthVeil';
+
+  const isDesktop = () =>
+    !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) &&
+    !(navigator.maxTouchPoints > 1) &&
+    matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   // Detecta a sessão persistida do Supabase (chave sb-<ref>-auth-token).
   const hasSession = () => {
@@ -55,7 +64,30 @@
     }, 120);
   };
 
-  const decide = () => { if (hasSession()) reveal(); else forceLogin(); };
+  // Desktop sem sessão: revela e tenta o login silencioso com o perfil salvo.
+  const desktopSilentLogin = () => {
+    reveal();
+    let tries = 0;
+    const timer = setInterval(async () => {
+      tries++;
+      const access = window.AgendaSimpleAccess;
+      if (access && typeof access.loginWithSavedProfile === 'function') {
+        clearInterval(timer);
+        try {
+          const ok = await access.loginWithSavedProfile();
+          if (ok) location.reload();
+        } catch (_) { /* sem rede ou perfil inválido: segue local, sem incomodar */ }
+      } else if (tries > 120) {
+        clearInterval(timer);
+      }
+    }, 120);
+  };
+
+  const decide = () => {
+    if (hasSession()) reveal();
+    else if (isDesktop()) desktopSilentLogin();
+    else forceLogin();
+  };
 
   decide();
 

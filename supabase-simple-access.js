@@ -58,6 +58,64 @@
     if (button) button.disabled = busy;
   };
 
+  // Troca usuário + e-mail por uma sessão Supabase (sem senha). Usado pelo
+  // formulário e pelo login silencioso do desktop (auth-gate.js).
+  const performLogin = async (username, email) => {
+    const sb = await getClient();
+    const login = await requestLoginToken(username, email);
+    const { data: currentData, error: currentError } = await sb.auth.getSession();
+    if (currentError) throw currentError;
+
+    let session = currentData.session;
+    if (!session || session.user.id !== login.ownerUserId) {
+      if (session) await sb.auth.signOut({ scope: 'local' });
+      const { data, error } = await sb.auth.verifyOtp({
+        token_hash: login.tokenHash,
+        type: login.tokenType || 'email'
+      });
+      if (error) throw error;
+      session = data.session;
+    }
+
+    if (!session || session.user.id !== login.ownerUserId) {
+      throw new Error('A sessão criada não corresponde à sua Agenda.');
+    }
+
+    await sb.auth.updateUser({
+      data: { app_username: username, app_email: email, app_name: 'Agenda Lagares' }
+    }).catch(() => {});
+
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({
+      username,
+      email,
+      userId: session.user.id,
+      workspaceId: login.workspaceId
+    }));
+
+    const cfg = readJson(CONFIG_KEY);
+    localStorage.setItem(CONFIG_KEY, JSON.stringify({
+      ...cfg,
+      username,
+      email,
+      enabled: true,
+      workspaceId: login.workspaceId,
+      workspaceOwnerId: login.ownerUserId,
+      migratedUserId: login.ownerUserId
+    }));
+    return session;
+  };
+
+  // Login silencioso com o perfil salvo (usuário + e-mail do último acesso).
+  // Retorna true se criou sessão; false se não há perfil salvo.
+  const loginWithSavedProfile = async () => {
+    const saved = readJson(PROFILE_KEY, {});
+    const username = String(saved.username || '').trim().toLowerCase();
+    const email = String(saved.email || '').trim().toLowerCase();
+    if (!username || !email.includes('@')) return false;
+    await performLogin(username, email);
+    return true;
+  };
+
   const lockCloseWhenRequired = overlay => {
     const close = overlay?.querySelector('#agendaLoginClose');
     if (!close) return;
@@ -103,48 +161,7 @@
       setBusy(true);
       setStatus('Validando usuário e criando a sessão…');
       try {
-        const sb = await getClient();
-        const login = await requestLoginToken(username, email);
-        const { data: currentData, error: currentError } = await sb.auth.getSession();
-        if (currentError) throw currentError;
-
-        let session = currentData.session;
-        if (!session || session.user.id !== login.ownerUserId) {
-          if (session) await sb.auth.signOut({ scope: 'local' });
-          const { data, error } = await sb.auth.verifyOtp({
-            token_hash: login.tokenHash,
-            type: login.tokenType || 'email'
-          });
-          if (error) throw error;
-          session = data.session;
-        }
-
-        if (!session || session.user.id !== login.ownerUserId) {
-          throw new Error('A sessão criada não corresponde à sua Agenda.');
-        }
-
-        await sb.auth.updateUser({
-          data: { app_username: username, app_email: email, app_name: 'Agenda Lagares' }
-        }).catch(() => {});
-
-        localStorage.setItem(PROFILE_KEY, JSON.stringify({
-          username,
-          email,
-          userId: session.user.id,
-          workspaceId: login.workspaceId
-        }));
-
-        const cfg = readJson(CONFIG_KEY);
-        localStorage.setItem(CONFIG_KEY, JSON.stringify({
-          ...cfg,
-          username,
-          email,
-          enabled: true,
-          workspaceId: login.workspaceId,
-          workspaceOwnerId: login.ownerUserId,
-          migratedUserId: login.ownerUserId
-        }));
-
+        await performLogin(username, email);
         setStatus('Sessão criada. Baixando sua agenda do Supabase…');
         setTimeout(() => location.reload(), 650);
       } catch (error) {
@@ -160,6 +177,7 @@
     if (overlay) { build(overlay); lockCloseWhenRequired(overlay); }
   };
 
+  window.AgendaSimpleAccess = { performLogin, loginWithSavedProfile };
   new MutationObserver(install).observe(document.documentElement, { childList: true, subtree: true });
   install();
 })();
