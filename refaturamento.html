@@ -23,7 +23,6 @@
   <style>.sim-card.combined.negative-balance b{color:var(--red)}.sim-card.invoice.credit-balance b{color:var(--green)}.sim-actions{display:grid;gap:7px;min-width:190px}.sim-actions .sim-toggle{justify-content:space-between}@media(max-width:390px){.sim-actions{width:100%;min-width:0}}</style>
 </head>
 <body>
-  <script>(function(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null'),s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return;}}catch(_){}location.replace('./?locked=1');})();</script>
   <main class="app">
     <header class="head"><a class="back" href="financeiro.html" aria-label="Voltar ao painel financeiro">‹</a><span class="smark" aria-hidden="true">S</span><div><p class="ey">INTER ↔ MERCADO PAGO</p><h1>Refaturamento</h1><p class="muted">Venda, taxa e estorno registrados separadamente.</p></div></header>
     <section class="simulator" id="refundSimulator" aria-live="polite">

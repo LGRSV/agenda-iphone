@@ -12,7 +12,6 @@
   <style>.row.credit .dot{background:#78d88b}.row.credit .value{color:#78d88b}</style>
 </head>
 <body>
-  <script>(function(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null'),s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return;}}catch(_){}location.replace('./?locked=1');})();</script>
   <main class="app">
     <header class="head"><a class="back" href="financeiro.html" aria-label="Voltar ao painel financeiro">‹</a><div><p class="ey">CARTÃO DE CRÉDITO</p><h1>Fatura Inter</h1><p class="muted">Compras e créditos no cartão</p></div></header>
     <nav class="invoice-nav" aria-label="Selecionar fatura"><button type="button" id="prevInvoice" aria-label="Fatura anterior">‹</button><strong id="invoiceMonth"></strong><button type="button" id="nextInvoice" aria-label="Próxima fatura">›</button></nav>

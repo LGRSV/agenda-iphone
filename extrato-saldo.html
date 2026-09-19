@@ -11,7 +11,6 @@
   </style>
 </head>
 <body>
-  <script>(function(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null'),s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return;}}catch(_){}location.replace('./?locked=1');})();</script>
   <main class="app">
     <header class="head"><a class="back" href="financeiro.html" aria-label="Voltar ao painel financeiro">‹</a><div><p class="ey">SALDO PREVISTO</p><h1>Extrato do mês</h1><p class="muted" id="month"></p></div></header>
     <section class="summary"><span>Saldo previsto até o fim do mês</span><b id="total">R$ 0,00</b><small>Saldo atual em conta + entradas pendentes − saídas programadas.</small><div class="formula" id="formula"></div></section>

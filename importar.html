@@ -35,9 +35,6 @@ input[type=file]{display:none}
 .help h3{margin:0 0 7px;font-size:11px;color:#4fd1c5;letter-spacing:.05em}
 .help li{font-size:12px;color:#93a1b8;line-height:1.6;margin-bottom:3px}.help ul{margin:0;padding-left:17px}
 </style></head><body>
-<script>
-(function(){function h(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||"null");var s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return true;}}catch(_){}return false;}if(!h()){location.replace("./?locked=1");}})();
-</script>
 <main class="app">
 <header class="head"><a class="back" href="./financeiro.html" aria-label="Voltar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></a><div><p class="ey">FINANCEIRO</p><h1>Importar extrato</h1><p class="muted">OFX ou CSV · Pix, compras e tudo que passou na conta</p></div></header>
 

@@ -12,7 +12,6 @@
   </style>
 </head>
 <body>
-  <script>(function(){function hasSession(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null'),s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return true}}catch(_){}return false}if(!hasSession())location.replace('./?locked=1')})();</script>
   <main class="app" id="gamePage">
     <header class="head"><a class="back" id="gameBack" href="./" aria-label="Voltar para a agenda"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></a><div><p class="ey">Gamificação</p><h1>Sua evolução</h1><p class="sub">Rotina transformada em progresso</p></div></header>
     <section class="game-body" id="gmPageBody" aria-live="polite"></section>

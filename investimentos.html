@@ -66,8 +66,6 @@ h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 9px;text-tran
 </style>
 </head>
 <body>
-<!-- guarda de sessão: só abre logado (mesma regra do financeiro.html) -->
-<script>(function(){function h(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||"null");var s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return true;}}catch(_){}return false;}if(!h()){location.replace("./?locked=1");}})();</script>
 <main class="app">
   <header class="head">
     <a class="back" href="financeiro.html" aria-label="Voltar ao financeiro">‹</a>
