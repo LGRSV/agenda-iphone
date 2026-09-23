@@ -19,7 +19,9 @@
     history: ['agenda_historico_v1', []],
     investments: ['agenda_investimentos_v1', {}],
     accounts: ['agenda_contas_v1', {}],
-    refaturamentos: ['agenda_refaturamentos_v1', []]
+    refaturamentos: ['agenda_refaturamentos_v1', []],
+    calorimetro: ['agenda_calorimetro_v1', {}],
+    calorimetro_log: ['agenda_calorimetro_log_v1', []]
   };
   // A tabela antiga aceita apenas as chaves históricas. Dados financeiros
   // adicionais ficam aninhados em "settings" para sincronizar sem exigir uma
@@ -27,7 +29,9 @@
   const NESTED_IN_SETTINGS = {
     investments: 'investments',
     accounts: 'accounts',
-    refaturamentos: 'refaturamentos'
+    refaturamentos: 'refaturamentos',
+    calorimetro: 'calorimetro',
+    calorimetro_log: 'calorimetro_log'
   };
   const LOCAL_TO_DOC = new Map(Object.entries(DOCUMENTS).map(([doc, [key]]) => [key, doc]));
   const originalSetItem = Storage.prototype.setItem;

@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#050506">
+  <meta name="app-page" content="calorimetro.html">
+  <title>Calorímetro · Agenda Lagares</title>
+  <style>
+    :root{--bg:#050506;--surface:#0c0c0f;--soft:#15151a;--soft2:#202027;--line:#2e2e36;--text:#f8f8fa;--muted:#afb0b8;--faint:#7b7d87;--accent:#6ec9ff;--accent2:#438ecc;--heat:#e09a4c;--heat-bg:#2e241a;--ok:#5fc9ae;
+      --s0:#3a423e;--s1:#4a544f;--s2:#5e736b;--s3:#46907c;--s4:#5fc9ae;--s5:#e09a4c;
+      --num:ui-monospace,"SF Mono",SFMono-Regular,Menlo,monospace}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html{min-height:100%;overflow-x:clip;background:var(--bg);-webkit-text-size-adjust:100%;text-size-adjust:100%}
+    body{min-height:100%;margin:0;overflow-x:clip;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;font-size:15px;line-height:1.5}
+    .app{width:min(100%,620px);margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom));animation:calEnter .28s cubic-bezier(.2,.8,.2,1) both}
+    .app.leaving{animation:calLeave .18s ease both}
+    @keyframes calEnter{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+    @keyframes calLeave{to{opacity:0;transform:translateX(18px)}}
+    .head{display:flex;align-items:center;gap:13px;margin-bottom:16px}
+    .back{display:grid;place-items:center;width:44px;height:44px;flex:0 0 auto;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--text);text-decoration:none}
+    .back svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+    .ey{margin:0;color:var(--accent);font-size:11px;font-weight:850;letter-spacing:.12em;text-transform:uppercase}
+    .head h1{margin:3px 0 2px;font-size:29px;letter-spacing:-.045em}
+    .sub{margin:0;color:var(--muted);font-size:13px}
+    h2,h3{margin:0;font-weight:700;letter-spacing:-.01em}
+    p{margin:0}
+    .readout{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);margin:0 -16px;padding:10px 16px 12px}
+    .hero{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 20px}
+    .big{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:clamp(38px,11vw,54px);font-weight:600;line-height:.92;letter-spacing:-.035em;color:var(--ok)}
+    .big-unit{font-family:var(--num);font-size:13px;color:var(--muted);margin-left:5px}
+    .minis{display:flex;flex-wrap:wrap;gap:6px 18px;padding-bottom:4px}
+    .mini-l{font-family:var(--num);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);display:block}
+    .mini-v{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:15px;font-weight:600;color:var(--text)}
+    .daybar{display:flex;height:9px;border-radius:3px;overflow:hidden;margin-top:12px;background:var(--soft)}
+    .daybar span{display:block;transition:width .12s linear}
+    .intro{padding:22px 0 4px;max-width:62ch}
+    .intro p{color:var(--muted);font-size:14px}
+    #sync{font-family:var(--num);font-size:11px;color:var(--faint);margin-top:12px;display:flex;align-items:center;gap:7px}
+    #sync i{width:6px;height:6px;border-radius:50%;background:var(--faint);flex:0 0 auto}
+    #sync.on i{background:var(--ok)}
+    section{margin-top:30px}
+    .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:7px;margin-bottom:16px}
+    .sec-head h2{font-size:12px;font-family:var(--num);font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+    .sec-note{font-size:12.5px;color:var(--faint)}
+    .ctl{display:grid;grid-template-columns:132px 1fr 76px;align-items:center;gap:10px 14px;margin-bottom:13px}
+    .ctl label{font-size:14px;color:var(--muted)}
+    .ctl label .par{font-family:var(--num);font-size:10.5px;color:var(--faint);display:block;line-height:1.35}
+    .val{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:14px;font-weight:600;text-align:right}
+    @media (max-width:560px){.ctl{grid-template-columns:1fr 66px;gap:4px 10px}.ctl label{grid-column:1;font-size:13.5px}.val{grid-column:2;grid-row:1}.ctl input[type=range],.ctl select,.ctl .chk{grid-column:1/-1}}
+    input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:22px;background:transparent;margin:0;cursor:pointer}
+    input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--line);border-radius:2px}
+    input[type=range]::-moz-range-track{height:3px;background:var(--line);border-radius:2px}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);margin-top:-7.5px;border:2px solid var(--bg)}
+    input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+    input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
+    select,input[type=date],input[type=number]{font-family:inherit;font-size:14px;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:100%}
+    input[type=date],input[type=number]{font-family:var(--num);width:150px}
+    select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    .chk{display:flex;align-items:center;gap:9px}
+    .chk input{width:16px;height:16px;accent-color:var(--accent);flex:0 0 auto}
+    .chk span{font-size:12.5px;color:var(--faint)}
+    button{font-family:inherit;font-size:13px;font-weight:600;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 14px;cursor:pointer}
+    button:hover{border-color:var(--faint)}
+    .presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+    .legend{display:flex;flex-wrap:wrap;gap:5px 16px;margin-top:11px}
+    .lg{display:flex;align-items:center;gap:6px;font-family:var(--num);font-size:10.5px;color:var(--faint)}
+    .dot{width:8px;height:8px;border-radius:2px;flex:0 0 auto}
+    #sum{font-family:var(--num);font-size:12.5px;color:var(--faint);margin-top:12px}
+    #sum.bad{color:var(--heat)}
+    .alert{background:var(--heat-bg);border-left:2px solid var(--heat);border-radius:0 10px 10px 0;padding:13px 16px;margin-top:18px}
+    .alert h3{font-size:14px;margin-bottom:4px}
+    .alert p{font-size:13.5px;color:var(--muted);max-width:64ch}
+    .alert p+p{margin-top:6px}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    td{padding:8px 0;border-bottom:1px solid var(--soft2)}
+    tr:last-child td{border-bottom:0}
+    td:first-child{color:var(--muted)}
+    td:last-child{text-align:right;font-family:var(--num);font-variant-numeric:tabular-nums;font-weight:600}
+    td .src{display:block;font-size:11px;color:var(--faint);font-family:var(--num)}
+    .goals{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+    .goal{background:var(--surface);padding:14px 15px}
+    .goal .gl{font-size:12.5px;color:var(--muted)}
+    .goal .gv{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:22px;font-weight:600;letter-spacing:-.02em;margin-top:2px}
+    .goal .gd{font-family:var(--num);font-size:10.5px;color:var(--faint);margin-top:1px}
+    .tl{display:grid;font-size:13.5px}
+    .tl div{display:grid;grid-template-columns:96px 1fr;gap:12px;padding:6px 0;border-bottom:1px solid var(--soft2)}
+    .tl div:last-child{border-bottom:0}
+    .tl b{font-family:var(--num);font-weight:400;color:var(--faint);font-size:12px}
+    .tl span{color:var(--muted)}
+    @media (max-width:480px){.tl div{grid-template-columns:82px 1fr;gap:8px}}
+    .logform{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px}
+    .logform div{display:flex;flex-direction:column;gap:5px}
+    .logform label{font-family:var(--num);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint)}
+    .lerr{font-size:13px;color:var(--heat);margin-top:8px;min-height:1px}
+    .lverdict{font-size:13.5px;color:var(--muted);margin-top:14px;max-width:64ch;padding-left:13px;border-left:2px solid var(--line)}
+    .lverdict.warn{border-left-color:var(--heat)}
+    .loglist{margin-top:18px;display:grid;gap:7px}
+    .lrow{display:grid;grid-template-columns:74px 1fr 92px;align-items:center;gap:10px;font-family:var(--num);font-size:12px}
+    .lrow .ld{color:var(--faint)}
+    .lrow .lt{height:16px;background:var(--soft);border-radius:3px;overflow:hidden;position:relative}
+    .lrow .lf{height:100%;display:block;background:var(--s5)}
+    .lrow .lf.ok{background:var(--ok)}
+    .lrow .lm{height:100%;width:1px;background:var(--faint);position:absolute;top:0}
+    .lrow .lv{text-align:right;font-variant-numeric:tabular-nums;color:var(--text)}
+    @media (max-width:480px){.lrow{grid-template-columns:62px 1fr 82px;gap:7px;font-size:11px}}
+    .notes{display:grid;gap:14px}
+    .note{border-left:2px solid var(--line);padding-left:15px}
+    .note.warm{border-left-color:var(--heat)}
+    .note h3{font-size:14px;margin-bottom:3px}
+    .note p{font-size:13.5px;color:var(--muted);max-width:64ch}
+    .note p+p{margin-top:6px}
+    .foot{margin-top:38px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--faint);max-width:64ch}
+    @media (prefers-reduced-motion:reduce){.app,.app.leaving{animation:none}.daybar span{transition:none}}
+  </style>
+</head>
+<body>
+  <main class="app" id="calPage">
+    <header class="head"><a class="back" id="calBack" href="./" aria-label="Voltar para a agenda"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></a><div><p class="ey">Calorímetro</p><h1>Quanto você queima</h1><p class="sub">Gasto energético diário com sua composição corporal, rotina e medicamentos</p></div></header>
+
+    <div class="readout">
+      <span class="mini-l">Gasto energético total · 24 h</span>
+      <div class="hero">
+        <div><span class="big" id="tdee">—</span><span class="big-unit">kcal/dia</span></div>
+        <div class="minis">
+          <div><span class="mini-l">Taxa basal</span><span class="mini-v" id="bmr">—</span></div>
+          <div><span class="mini-l">PAL</span><span class="mini-v" id="pal">—</span></div>
+          <div><span class="mini-l">Faixa real</span><span class="mini-v" id="rng">—</span></div>
+          <div><span class="mini-l">Massa magra</span><span class="mini-v" id="lbm">—</span></div>
+          <div><span class="mini-l">IMC</span><span class="mini-v" id="imc">—</span></div>
+        </div>
+      </div>
+      <div class="daybar" id="daybar" role="img" aria-label="Distribuição das 24 horas do dia por intensidade de atividade">
+        <span id="b0"></span><span id="b1"></span><span id="b2"></span><span id="b3"></span><span id="b4"></span><span id="b5"></span>
+      </div>
+    </div>
+
+    <div class="intro">
+      <p>Parte da composição corporal medida, não do peso bruto: com a gordura preenchida entra Katch-McArdle, que calcula sobre massa magra. Para a atividade, o método PAL da FAO/OMS — você distribui as 24 horas reais do dia em vez de escolher um rótulo. Já vem com a sua rotina da Energisa, os medicamentos e o ajuste de clima tropical.</p>
+      <p id="sync"><i aria-hidden="true"></i><span id="sync-t">Salvo neste aparelho</span></p>
+    </div>
+
+    <section>
+      <div class="sec-head"><h2>Corpo</h2><span class="sec-note">composição do exame de 2024</span></div>
+      <div class="ctl"><label for="w">Peso</label><input type="range" id="w" min="45" max="110" step="0.5" value="65"><span class="val" id="w-o">65 kg</span></div>
+      <div class="ctl"><label for="h">Altura</label><input type="range" id="h" min="145" max="200" step="1" value="168"><span class="val" id="h-o">168 cm</span></div>
+      <div class="ctl"><label for="ag">Idade</label><input type="range" id="ag" min="14" max="80" step="1" value="21"><span class="val" id="ag-o">21 anos</span></div>
+      <div class="ctl"><label for="sx">Sexo</label><select id="sx"><option value="m" selected>Masculino</option><option value="f">Feminino</option></select><span class="val"></span></div>
+      <div class="ctl"><label for="bf">Gordura corporal<span class="par">estimada — medida 16,8% a 61,5 kg</span></label><input type="range" id="bf" min="0" max="45" step="0.1" value="19.3"><span class="val" id="bf-o">19,3%</span></div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Seu dia</h2><span class="sec-note">as 24 horas precisam fechar</span></div>
+      <div class="presets">
+        <button type="button" id="p1">Semana corrida</button>
+        <button type="button" id="p2">Semana boa</button>
+        <button type="button" id="p3">Dia de gripe</button>
+        <button type="button" id="p4">Fim de semana</button>
+      </div>
+      <div class="ctl"><label for="c0">Dormindo<span class="par">PAR 1,0</span></label><input type="range" id="c0" min="0" max="16" step="0.5" value="7.5"><span class="val" id="c0-o">7,5 h</span></div>
+      <div class="ctl"><label for="c1">Deitado acordado<span class="par">PAR 1,2 — descanso do almoço</span></label><input type="range" id="c1" min="0" max="16" step="0.5" value="1"><span class="val" id="c1-o">1 h</span></div>
+      <div class="ctl"><label for="c2">Sentado<span class="par">PAR 1,5 — escritório, direção, refeições</span></label><input type="range" id="c2" min="0" max="18" step="0.5" value="12"><span class="val" id="c2-o">12 h</span></div>
+      <div class="ctl"><label for="c3">Em pé, tarefas leves<span class="par">PAR 2,2 — banho, cozinha, se arrumar</span></label><input type="range" id="c3" min="0" max="14" step="0.5" value="1"><span class="val" id="c3-o">1 h</span></div>
+      <div class="ctl"><label for="c4">Caminhando<span class="par">PAR 3,2 — estacionamento, almoço, escritório</span></label><input type="range" id="c4" min="0" max="10" step="0.25" value="1"><span class="val" id="c4-o">1 h</span></div>
+      <div class="ctl"><label for="c5">Esforço intenso<span class="par">PAR 6,0 — academia, corrida</span></label><input type="range" id="c5" min="0" max="6" step="0.25" value="0"><span class="val" id="c5-o">0 h</span></div>
+      <div class="legend">
+        <span class="lg"><i class="dot" style="background:var(--s0)"></i>dormindo</span>
+        <span class="lg"><i class="dot" style="background:var(--s1)"></i>deitado</span>
+        <span class="lg"><i class="dot" style="background:var(--s2)"></i>sentado</span>
+        <span class="lg"><i class="dot" style="background:var(--s3)"></i>em pé</span>
+        <span class="lg"><i class="dot" style="background:var(--s4)"></i>caminhando</span>
+        <span class="lg"><i class="dot" style="background:var(--s5)"></i>intenso</span>
+      </div>
+      <p id="sum">Total: 24,0 h</p>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Medicamentos</h2><span class="sec-note">só o Venvanse mexe no gasto</span></div>
+      <div class="ctl"><label for="venv">Venvanse</label><div class="chk"><input type="checkbox" id="venv" checked><span>lisdexanfetamina — eleva a basal cerca de 4%</span></div><span class="val" id="venv-o">+4%</span></div>
+      <div class="ctl"><label for="monj">Monjaro</label><div class="chk"><input type="checkbox" id="monj" checked><span>tirzepatida — não altera o gasto, corta o apetite</span></div><span class="val">0%</span></div>
+      <div class="ctl"><label for="test">Testosterona<span class="par">1 ml por semana</span></label><div class="chk"><input type="checkbox" id="test" checked><span>efeito direto pequeno — o real vem pela massa magra</span></div><span class="val" id="test-o">+3%</span></div>
+      <div class="alert">
+        <h3>O risco aqui é comer de menos, não de mais</h3>
+        <p>Venvanse e Monjaro suprimem o apetite por mecanismos diferentes, e você relatou que está com bem menos fome. Nenhum dos dois reduz o quanto você gasta — o gasto continua o do painel acima. O que eles reduzem é o quanto entra.</p>
+        <p>A testosterona empurra para o outro lado: constrói massa magra, mas isso exige matéria-prima. Proteína e calorias suficientes são pré-condição para o anabolismo acontecer — em déficit, o estímulo existe e o tecido não vem. Testosterona sem comida é gasto de medicamento sem resultado.</p>
+        <p>Com IMC 23,0 e FFMI 18,6 você não tem reserva de massa magra para perder. Use o diário abaixo por duas semanas e leve os números ao médico que te acompanha — média de consumo contra gasto estimado é informação que muda conduta.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Condições</h2><span class="sec-note">febre e ambiente</span></div>
+      <div class="ctl"><label for="t">Sua temperatura</label><input type="range" id="t" min="36.2" max="40" step="0.1" value="36.8"><span class="val" id="t-o">36,8 °C</span></div>
+      <div class="ctl"><label for="amb">Ambiente</label><select id="amb">
+        <option value="1.03">Frio — abaixo de 22 °C</option>
+        <option value="1.00">Ar-condicionado — 23 a 26 °C</option>
+        <option value="1.005" selected>Casa ventilada — 26 a 30 °C</option>
+        <option value="1.02">Casa abafada — 30 a 35 °C</option>
+        <option value="1.04">Calor extremo — acima de 35 °C</option>
+      </select><span class="val"></span></div>
+      <div class="ctl"><label for="acl">Aclimatado ao calor</label><div class="chk"><input type="checkbox" id="acl" checked><span>mora em clima quente há mais de um ano — reduz 4%</span></div><span class="val"></span></div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>De onde vem o número</h2></div>
+      <table>
+        <tr><td>Mifflin-St Jeor<span class="src">a mais precisa para não-atletas</span></td><td id="f1">—</td></tr>
+        <tr><td>Harris-Benedict revisada<span class="src">Roza e Shizgal, 1984</span></td><td id="f2">—</td></tr>
+        <tr><td>Schofield / FAO-OMS<span class="src">faixa 18–30 anos</span></td><td id="f3">—</td></tr>
+        <tr><td>Média das três acima<span class="src">estimam massa magra pelo peso e altura</span></td><td id="pop">—</td></tr>
+        <tr><td>Katch-McArdle<span class="src">usa sua massa magra real</span></td><td id="f4">—</td></tr>
+        <tr><td>Estimativa usada<span class="src">metade Katch, metade população</span></td><td id="comb">—</td></tr>
+        <tr><td>Ajuste por Venvanse<span class="src">estimulante, efeito termogênico</span></td><td id="venv-r">—</td></tr>
+        <tr><td>Ajuste por testosterona<span class="src">efeito direto; o ganho de massa entra pela gordura corporal</span></td><td id="test-r">—</td></tr>
+        <tr><td>Ajuste por febre<span class="src">+11,5% por °C acima de 37</span></td><td id="fev">—</td></tr>
+        <tr><td>Ajuste por ambiente<span class="src">termorregulação e aclimatação</span></td><td id="amb-o">—</td></tr>
+        <tr><td>FFMI<span class="src">massa magra ÷ altura² — destreinado 18, treinado 20+</span></td><td id="ffmi">—</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Metas</h2><span class="sec-note">a partir do gasto acima</span></div>
+      <div class="goals">
+        <div class="goal"><p class="gl">Manter o peso</p><p class="gv" id="g0">—</p><p class="gd">equilíbrio</p></div>
+        <div class="goal"><p class="gl">Ganhar massa</p><p class="gv" id="g1">—</p><p class="gd">+10% com treino de força</p></div>
+        <div class="goal"><p class="gl">Mínimo de segurança</p><p class="gv" id="g2">—</p><p class="gd">nunca comer abaixo da basal</p></div>
+        <div class="goal"><p class="gl">Proteína por dia</p><p class="gv" id="prot">—</p><p class="gd">2,0 a 2,2 g por kg de peso</p></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Diário de consumo</h2><span class="sec-note">quanto entrou, contra quanto saiu</span></div>
+      <form class="logform" id="logform">
+        <div><label for="ld">Dia</label><input type="date" id="ld"></div>
+        <div><label for="lk">Calorias comidas</label><input type="number" id="lk" min="0" max="9000" step="10" placeholder="1800" inputmode="numeric"></div>
+        <button type="submit" id="lb">Registrar</button>
+      </form>
+      <p id="lerr" class="lerr"></p>
+      <div class="goals" style="margin-top:16px">
+        <div class="goal"><p class="gl">Média de 7 dias</p><p class="gv" id="m7">—</p><p class="gd" id="m7d">sem registros ainda</p></div>
+        <div class="goal"><p class="gl">Saldo diário médio</p><p class="gv" id="bal">—</p><p class="gd" id="bald">contra o gasto atual</p></div>
+        <div class="goal"><p class="gl">Dias registrados</p><p class="gv" id="ndays">0</p><p class="gd">quanto mais, melhor</p></div>
+      </div>
+      <p id="lverdict" class="lverdict"></p>
+      <div id="loglist" class="loglist"></div>
+      <p style="font-size:13px;color:var(--faint);margin-top:14px;max-width:64ch">Não precisa ser exato. Anotar por alto, todo dia, vale muito mais que pesar tudo por três dias e desistir. As barras comparam cada dia com o gasto do painel no topo: verde passou, laranja ficou abaixo.</p>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Seu dia na Energisa</h2><span class="sec-note">de onde saíram as horas</span></div>
+      <div class="tl">
+        <div><b>06:30</b><span>Acorda, banho quente de 4 min, se arruma</span></div>
+        <div><b>07:15 – 07:30</b><span>Dirige até o trabalho — 15 min</span></div>
+        <div><b>07:30 – 11:30</b><span>Trabalho sentado, resolvendo problemas — 4 h</span></div>
+        <div><b>11:30 – 11:45</b><span>Dirige de volta para casa</span></div>
+        <div><b>11:45 – 13:15</b><span>Almoço, descanso — 1 h 30</span></div>
+        <div><b>13:15 – 13:30</b><span>Dirige de volta ao trabalho</span></div>
+        <div><b>13:30 – 18:15</b><span>Mais 4 a 5 h sentado</span></div>
+        <div><b>18:15 – 18:30</b><span>Dirige para casa</span></div>
+        <div><b>18:30 – 23:00</b><span>Jantar, banho, descanso — exausto</span></div>
+        <div><b>23:00</b><span>Dorme — 7 h 30</span></div>
+      </div>
+      <p style="font-size:13px;color:var(--faint);margin-top:12px;max-width:64ch">Uma hora de direção por dia, somando as quatro viagens. Ajuste os controles se a sua saída da tarde for mais cedo ou mais tarde.</p>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>O que o número não diz</h2></div>
+      <div class="notes">
+        <div class="note"><h3>Pensar muito não queima calorias</h3><p>O cérebro consome cerca de 20% da taxa basal — uns 310 kcal por dia no seu caso. Mas esse consumo é quase fixo: um dia inteiro resolvendo problemas difíceis adiciona algo entre 5 e 20 kcal sobre ficar parado sem pensar em nada. É uma das estimativas mais consistentes da fisiologia, e contraria a intuição de todo mundo.</p><p>A exaustão que você sente à noite é real, mas é fadiga neural e cognitiva, não depleção calórica. O corpo não está pedindo comida — está pedindo descanso. Vale distinguir os dois, porque comer em resposta a cansaço mental não resolve cansaço mental.</p></div>
+        <div class="note"><h3>Dirigir: sim, mas quase nada</h3><p>Dirigir fica em torno de 1,8 MET, contra 1,5 de ficar sentado parado. Na sua hora diária ao volante, isso dá cerca de 20 kcal a mais que passar essa hora numa cadeira. Está contado dentro das horas sentadas.</p><p>Mesma ordem de grandeza para o resto: os dois banhos quentes de 4 min somam menos de 5 kcal, escovar os dentes é desprezível, e a masturbação fica em torno de 8 kcal por vez. Uma hora inteira de sauna rende entre 15 e 50 kcal a mais que passar essa hora sentado — para queimar 1 kg de gordura só com sauna seriam mais de 150 horas. Nada disso move o ponteiro; o que move são as 12 horas sentado.</p></div>
+        <div class="note warm"><h3>Sauna e calor: cuidado com a combinação</h3><p>Os números acima dizem que sauna não emagrece. Mas há um motivo mais concreto para pensar duas vezes: estimulantes anfetamínicos como o Venvanse elevam a temperatura central e prejudicam a dissipação de calor. Anfetamina somada a calor extremo é causa reconhecida de hipertermia.</p><p>Some a isso o Monjaro, que reduz sede e ingestão de líquido e está associado a desidratação, o clima seco de Palmas em setembro, e uma ingestão calórica já baixa. Se for à sauna, vá hidratado, em sessões curtas, nunca em jejum prolongado, e converse antes com o médico que acompanha seus medicamentos.</p></div>
+        <div class="note warm"><h3>12 horas sentado é o número que importa</h3><p>Seu PAL de 1,48 é o piso da faixa "levemente ativo". O problema não é o trabalho ser mental — é serem 8 h e meia de cadeira mais 1 h de carro mais a noite parado. Na semana em que você consegue academia 2 ou 3 vezes, o PAL sobe para 1,63 e o gasto passa de 2.395 para 2.651 kcal. São 250 kcal por dia de diferença, mais do que qualquer ajuste de fórmula nesta página.</p><p>E o ganho maior não é calórico: treino de força é o que protege massa magra durante uso de Monjaro. Com FFMI 18,6, é exatamente disso que você precisa.</p></div>
+        <div class="note"><h3>Testosterona: o efeito quase todo é indireto</h3><p>O efeito direto sobre a taxa basal é pequeno e a literatura diverge — parte dos estudos encontra 3 a 5%, parte conclui que o aumento se explica inteiramente pelo ganho de massa magra. Por isso o ajuste aqui é de 3%, e é o número menos confiável desta página inteira.</p><p>O efeito que importa entra por outro caminho: massa magra. Cada quilo de tecido magro queima cerca de 13 kcal por dia, contra 4,5 da gordura. Se a reposição somar 3 kg de massa magra ao longo de meses, são 39 kcal a mais na basal — mais do que o ajuste direto, e permanente enquanto o tecido existir. Só que isso não aparece sozinho: aparece quando você refaz a bioimpedância e atualiza o campo de gordura corporal aqui em cima.</p><p>Ela protege parte da massa magra, sim. Ensaios randomizados em homens obesos e hipogonadais sob restrição calórica severa mostram que o grupo com testosterona perde o mesmo peso total, mas preserva vários quilos a mais de massa magra que o grupo placebo — a perda se desloca para a gordura. O mecanismo é real e bem documentado.</p><p>Três coisas limitam isso no seu caso. Primeiro, a proteção é parcial: reduz a perda, não zera. Segundo, esses estudos foram feitos em homens obesos e hipogonadais — extrapolar para alguém de 21 anos com IMC 23 não está validado. Terceiro, e o mais importante: quanto mais magra a pessoa já é, maior a fração do peso perdido que vem de tecido magro. É a curva de Forbes, e ela trabalha contra você exatamente por você não ter gordura sobrando.</p><p>E a testosterona não fabrica tecido a partir do nada. Ela levanta o teto do que é possível; quem define o piso são proteína, calorias e estímulo mecânico. Sem treino de força, o corpo não recebe o sinal de qual tecido vale a pena manter — e hoje você não está treinando. Testosterona em déficit e sem treino protege muito menos do que o mesmo hormônio com comida e academia.</p><p>Duas coisas para conferir com seu médico. Primeiro, "1 ml por semana" é volume, não dose — depende da concentração do frasco. A 200 ou 250 mg/ml, comum no Brasil, 1 ml semanal fica acima da faixa de reposição e entra em território suprafisiológico. Segundo, testosterona e Monjaro puxam sua composição para lados opostos ao mesmo tempo: um constrói massa magra, o outro conduz perda de peso que pode incluir massa magra. Medir composição a cada três meses é o que mostra qual dos dois está ganhando.</p></div>
+        <div class="note"><h3>De onde vêm esses 19,3%</h3><p>O exame de 20 de janeiro de 2024 mediu 61,5 kg com 16,8% de gordura e 51,2 kg de massa magra. A TMB de 1.475 kcal que o aparelho reportou é exatamente Katch-McArdle aplicada a essa massa magra — a balança usa a mesma fórmula que esta página.</p><p>Os 19,3% são estimativa para 65 kg, supondo que os 3,5 kg ganhos desde então tenham sido um terço magro e dois terços gordura. Mas o cenário quase não importa: entre os extremos possíveis, o gasto total varia menos de 60 kcal. Só o peso importa de verdade — cada quilo move 14 kcal.</p></div>
+        <div class="note"><h3>Palmas em setembro</h3><p>Fim da seca, o mês mais quente do ano, com máximas acima de 38 °C. Mas dentro do escritório e de casa a temperatura fica na zona termoneutra, em que o corpo não gasta energia para se regular. Por isso o ajuste de ambiente é quase zero. O calor pesa por outro caminho: reduz o quanto você se mexe — e isso já está nas horas que você alocou.</p><p>No ar seco da estação você pode perder 1 a 2 kg de água num dia sem perceber. Se for acompanhar peso, pese sempre de manhã, em jejum, depois do banheiro, e olhe a média de sete dias.</p></div>
+        <div class="note"><h3>A margem é de 10%</h3><p>Mesmo com dados perfeitos estas equações erram cerca de 10% para cima ou para baixo, e o ajuste do Venvanse é o mais incerto de todos — estimulantes elevam a basal entre 3 e 6% conforme o estudo. A faixa no topo é mais honesta que o número cheio.</p></div>
+      </div>
+    </section>
+
+    <p class="foot">Estimativa educativa, sem valor diagnóstico — não substitui avaliação de nutricionista ou médico. Os ajustes de medicamento são aproximações de literatura, não medições suas. Qualquer mudança de dose, dieta ou plano de peso é decisão do médico que acompanha seu tratamento.</p>
+  </main>
+
+  <script>
+  (function(){
+    'use strict';
+    // Perfil e diário ficam no localStorage com chaves registradas em
+    // supabase-shared-storage.js (aninhadas em "settings"), então sincronizam
+    // entre aparelhos como o resto da agenda.
+    var KEY='agenda_calorimetro_v1', LKEY='agenda_calorimetro_log_v1';
+    // Perfil inicial: o mesmo que estava salvo no artifact "Calorímetro de Palmas" (22/09/2026).
+    var SEED={w:65,h:168,ag:21,sx:'m',bf:19.3,t:36.8,amb:'1.005',acl:true,venv:true,monj:true,test:true,c:[7.5,1,12,1,1,0]};
+    var PAR=[1.0,1.2,1.5,2.2,3.2,6.0];
+    var $=function(id){return document.getElementById(id);};
+    var c=[],co=[],bars=[];
+    for(var i=0;i<6;i++){c.push($('c'+i));co.push($('c'+i+'-o'));bars.push($('b'+i));}
+    var w=$('w'),h=$('h'),ag=$('ag'),sx=$('sx'),bf=$('bf'),t=$('t'),amb=$('amb'),acl=$('acl'),venv=$('venv'),monj=$('monj'),test=$('test');
+    var ranges=[w,h,ag,bf,t].concat(c), boxes=[acl,venv,monj,test];
+    var applying=false, curTdee=0, curBmr=0, entries=[];
+
+    function state(){
+      return {w:+w.value,h:+h.value,ag:+ag.value,sx:sx.value,bf:+bf.value,t:+t.value,amb:amb.value,
+              acl:acl.checked,venv:venv.checked,monj:monj.checked,test:test.checked,c:c.map(function(x){return +x.value;})};
+    }
+    function apply(d){
+      if(!d||typeof d!=='object')return;
+      applying=true;
+      try{
+        if(d.w!=null)w.value=d.w; if(d.h!=null)h.value=d.h; if(d.ag!=null)ag.value=d.ag;
+        if(d.sx)sx.value=d.sx; if(d.bf!=null)bf.value=d.bf; if(d.t!=null)t.value=d.t; if(d.amb)amb.value=d.amb;
+        if(typeof d.acl==='boolean')acl.checked=d.acl; if(typeof d.venv==='boolean')venv.checked=d.venv;
+        if(typeof d.monj==='boolean')monj.checked=d.monj; if(typeof d.test==='boolean')test.checked=d.test;
+        if(Array.isArray(d.c))for(var i=0;i<6;i++){if(d.c[i]!=null)c[i].value=d.c[i];}
+      }catch(e){}
+      applying=false;
+    }
+    function loadJSON(k,fb){try{var r=localStorage.getItem(k);return r?JSON.parse(r):fb;}catch(e){return fb;}}
+    function saveProfile(){if(applying)return;try{localStorage.setItem(KEY,JSON.stringify(state()));}catch(e){}}
+    function saveLog(){try{localStorage.setItem(LKEY,JSON.stringify(entries));}catch(e){}}
+    function setSync(on,msg){var el=$('sync');el.className=on?'on':'';$('sync-t').textContent=msg;}
+
+    function n(x){return Math.round(x).toLocaleString('pt-BR');}
+    function dec(x,p){return x.toFixed(p).replace('.',',');}
+    function hr(x){return (x%1===0?String(x):dec(x,1))+' h';}
+    function palName(p){return p<1.40?'sedentário':p<1.60?'levemente ativo':p<1.90?'moderadamente ativo':p<2.20?'muito ativo':'extremamente ativo';}
+
+    function calc(){
+      var W=+w.value,H=+h.value,A=+ag.value,BF=+bf.value,T=+t.value,male=sx.value==='m';
+      $('w-o').textContent=(W%1===0?W:dec(W,1))+' kg'; $('h-o').textContent=H+' cm'; $('ag-o').textContent=A+' anos';
+      $('bf-o').textContent=BF===0?'não sei':dec(BF,1)+'%'; $('t-o').textContent=dec(T,1)+' °C';
+      var tot=0,wsum=0,i;
+      for(i=0;i<6;i++){var v=+c[i].value;co[i].textContent=hr(v);tot+=v;wsum+=v*PAR[i];}
+      for(i=0;i<6;i++){bars[i].style.width=(tot>0?(+c[i].value/tot*100):0)+'%';bars[i].style.background='var(--s'+i+')';}
+      var pal=tot>0?wsum/tot:1.2, sumEl=$('sum');
+      if(Math.abs(tot-24)>0.01){sumEl.textContent='Total: '+hr(tot)+' — faltam '+dec(Math.abs(24-tot),1)+' h para fechar o dia. O resultado usa a proporção.';sumEl.className='bad';}
+      else{sumEl.textContent='Total: 24,0 h · PAL '+dec(pal,2)+' — '+palName(pal);sumEl.className='';}
+      var f1=male?(10*W+6.25*H-5*A+5):(10*W+6.25*H-5*A-161);
+      var f2=male?(88.362+13.397*W+4.799*H-5.677*A):(447.593+9.247*W+3.098*H-4.330*A);
+      var f3=male?(A<18?(17.686*W+658.2):A<30?(15.057*W+692.2):A<60?(11.472*W+873.1):(11.711*W+587.7))
+                 :(A<18?(13.384*W+692.6):A<30?(14.818*W+486.6):A<60?(8.126*W+845.6):(9.082*W+658.5));
+      var pop=(f1+f2+f3)/3, base, f4txt, lbmTxt, ffmiTxt;
+      if(BF>0){var lbm=W*(1-BF/100), f4=370+21.6*lbm; base=0.5*f4+0.5*pop; f4txt=n(f4); lbmTxt=dec(lbm,1)+' kg'; ffmiTxt=dec(lbm/Math.pow(H/100,2),1);}
+      else{base=pop; f4txt='informe a gordura'; lbmTxt='—'; ffmiTxt='—';}
+      var vm=venv.checked?1.04:1, tm=test.checked?1.03:1, fv=T>37.2?1+0.115*(T-37.0):1, ab=+amb.value, ac=acl.checked?0.96:1;
+      var bmr=base*vm*tm*fv, tdee=bmr*pal*ab*ac;
+      $('pop').textContent=n(pop); $('lbm').textContent=lbmTxt; $('ffmi').textContent=ffmiTxt;
+      $('f1').textContent=n(f1); $('f2').textContent=n(f2); $('f3').textContent=n(f3); $('f4').textContent=f4txt; $('comb').textContent=n(base);
+      $('bmr').textContent=n(bmr); $('pal').textContent=dec(pal,2); $('tdee').textContent=n(tdee);
+      $('rng').textContent=n(tdee*0.9)+'–'+n(tdee*1.1); $('imc').textContent=dec(W/Math.pow(H/100,2),1);
+      $('venv-o').textContent=venv.checked?'+4%':'0%'; $('venv-r').textContent=venv.checked?('+'+n(base*0.04)+' kcal'):'não usa';
+      $('test-o').textContent=test.checked?'+3%':'0%'; $('test-r').textContent=test.checked?('+'+n(base*vm*0.03)+' kcal'):'não usa';
+      $('fev').textContent=fv>1?('+'+Math.round((fv-1)*100)+'% · '+n(bmr-base*vm*tm)+' kcal'):'nenhum';
+      var pct=Math.round((ab*ac-1)*100); $('amb-o').textContent=(pct>0?'+':pct===0?'':'−')+Math.abs(pct)+'%';
+      $('g0').textContent=n(tdee); $('g1').textContent=n(tdee*1.1); $('g2').textContent=n(bmr); $('prot').textContent=n(W*2.0)+'–'+n(W*2.2)+' g';
+      curTdee=tdee; curBmr=bmr;
+      renderLog(); saveProfile();
+    }
+
+    function todayISO(){var d=new Date(),p=function(x){return (x<10?'0':'')+x;};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
+    function fmtDay(iso){var p=String(iso).split('-');return p.length===3?(p[2]+'/'+p[1]):iso;}
+    function upsert(d,k){
+      var found=false;
+      for(var i=0;i<entries.length;i++){if(entries[i].d===d){entries[i]={d:d,kcal:k};found=true;break;}}
+      if(!found)entries.push({d:d,kcal:k});
+      entries.sort(function(a,b){return a.d<b.d?1:(a.d>b.d?-1:0);}); entries=entries.slice(0,60);
+    }
+    function renderLog(){
+      var list=$('loglist'),m7=$('m7'),m7d=$('m7d'),bal=$('bal'),bald=$('bald'),nd=$('ndays'),vd=$('lverdict');
+      nd.textContent=entries.length;
+      if(!entries.length){list.textContent='';m7.textContent='—';m7d.textContent='sem registros ainda';bal.textContent='—';bald.textContent='contra o gasto atual';
+        vd.textContent='Registre alguns dias e aparece aqui a comparação entre o que você come e o que gasta.';vd.className='lverdict';return;}
+      var last7=entries.slice(0,7),avg=0;last7.forEach(function(e){avg+=e.kcal;});avg=avg/last7.length;var diff=avg-curTdee;
+      m7.textContent=n(avg); m7d.textContent=last7.length+(last7.length===1?' dia contado':' dias contados');
+      bal.textContent=(diff>=0?'+':'−')+n(Math.abs(diff)); bald.textContent=diff>=0?'acima do gasto':'abaixo do gasto';
+      if(avg<curBmr){vd.textContent='Sua média está abaixo da taxa basal de '+n(curBmr)+' kcal — a energia que o corpo gasta só para funcionar em repouso. Sustentar isso com testosterona em uso não constrói massa: o corpo canibaliza tecido para cobrir a diferença. Leve esse número ao seu médico.';vd.className='lverdict warn';}
+      else if(diff<-500){vd.textContent='Déficit médio de '+n(Math.abs(diff))+' kcal por dia. É um corte agressivo para quem está com IMC 23 e fazendo reposição — boa parte da perda tende a vir de massa magra, não de gordura.';vd.className='lverdict warn';}
+      else if(diff<-200){vd.textContent='Déficit moderado de '+n(Math.abs(diff))+' kcal por dia, cerca de '+dec(Math.abs(diff)*7/7700,2)+' kg de gordura por semana se mantido. Com testosterona em uso, o ideal seria estar no mínimo em equilíbrio.';vd.className='lverdict';}
+      else if(diff<=200){vd.textContent='Você está em equilíbrio — comendo praticamente o que gasta. É o ponto de partida certo para ganhar massa com treino de força.';vd.className='lverdict';}
+      else{vd.textContent='Superávit de '+n(diff)+' kcal por dia. Com treino de força e testosterona acompanhada, é a faixa em que a massa magra cresce. Sem treino, vira gordura.';vd.className='lverdict';}
+      var recent=entries.slice(0,14),top=curTdee;recent.forEach(function(e){if(e.kcal>top)top=e.kcal;});top=top*1.12;
+      list.textContent='';
+      recent.forEach(function(e){
+        var row=document.createElement('div');row.className='lrow';
+        var dd=document.createElement('span');dd.className='ld';dd.textContent=fmtDay(e.d);
+        var track=document.createElement('span');track.className='lt';
+        var fill=document.createElement('span');fill.className='lf'+(e.kcal>=curTdee?' ok':'');fill.style.width=Math.max(1,Math.min(100,e.kcal/top*100))+'%';
+        var mark=document.createElement('span');mark.className='lm';mark.style.left=(curTdee/top*100)+'%';
+        track.appendChild(fill);track.appendChild(mark);
+        var vv=document.createElement('span');vv.className='lv';vv.textContent=n(e.kcal)+' kcal';
+        row.appendChild(dd);row.appendChild(track);row.appendChild(vv);list.appendChild(row);
+      });
+    }
+
+    $('logform').addEventListener('submit',function(ev){
+      ev.preventDefault();
+      var d=$('ld').value,raw=$('lk').value,k=parseFloat(raw),err=$('lerr');
+      if(!d){err.textContent='Escolha o dia primeiro.';return;}
+      if(raw===''||!isFinite(k)||k<=0){err.textContent='Digite quantas calorias você comeu nesse dia.';return;}
+      if(k>9000){err.textContent='Acima de 9.000 kcal — confira o número.';return;}
+      err.textContent='';upsert(d,Math.round(k));saveLog();renderLog();$('lk').value='';
+    });
+    ['ld','lk'].forEach(function(id){$(id).addEventListener('input',function(){$('lerr').textContent='';});});
+
+    var PRESETS={p1:[7.5,1,12,2.5,1,0],p2:[7.5,1,11,2.5,1.25,0.75],p3:[10,5,8,1,0,0],p4:[9,2,10,2,1,0]};
+    Object.keys(PRESETS).forEach(function(id){$(id).addEventListener('click',function(){for(var i=0;i<6;i++){c[i].value=PRESETS[id][i];}calc();});});
+    ranges.forEach(function(el){el.addEventListener('input',calc);});
+    [sx,amb].forEach(function(el){el.addEventListener('change',calc);});
+    boxes.forEach(function(el){el.addEventListener('change',calc);});
+
+    function boot(){
+      var prof=loadJSON(KEY,null); apply(prof&&typeof prof==='object'&&prof.w?prof:SEED);
+      var log=loadJSON(LKEY,[]); entries=Array.isArray(log)?log.filter(function(e){return e&&e.d&&isFinite(e.kcal);}):[];
+      $('ld').value=todayISO(); calc();
+    }
+    boot();
+    // Quando a nuvem manda perfil/diário mais novos, reaplica sem perder o que está na tela.
+    window.addEventListener('agenda:remote-sync',function(){var p=loadJSON(KEY,null);if(p&&p.w)apply(p);var l=loadJSON(LKEY,null);if(Array.isArray(l))entries=l;calc();});
+    window.addEventListener('storage',function(e){if(e.key===KEY||e.key===LKEY)boot();});
+    setSync(false,'Salvo neste aparelho — sincroniza com a agenda quando a nuvem estiver vinculada');
+    var cfg=loadJSON('agenda_supabase_config_v1',{}); if(cfg&&cfg.lastSyncAt)setSync(true,'Sincronizado com a agenda (última vez '+String(cfg.lastSyncAt).slice(0,16).replace('T',' ')+')');
+  })();
+  </script>
+  <script>document.getElementById('calBack').addEventListener('click',function(e){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;e.preventDefault();var p=document.getElementById('calPage');p.classList.add('leaving');setTimeout(function(){location.href='./';},170);});</script>
+  <script src="./supabase-project-config.js?v=1"></script>
+  <script src="./supabase-shared-storage.js?v=8"></script>
+</body>
+</html>
