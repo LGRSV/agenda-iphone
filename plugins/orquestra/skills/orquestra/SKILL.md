@@ -63,8 +63,15 @@ Regras de corte:
 
 ## Fase 2 — Briefing
 
-Para cada frente, escreva o briefing seguindo `modelos/briefing.md` e salve em
-`.orquestra/<missao>/briefings/<frente>.md`. O subagente **não vê esta
+Para cada frente, escreva o briefing seguindo `modelos/briefing.md` e **salve
+em `.orquestra/<missao>/briefings/<frente>.md` ANTES de despachar** — e
+despache o conteúdo lido desse arquivo, não um texto redigido à parte. O
+arquivo é o único registro auditável do que cada agente sabia; sem ele, um
+critério como "o testador não viu a implementação" fica impossível de
+comprovar. (Medido: num teste real, briefings passados direto na chamada
+deixaram a pasta vazia e o revisor não conseguiu verificar esse critério.)
+
+O subagente **não vê esta
 conversa** — tudo o que ele precisa saber tem que estar no briefing: caminhos
 absolutos, contratos, critérios, o que não fazer, e o formato exato do
 relatório de volta.
@@ -105,6 +112,14 @@ não participou da produção**. O briefing dele recebe: a missão, a definiçã
 pronto e o caminho da entrega integrada — e a instrução de tentar **derrubar**
 a entrega: achar o critério que não está atendido, a inconsistência entre
 partes, o caso que ninguém testou.
+
+Técnicas que funcionam para o revisor, peça explicitamente:
+- **validação cruzada**: reimplementar o núcleo de forma independente e
+  comparar em milhares de entradas aleatórias;
+- **teste de mutação**: introduzir bugs plausíveis numa CÓPIA do código e ver
+  se a suíte de testes pega cada um. Mutante que sobrevive é lacuna de teste
+  — mais concreto que qualquer "a cobertura parece boa";
+- **conferir a documentação executando** cada exemplo dela.
 
 Achado do revisor é tratado como defeito: volta para a Fase 4 na frente
 responsável. Se ele não acha nada, peça a ele que liste o que testou — "não
