@@ -1,0 +1,15 @@
+{
+  "name": "analise-verificada",
+  "owner": { "name": "lgrsv", "url": "https://github.com/lgrsv" },
+  "description": "Numero sem origem registrada nao sai na resposta.",
+  "plugins": [
+    {
+      "name": "analise-verificada",
+      "source": "./",
+      "description": "Obriga que todo numero de uma analise tenha origem registrada.",
+      "version": "1.0.0",
+      "category": "quality",
+      "keywords": ["analise", "verificacao", "auditoria", "anti-alucinacao"]
+    }
+  ]
+}
