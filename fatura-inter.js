@@ -151,17 +151,20 @@
   }
 
   // ---- Resumo da fatura e visão do ano: tipo (consumo, refaturamento...), compra x estorno e categoria.
-  // Os campos faturaTipo, categoria, lancamento e estornoInfo ficam na nota de cada lançamento; sem eles,
+  // Os campos faturaTipo, categoria, lancamento, estornoInfo e paraQuem ficam na nota de cada lançamento; sem eles,
   // o tipo é deduzido pelo nome e pelo crédito, e a categoria fica como "Sem categoria".
   const TIPOS = [
     ['consumo','Consumo','o que você comprou'],
     ['refat','Refaturamento','passado na maquininha do Mercado Pago; não é consumo'],
+    ['terceiros','Para outras pessoas','gasto feito para outra pessoa; não é consumo pessoal'],
     ['encargos','IOF','imposto sobre compra em moeda estrangeira'],
     ['saldo','Saldo de fatura anterior','valor que passou de uma fatura para a seguinte'],
     ['ajustes','Créditos do banco','resgate de pontos e outros créditos que não devolvem compra']
   ];
   const TIPO_NOME = Object.fromEntries(TIPOS.map(t => [t[0], t[1]]));
   const LANCS = [['compra','Compras'],['estorno','Estornos'],['estorno_desfeito','Estornos desfeitos']];
+  const COM_LANC = ['consumo','refat','terceiros'];
+  const quemOf = item => String(item.n.paraQuem || '') || 'Outra pessoa';
   const nameOf = item => String(item.n.invoiceLabel || item.text || '');
   const tipoOf = item => TIPO_NOME[item.n.faturaTipo] ? item.n.faturaTipo
     : /refaturamento/i.test(nameOf(item)) ? 'refat'
@@ -169,7 +172,7 @@
     : /^saldo da fatura/i.test(nameOf(item)) ? 'saldo' : 'consumo';
   const lancOf = item => {
     const tipo = tipoOf(item);
-    if (tipo !== 'consumo' && tipo !== 'refat') return '';
+    if (!COM_LANC.includes(tipo)) return '';
     if (['compra','estorno','estorno_desfeito'].includes(item.n.lancamento)) return item.n.lancamento;
     return item.credit ? 'estorno' : /^revers[aã]o de cr[eé]dito/i.test(nameOf(item)) ? 'estorno_desfeito' : 'compra';
   };
@@ -193,14 +196,15 @@
     const tipo = tipoOf(item);
     if (tipo === 'consumo') return esc(catOf(item));
     if (tipo === 'refat') return item.credit ? 'Refaturamento · crédito na fatura' : 'Refaturamento';
+    if (tipo === 'terceiros') return `Para ${esc(quemOf(item))} · não é consumo pessoal`;
     return esc(TIPO_NOME[tipo]);
   }
 
   function resumo(list) {
     const tipos = Object.fromEntries(TIPOS.map(t => [t[0], 0]));
-    const ce = { consumo:{}, refat:{} };
-    ['consumo','refat'].forEach(t => LANCS.forEach(([l]) => { ce[t][l] = { n:0, v:0, items:[] }; }));
-    const cats = new Map();
+    const ce = Object.fromEntries(COM_LANC.map(t => [t, {}]));
+    COM_LANC.forEach(t => LANCS.forEach(([l]) => { ce[t][l] = { n:0, v:0, items:[] }; }));
+    const cats = new Map(), outras = new Map();
     list.forEach(item => {
       const tipo = tipoOf(item), v = signedCents(item), lanc = lancOf(item);
       tipos[tipo] += v;
@@ -210,8 +214,13 @@
         if (!cats.has(cat)) cats.set(cat, { nome:cat, v:0, items:[] });
         const c = cats.get(cat); c.v += v; c.items.push(item);
       }
+      if (tipo === 'terceiros') {
+        const quem = quemOf(item);
+        if (!outras.has(quem)) outras.set(quem, { nome:quem, v:0, items:[] });
+        const o = outras.get(quem); o.v += v; o.items.push(item);
+      }
     });
-    return { tipos, ce, cats:[...cats.values()].sort((a,b) => b.v - a.v), total:Object.values(tipos).reduce((a,b) => a + b, 0) };
+    return { tipos, ce, cats:[...cats.values()].sort((a,b) => b.v - a.v), outras:[...outras.values()].sort((a,b) => b.v - a.v), total:Object.values(tipos).reduce((a,b) => a + b, 0) };
   }
 
   function barraHtml(tipos, ce) {
@@ -225,7 +234,7 @@
   }
 
   function ceHtml(ce, tipos) {
-    return ['consumo','refat'].filter(t => LANCS.some(([l]) => ce[t][l].n)).map(t => `<div class="ce" data-tipo="${t}"><h3>${TIPO_NOME[t]}</h3>${LANCS.filter(([l]) => l !== 'estorno_desfeito' || ce[t][l].n).map(([l, nome]) =>
+    return COM_LANC.filter(t => LANCS.some(([l]) => ce[t][l].n)).map(t => `<div class="ce" data-tipo="${t}"><h3>${TIPO_NOME[t]}</h3>${LANCS.filter(([l]) => l !== 'estorno_desfeito' || ce[t][l].n).map(([l, nome]) =>
       `<div class="ln" data-lanc="${l}"><span>${nome}<small>${ce[t][l].n ? plural(ce[t][l].n,'lançamento','lançamentos') : 'nenhum'}</small></span><b>${money(fromCents(ce[t][l].v))}</b></div>`).join('')}
       <div class="ln tot" data-lanc="liquido"><span>Líquido</span><b>${money(fromCents(tipos[t]))}</b></div></div>`).join('');
   }
@@ -266,14 +275,23 @@
     box.hidden = false;
     document.querySelector('#barra').innerHTML = barraHtml(r.tipos, r.ce);
     document.querySelector('#ceGrid').innerHTML = ceHtml(r.ce, r.tipos);
-    const devs = ['consumo','refat'].flatMap(t => r.ce[t].estorno.items.concat(r.ce[t].estorno_desfeito.items));
+    const devs = COM_LANC.flatMap(t => r.ce[t].estorno.items.concat(r.ce[t].estorno_desfeito.items));
     document.querySelector('#ceNota').textContent = devs.length
       ? 'Estorno é dinheiro que o banco devolveu de uma compra; estorno desfeito é quando o banco cancela o estorno e cobra de novo. Os estornos já estão descontados nos totais.'
       : 'Nenhum estorno nesta fatura: todos os lançamentos são compras.';
     const totC = r.tipos.consumo, max = Math.max(1, ...r.cats.map(c => c.v));
     document.querySelector('#catsTitle').textContent = `CONSUMO POR CATEGORIA · ${money(fromCents(totC))}`;
     document.querySelector('#catsBox').hidden = !r.cats.length;
+    renderOutras(r.outras, '#outrasBox', '#outrasTitle', '#outras', null, '');
     document.querySelector('#cats').innerHTML = r.cats.map(c => `<details><summary><span class="nm">${esc(c.nome)}<small>${countsOf(c.items)}</small></span><span class="v">${money(fromCents(c.v))}<small>${pct(c.v, totC)}</small></span><span class="track"><i style="width:${Math.max(0, c.v) / max * 100}%"></i></span></summary>${miniList(c.items)}</details>`).join('');
+  }
+
+  // Gastos feitos para outras pessoas (faturaTipo "terceiros"), agrupados por pessoa.
+  function renderOutras(outras, box, title, list, extra, sufixo) {
+    const total = outras.reduce((a,o) => a + o.v, 0);
+    document.querySelector(box).hidden = !outras.length;
+    document.querySelector(title).textContent = `PARA OUTRAS PESSOAS${sufixo} · ${money(fromCents(total))}`;
+    document.querySelector(list).innerHTML = outras.map(o => `<details><summary><span class="nm">${esc(o.nome)}<small>${countsOf(o.items)}</small></span><span class="v" data-v="${fromCents(o.v)}">${money(fromCents(o.v))}</span></summary>${miniList(o.items, extra)}</details>`).join('');
   }
 
   // ---- Visão do ano: as 12 faturas do ano (fechadas, a aberta e as seguintes, só com o que já está lançado)
@@ -290,8 +308,8 @@
   function renderAno() {
     const meses = anoData(), sum = f => meses.reduce((a,m) => a + f(m), 0);
     const tipos = Object.fromEntries(TIPOS.map(t => [t[0], sum(m => m.r.tipos[t[0]])]));
-    const ce = { consumo:{}, refat:{} };
-    ['consumo','refat'].forEach(t => LANCS.forEach(([l]) => { ce[t][l] = { n:sum(m => m.r.ce[t][l].n), v:sum(m => m.r.ce[t][l].v), items:[] }; }));
+    const ce = Object.fromEntries(COM_LANC.map(t => [t, {}]));
+    COM_LANC.forEach(t => LANCS.forEach(([l]) => { ce[t][l] = { n:sum(m => m.r.ce[t][l].n), v:sum(m => m.r.ce[t][l].v), items:[] }; }));
     const somaFaturas = sum(m => m.r.total), saldo = tipos.saldo, total = somaFaturas - saldo;
     const st = k => sum(m => m.st === k ? m.r.total - m.r.tipos.saldo : 0);
     const partes = [['fechada','Faturas fechadas',`${meses.filter(m => m.st === 'fechada').length} até agora`], ['aberta','Fatura aberta', meses.filter(m => m.st === 'aberta').map(m => monthShort(m.key)).join(', ') || '—'], ['prevista','Faturas seguintes','só parcelas e lançamentos já feitos']].map(p => [...p, st(p[0])]).filter(p => p[3] !== 0);
@@ -309,10 +327,10 @@
     document.querySelectorAll('#anoBars button').forEach(b => b.addEventListener('click', () => { cursor = b.dataset.key; setView('fatura'); window.scrollTo({ top:0 }); }));
     const cel = v => (v / 100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
     const outros = r => r.tipos.encargos + r.tipos.ajustes;
-    document.querySelector('#anoTab').innerHTML = `<thead><tr><th>Fatura</th><th>Situação</th><th>Consumo</th><th>Refaturamento</th><th>IOF e créditos</th><th>Saldo anterior</th><th>Total</th></tr></thead><tbody>${meses.map(m =>
-      `<tr><td>${monthShort(m.key)}</td><td class="st">${ST[m.st]}</td><td>${cel(m.r.tipos.consumo)}</td><td>${cel(m.r.tipos.refat)}</td><td>${cel(outros(m.r))}</td><td>${cel(m.r.tipos.saldo)}</td><td>${cel(m.r.total)}</td></tr>`).join('')}</tbody>
-      <tfoot><tr><td>Soma</td><td></td><td>${cel(tipos.consumo)}</td><td>${cel(tipos.refat)}</td><td>${cel(tipos.encargos + tipos.ajustes)}</td><td>${cel(saldo)}</td><td>${cel(somaFaturas)}</td></tr>
-      <tr><td colspan="6" class="st">Total do ano, sem o saldo repassado</td><td>${cel(total)}</td></tr></tfoot>`;
+    document.querySelector('#anoTab').innerHTML = `<thead><tr><th>Fatura</th><th>Situação</th><th>Consumo</th><th>Para outras pessoas</th><th>Refaturamento</th><th>IOF e créditos</th><th>Saldo anterior</th><th>Total</th></tr></thead><tbody>${meses.map(m =>
+      `<tr><td>${monthShort(m.key)}</td><td class="st">${ST[m.st]}</td><td>${cel(m.r.tipos.consumo)}</td><td>${cel(m.r.tipos.terceiros)}</td><td>${cel(m.r.tipos.refat)}</td><td>${cel(outros(m.r))}</td><td>${cel(m.r.tipos.saldo)}</td><td>${cel(m.r.total)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td>Soma</td><td></td><td>${cel(tipos.consumo)}</td><td>${cel(tipos.terceiros)}</td><td>${cel(tipos.refat)}</td><td>${cel(tipos.encargos + tipos.ajustes)}</td><td>${cel(saldo)}</td><td>${cel(somaFaturas)}</td></tr>
+      <tr><td colspan="7" class="st">Total do ano, sem o saldo repassado</td><td>${cel(total)}</td></tr></tfoot>`;
     const cats = new Map(), mesDe = new Map();
     meses.forEach((m, i) => m.r.cats.forEach(c => { if (!cats.has(c.nome)) cats.set(c.nome, { nome:c.nome, v:0, mes:Array(12).fill(0), itensMes:Array.from({ length:12 }, () => []), items:[] }); const x = cats.get(c.nome); x.v += c.v; x.mes[i] += c.v; x.itensMes[i].push(...c.items); x.items.push(...c.items); c.items.forEach(item => mesDe.set(item, m)); }));
     const daFatura = item => { const m = mesDe.get(item); return m ? `<small>fatura de ${monthShort(m.key)}${m.st === 'fechada' ? '' : ` · ${ST[m.st]}`}</small>` : ''; };
@@ -325,6 +343,9 @@
         <span class="grupo">Mês a mês</span><div class="meses-cat">${meses.map((m, i) => c.itensMes[i].length
           ? `<details class="mes" data-mes="${m.key}"><summary><span class="nm">${monthShort(m.key)}<small>${ST[m.st]} · ${countsOf(c.itensMes[i])}</small></span><span class="v" data-v="${fromCents(c.mes[i])}">${money(fromCents(c.mes[i]))}</span></summary>${miniList(c.itensMes[i])}</details>`
           : `<div class="mes vazio" data-mes="${m.key}"><span class="nm">${monthShort(m.key)}<small>${ST[m.st]} · nada nesta categoria</small></span><span class="v" data-v="0">${money(0)}</span></div>`).join('')}</div></details>`; }).join('');
+    const outrasAno = new Map();
+    meses.forEach(m => m.r.outras.forEach(o => { if (!outrasAno.has(o.nome)) outrasAno.set(o.nome, { nome:o.nome, v:0, items:[] }); const x = outrasAno.get(o.nome); x.v += o.v; x.items.push(...o.items); o.items.forEach(item => mesDe.set(item, m)); }));
+    renderOutras([...outrasAno.values()].sort((a,b) => b.v - a.v), '#anoOutrasBox', '#anoOutrasTitle', '#anoOutras', daFatura, ` EM ${YEAR}`);
     const todos = lista.flatMap(c => c.items);
     document.querySelector('#anoLugaresTitle').textContent = `ONDE VOCÊ MAIS GASTOU EM ${YEAR}`;
     document.querySelector('#anoLugares').innerHTML = lugaresHtml(todos, daFatura, 12, true);
