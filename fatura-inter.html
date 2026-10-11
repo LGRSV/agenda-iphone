@@ -10,19 +10,101 @@
     :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#17181c;color:#f7f8fb;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.app{max-width:760px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom))}.head{display:flex;align-items:center;gap:13px}.back{display:grid;place-items:center;width:44px;height:44px;border:1px solid #3b404a;border-radius:13px;background:#202228;color:#f7f8fb;text-decoration:none;font-size:28px;line-height:1}.ey{margin:0;color:#ff9a4e;font-size:11px;font-weight:850;letter-spacing:.12em}.head h1{margin:4px 0 0;font-size:26px;letter-spacing:-.04em}.muted{margin:0;color:#a6acb8;font-size:13px}.invoice-nav{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:10px;margin:20px 0 10px}.invoice-nav button{width:44px;height:44px;border:1px solid #3b404a;border-radius:13px;background:#202228;color:#f7f8fb;font-size:27px;line-height:1;cursor:pointer}.invoice-nav strong{text-align:center;text-transform:capitalize;font-size:18px;letter-spacing:-.02em}.slide{margin:10px 0 18px;padding:15px 16px;border-radius:18px;color:#fff}.slide.cartao{background:linear-gradient(140deg,#0a0a0c,#1c1c20 55%,#2b2b30);box-shadow:0 14px 30px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.09);position:relative;overflow:hidden}.slide.cartao:before{content:"";position:absolute;top:-40%;right:-10%;width:180px;height:180px;background:radial-gradient(circle,rgba(255,122,0,.22),transparent 70%);pointer-events:none}.slide.cartao.changing{animation:invoiceChange .28s ease-out both}.ct-top{display:flex;justify-content:space-between;align-items:center;gap:8px;position:relative}.ct-brand{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:.02em}.ct-brand:before{content:"";width:8px;height:8px;border-radius:2px;background:#ff7a00}.ct-due{font-size:11px;font-weight:800;background:rgba(255,255,255,.12);padding:3px 8px;border-radius:999px;white-space:nowrap}.ct-val{position:relative;font-size:26px;font-weight:850;margin-top:8px}.ct-sub{position:relative;font-size:11px;opacity:.92;margin-top:2px;font-weight:600}.ct-cardbot{position:relative;display:flex;justify-content:space-between;align-items:flex-end;margin-top:8px;gap:10px}.mc{position:relative;width:40px;height:25px;flex:0 0 auto}.mc i{position:absolute;top:0;width:25px;height:25px;border-radius:50%}.mc i:first-child{left:0;background:#eb001b}.mc i:last-child{right:0;background:#f79e1b;mix-blend-mode:screen}h2{margin:24px 0 9px;color:#a6acb8;font-size:11px;font-weight:850;letter-spacing:.09em}.list{border:1px solid #3b404a;border-radius:18px;background:#202228;overflow:hidden}.day{border-bottom:1px solid #3b404a}.day:last-child{border-bottom:0}.day-head{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;background:#24262c;color:#dfe2e8;font-size:12px;font-weight:850}.day-head b{color:#ff8c9d;font-size:13px}.row{display:grid;grid-template-columns:20px 1fr auto;gap:10px;align-items:start;padding:13px;border-bottom:1px solid #343840}.row:last-child{border-bottom:0}.dot{display:block;width:9px;height:9px;border-radius:50%;margin-top:5px;background:#ff7f91}.title{font-weight:800;line-height:1.35}.meta{margin-top:4px;color:#a6acb8;font-size:11px;font-weight:650}.value{color:#ff8c9d;font-size:14px;font-weight:900;white-space:nowrap}.detail{margin-top:8px;padding:7px 8px;border:1px solid #363a43;border-radius:9px;color:#b9bfca;font-size:11px;line-height:1.4}.invoice-details>span{display:block;margin-bottom:6px;color:#8f96a3;font-size:9px;font-weight:850;letter-spacing:.06em;text-transform:uppercase}.invoice-detail-boxes{display:flex;flex-wrap:wrap;gap:6px}.invoice-detail-box{display:inline-flex;align-items:center;min-height:28px;padding:5px 8px;border:1px solid #3a414d;border-radius:8px;background:#252830;color:#d8dbe2;font-size:11px;line-height:1.3}.empty{padding:34px 18px;text-align:center;color:#a6acb8}.updated{padding-top:18px;text-align:center;color:#777e8b;font-size:11px;font-weight:650}@media(prefers-reduced-motion:no-preference){.slide.cartao{animation:enter .3s ease-out both}@keyframes enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes invoiceChange{from{opacity:.35;transform:translateX(12px) scale(.985)}to{opacity:1;transform:none}}}
   </style>
   <style>.row.credit .dot{background:#78d88b}.row.credit .value{color:#78d88b}</style>
+  <style>
+    [hidden]{display:none!important}
+    .tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:16px 0 0;padding:4px;border:1px solid #3b404a;border-radius:14px;background:#202228}
+    .tabs button{padding:10px 8px;border:0;border-radius:10px;background:transparent;color:#a6acb8;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
+    .tabs button[aria-selected="true"]{background:#2e3139;color:#f7f8fb;box-shadow:inset 0 0 0 1px #4a505c}
+    .tabs button:focus-visible,.bars button:focus-visible,summary:focus-visible{outline:2px solid #ff9a4e;outline-offset:2px}
+    .box{border:1px solid #3b404a;border-radius:18px;background:#202228;padding:13px}
+    .stack{display:flex;height:14px;gap:2px;border-radius:5px;overflow:hidden;background:#2a2d34}
+    .stack i{display:block;height:100%}
+    .k-consumo,.k-fechada{background:#ff7a00}.k-refat{background:#8f96a3}
+    .k-encargos{background:repeating-linear-gradient(135deg,#ffb36b 0 2px,transparent 2px 5px);box-shadow:inset 0 0 0 1px #ffb36b}
+    .k-saldo{background:repeating-linear-gradient(45deg,#8f96a3 0 2px,transparent 2px 5px);box-shadow:inset 0 0 0 1px #8f96a3}
+    .k-ajustes{background:transparent;box-shadow:inset 0 0 0 1.5px #78d88b}
+    .k-aberta{background:repeating-linear-gradient(135deg,#ff7a00 0 2px,transparent 2px 5px);box-shadow:inset 0 0 0 1px #ff7a00}
+    .k-prevista{background:transparent;box-shadow:inset 0 0 0 1.5px #8f96a3}
+    .legend{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:11px}
+    .legend li{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:10px;align-items:start;font-size:13px;font-weight:750}
+    .legend .sw{width:12px;height:12px;border-radius:3px;margin-top:3px}
+    .legend small,.ce small,.cats small,.mini small{display:block;color:#a6acb8;font-size:11px;font-weight:600;line-height:1.35}
+    .legend .v{text-align:right;font-weight:850;white-space:nowrap}
+    .legend-note small{color:#8f96a3}
+    .ce-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px}
+    .ce{border:1px solid #3b404a;border-radius:16px;background:#202228;padding:12px 13px}
+    .ce h3{margin:0 0 6px;font-size:13px;font-weight:850}
+    .ce .ln{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:4px 0;font-size:13px;align-items:baseline}
+    .ce .ln small{display:inline;margin-left:5px}
+    .ce .ln b{white-space:nowrap}
+    .ce .tot{border-top:1px solid #3b404a;margin-top:4px;padding-top:7px;font-weight:850}
+    .note{margin:8px 2px 0;color:#8f96a3;font-size:11.5px;line-height:1.45}
+    .cats{border:1px solid #3b404a;border-radius:18px;background:#202228;overflow:hidden}
+    .cats details{border-bottom:1px solid #343840}.cats details:last-child{border-bottom:0}
+    .cats summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;padding:12px 13px}
+    .cats summary::-webkit-details-marker{display:none}
+    .cats .nm{font-weight:800;font-size:14px}.cats .nm small{margin-top:2px}
+    .cats .v{text-align:right;font-weight:850;white-space:nowrap}
+    .track{grid-column:1/-1;height:5px;border-radius:3px;background:#2a2d34;overflow:hidden}.track i{display:block;height:100%;background:#ff7a00}
+    .spark{grid-column:1/-1;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:2px;align-items:end;height:22px}
+    .spark i{display:block;border-radius:2px 2px 0 0;min-height:2px}.spark i.z{background:#2a2d34}
+    .mini{list-style:none;margin:0;padding:0 13px 8px}
+    .mini li{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:8px;padding:8px 0;border-top:1px dashed #343840;font-size:13px;font-weight:700}
+    .mini li.sub{display:block;padding:11px 0 3px;border-top:1px solid #343840;color:#8f96a3;font-size:10px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
+    .mini .d{color:#8f96a3;font-size:11px;padding-top:2px}
+    .mini .val{white-space:nowrap;color:#ff8c9d}.mini li.credit .val{color:#78d88b}.mini.months .val{color:#f7f8fb}
+    .meta.par{color:#8ce59d}
+    .bars{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px;align-items:end;height:170px;padding-top:18px;border-bottom:1px solid #3b404a}
+    .bars button{all:unset;cursor:pointer;display:grid;grid-template-rows:auto 1fr;grid-template-columns:minmax(0,1fr);align-items:end;height:100%;min-width:0}
+    .bars .lbl{font-size:8.5px;color:#a6acb8;text-align:center;padding-bottom:3px;white-space:nowrap;font-weight:750;letter-spacing:-.03em}
+    .bars .col{border-radius:4px 4px 0 0;min-height:2px;width:100%}
+    .barsx{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px;margin-top:5px;font-size:10px;color:#8f96a3;text-align:center;font-weight:750}
+    .inline-leg{display:flex;flex-wrap:wrap;gap:6px 14px;list-style:none;margin:0 0 6px;padding:0;font-size:11px;color:#a6acb8;font-weight:650}
+    .inline-leg .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+    .tbl{margin-top:10px}.tbl summary{cursor:pointer;color:#dfe2e8;font-size:13px;font-weight:800;padding:4px 2px}
+    .tblw{overflow-x:auto;margin-top:8px}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    th,td{padding:7px 6px;border-bottom:1px solid #343840;text-align:right;white-space:nowrap}
+    th:first-child,td:first-child,td.st,th:nth-child(2){text-align:left}
+    th{color:#8f96a3;font-weight:800;font-size:10.5px}td.st{color:#a6acb8;white-space:normal}
+    tfoot td{font-weight:850;border-bottom:0}
+    @media (max-width:380px){.bars .lbl{font-size:7.5px}.bars{gap:3px}.barsx{gap:3px;font-size:9px}}
+  </style>
 </head>
 <body>
   <script>(function(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null'),s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return;}}catch(_){}location.replace('./?locked=1');})();</script>
   <main class="app">
     <header class="head"><a class="back" href="financeiro.html" aria-label="Voltar ao painel financeiro">‹</a><div><p class="ey">CARTÃO DE CRÉDITO</p><h1>Fatura Inter</h1><p class="muted">Compras e créditos no cartão</p></div></header>
+    <div class="tabs" id="views" role="tablist" aria-label="Escolher a visão"><button type="button" role="tab" data-view="fatura" aria-selected="true">Fatura do mês</button><button type="button" role="tab" data-view="ano" id="tabAno" aria-selected="false">Ano</button></div>
+    <div id="viewFatura">
     <nav class="invoice-nav" aria-label="Selecionar fatura"><button type="button" id="prevInvoice" aria-label="Fatura anterior">‹</button><strong id="invoiceMonth"></strong><button type="button" id="nextInvoice" aria-label="Próxima fatura">›</button></nav>
     <section class="slide cartao" id="invoiceCard" aria-live="polite"><div class="ct-top"><span class="ct-brand">Inter Black</span><span class="ct-due" id="due"></span></div><div class="ct-val" id="total">R$ 0,00</div><div class="ct-sub" id="period"></div><div class="ct-cardbot"><span class="ct-sub" id="count">0 lançamentos</span><span class="mc" aria-hidden="true"><i></i><i></i></span></div></section>
+    <div id="resumo">
+      <h2>PARA ONDE FOI O DINHEIRO</h2><section class="box" id="barra"></section>
+      <h2>COMPRAS E ESTORNOS</h2><section class="ce-grid" id="ceGrid"></section><p class="note" id="ceNota"></p>
+      <div id="catsBox"><h2 id="catsTitle">CONSUMO POR CATEGORIA</h2><section class="cats" id="cats"></section><p class="note">Toque numa categoria para ver as compras. Estornos aparecem separados no fim de cada lista.</p></div>
+    </div>
     <h2>EXTRATO DA FATURA · COMPRAS E CRÉDITOS INTER</h2>
     <section class="list" id="list"></section>
+    </div>
+    <div id="viewAno" hidden>
+      <nav class="invoice-nav" aria-label="Selecionar ano"><button type="button" id="prevYear" aria-label="Ano anterior">‹</button><strong id="anoLabel"></strong><button type="button" id="nextYear" aria-label="Próximo ano">›</button></nav>
+      <section class="slide cartao"><div class="ct-top"><span class="ct-brand" id="anoBrand">Inter Black</span><span class="ct-due">12 faturas</span></div><div class="ct-val" id="anoTotal">R$ 0,00</div><div class="ct-sub" id="anoSub"></div></section>
+      <section class="box" id="anoStatus"></section>
+      <h2 id="anoBarraTitle">PARA ONDE FOI O DINHEIRO</h2><section class="box" id="anoBarra"></section>
+      <h2 id="anoCeTitle">COMPRAS E ESTORNOS</h2><section class="ce-grid" id="anoCe"></section>
+      <h2>CONSUMO EM CADA FATURA</h2>
+      <section class="box"><ul class="inline-leg"><li><span class="sw k-fechada"></span>fechada</li><li><span class="sw k-aberta"></span>aberta</li><li><span class="sw k-prevista"></span>só o que já está lançado</li></ul>
+        <div class="bars" id="anoBars" role="group" aria-label="Consumo por fatura, em R$ mil"></div><div class="barsx" id="anoBarsX" aria-hidden="true"></div>
+        <p class="note">Valores em R$ mil. Consumo é o que você comprou menos os estornos, sem refaturamento, IOF e saldo repassado. Toque numa coluna para abrir a fatura.</p>
+        <details class="tbl"><summary>Tabela das 12 faturas</summary><div class="tblw"><table id="anoTab"></table></div></details></section>
+      <h2 id="anoCatsTitle">CONSUMO POR CATEGORIA</h2><section class="cats" id="anoCats"></section>
+      <p class="note">As colunas pequenas mostram jan a dez. Toque numa categoria para ver o valor de cada fatura.</p>
+    </div>
     <footer class="updated" id="updated"></footer>
   </main>
   <script src="./supabase-project-config.js?v=1"></script>
-  <script src="./supabase-shared-storage.js?v=7"></script>
-  <script src="./fatura-inter.js?v=7"></script>
+  <script src="./supabase-shared-storage.js?v=9"></script>
+  <script src="./fatura-inter.js?v=8"></script>
 </body>
 </html>
