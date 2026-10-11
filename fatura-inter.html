@@ -68,6 +68,18 @@
     th:first-child,td:first-child,td.st,th:nth-child(2){text-align:left}
     th{color:#8f96a3;font-weight:800;font-size:10.5px}td.st{color:#a6acb8;white-space:normal}
     tfoot td{font-weight:850;border-bottom:0}
+    .cats .grupo{display:block;padding:12px 13px 2px;color:#8f96a3;font-size:10px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
+    .cats details details,.cats .mes.vazio{margin:0 13px;border-top:1px dashed #343840;border-bottom:0}
+    .cats details details:last-child{border-bottom:0}
+    .cats details details>summary,.cats .mes.vazio{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:9px 0}
+    .cats details details>summary .nm{font-size:13px}
+    .cats details details>summary .nm::before{content:"▸ ";color:#8f96a3}
+    .cats details details[open]>summary .nm::before{content:"▾ "}
+    .cats .mes.vazio .nm{font-size:13px;font-weight:700;color:#8f96a3}.cats .mes.vazio .v{color:#8f96a3}
+    .cats details details .mini{padding:0 0 6px}
+    .cats .lugares,.cats .meses-cat{padding-bottom:6px}
+    #anoLugares>details{margin:0;border-top:0;border-bottom:1px solid #343840}
+    #anoLugares>details:last-child{border-bottom:0}
     @media (max-width:380px){.bars .lbl{font-size:7.5px}.bars{gap:3px}.barsx{gap:3px;font-size:9px}}
   </style>
 </head>
@@ -99,7 +111,9 @@
         <p class="note">Valores em R$ mil. Consumo é o que você comprou menos os estornos, sem refaturamento, IOF e saldo repassado. Toque numa coluna para abrir a fatura.</p>
         <details class="tbl"><summary>Tabela das 12 faturas</summary><div class="tblw"><table id="anoTab"></table></div></details></section>
       <h2 id="anoCatsTitle">CONSUMO POR CATEGORIA</h2><section class="cats" id="anoCats"></section>
-      <p class="note">As colunas pequenas mostram jan a dez. Toque numa categoria para ver o valor de cada fatura.</p>
+      <p class="note">As colunas pequenas mostram jan a dez. Toque numa categoria para ver onde você mais gastou e as compras de cada mês.</p>
+      <h2 id="anoLugaresTitle">ONDE VOCÊ MAIS GASTOU</h2><section class="cats" id="anoLugares"></section>
+      <p class="note">Somado pelo nome do lançamento, juntando as parcelas e as várias compras no mesmo lugar. Toque para ver cada compra e a fatura em que ela caiu.</p>
     </div>
     <footer class="updated" id="updated"></footer>
   </main>

@@ -238,6 +238,25 @@
     const order = arr => arr.slice().sort((a,b) => Math.abs(signedCents(b)) - Math.abs(signedCents(a)));
     return `<ul class="mini">${order(rest).map(i => miniRow(i, extra ? extra(i) : '')).join('')}${dev.length && rest.length ? `<li class="sub">${dev.some(i => lancOf(i) === 'estorno_desfeito') ? 'Estornos e estornos desfeitos' : dev.length === 1 ? 'Estorno' : 'Estornos'}</li>` : ''}${order(dev).map(i => miniRow(i, extra ? extra(i) : '')).join('')}</ul>`;
   }
+  // Agrupa por lugar/item: o nome sem "(3/10)", "— 2ª compra do dia" e "— parcela 3 de 10".
+  const baseName = text => String(text || '').replace(/\s*\(\d+\s*\/\s*\d+\)\s*$/,'').replace(/\s*—\s*\d+[ªº]\s+(compra|crédito)\s+do\s+dia$/i,'').replace(/\s*—\s*parcela\s+\d+\s+de\s+\d+$/i,'').trim();
+  function porLugar(list) {
+    const groups = new Map();
+    list.forEach(item => {
+      const nome = baseName(nameOf(item)) || 'Sem nome', key = nome.toLocaleLowerCase('pt-BR');
+      if (!groups.has(key)) groups.set(key, { nome, v:0, items:[], cats:new Set() });
+      const g = groups.get(key); g.v += signedCents(item); g.items.push(item); g.cats.add(catOf(item));
+    });
+    return [...groups.values()].sort((a,b) => b.v - a.v);
+  }
+  function lugarHtml(g, extra, comCategoria) {
+    return `<details class="lugar"><summary><span class="nm">${esc(g.nome)}<small>${countsOf(g.items)}${comCategoria ? ` · ${esc([...g.cats].join(', '))}` : ''}</small></span><span class="v" data-v="${fromCents(g.v)}">${money(fromCents(g.v))}</span></summary>${miniList(g.items, extra)}</details>`;
+  }
+  function lugaresHtml(list, extra, limite, comCategoria) {
+    const grupos = porLugar(list), topo = grupos.slice(0, limite), resto = grupos.slice(limite);
+    return topo.map(g => lugarHtml(g, extra, comCategoria)).join('') + (resto.length
+      ? `<details class="lugar mais"><summary><span class="nm">Ver ${resto.length === 1 ? 'mais 1' : `os outros ${resto.length}`}<small>${money(fromCents(resto.reduce((a,g) => a + g.v, 0)))} no total</small></span><span class="v"></span></summary>${resto.map(g => lugarHtml(g, extra, comCategoria)).join('')}</details>` : '');
+  }
   const countsOf = list => { const n = { compra:0, estorno:0, estorno_desfeito:0 }; list.forEach(i => { const l = lancOf(i); if (l) n[l] += 1; });
     return [n.compra ? plural(n.compra,'compra','compras') : '', n.estorno ? plural(n.estorno,'estorno','estornos') : '', n.estorno_desfeito ? plural(n.estorno_desfeito,'estorno desfeito','estornos desfeitos') : ''].filter(Boolean).join(' · '); };
 
@@ -294,14 +313,21 @@
       `<tr><td>${monthShort(m.key)}</td><td class="st">${ST[m.st]}</td><td>${cel(m.r.tipos.consumo)}</td><td>${cel(m.r.tipos.refat)}</td><td>${cel(outros(m.r))}</td><td>${cel(m.r.tipos.saldo)}</td><td>${cel(m.r.total)}</td></tr>`).join('')}</tbody>
       <tfoot><tr><td>Soma</td><td></td><td>${cel(tipos.consumo)}</td><td>${cel(tipos.refat)}</td><td>${cel(tipos.encargos + tipos.ajustes)}</td><td>${cel(saldo)}</td><td>${cel(somaFaturas)}</td></tr>
       <tr><td colspan="6" class="st">Total do ano, sem o saldo repassado</td><td>${cel(total)}</td></tr></tfoot>`;
-    const cats = new Map();
-    meses.forEach((m, i) => m.r.cats.forEach(c => { if (!cats.has(c.nome)) cats.set(c.nome, { nome:c.nome, v:0, mes:Array(12).fill(0), items:[] }); const x = cats.get(c.nome); x.v += c.v; x.mes[i] += c.v; x.items.push(...c.items); }));
+    const cats = new Map(), mesDe = new Map();
+    meses.forEach((m, i) => m.r.cats.forEach(c => { if (!cats.has(c.nome)) cats.set(c.nome, { nome:c.nome, v:0, mes:Array(12).fill(0), itensMes:Array.from({ length:12 }, () => []), items:[] }); const x = cats.get(c.nome); x.v += c.v; x.mes[i] += c.v; x.itensMes[i].push(...c.items); x.items.push(...c.items); c.items.forEach(item => mesDe.set(item, m)); }));
+    const daFatura = item => { const m = mesDe.get(item); return m ? `<small>fatura de ${monthShort(m.key)}${m.st === 'fechada' ? '' : ` · ${ST[m.st]}`}</small>` : ''; };
     const lista = [...cats.values()].sort((a,b) => b.v - a.v), maxCat = Math.max(1, ...lista.map(c => c.v));
     document.querySelector('#anoCatsTitle').textContent = `CONSUMO POR CATEGORIA EM ${YEAR} · ${money(fromCents(tipos.consumo))}`;
     document.querySelector('#anoCats').innerHTML = lista.map(c => { const mx = Math.max(1, ...c.mes);
       return `<details><summary><span class="nm">${esc(c.nome)}<small>${countsOf(c.items)}</small></span><span class="v">${money(fromCents(c.v))}<small>${pct(c.v, tipos.consumo)}</small></span><span class="track"><i style="width:${Math.max(0, c.v) / maxCat * 100}%"></i></span>
         <span class="spark" aria-hidden="true">${c.mes.map((v, i) => `<i class="${v > 0 ? `k-${meses[i].st}` : 'z'}" style="height:${v > 0 ? Math.max(8, v / mx * 100) : 8}%"></i>`).join('')}</span></summary>
-        <ul class="mini months">${meses.map((m, i) => `<li><span class="d">${MONTH_SHORT[i]}</span><span>${monthShort(m.key)}<small>${ST[m.st]}</small></span><b class="val" data-v="${fromCents(c.mes[i])}">${money(fromCents(c.mes[i]))}</b></li>`).join('')}</ul></details>`; }).join('');
+        <span class="grupo">Onde você mais gastou</span><div class="lugares">${lugaresHtml(c.items, daFatura, 8, false)}</div>
+        <span class="grupo">Mês a mês</span><div class="meses-cat">${meses.map((m, i) => c.itensMes[i].length
+          ? `<details class="mes" data-mes="${m.key}"><summary><span class="nm">${monthShort(m.key)}<small>${ST[m.st]} · ${countsOf(c.itensMes[i])}</small></span><span class="v" data-v="${fromCents(c.mes[i])}">${money(fromCents(c.mes[i]))}</span></summary>${miniList(c.itensMes[i])}</details>`
+          : `<div class="mes vazio" data-mes="${m.key}"><span class="nm">${monthShort(m.key)}<small>${ST[m.st]} · nada nesta categoria</small></span><span class="v" data-v="0">${money(0)}</span></div>`).join('')}</div></details>`; }).join('');
+    const todos = lista.flatMap(c => c.items);
+    document.querySelector('#anoLugaresTitle').textContent = `ONDE VOCÊ MAIS GASTOU EM ${YEAR}`;
+    document.querySelector('#anoLugares').innerHTML = lugaresHtml(todos, daFatura, 12, true);
     document.querySelector('#anoLabel').textContent = String(YEAR);
     document.querySelector('#anoBrand').textContent = `Inter Black · ${YEAR}`;
     document.querySelector('#anoBarraTitle').textContent = `PARA ONDE FOI O DINHEIRO EM ${YEAR}`;
