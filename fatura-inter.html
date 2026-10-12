@@ -80,6 +80,7 @@
     .cats .lugares,.cats .meses-cat{padding-bottom:6px}
     #anoLugares>details{margin:0;border-top:0;border-bottom:1px solid #343840}
     #anoLugares>details:last-child{border-bottom:0}
+    details.sem-nome>summary .nm{color:#a9aeb8}
     @media (max-width:380px){.bars .lbl{font-size:7.5px}.bars{gap:3px}.barsx{gap:3px;font-size:9px}}
   </style>
 </head>
@@ -96,6 +97,7 @@
       <h2>COMPRAS E ESTORNOS</h2><section class="ce-grid" id="ceGrid"></section><p class="note" id="ceNota"></p>
       <div id="catsBox"><h2 id="catsTitle">CONSUMO POR CATEGORIA</h2><section class="cats" id="cats"></section><p class="note">Toque numa categoria para ver as compras. Estornos aparecem separados no fim de cada lista.</p></div>
       <div id="outrasBox" hidden><h2 id="outrasTitle">PARA OUTRAS PESSOAS</h2><section class="cats" id="outras"></section><p class="note">Gastos que passaram no seu cartão, mas foram para outra pessoa. Ficam fora do consumo.</p></div>
+      <div id="refatBox" hidden><h2 id="refatTitle">REFATURAMENTO POR PESSOA</h2><section class="cats" id="refatLista"></section><p class="note">Refaturamento não entra no consumo. Os empréstimos aparecem por pessoa; o que ainda não tem a pessoa anotada fica em "Sem nome".</p></div>
     </div>
     <h2>EXTRATO DA FATURA · COMPRAS E CRÉDITOS INTER</h2>
     <section class="list" id="list"></section>
@@ -114,6 +116,7 @@
       <h2 id="anoCatsTitle">CONSUMO POR CATEGORIA</h2><section class="cats" id="anoCats"></section>
       <p class="note">As colunas pequenas mostram jan a dez. Toque numa categoria para ver onde você mais gastou e as compras de cada mês.</p>
       <div id="anoOutrasBox" hidden><h2 id="anoOutrasTitle">PARA OUTRAS PESSOAS</h2><section class="cats" id="anoOutras"></section><p class="note">Gastos que passaram no seu cartão, mas foram para outra pessoa. Ficam fora do consumo e das categorias.</p></div>
+      <div id="anoRefatBox" hidden><h2 id="anoRefatTitle">REFATURAMENTO POR PESSOA</h2><section class="cats" id="anoRefatLista"></section><p class="note">Refaturamento não entra no consumo. Os empréstimos aparecem por pessoa; o que ainda não tem a pessoa anotada fica em "Sem nome".</p></div>
       <h2 id="anoLugaresTitle">ONDE VOCÊ MAIS GASTOU</h2><section class="cats" id="anoLugares"></section>
       <p class="note">Somado pelo nome do lançamento, juntando as parcelas e as várias compras no mesmo lugar. Toque para ver cada compra e a fatura em que ela caiu.</p>
     </div>
@@ -121,6 +124,6 @@
   </main>
   <script src="./supabase-project-config.js?v=1"></script>
   <script src="./supabase-shared-storage.js?v=9"></script>
-  <script src="./fatura-inter.js?v=8"></script>
+  <script src="./fatura-inter.js?v=9"></script>
 </body>
 </html>

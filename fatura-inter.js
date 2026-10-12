@@ -165,6 +165,9 @@
   const LANCS = [['compra','Compras'],['estorno','Estornos'],['estorno_desfeito','Estornos desfeitos']];
   const COM_LANC = ['consumo','refat','terceiros'];
   const quemOf = item => String(item.n.paraQuem || '') || 'Outra pessoa';
+  // Refaturamento: a pessoa que recebeu o dinheiro (empréstimo), quando a nota diz; o resto fica em "Sem nome".
+  const SEM_NOME = 'Sem nome';
+  const quemRefatOf = item => String(item.n.paraQuem || '') || SEM_NOME;
   const nameOf = item => String(item.n.invoiceLabel || item.text || '');
   const tipoOf = item => TIPO_NOME[item.n.faturaTipo] ? item.n.faturaTipo
     : /refaturamento/i.test(nameOf(item)) ? 'refat'
@@ -204,7 +207,7 @@
     const tipos = Object.fromEntries(TIPOS.map(t => [t[0], 0]));
     const ce = Object.fromEntries(COM_LANC.map(t => [t, {}]));
     COM_LANC.forEach(t => LANCS.forEach(([l]) => { ce[t][l] = { n:0, v:0, items:[] }; }));
-    const cats = new Map(), outras = new Map();
+    const cats = new Map(), outras = new Map(), refat = new Map();
     list.forEach(item => {
       const tipo = tipoOf(item), v = signedCents(item), lanc = lancOf(item);
       tipos[tipo] += v;
@@ -219,8 +222,13 @@
         if (!outras.has(quem)) outras.set(quem, { nome:quem, v:0, items:[] });
         const o = outras.get(quem); o.v += v; o.items.push(item);
       }
+      if (tipo === 'refat') {
+        const quem = quemRefatOf(item);
+        if (!refat.has(quem)) refat.set(quem, { nome:quem, v:0, items:[] });
+        const g = refat.get(quem); g.v += v; g.items.push(item);
+      }
     });
-    return { tipos, ce, cats:[...cats.values()].sort((a,b) => b.v - a.v), outras:[...outras.values()].sort((a,b) => b.v - a.v), total:Object.values(tipos).reduce((a,b) => a + b, 0) };
+    return { tipos, ce, cats:[...cats.values()].sort((a,b) => b.v - a.v), outras:[...outras.values()].sort((a,b) => b.v - a.v), refat:ordemRefat([...refat.values()]), total:Object.values(tipos).reduce((a,b) => a + b, 0) };
   }
 
   function barraHtml(tipos, ce) {
@@ -283,7 +291,17 @@
     document.querySelector('#catsTitle').textContent = `CONSUMO POR CATEGORIA · ${money(fromCents(totC))}`;
     document.querySelector('#catsBox').hidden = !r.cats.length;
     renderOutras(r.outras, '#outrasBox', '#outrasTitle', '#outras', null, '');
+    renderRefat(r.refat, '#refatBox', '#refatTitle', '#refatLista', null, '');
     document.querySelector('#cats').innerHTML = r.cats.map(c => `<details><summary><span class="nm">${esc(c.nome)}<small>${countsOf(c.items)}</small></span><span class="v">${money(fromCents(c.v))}<small>${pct(c.v, totC)}</small></span><span class="track"><i style="width:${Math.max(0, c.v) / max * 100}%"></i></span></summary>${miniList(c.items)}</details>`).join('');
+  }
+
+  // Pessoas primeiro (maior valor antes); "Sem nome" sempre no fim.
+  const ordemRefat = grupos => grupos.sort((a,b) => (a.nome === SEM_NOME) - (b.nome === SEM_NOME) || b.v - a.v);
+  function renderRefat(grupos, box, title, list, extra, sufixo) {
+    const total = grupos.reduce((a,g) => a + g.v, 0);
+    document.querySelector(box).hidden = !grupos.length;
+    document.querySelector(title).textContent = `REFATURAMENTO POR PESSOA${sufixo} · ${money(fromCents(total))}`;
+    document.querySelector(list).innerHTML = grupos.map(g => `<details${g.nome === SEM_NOME ? ' class="sem-nome"' : ''}><summary><span class="nm">${esc(g.nome)}<small>${g.nome === SEM_NOME ? 'você ainda não disse para quem foi · ' : 'empréstimo · '}${countsOf(g.items)}</small></span><span class="v" data-v="${fromCents(g.v)}">${money(fromCents(g.v))}</span></summary>${miniList(g.items, extra)}</details>`).join('');
   }
 
   // Gastos feitos para outras pessoas (faturaTipo "terceiros"), agrupados por pessoa.
@@ -346,6 +364,9 @@
     const outrasAno = new Map();
     meses.forEach(m => m.r.outras.forEach(o => { if (!outrasAno.has(o.nome)) outrasAno.set(o.nome, { nome:o.nome, v:0, items:[] }); const x = outrasAno.get(o.nome); x.v += o.v; x.items.push(...o.items); o.items.forEach(item => mesDe.set(item, m)); }));
     renderOutras([...outrasAno.values()].sort((a,b) => b.v - a.v), '#anoOutrasBox', '#anoOutrasTitle', '#anoOutras', daFatura, ` EM ${YEAR}`);
+    const refatAno = new Map();
+    meses.forEach(m => m.r.refat.forEach(g => { if (!refatAno.has(g.nome)) refatAno.set(g.nome, { nome:g.nome, v:0, items:[] }); const x = refatAno.get(g.nome); x.v += g.v; x.items.push(...g.items); g.items.forEach(item => mesDe.set(item, m)); }));
+    renderRefat(ordemRefat([...refatAno.values()]), '#anoRefatBox', '#anoRefatTitle', '#anoRefatLista', daFatura, ` EM ${YEAR}`);
     const todos = lista.flatMap(c => c.items);
     document.querySelector('#anoLugaresTitle').textContent = `ONDE VOCÊ MAIS GASTOU EM ${YEAR}`;
     document.querySelector('#anoLugares').innerHTML = lugaresHtml(todos, daFatura, 12, true);

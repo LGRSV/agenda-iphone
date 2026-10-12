@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v235-fatura-estornos';
+const CACHE = 'agenda-lagares-v236-fatura-refat-pessoa';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=13" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
