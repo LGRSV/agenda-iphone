@@ -988,9 +988,9 @@
         if(!inv||!Array.isArray(inv.cofres)||!inv.cofres.length)return'(sem dados de investimentos)';
         const d=inv.cdiDiario>0?inv.cdiDiario/100:Math.pow(1+(inv.cdi>0?inv.cdi:0.1095),1/252)-1;
         const pad=inv.pctCDIPadrao>0?inv.pctCDIPadrao:1,r2=n=>Math.round(n*100)/100;
-        const cof=inv.cofres.map(c=>{const p=c.pctCDI>0?c.pctCDI:pad;return{nome:c.nome,nome_no_mercado_pago:c.mpNome||c.nome,saldo:r2(c.saldo||0),rende_por_dia_util:r2((c.saldo||0)*d*p),percentual_do_cdi:Math.round(p*1000)/10};});
+        const cof=inv.cofres.map(c=>{const p=c.pctCDI>0?c.pctCDI:pad;return{nome:c.nome,instituicao:c.instituicao||'Mercado Pago',...(c.mpNome?{nome_no_app_do_banco:c.mpNome}:{}),...(c.obs?{observacao:c.obs}:{}),saldo:r2(c.saldo||0),rende_por_dia_util:r2((c.saldo||0)*d*p),percentual_do_cdi:Math.round(p*1000)/10};});
         const dia=r2(cof.reduce((s,c)=>s+c.rende_por_dia_util,0)),tot=r2(cof.reduce((s,c)=>s+c.saldo,0));
-        const o={cofrinhos:cof,total_nos_cofrinhos:tot,rendimento_por_dia_util:dia,rendimento_estimado_mes_21_dias_uteis:r2(dia*21),cdi_anual_percentual:inv.cdi>0?Math.round(inv.cdi*10000)/100:null,saldo_atualizado_em:inv.upd||null,rendimento_automatico_no_servidor:!!inv.serverAccrual};
+        const o={investimentos:cof,total_investido:tot,rendimento_por_dia_util:dia,rendimento_estimado_mes_21_dias_uteis:r2(dia*21),cdi_anual_percentual:inv.cdi>0?Math.round(inv.cdi*10000)/100:null,saldo_atualizado_em:inv.upd||null,rendimento_automatico_no_servidor:!!inv.serverAccrual};
         if(inv.rendimentoDia&&inv.rendimentoDia.total)o.ultimo_rendimento_creditado={data:inv.rendimentoDia.data,total:inv.rendimentoDia.total};
         if(Array.isArray(inv.rendimentos)&&inv.rendimentos.length)o.rendimentos_recentes=inv.rendimentos.slice(-7).map(x=>({data:x.data,total:x.total}));
         if(inv.energisaPrev&&inv.energisaPrev.saldo)o.previdencia_energisa={saldo:inv.energisaPrev.saldo,atualizado_em:inv.energisaPrev.upd||null};
@@ -1003,7 +1003,7 @@
 DATA E HORA ATUAL: ${now.human} (ISO: ${now.iso}).
 AGENDA DO USUARIO (dados reais — use como verdade absoluta, nao invente; ao perguntarem "hoje" use a secao HOJE):
 ${agendaContext()}
-INVESTIMENTOS DO USUARIO (cofrinhos do Mercado Pago; dados reais que rendem sozinhos todo dia util pelo CDI do Banco Central — use como verdade, nao invente; 'dia util' = dia com CDI, sem fins de semana e feriados):
+INVESTIMENTOS DO USUARIO (cofrinhos do Mercado Pago e conta da XP; dados reais que rendem sozinhos todo dia util pelo CDI do Banco Central — use como verdade, nao invente; 'dia util' = dia com CDI, sem fins de semana e feriados):
 ${investContext()}
 VOCE CONTROLA A AGENDA. Responda SEMPRE e SOMENTE com um JSON puro (sem markdown, sem crases) neste formato:
 {"action":"none|add_task|complete_task|delete_task|edit_task|web_search|update_cofrinho","task":{"text":"","date":"YYYY-MM-DD","time":"HH:MM ou vazio","tag":"trabalho|pessoal|casa|faculdade|saude|financeiro|outros"},"query":"","valor":"","rendimento":"","transcript":"","reply":"sua resposta ao usuario em PT-BR"}
@@ -1305,7 +1305,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
           // o servidor volta a render a partir de hoje (o saldo informado ja inclui ate ontem)
           const o=new Date();o.setDate(o.getDate()-1);inv.accruedThrough=ymd(o);inv.upd=ymd(new Date());
           localStorage.setItem(IK,JSON.stringify(inv)); // dispara a sincronizacao com o Supabase
-          return(/cofr/i.test(c.nome)?'':'Cofrinho ')+c.nome+': '+brl(antes)+' → '+brl(saldo)+recal;
+          return(/cofr|conta/i.test(c.nome)?'':'Cofrinho ')+c.nome+': '+brl(antes)+' → '+brl(saldo)+recal;
         }catch(_){return'Falha ao atualizar o cofrinho';}
       }
       if(!window.AgendaAPI)return null;
