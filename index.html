@@ -980,15 +980,34 @@
           '\nCONCLUIDAS HOJE: '+feitasHoje;
       }catch(_){return'(indisponivel)';}
     }
+    function investContext(){
+      // Cofrinhos do Mercado Pago: o saldo e o rendimento diario sao atualizados sozinhos
+      // no servidor (Supabase + CDI do Banco Central) e chegam aqui pela sincronizacao.
+      try{
+        const inv=JSON.parse(localStorage.getItem('agenda_investimentos_v1')||'null');
+        if(!inv||!Array.isArray(inv.cofres)||!inv.cofres.length)return'(sem dados de investimentos)';
+        const d=inv.cdiDiario>0?inv.cdiDiario/100:Math.pow(1+(inv.cdi>0?inv.cdi:0.1095),1/252)-1;
+        const pad=inv.pctCDIPadrao>0?inv.pctCDIPadrao:1,r2=n=>Math.round(n*100)/100;
+        const cof=inv.cofres.map(c=>{const p=c.pctCDI>0?c.pctCDI:pad;return{nome:c.nome,nome_no_mercado_pago:c.mpNome||c.nome,saldo:r2(c.saldo||0),rende_por_dia_util:r2((c.saldo||0)*d*p),percentual_do_cdi:Math.round(p*1000)/10};});
+        const dia=r2(cof.reduce((s,c)=>s+c.rende_por_dia_util,0)),tot=r2(cof.reduce((s,c)=>s+c.saldo,0));
+        const o={cofrinhos:cof,total_nos_cofrinhos:tot,rendimento_por_dia_util:dia,rendimento_estimado_mes_21_dias_uteis:r2(dia*21),cdi_anual_percentual:inv.cdi>0?Math.round(inv.cdi*10000)/100:null,saldo_atualizado_em:inv.upd||null,rendimento_automatico_no_servidor:!!inv.serverAccrual};
+        if(inv.rendimentoDia&&inv.rendimentoDia.total)o.ultimo_rendimento_creditado={data:inv.rendimentoDia.data,total:inv.rendimentoDia.total};
+        if(Array.isArray(inv.rendimentos)&&inv.rendimentos.length)o.rendimentos_recentes=inv.rendimentos.slice(-7).map(x=>({data:x.data,total:x.total}));
+        if(inv.energisaPrev&&inv.energisaPrev.saldo)o.previdencia_energisa={saldo:inv.energisaPrev.saldo,atualizado_em:inv.energisaPrev.upd||null};
+        return JSON.stringify(o);
+      }catch(_){return'(indisponivel)';}
+    }
     function systemPrompt(){
       const now=nowInfo();
       return `Voce e o J.A.R.V.I.S, assistente pessoal inteligente de Lagares, tecnico da Energisa Tocantins (departamento DCMD), morador de Palmas-TO. Personalidade: prestativo, direto, levemente sofisticado como o Jarvis do Homem de Ferro; trata o usuario como "Senhor" ocasionalmente. Sempre responda em portugues brasileiro, de forma concisa.
 DATA E HORA ATUAL: ${now.human} (ISO: ${now.iso}).
 AGENDA DO USUARIO (dados reais — use como verdade absoluta, nao invente; ao perguntarem "hoje" use a secao HOJE):
 ${agendaContext()}
+INVESTIMENTOS DO USUARIO (cofrinhos do Mercado Pago; dados reais que rendem sozinhos todo dia util pelo CDI do Banco Central — use como verdade, nao invente; 'dia util' = dia com CDI, sem fins de semana e feriados):
+${investContext()}
 VOCE CONTROLA A AGENDA. Responda SEMPRE e SOMENTE com um JSON puro (sem markdown, sem crases) neste formato:
-{"action":"none|add_task|complete_task|delete_task|edit_task|web_search","task":{"text":"","date":"YYYY-MM-DD","time":"HH:MM ou vazio","tag":"trabalho|pessoal|casa|faculdade|saude|financeiro|outros"},"query":"","transcript":"","reply":"sua resposta ao usuario em PT-BR"}
-Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (preencha task; se nao houver horario, deixe time vazio; escolha a tag mais adequada). Use complete_task quando disserem que concluiram algo, e delete_task para remover/cancelar (preencha query com palavras-chave exatas do texto da tarefa). Use edit_task para mudar data, horario, nome ou tag de uma tarefa existente: query = palavras do texto ATUAL da tarefa; task = SOMENTE os campos novos (deixe vazio o que nao muda). Use web_search quando o usuario pedir informacao do mundo real que nao esta na agenda (noticias, clima, precos, cotacoes, resultados, fatos atuais): preencha query com a pergunta completa e em reply diga algo curto como "Um instante, Senhor, consultando." Use none para conversas e perguntas sobre a propria agenda. Quando receber AUDIO, preencha transcript com a transcricao exata em PT-BR do que o usuario falou. Calcule datas relativas (amanha, segunda que vem) a partir da data atual. No reply, confirme a acao naturalmente. Seja conciso: reply com no maximo 2-3 frases diretas, salvo quando o usuario pedir detalhes.`;
+{"action":"none|add_task|complete_task|delete_task|edit_task|web_search|update_cofrinho","task":{"text":"","date":"YYYY-MM-DD","time":"HH:MM ou vazio","tag":"trabalho|pessoal|casa|faculdade|saude|financeiro|outros"},"query":"","valor":"","rendimento":"","transcript":"","reply":"sua resposta ao usuario em PT-BR"}
+Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (preencha task; se nao houver horario, deixe time vazio; escolha a tag mais adequada). Use complete_task quando disserem que concluiram algo, e delete_task para remover/cancelar (preencha query com palavras-chave exatas do texto da tarefa). Use edit_task para mudar data, horario, nome ou tag de uma tarefa existente: query = palavras do texto ATUAL da tarefa; task = SOMENTE os campos novos (deixe vazio o que nao muda). Use web_search quando o usuario pedir informacao do mundo real que nao esta na agenda (noticias, clima, precos, cotacoes, resultados, fatos atuais): preencha query com a pergunta completa e em reply diga algo curto como "Um instante, Senhor, consultando." Use update_cofrinho quando o usuario informar o saldo ATUAL de um cofrinho (ex.: "o cofrinho Lagares esta em 46.900", "giro mensal ficou 15 mil"): query = nome do cofrinho, valor = saldo em reais so com numeros (ex. "46900.00"); se ele disser quanto rendeu no dia, coloque em rendimento (ex. "19.56") para recalibrar a taxa. Perguntas sobre quanto os investimentos rendem por dia, por mes ou o saldo dos cofrinhos: responda com action none usando a secao INVESTIMENTOS (valores em reais, arredondados). Use none para conversas e perguntas sobre a propria agenda. Quando receber AUDIO, preencha transcript com a transcricao exata em PT-BR do que o usuario falou. Calcule datas relativas (amanha, segunda que vem) a partir da data atual. No reply, confirme a acao naturalmente. Seja conciso: reply com no maximo 2-3 frases diretas, salvo quando o usuario pedir detalhes.`;
     }
 
     function stripForSpeech(t){return t.replace(/J\.?A\.?R\.?V\.?I\.?S\.?/gi,'Jarvis').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,'').replace(/\*/g,'').replace(/^[\s]*[-•]\s+/gm,'');}
@@ -1241,7 +1260,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
       if(reply){
         const j={action:'none',reply};
         const tr=rgxStr(t,'transcript');if(tr)j.transcript=tr;
-        const am=/"action"\s*:\s*"(none|add_task|complete_task|delete_task|edit_task|web_search)"/.exec(t);
+        const am=/"action"\s*:\s*"(none|add_task|complete_task|delete_task|edit_task|web_search|update_cofrinho)"/.exec(t);
         if(am){
           j.action=am[1];
           const tx=rgxStr(t,'text'),dm=/"date"\s*:\s*"(\d{4}-\d{2}-\d{2})"/.exec(t),
@@ -1252,6 +1271,10 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
           }else if(j.action==='edit_task'){
             if(qr){j.query=qr;j.task={text:tx||'',date:dm?dm[1]:'',time:tm?tm[1]:'',tag:tg||''};}
             else j.action='none';
+          }else if(j.action==='update_cofrinho'){
+            const vl=rgxStr(t,'valor');
+            if(qr&&vl){j.query=qr;j.valor=vl;const rd=rgxStr(t,'rendimento');if(rd)j.rendimento=rd;}
+            else j.action='none';
           }else if(qr)j.query=qr;
           else if(j.action!=='none')j.action='none';
         }
@@ -1261,6 +1284,30 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
     }
 
     function runAction(j){
+      if(j&&j.action==='update_cofrinho'){
+        try{
+          const IK='agenda_investimentos_v1';
+          const inv=JSON.parse(localStorage.getItem(IK)||'null');
+          if(!inv||!Array.isArray(inv.cofres)||!inv.cofres.length)return'Cofrinhos nao encontrados';
+          const norm=x=>String(x||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\b(cofrinho|cofre|fundo|do|da|de)\b/g,' ').replace(/\s+/g,' ').trim();
+          const q=norm(j.query);
+          const c=inv.cofres.find(c=>[c.nome,c.mpNome,c.id].some(n=>{const m=norm(n);return m&&q&&(m.includes(q)||q.includes(m));}));
+          if(!c)return'Cofrinho "'+j.query+'" nao encontrado';
+          const toNum=v=>{let x=String(v||'').replace(/[^\d,.-]/g,'');if(x.includes(','))x=x.replace(/\./g,'').replace(',','.');const n=Number(x);return Number.isFinite(n)?n:0;};
+          const saldo=Math.round(toNum(j.valor)*100)/100;
+          if(!(saldo>0))return'Valor invalido para o cofrinho';
+          const brl=n=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+          const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+          const antes=Number(c.saldo)||0;c.saldo=saldo;
+          let recal='';
+          const y=toNum(j.rendimento);
+          if(y>0&&inv.cdiDiario>0&&saldo>y){const p=y/(saldo-y)/(inv.cdiDiario/100);if(p>0.3&&p<1.6){c.pctCDI=Math.round(p*1000)/1000;c.pctFonte='calibrado pelo Jarvis em '+ymd(new Date())+' (rendeu '+y+')';recal=' · taxa recalibrada para '+Math.round(p*1000)/10+'% do CDI';}}
+          // o servidor volta a render a partir de hoje (o saldo informado ja inclui ate ontem)
+          const o=new Date();o.setDate(o.getDate()-1);inv.accruedThrough=ymd(o);inv.upd=ymd(new Date());
+          localStorage.setItem(IK,JSON.stringify(inv)); // dispara a sincronizacao com o Supabase
+          return(/cofr/i.test(c.nome)?'':'Cofrinho ')+c.nome+': '+brl(antes)+' → '+brl(saldo)+recal;
+        }catch(_){return'Falha ao atualizar o cofrinho';}
+      }
       if(!window.AgendaAPI)return null;
       try{
         if(j.action==='add_task'&&j.task&&j.task.text){
@@ -1307,7 +1354,7 @@ Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (pree
               body:JSON.stringify({
                 system_instruction:{parts:[{text:sys}]},
                 contents,
-                generationConfig:{temperature:0.6,maxOutputTokens:1600,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0},responseSchema:{type:'OBJECT',properties:{action:{type:'STRING',enum:['none','add_task','complete_task','delete_task','edit_task','web_search']},task:{type:'OBJECT',properties:{text:{type:'STRING'},date:{type:'STRING'},time:{type:'STRING'},tag:{type:'STRING'}}},query:{type:'STRING'},transcript:{type:'STRING'},reply:{type:'STRING'}},required:['action','reply']}}
+                generationConfig:{temperature:0.6,maxOutputTokens:1600,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0},responseSchema:{type:'OBJECT',properties:{action:{type:'STRING',enum:['none','add_task','complete_task','delete_task','edit_task','web_search','update_cofrinho']},task:{type:'OBJECT',properties:{text:{type:'STRING'},date:{type:'STRING'},time:{type:'STRING'},tag:{type:'STRING'}}},query:{type:'STRING'},valor:{type:'STRING'},rendimento:{type:'STRING'},transcript:{type:'STRING'},reply:{type:'STRING'}},required:['action','reply']}}
               })
             },14000);
             const data=await res.json();
