@@ -25,8 +25,14 @@ global.document = {
   createElement: () => ({ style: {}, classList: { add() {}, remove() {}, toggle() {} }, setAttribute() {}, addEventListener() {}, appendChild() {}, insertBefore() {} }),
   body: { appendChild() {} },
 };
-let now = new Date('2026-09-01T08:00:00').getTime();
-Date.now = () => now;
+// Congela o relógio inteiro, não só Date.now(): o módulo também usa new Date()
+// (ex.: hojeIso), e com o relógio real o teste passava só no dia 01/09/2026.
+const RealDate = Date;
+let now = new RealDate('2026-09-01T08:00:00').getTime();
+global.Date = class extends RealDate {
+  constructor(...a) { if (a.length) super(...a); else super(now); }
+  static now() { return now; }
+};
 global.setInterval = () => 0; global.clearInterval = () => {}; global.setTimeout = () => 0; global.clearTimeout = () => {};
 let gpsAtual = null;
 Object.defineProperty(globalThis, 'navigator', { configurable: true, value: {
