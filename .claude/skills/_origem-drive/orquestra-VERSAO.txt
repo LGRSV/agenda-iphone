@@ -1,0 +1,27 @@
+Skill: orquestra
+Versão: 1.0.0 (campo "version" do plugin.json e do marketplace agenda-tools)
+Revisão do conteúdo: commit b728c79, 27/09/2026 00:15 UTC
+  "orquestra: duas lições do primeiro teste real entram no protocolo"
+  (o número 1.0.0 não foi aumentado nesse commit; o conteúdo é o mais novo)
+
+Histórico
+  1fc8670  27/09/2026 00:04 UTC  criação da skill
+  b728c79  27/09/2026 00:15 UTC  2 lições do primeiro teste real:
+           1. briefing salvo em arquivo ANTES do despacho (registro auditável)
+           2. revisor independente com técnicas concretas: validação cruzada,
+              teste de mutação e execução dos exemplos da documentação
+
+Origem: github.com/lgrsv/agenda-iphone
+  branch claude/analysis-verification-plugin-j5qv3j, pasta plugins/orquestra
+
+Conferência (md5) — idêntica à skill instalada em ~/.claude/skills/orquestra:
+  SKILL.md              195247f1c98ab9ab49cd1e192a9f9650
+  modelos/briefing.md   5b010409e667347cfac755c8b6fcb9f6
+  modelos/revisao.md    1e37610f039f70483e45850b0482e4c8
+
+Arquivos nesta pasta
+  orquestra-1.0.0-b728c79.zip  plugin completo (skill + modelos + plugin.json + instalar.sh)
+  SKILL.md, briefing.md, revisao.md, plugin.json, instalar.sh  os mesmos arquivos soltos, para ler no Drive
+
+Como instalar: descompacte o zip e rode  bash orquestra/instalar.sh
+  (copia a skill para ~/.claude/skills/orquestra; --remover desinstala)
