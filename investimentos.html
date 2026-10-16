@@ -130,6 +130,8 @@ h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 9px;text-tran
   const loadInv=()=>{const base=invDefault(),v=j(IK,null);return v&&typeof v==='object'?{...base,...v,cofres:Array.isArray(v.cofres)?v.cofres:base.cofres}:base};
   const saveInv=v=>save(IK,v);
   const cdiOf=inv=>inv.cdi>0?inv.cdi:0.1095;
+  const diaReal=(c,inv)=>{const d=inv.cdiDiario>0?inv.cdiDiario/100:Math.pow(1+cdiOf(inv),1/252)-1;const p=c.pctCDI>0?c.pctCDI:(inv.pctCDIPadrao>0?inv.pctCDIPadrao:1);return Math.round((c.saldo||0)*d*p*100)/100;};
+  const ontem=()=>{const o=new Date();o.setDate(o.getDate()-1);return o.getFullYear()+'-'+String(o.getMonth()+1).padStart(2,'0')+'-'+String(o.getDate()).padStart(2,'0')};
   const prevOf=inv=>{
     const p=inv.energisaPrev||{};
     const proprio=numRaw(p.aporteUsuario);
@@ -151,9 +153,9 @@ h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 9px;text-tran
     const ep=prevOf(inv);
     document.querySelector('#totGeral').textContent=money(cofresTot+ep.saldo);
     document.querySelector('#cofresBox').innerHTML=inv.cofres.map((c,i)=>
-      '<div class="row"><div class="nm">'+c.nome+'</div><div class="vl">'+money(c.saldo||0)+
+      '<div class="row"><div class="nm">'+c.nome+(inv.serverAccrual?'<small>rende ~'+money(diaReal(c,inv))+'/dia útil'+(c.pctCDI>0?' · '+Math.round(c.pctCDI*100)+'% do CDI':'')+'</small>':'')+'</div><div class="vl">'+money(c.saldo||0)+
       ' <button class="editbtn" data-cofre="'+i+'">Ajustar</button></div></div>').join('')+
-      '<div class="row"><div class="nm" style="color:#a6acb8">CDI de referência</div><div class="vl">'+(cdiOf(inv)*100).toFixed(2).replace('.',',')+'% a.a. <button class="editbtn" data-cdi="1">Ajustar</button></div></div>';
+      (inv.serverAccrual?'<div class="row"><div class="nm" style="color:#a6acb8">Rendimento por dia útil<small>'+(inv.rendimentoDia&&inv.rendimentoDia.total?'último: '+money(inv.rendimentoDia.total)+' em '+String(inv.rendimentoDia.data||'').split('-').reverse().join('/'):'automático pelo CDI do Banco Central')+'</small></div><div class="vl" style="color:#78d88b">+ '+money(inv.cofres.reduce((s,c)=>s+diaReal(c,inv),0))+'</div></div>':'')+'<div class="row"><div class="nm" style="color:#a6acb8">CDI de referência</div><div class="vl">'+(cdiOf(inv)*100).toFixed(2).replace('.',',')+'% a.a. <button class="editbtn" data-cdi="1">Ajustar</button></div></div>';
     document.querySelector('#eprevBox').innerHTML=
       '<div class="row"><div class="nm">Energisa Prev <small>Previdência privada'+(ep.upd?' · saldo em '+ep.upd.split('-').reverse().join('/'):'')+'</small></div>'+
       '<div class="vl"><span class="ep-b">'+money(ep.saldo)+'</span><br><button class="editbtn" data-eprev="1">Ajustar plano</button></div></div>'+
@@ -166,7 +168,7 @@ h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 9px;text-tran
   document.addEventListener('click',e=>{
     const inv=loadInv();
     const cofBtn=e.target.closest('[data-cofre]');
-    if(cofBtn){const i=+cofBtn.dataset.cofre;const v=prompt('Saldo de '+inv.cofres[i].nome+' (R$):',inv.cofres[i].saldo);if(v===null)return;inv.cofres[i].saldo=num(v);saveInv(inv);mark();renderSaldos();refillSim();return;}
+    if(cofBtn){const i=+cofBtn.dataset.cofre;const v=prompt('Saldo de '+inv.cofres[i].nome+' (R$):',inv.cofres[i].saldo);if(v===null)return;inv.cofres[i].saldo=num(v);if(inv.serverAccrual)inv.accruedThrough=ontem();saveInv(inv);mark();renderSaldos();refillSim();return;}
     if(e.target.closest('[data-cdi]')){const v=prompt('CDI anual (%):',(cdiOf(inv)*100).toFixed(2));if(v===null)return;inv.cdi=numRaw(v)/100;saveInv(inv);mark();renderSaldos();refillSim();return;}
     if(e.target.closest('[data-eprev]')){
       const ep=prevOf(inv);
@@ -289,6 +291,6 @@ h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 9px;text-tran
 })();
 </script>
 <script src="./supabase-project-config.js?v=1"></script>
-<script src="./supabase-shared-storage.js?v=7"></script>
+<script src="./supabase-shared-storage.js?v=10"></script>
 </body>
 </html>

@@ -190,12 +190,25 @@
     }
     return out;
   }
+  // Mesma regra das tarefas: a nota local vence, a não ser que a do servidor
+  // tenha syncRev maior (foi gravada depois que este aparelho baixou a cópia).
+  // Sem isso, um aparelho com a cópia antiga desfazia campos gravados por outro
+  // aparelho ou direto no servidor (ex.: categoria e tipo dos lançamentos).
+  function mergeNotes(localObj, serverObj) {
+    const out = { ...serverObj };
+    Object.keys(localObj).forEach(id => {
+      const mine = localObj[id], theirs = serverObj[id];
+      if (theirs && typeof theirs === 'object' && mine && typeof mine === 'object' && Number(theirs.syncRev || 0) > Number(mine.syncRev || 0)) return;
+      out[id] = mine;
+    });
+    return out;
+  }
   async function reconcileForPush(sb, key, localPayload) {
     try {
       const server = await serverPayload(sb, key);
       if (server == null) return localPayload;
       if (key === 'tasks' && Array.isArray(localPayload)) return mergeTasks(localPayload, server);
-      if (key === 'notes' && server && typeof server === 'object' && !Array.isArray(server) && localPayload && typeof localPayload === 'object' && !Array.isArray(localPayload)) return { ...server, ...localPayload };
+      if (key === 'notes' && server && typeof server === 'object' && !Array.isArray(server) && localPayload && typeof localPayload === 'object' && !Array.isArray(localPayload)) return mergeNotes(localPayload, server);
     } catch (_) { /* em caso de falha, envia o local mesmo (comportamento antigo) */ }
     return localPayload;
   }

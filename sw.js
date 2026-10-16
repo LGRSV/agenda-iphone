@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v234-jarvis-localizacao';
+const CACHE = 'agenda-lagares-v239-jarvis-localizacao';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=13" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -7,7 +7,7 @@ const FINANCEIRO_SCRIPT = '<script src="./financeiro.js?v=2" defer><\/script>';
 const NOTAS_SCRIPT = '<script src="./notas.js?v=8" defer><\/script>';
 const CONDICIONAL_SCRIPT = '<script src="./condicional.js?v=3" defer><\/script>';
 const SUPABASE_CONFIG_SCRIPT = '<script src="./supabase-project-config.js?v=1" defer><\/script>';
-const SUPABASE_SCRIPT = '<script src="./supabase-shared-storage.js?v=9" defer><\/script>';
+const SUPABASE_SCRIPT = '<script src="./supabase-shared-storage.js?v=10" defer><\/script>';
 const SUPABASE_LOGIN_SCRIPT = '<script src="./supabase-login-ui.js?v=4" defer><\/script>';
 const SIMPLE_ACCESS_SCRIPT = '<script src="./supabase-simple-access.js?v=5" defer><\/script>';
 const SHARING_SCRIPT = '<script src="./agenda-sharing.js?v=4" defer><\/script>';
@@ -59,7 +59,8 @@ self.addEventListener('fetch', event => {
       const isTreinoAna = html.includes('treino-ana.html');
       const isImportar = html.includes('importar.html');
       const isEquip = html.includes('Equipamentos Especiais DCMD') || new URL(request.url).pathname.includes('equipamentos-especiais');
-      const isAuxPage = isFinance || isGame || isTraining || isInvest || isCarteira || isTreinoAna || isImportar || isEquip;
+      const isMarket = new URL(request.url).pathname.includes('/marketplace/');
+      const isAuxPage = isFinance || isGame || isTraining || isInvest || isCarteira || isTreinoAna || isImportar || isEquip || isMarket;
       if (!isAuxPage && !html.includes('interface-polish.css')) html = html.replace('</head>', `${POLISH_STYLE}</head>`);
       if (!isAuxPage && !html.includes('edit-enhancement.js')) html = html.replace('</body>', `${EDIT_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('treino.js')) html = html.replace('</body>', `${TREINO_SCRIPT}</body>`);
@@ -104,7 +105,8 @@ self.addEventListener('fetch', event => {
   // toda navegação baixava de novo os ~25 scripts do zero, mesmo sem nenhuma
   // mudança neles, o que pesava bastante em rede lenta/instável.
   const url = new URL(request.url);
-  if (url.origin === self.location.origin && STATIC_ASSET_RE.test(url.pathname)) {
+  // as fotos do marketplace mudam a cada coleta: não entram no cache (ele cresceria sem parar)
+  if (url.origin === self.location.origin && STATIC_ASSET_RE.test(url.pathname) && !url.pathname.includes('/marketplace/')) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE);
       const cached = await cache.match(request);
