@@ -1424,7 +1424,7 @@ Quando receber AUDIO, preencha transcript com a transcricao exata em PT-BR do qu
       const messages=contents.map(c=>({role:c.role==='model'?'assistant':'user',text:(c.parts||[]).map(p=>(p&&typeof p.text==='string')?p.text:'').join('\n').trim().slice(0,8000)})).filter(m=>m.text).slice(-40);
       let res,data;
       try{
-        res=await jfetch(base+'/functions/v1/jarvis-claude',{method:'POST',headers:{'Content-Type':'application/json',apikey:String(cfg.publishableKey||''),Authorization:'Bearer '+tok},body:JSON.stringify({system:systemPrompt(),messages})},30000);
+        res=await jfetch(base+'/functions/v1/jarvis-claude',{method:'POST',headers:{'Content-Type':'application/json',apikey:String(cfg.publishableKey||''),Authorization:'Bearer '+tok},body:JSON.stringify({system:systemPrompt(),messages})},60000);
         data=await res.json().catch(()=>null);
       }catch(_){throw new Error('CLAUDE_network');}
       if(res.ok&&data&&data.ok&&typeof data.text==='string')return data.text;

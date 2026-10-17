@@ -1,7 +1,7 @@
 /* Regras puras da Edge Function jarvis-claude (supabase/functions/jarvis-claude/logic.ts).
    Roda: node tests/jarvis-claude.test.mjs (Node 22.18+ le TypeScript direto, sem dependencias) */
 import assert from 'node:assert';
-import { ACTIONS, GUARD, LIMITS, TOOL, buildPayload, extractAction, parseRequest, sanitizeAction } from '../supabase/functions/jarvis-claude/logic.ts';
+import { ACTIONS, GUARD, LIMITS, TOOL, TOOL_AGENDA, buildPayload, extractAction, filterAgenda, parseRequest, sanitizeAction, visibleTasks } from '../supabase/functions/jarvis-claude/logic.ts';
 
 let ok = 0;
 const t = (name, fn) => { fn(); ok++; console.log('ok -', name); };
@@ -55,14 +55,44 @@ t('extrai a chamada da ferramenta; sem ferramenta usa o texto', () => {
   assert.deepEqual(extractAction(null), { action: 'none', reply: 'Pois nao, Senhor.' });
 });
 
-t('payload: guarda vem antes do prompt do app, ferramenta obrigatoria, teto de tokens', () => {
-  const p = buildPayload('m', 'prompt do app', [{ role: 'user', content: 'oi' }]);
+t('payload: guarda antes do prompt do app, duas ferramentas, final obriga a responder', () => {
+  const p = buildPayload('m', 'prompt do app', [{ role: 'user', content: 'oi' }], 'any');
   assert.equal(p.system[0].text, GUARD);
   assert.equal(p.system[1].text, 'prompt do app');
-  assert.deepEqual(p.tool_choice, { type: 'tool', name: TOOL.name });
-  assert.equal(p.tools.length, 1);
+  assert.deepEqual(p.tools.map(x => x.name), [TOOL.name, TOOL_AGENDA.name]);
+  assert.deepEqual(p.tool_choice, { type: 'any', disable_parallel_tool_use: true });
+  assert.deepEqual(buildPayload('m', 's', []).tool_choice, { type: 'tool', name: TOOL.name, disable_parallel_tool_use: true });
   assert.equal(p.max_tokens, LIMITS.maxTokens);
   assert.deepEqual(TOOL.input_schema.properties.action.enum, ACTIONS);
+});
+
+const AG = [
+  { id: 1, text: 'Dentista Dr. Ícaro', date: '2026-11-03', time: '09:00', tag: 'saude', done: false },
+  { id: 2, text: 'Pagar luz', date: '2026-10-01', tag: 'financeiro', done: true },
+  { id: 3, text: 'Saída manual', date: '2026-10-02', tag: 'financeiro', done: false },
+  { id: 4, text: 'Voo Azul', date: '2026-10-19', time: '03:15', tag: 'pessoal', done: false },
+  { id: 5, date: '2026-10-19' }, // sem texto: ignorada
+];
+const NOTES = { 3: { movimento: 'saida' }, 2: { movimento: 'entrada' } };
+
+t('agenda visível segue a regra do app (saídas financeiras manuais ficam fora)', () => {
+  assert.deepEqual(visibleTasks(AG, NOTES).map(t => t.id), [1, 2, 4]);
+  assert.deepEqual(visibleTasks(null, null), []);
+});
+
+t('consultar_agenda filtra por período, texto sem acento, concluídas e limite', () => {
+  const v = visibleTasks(AG, NOTES);
+  assert.deepEqual(filterAgenda(v, {}), { total: 2, tarefas: [
+    { t: 'Voo Azul', data: '2026-10-19', tag: 'pessoal', h: '03:15' },
+    { t: 'Dentista Dr. Ícaro', data: '2026-11-03', tag: 'saude', h: '09:00' },
+  ] });
+  assert.equal(filterAgenda(v, { texto: 'icaro' }).total, 1);
+  assert.equal(filterAgenda(v, { incluir_concluidas: true }).total, 3);
+  assert.equal(filterAgenda(v, { de: '2026-10-20', ate: '2026-12-31' }).tarefas[0].t, 'Dentista Dr. Ícaro');
+  assert.equal(filterAgenda(v, { de: 'ontem' }).total, 2); // data inválida é ignorada
+  assert.equal(filterAgenda(v, { limite: 1 }).tarefas.length, 1);
+  assert.equal(filterAgenda(v, { limite: 99999 }).tarefas.length, 2);
+  assert.equal(filterAgenda(v, null).total, 2);
 });
 
 console.log(`\n${ok} testes passaram`);
