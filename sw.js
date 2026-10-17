@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v243-gasto-api';
+const CACHE = 'agenda-lagares-v244-varias-acoes';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=13" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -106,6 +106,8 @@ self.addEventListener('fetch', event => {
   // mudança neles, o que pesava bastante em rede lenta/instável.
   const url = new URL(request.url);
   // as fotos do marketplace mudam a cada coleta: não entram no cache (ele cresceria sem parar)
+  // sw.js nunca vem do cache: o app le dele o numero da versao publicada.
+  if (url.origin === self.location.origin && url.pathname.endsWith('/sw.js')) return;
   if (url.origin === self.location.origin && STATIC_ASSET_RE.test(url.pathname) && !url.pathname.includes('/marketplace/')) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE);
