@@ -4815,7 +4815,7 @@
    "rc": 0,
    "ok": 4,
    "falhou": 0,
-   "s": 3
+   "s": 2
   },
   "e2e-atualiza": {
    "rc": 0,
@@ -4833,13 +4833,13 @@
    "rc": 0,
    "ok": 1,
    "falhou": 0,
-   "s": 2
+   "s": 3
   },
   "e2e-vozes-app": {
    "rc": 0,
    "ok": 8,
    "falhou": 0,
-   "s": 27
+   "s": 29
   },
   "unidade": {
    "rc": 0,
