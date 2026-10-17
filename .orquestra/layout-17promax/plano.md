@@ -87,3 +87,6 @@ O cérebro é o Fable: escreve a especificação e faz a revisão final adversar
 | F2 auditoria | workflow wf_182b1ed9-2a8 (opus) | 2026-10-17 08:27 | despachada |
 | F1 pesquisa | rodada 1 | aprovado | JSON válido; 440×956 e 62/34 conferidos pelo maestro na fonte primária (Use Your Loaf); bug WebKit 301994 conferido no Bugzilla |
 | F2 auditoria | rodada 1 | aprovado | harness exporta as 4 funções; emulação conferida pelo maestro com elemento próprio (62/34 e 47/34); 18+12 capturas; defeitos A1–A6, M1–M10, B1–B7 com seletor, medida e linha |
+| C1 especificação | rodada 1 (claude-fable-5-1, conferido no transcript) | aprovado | 7 seções; A1–A6/M1–M10 rastreados em 3.1; 72 trechos old conferidos pelo maestro, cada um 1× no arquivo certo; seção 6 com 10 critérios numéricos; divisão de arquivos coerente (treino.js na F3) |
+| F3 app principal | workflow (opus) | despachada | — |
+| F4 páginas auxiliares | workflow (opus) | despachada | — |
