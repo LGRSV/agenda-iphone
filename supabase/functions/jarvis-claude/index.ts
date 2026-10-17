@@ -6,7 +6,7 @@
 // app, com as validacoes do Jarvis (apagar pede confirmacao na tela).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { LAST_CALL, LIMITS, TOOL, type Msg, buildPayload, extractAction, filterAgenda, parseRequest, visibleTasks } from "./logic.ts";
+import { LAST_CALL, LIMITS, TOOL, type Msg, buildPayload, extractAction, filterAgenda, parseRequest, resumoUso, visibleTasks } from "./logic.ts";
 
 const ORIGIN = "https://lgrsv.github.io";
 const OWNER = "718266ce-ac47-4ab9-ac39-4fde8344c9d7";
@@ -54,6 +54,22 @@ async function loadAgenda(userId: string) {
   if (error) return null;
   const by = Object.fromEntries((data || []).map((d) => [d.document_key, d.payload]));
   return visibleTasks(by.tasks, by.notes);
+}
+
+// Gasto do Jarvis (estimativa pelos tokens registrados e pelos precos oficiais).
+// O saldo da conta nao tem consulta na API da Anthropic: so no Console.
+async function uso(userId: string) {
+  const inicio = new Date(Date.now() - 32 * 24 * 3_600_000).toISOString();
+  const rows: { model: string | null; status: string | null; input_tokens: number | null; output_tokens: number | null; created_at: string }[] = [];
+  for (let de = 0; de < 20_000; de += 1000) { // o PostgREST devolve no maximo 1000 linhas por consulta
+    const { data, error } = await admin.from("jarvis_claude_calls")
+      .select("model,status,input_tokens,output_tokens,created_at").eq("user_id", userId).gte("created_at", inicio)
+      .order("id").range(de, de + 999);
+    if (error) return null;
+    rows.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
+  return { ...resumoUso(rows, Date.now()), limite_dia: CHAT_DAY };
 }
 
 async function chat(userId: string, body: unknown, apiKey: string) {
@@ -115,7 +131,7 @@ async function chat(userId: string, body: unknown, apiKey: string) {
   }
   await patch("jarvis_claude_calls", row.id, { status: action ? "ok" : status, input_tokens: tokensIn, output_tokens: tokensOut });
   if (!action) return fail(/^upstream_(429|529)$/.test(status) ? "upstream_busy" : status.startsWith("incomplete") ? "incomplete" : "upstream_error", 502);
-  return out({ ok: true, text: JSON.stringify(action) });
+  return out({ ok: true, text: JSON.stringify(action), uso: await uso(userId) });
 }
 
 Deno.serve(async (req) => {
@@ -147,6 +163,10 @@ Deno.serve(async (req) => {
     body = b;
   } catch { return fail("bad_request", 400); }
 
+  if (body.kind === "uso") {
+    const u = await uso(user.id);
+    return u ? out({ ok: true, uso: u }) : fail("unavailable", 503);
+  }
   const apiKey = env("ANTHROPIC_API_KEY");
   if (!apiKey) return fail("not_configured", 503);
   return await chat(user.id, body, apiKey);

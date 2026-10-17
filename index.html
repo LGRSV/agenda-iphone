@@ -774,6 +774,7 @@
     #jarvis-title small{display:block;font-size:10px;font-weight:600;color:#75cbff;letter-spacing:.04em;margin-top:1px}
     .jarvis-hbtn{width:30px;height:30px;border:0;border-radius:9px;background:rgba(255,255,255,.07);color:#a6acb8;font-size:15px;cursor:pointer;display:grid;place-items:center;line-height:1;flex:0 0 auto}
     .jarvis-hbtn.on{background:rgba(117,203,255,.22);color:#75cbff}
+    #jarvis-uso{display:block;flex:0 0 auto;padding:6px 16px;font-size:11px;letter-spacing:.02em;color:#8fb6cc;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.05)}#jarvis-uso[hidden]{display:none}
     #jarvis-msgs{flex:1;overflow-y:auto;padding:14px 14px 6px;display:flex;flex-direction:column;gap:10px;min-height:120px}
     .j-msg{max-width:88%;padding:10px 13px;border-radius:16px;font-size:13px;line-height:1.48;word-break:break-word;white-space:pre-wrap}
     .j-msg.user{align-self:flex-end;background:linear-gradient(135deg,#0d72aa,#147fb7);color:#fff;border-bottom-right-radius:5px}
@@ -852,6 +853,7 @@
       <button id="jarvis-key" class="jarvis-hbtn" type="button" title="Configurar chave" aria-label="Configurar chave do Jarvis"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4.2"/><path d="M10.9 12.1 20 3"/><path d="M16.5 6.5 19 9M14 9l1.8 1.8"/></svg></button>
       <button id="jarvis-close" class="jarvis-hbtn" type="button" aria-label="Fechar">&times;</button>
     </div>
+    <a id="jarvis-uso" href="https://platform.claude.com/settings/billing" target="_blank" rel="noopener" hidden></a>
     <div id="jarvis-msgs"></div>
     <div id="jarvis-chips">
       <button class="j-chip" type="button" data-p="Me dê um briefing do meu dia: tarefas de hoje e o que priorizar."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 10h6M9 14h4"/></svg>Meu dia</button>
@@ -923,6 +925,7 @@
       // Ao abrir: puxa o mais recente do Supabase para o Jarvis nunca responder
       // com uma copia velha das tarefas (o evento agenda:remote-sync recarrega
       // o AgendaAPI assim que o pull chega).
+      if(isOpen&&SO_CLAUDE)atualizarUso();
       if(isOpen){try{const S=window.SupabaseAgenda;if(S&&S.getUser&&S.getUser()&&(S.pullAll||S.syncNow))(S.pullAll||S.syncNow)();}catch(_){}}
       if(isOpen&&!voiceOn)statusEl.textContent='VOZ DESLIGADA · TOQUE NO ALTO-FALANTE ACIMA';
       if(isOpen&&!msgs.children.length){
@@ -1023,6 +1026,7 @@ ${agendaContext()}
 ${localContext()}
 INVESTIMENTOS DO USUARIO (cofrinhos do Mercado Pago e conta da XP; dados reais que rendem sozinhos todo dia util pelo CDI do Banco Central — use como verdade, nao invente; 'dia util' = dia com CDI, sem fins de semana e feriados):
 ${investContext()}
+${usoContext()}
 VOCE CONTROLA A AGENDA E A LOCALIZACAO. Responda SEMPRE e SOMENTE com um JSON puro (sem markdown, sem crases) neste formato:
 {"action":"none|add_task|complete_task|delete_task|edit_task|web_search|update_cofrinho|save_place|delete_place|location_on|location_off","task":{"text":"","date":"YYYY-MM-DD","time":"HH:MM ou vazio","tag":"trabalho|pessoal|casa|faculdade|saude|financeiro|outros"},"query":"","valor":"","rendimento":"","transcript":"","reply":"sua resposta ao usuario em PT-BR"}
 Regras: use add_task quando pedirem para agendar/adicionar/lembrar de algo (preencha task; se nao houver horario, deixe time vazio; escolha a tag mais adequada). Use complete_task quando disserem que concluiram algo, e delete_task para remover/cancelar (preencha query com palavras-chave exatas do texto da tarefa). Use edit_task para mudar data, horario, nome ou tag de uma tarefa existente: query = palavras do texto ATUAL da tarefa; task = SOMENTE os campos novos (deixe vazio o que nao muda). Use web_search quando o usuario pedir informacao do mundo real que nao esta na agenda (noticias, clima, precos, cotacoes, resultados, fatos atuais): preencha query com a pergunta completa e em reply diga algo curto como "Um instante, Senhor, consultando." Use update_cofrinho quando o usuario informar o saldo ATUAL de um cofrinho (ex.: "o cofrinho Lagares esta em 46.900", "giro mensal ficou 15 mil"): query = nome do cofrinho, valor = saldo em reais so com numeros (ex. "46900.00"); se ele disser quanto rendeu no dia, coloque em rendimento (ex. "19.56") para recalibrar a taxa. Perguntas sobre quanto os investimentos rendem por dia, por mes ou o saldo dos cofrinhos: responda com action none usando a secao INVESTIMENTOS (valores em reais, arredondados). Use none para conversas e perguntas sobre a propria agenda.
@@ -1462,7 +1466,8 @@ ${SO_CLAUDE?'MODO ATUAL: so texto e sem internet. NAO use web_search: se pedirem
     // Recusas definitivas (nao configurado, sem permissao, sem login) pausam o
     // Claude por 10 min para nao atrasar cada pergunta.
     let claudeOffUntil=0;
-    async function callClaude(contents){
+    // Chamada a Edge Function jarvis-claude com a sessao do app (conversa ou gasto).
+    async function jarvisFn(body,ms){
       const S=window.SupabaseAgenda;
       if(!S||!S.getAccessToken)throw new Error('CLAUDE_sem_modulo');
       if(!(S.getUser&&S.getUser()))throw new Error('CLAUDE_sem_login');
@@ -1471,17 +1476,39 @@ ${SO_CLAUDE?'MODO ATUAL: so texto e sem internet. NAO use web_search: se pedirem
       if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(base))throw new Error('CLAUDE_config');
       const tok=await S.getAccessToken();
       if(!tok)throw new Error('CLAUDE_sem_token');
-      const messages=contents.map(c=>({role:c.role==='model'?'assistant':'user',text:(c.parts||[]).map(p=>(p&&typeof p.text==='string')?p.text:'').join('\n').trim().slice(0,8000)})).filter(m=>m.text).slice(-40);
-      let res,data;
       try{
-        res=await jfetch(base+'/functions/v1/jarvis-claude',{method:'POST',headers:{'Content-Type':'application/json',apikey:String(cfg.publishableKey||''),Authorization:'Bearer '+tok},body:JSON.stringify({system:systemPrompt().slice(0,110000),messages})},60000);
-        data=await res.json().catch(()=>null);
+        const res=await jfetch(base+'/functions/v1/jarvis-claude',{method:'POST',headers:{'Content-Type':'application/json',apikey:String(cfg.publishableKey||''),Authorization:'Bearer '+tok},body:JSON.stringify(body)},ms);
+        return{res,data:await res.json().catch(()=>null)};
       }catch(_){throw new Error('CLAUDE_network');}
+    }
+    async function callClaude(contents){
+      const messages=contents.map(c=>({role:c.role==='model'?'assistant':'user',text:(c.parts||[]).map(p=>(p&&typeof p.text==='string')?p.text:'').join('\n').trim().slice(0,8000)})).filter(m=>m.text).slice(-40);
+      const{res,data}=await jarvisFn({system:systemPrompt().slice(0,110000),messages},60000);
+      if(data&&data.uso)mostrarUso(data.uso);
       if(res.ok&&data&&data.ok&&typeof data.text==='string')return data.text;
       const code=String((data&&data.error)||('http_'+res.status)).replace(/[^a-z0-9_]/gi,'').slice(0,40);
       if(res.status===401||res.status===403||code==='not_configured')claudeOffUntil=Date.now()+10*60*1000;
       else if(code==='unavailable'||res.status===404)claudeOffUntil=Date.now()+3*60*1000;
       throw new Error('CLAUDE_'+code);
+    }
+    // Gasto do Jarvis com a API (estimativa do servidor pelos tokens e precos
+    // oficiais). O saldo da conta so existe no Console: o link leva para la.
+    let usoAtual=null;
+    const usdBR=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2});
+    function mostrarUso(u){
+      if(!u||!u.hoje||!u.mes)return;
+      usoAtual=u;
+      const el=q('jarvis-uso');if(!el)return;
+      el.textContent='API Claude \u00B7 hoje '+usdBR(u.hoje.usd)+' ('+u.hoje.chamadas+') \u00B7 m\u00EAs '+usdBR(u.mes.usd)+' \u00B7 ver saldo \u203A';
+      el.title='Gasto do Jarvis estimado pelos tokens. O saldo da conta fica no Console da Anthropic.';
+      el.hidden=false;
+    }
+    async function atualizarUso(){
+      try{const{res,data}=await jarvisFn({kind:'uso'},15000);if(res.ok&&data&&data.ok)mostrarUso(data.uso);}catch(_){}
+    }
+    function usoContext(){
+      const u=usoAtual;if(!u)return'';
+      return 'USO DA API DO CLAUDE PELO JARVIS (estimativa pelos tokens e precos oficiais, em dolar): hoje '+usdBR(u.hoje.usd)+' em '+u.hoje.chamadas+' perguntas; neste mes '+usdBR(u.mes.usd)+' em '+u.mes.chamadas+' perguntas; limite de '+(u.limite_dia||200)+' perguntas por dia. O SALDO de creditos da conta NAO e acessivel por aqui: so no Console da Anthropic (platform.claude.com > Billing); diga isso se perguntarem o saldo.';
     }
     // Pesquisa na web via grounding do Google Search: da ao Jarvis informacao
     // em tempo real (noticias, clima, cotacoes, fatos). Sem schema JSON aqui —

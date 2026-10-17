@@ -1,7 +1,7 @@
 /* Regras puras da Edge Function jarvis-claude (supabase/functions/jarvis-claude/logic.ts).
    Roda: node tests/jarvis-claude.test.mjs (Node 22.18+ le TypeScript direto, sem dependencias) */
 import assert from 'node:assert';
-import { ACTIONS, GUARD, LAST_CALL, LIMITS, TOOL, TOOL_AGENDA, buildPayload, extractAction, filterAgenda, parseRequest, sanitizeAction, visibleTasks } from '../supabase/functions/jarvis-claude/logic.ts';
+import { ACTIONS, GUARD, LAST_CALL, LIMITS, TOOL, TOOL_AGENDA, buildPayload, extractAction, custoUsd, filterAgenda, parseRequest, resumoUso, sanitizeAction, visibleTasks } from '../supabase/functions/jarvis-claude/logic.ts';
 
 let ok = 0;
 const t = (name, fn) => { fn(); ok++; console.log('ok -', name); };
@@ -98,6 +98,29 @@ t('consultar_agenda filtra por período, texto sem acento, concluídas e limite'
   assert.equal(filterAgenda(v, { limite: 1 }).tarefas.length, 1);
   assert.equal(filterAgenda(v, { limite: 99999 }).tarefas.length, 2);
   assert.equal(filterAgenda(v, null).total, 2);
+});
+
+t('custo pelos preços oficiais: Opus 5.5 US$ 4 entrada / US$ 20 saída por milhão', () => {
+  assert.equal(custoUsd('claude-opus-5-5', 1_000_000, 0), 4);
+  assert.equal(custoUsd('claude-opus-5-5', 0, 1_000_000), 20);
+  assert.equal(Math.round(custoUsd('claude-opus-5-5', 28947, 488) * 10000) / 10000, 0.1255); // pergunta real das 03:22
+  assert.equal(custoUsd('modelo-desconhecido', 10, 10), null);
+});
+
+t('resumo do gasto: hoje e mês no horário de Brasília, ignora chamadas sem tokens', () => {
+  const agora = Date.parse('2026-10-17T06:40:00Z'); // 17/10 03:40 em Brasília
+  const rows = [
+    { model: 'claude-opus-5-5', input_tokens: 1_000_000, output_tokens: 0, created_at: '2026-10-17T06:20:00Z' }, // hoje: US$ 4
+    { model: 'claude-opus-5-5', input_tokens: 0, output_tokens: 100_000, created_at: '2026-10-17T02:50:00Z' }, // 16/10 23:50 BRT: ontem, US$ 2
+    { model: 'claude-opus-5-5', input_tokens: 500_000, output_tokens: 0, created_at: '2026-10-01T03:10:00Z' }, // 01/10 00:10 BRT: no mês, US$ 2
+    { model: 'claude-opus-5-5', input_tokens: 500_000, output_tokens: 0, created_at: '2026-10-01T02:50:00Z' }, // 30/09 23:50 BRT: fora do mês
+    { model: 'claude-opus-5-5', input_tokens: 0, output_tokens: 0, created_at: '2026-10-17T06:30:00Z' },       // recusada: sem tokens
+    { model: 'outro', input_tokens: 10, output_tokens: 10, created_at: '2026-10-17T06:31:00Z' },              // sem preço conhecido
+  ];
+  const r = resumoUso(rows, agora);
+  assert.deepEqual(r.hoje, { chamadas: 2, usd: 4, semPreco: 1 });
+  assert.deepEqual(r.mes, { chamadas: 4, usd: 8, semPreco: 1 });
+  assert.equal(r.desde_mes, '2026-10-01T03:00:00.000Z');
 });
 
 console.log(`\n${ok} testes passaram`);
