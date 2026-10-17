@@ -19,7 +19,8 @@
 
   const load = () => { try { const v = JSON.parse(localStorage.getItem(NOTES_KEY)); return v && typeof v === 'object' ? v : {}; } catch (_) { return {}; } };
   const saveAll = a => localStorage.setItem(NOTES_KEY, JSON.stringify(a));
-  const getNote = id => { const n = load()[id]; return { prio: n && n.prio || '', durationMin: n && n.durationMin || null, detail: n && n.detail || '', valor: n && n.valor || '', parcPagas: n && n.parcPagas || '', parcRest: n && n.parcRest || '', cond: n && n.cond || null, subs: n && Array.isArray(n.subs) ? n.subs : [] }; };
+  // all: notas ja lidas (installToggles le uma vez para todos os cartoes, em vez de uma vez por cartao).
+  const getNote = (id, all) => { const n = (all || load())[id]; return { prio: n && n.prio || '', durationMin: n && n.durationMin || null, detail: n && n.detail || '', valor: n && n.valor || '', parcPagas: n && n.parcPagas || '', parcRest: n && n.parcRest || '', cond: n && n.cond || null, subs: n && Array.isArray(n.subs) ? n.subs : [] }; };
   const hasCond = c => !!(c && (String(c.thenText || '').trim() || String(c.elseText || '').trim()));
   const PRIOS = { alta: { label: 'Alta', color: '#ffb74d' }, urgente: { label: 'Urgente', color: '#ff7f91' } };
   const NOTE_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>';
@@ -216,12 +217,12 @@
   }
   const debouncedSave = panel => { clearTimeout(saveTimer); saveTimer = setTimeout(() => saveFromPanel(panel), 400); };
 
-  function updateToggle(id) {
-    const card = cardFor(id);
+  function updateToggle(id, card0, all) {
+    const card = card0 || cardFor(id);
     if (!card) return;
     const btn = card.querySelector('.notas-toggle');
     if (!btn) return;
-    const note = getNote(id);
+    const note = getNote(id, all);
     const has = !!(note.prio || note.valor || note.parcPagas || note.parcRest || hasCond(note.cond) || note.durationMin || note.detail.trim() || note.subs.length);
     btn.classList.toggle('has', has);
     let label = has ? '' : 'Detalhes';
@@ -280,6 +281,7 @@
   const toggle = id => openDetails(id);
 
   function installToggles() {
+    let all = null; // lidas so se algum cartao precisar
     document.querySelectorAll('.task-card').forEach(card => {
       const id = cardId(card);
       if (!id || String(id).startsWith('treino-')) return; // treino tem painel próprio
@@ -291,7 +293,7 @@
       b.dataset.nid = id;
       b.innerHTML = NOTE_SVG;
       footer.appendChild(b);
-      updateToggle(id);
+      updateToggle(id, card, all || (all = load()));
     });
   }
 

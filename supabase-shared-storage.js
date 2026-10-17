@@ -151,9 +151,10 @@
   // lista é colapsada de verdade antes de subir — com a mesma regra da agenda:
   // a cópia que tem nota vence, e duas cópias com notas diferentes sobrevivem,
   // porque são lançamentos distintos e não repetição.
-  function noteSig(id) {
+  // notes: notas ja lidas (collapseDuplicates le uma vez; antes era um parse por tarefa).
+  function noteSig(id, notes) {
     try {
-      const n = (read('notes') || {})[String(id)];
+      const n = (notes || read('notes') || {})[String(id)];
       if (!n || typeof n !== 'object') return '';
       const keep = {};
       Object.keys(n).sort().forEach(k => {
@@ -167,10 +168,10 @@
   }
   function collapseDuplicates(arr) {
     if (!Array.isArray(arr)) return arr;
-    const seen = new Map(), sig = new Map(), out = [];
+    const seen = new Map(), sig = new Map(), out = [], notes = read('notes') || {};
     for (const t of arr) {
       if (!t || !t.text) { out.push(t); continue; }
-      const mine = noteSig(t.id);
+      const mine = noteSig(t.id, notes);
       const key = `${t.text}|${t.date || ''}|${t.time || ''}|${t.tag || ''}`;
       const idx = seen.get(key);
       if (idx === undefined) { seen.set(key, out.length); sig.set(key, mine); out.push(t); continue; }
