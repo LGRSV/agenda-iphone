@@ -72,6 +72,20 @@ Para cada achado, diga se é defeito real, com evidência reproduzível.
 5. **Regressões no iPhone 13:** compare as capturas de antes e depois e as medidas de topo
    (orçamento vertical). Diga se algo ficou pior de forma perceptível.
 
+## Pontos de projeto que o coordenador pede que você julgue
+Para cada um: aceitar como está, ou propor a correção concreta (old → new) com a medida antes e
+depois.
+1. **Botões flutuantes sobre o calendário** (auditoria B1, que a C1 deixou fora do escopo):
+   - no Mês, o "+ Nova tarefa" e o `#cardioFab` cobrem dias do calendário, inclusive o dia de hoje;
+   - na mudança, o grupo subiu 16 px;
+   - veja `scratchpad/layout/depois/iphone17promax-mes.png`.
+2. **Rodapé do cartão com `gap:16px 6px`** (rodada 2 da F3):
+   - o rodapé quebra em quase todos os cartões (51/60 no 17PM, 60/60 no 13);
+   - por isso quase todos ficaram +10 px (alguns +20 px no 13);
+   - existe alternativa que mantenha os 44 px de toque com menos altura?
+3. **Orçamento vertical:** o topo cresceu 22 px nos dois aparelhos (abas, filtros e modo sequencial
+   em 44). Vale no iPhone 13?
+
 ## Entregável
 `/home/user/agenda-iphone/.orquestra/layout-17promax/revisao-final.md` com:
 - (a) o veredito: **aprovado** ou **reprovado**, com a lista de defeitos que impedem;
