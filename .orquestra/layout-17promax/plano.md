@@ -103,3 +103,5 @@ O cérebro é o Fable: escreve a especificação e faz a revisão final adversar
 | F5 | rodada 2 | aguarda F3/F4 r3 | — |
 | F3 | rodada 3 | aprovado | maestro: 16/16 trechos novos 1×; paisagem painel 20..330 e linha de entrada 261..305 dentro; zona nível B 44,5 pelo mesmo método que dava 42,5; retrato inalterado nos 2 perfis (painel 416×477 / 366×506), 0 erros |
 | F4 | rodada 3 | aprovado | maestro: trechos 1×; treino.js?v=14 no treino.html; arquivos alterados = os 4 previstos |
+| F5 | rodada 2 | aprovado (entrega do verificador) | teste pega M7 (transbordo recortado) e zona 42 (mutantes em cópias); 430/431; única falha pré-existente: `.filters` do financeiro com 518 px (Extrato inalcançável) → nova frente F6 (F4 já usou 3 rodadas) |
+| F6 financeiro filtros | workflow (opus) | despachada | flex-wrap:wrap medido pela F5 |

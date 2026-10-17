@@ -14,7 +14,19 @@
 //   FALHOU - <id> <descrição> (<medida obtida> vs <esperado>)
 // Linhas que começam com "# " são só informação. Código de saída: 0 se tudo passou, 1 se algo falhou.
 //
-// Variáveis opcionais: LAYOUT_CAPTURAS (pasta das capturas), LAYOUT_SUITES (pasta das suítes E2E).
+// Variáveis opcionais: LAYOUT_CAPTURAS (pasta das capturas), LAYOUT_SUITES (pasta das suítes E2E),
+// LAYOUT_JSON (arquivo das medidas brutas; padrão testes/resultado-layout.json).
+//
+// Rodada 2 (devolução do coordenador, briefings/F5-rodada2.md):
+//  - R5: S6.1.<perfil>.<vista>.bruto — todo elemento visível com getBoundingClientRect().right > innerWidth + 0,5
+//    ou left < −0,5 reprova, mesmo recortado por html/body/.app/.view-shell. Só ficam de fora os filhos dos
+//    contêineres de rolagem horizontal intencional (ROLAGEM_INTENCIONAL, overflow-x auto/scroll), e só se o
+//    contêiner couber no viewport. O mesmo predicado roda, como verificação extra, na paisagem e nas auxiliares.
+//  - R6: nível B por extensão medida da zona de toque (elementFromPoint no centro horizontal, varredura de 0,25 px
+//    a partir do meio do botão, para cima e para baixo, refinada por bisseção): zona ≥ 43,5, e ≥ 6 px de cada lado.
+//    Mais: zero pares de zonas sobrepostas entre interativos do mesmo cartão.
+//  - S6.8 com as emendas da especificação (marketplace, versões, contrato do nível B e correções R1–R4/P2).
+//  - S6.10 com a linha de entrada do Jarvis inteira no painel e o #taskDialog dentro de 20..420.
 'use strict';
 
 const path = require('path');
@@ -33,11 +45,18 @@ const REPO = path.resolve(__dirname, '..', '..', '..');
 const SCRATCH = '/tmp/claude-0/-home-user-agenda-iphone/3207d749-cbff-51f4-a8a2-534b7b3c7cb3/scratchpad';
 const CAPT = process.env.LAYOUT_CAPTURAS || path.join(SCRATCH, 'layout', 'verificacao');
 const SUITES = process.env.LAYOUT_SUITES || path.join(SCRATCH, 'tools');
-const SAIDA_JSON = path.join(__dirname, 'resultado-layout.json');
+const SAIDA_JSON = process.env.LAYOUT_JSON || path.join(__dirname, 'resultado-layout.json');
 const CHROME = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
 const EPS = 0.01;   // ruído de ponto flutuante nos predicados "≥ 44" / "≥ 28"
 const TOL = 0.5;    // tolerância da especificação (seção 6) para igualdades
+const ZONA_MIN = 43.5; // rodada 2 (R6): extensão vertical mínima medida da zona de toque do nível B
+const LADO_MIN = 6;    // e, de cada lado da caixa, pelo menos os 6 px da sonda original da especificação
+// Rodada 2 (R5): contêineres de rolagem horizontal intencional. Os filhos deles podem passar do viewport (rolam
+// dentro do contêiner), desde que o próprio contêiner caiba e tenha overflow-x auto/scroll. Lista fechada:
+// app: #jarvis-chips (chips do Jarvis) e #filters (filtros, rolam no iPhone 13); financeiro: #saldoAtual e #pager
+// (carrosséis); equipamentos-especiais: #filtros e #filtros-cat (faixas de chips).
+const ROLAGEM_INTENCIONAL = ['#jarvis-chips', '#filters', '#saldoAtual', '#pager', '#filtros', '#filtros-cat'];
 
 const P17 = h.perfis.iphone17promax;
 const P13 = h.perfis.iphone13;
@@ -55,6 +74,7 @@ function chk(id, desc, ok, medida, esperado) {
 }
 const nota = s => console.log('# ' + s);
 const f1 = v => (v == null || Number.isNaN(v)) ? String(v) : String(Math.round(v * 10) / 10);
+const f2 = v => (v == null || !Number.isFinite(v)) ? String(v) : v.toFixed(2);
 const perto = (a, b, tol = TOL) => a != null && Math.abs(a - b) <= tol + 1e-9;
 const ge = (a, b) => a != null && a >= b - EPS;
 
@@ -143,7 +163,36 @@ function coletarPagina(arg) {
     if (c.R <= W + 0.5 && c.L >= -0.5) continue;
     transb.push(nome(el) + ' ' + r1(r.left) + '..' + r1(r.right));
   }
-  return { W, H, sw: document.documentElement.scrollWidth, scrollY: window.scrollY, itens, transb: transb.slice(0, 8), nTransb: transb.length };
+  // Rodada 2 (R5): transbordo BRUTO. Nenhum recorte é descontado (html/body com overflow-x:clip, .app, .view-shell
+  // com overflow:hidden recortam sem gerar scrollWidth). Visível = visibility visible, nenhum ancestral com
+  // display:none e opacidade ≥ 0,05 em toda a cadeia. Exceção única: filhos de um contêiner da lista de rolagem
+  // horizontal intencional, com overflow-x auto/scroll, desde que o contêiner caiba no viewport.
+  const rolagem = (arg && arg.rolagem) || [];
+  const cabe = rr => rr.left >= -0.5 && rr.right <= W + 0.5;
+  const visivelCss = el => {
+    if (getComputedStyle(el).visibility !== 'visible') return false;
+    for (let n = el; n && n.nodeType === 1; n = n.parentElement) { const s = getComputedStyle(n); if (s.display === 'none' || parseFloat(s.opacity) < 0.05) return false; }
+    return true;
+  };
+  const fora = [], excluidos = {};
+  for (const el of document.body.querySelectorAll('*')) {
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1 || cabe(r)) continue;
+    if (!visivelCss(el)) continue;
+    let cont = null, contRuim = null;
+    for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+      const s = rolagem.find(x => a.matches(x));
+      if (!s) continue;
+      const cs = getComputedStyle(a), ar = a.getBoundingClientRect();
+      if ((cs.overflowX === 'auto' || cs.overflowX === 'scroll') && cabe(ar)) cont = s;
+      else contRuim = `${s} ${cs.overflowX} ${r1(ar.left)}..${r1(ar.right)}`;
+      break;
+    }
+    if (cont) { excluidos[cont] = (excluidos[cont] || 0) + 1; continue; }
+    fora.push(nome(el) + ' ' + r1(r.left) + '..' + r1(r.right) + (contRuim ? ` (contêiner ${contRuim} não vale)` : ''));
+  }
+  return { W, H, sw: document.documentElement.scrollWidth, scrollY: window.scrollY, itens, transb: transb.slice(0, 8), nTransb: transb.length,
+    fora: fora.slice(0, 6), nFora: fora.length, excluidos };
 }
 
 // Retângulos de uma lista de seletores (elementos com tamanho > 0 e visibility visible).
@@ -161,31 +210,86 @@ function retangulos(sels) {
   return out;
 }
 
-// Nível B: altura ≥ 28 e área de toque 6 px acima e abaixo devolvendo o próprio botão, com o botão no meio da tela.
-function testarNivelB(sels) {
-  const r1 = v => Math.round(v * 10) / 10;
+// Nível B (rodada 2, R6): altura ≥ 28 e EXTENSÃO MEDIDA da zona de toque. Com o botão rolado para o meio da tela,
+// elementFromPoint no centro horizontal, partindo do meio do botão para cima e para baixo a cada 0,25 px até o
+// primeiro ponto que não devolve o botão (nem descendente); a fronteira é refinada por bisseção (12 passos) entre o
+// último acerto e o primeiro erro. zona = fronteira de baixo − fronteira de cima; acima/abaixo = quanto a zona passa
+// da caixa (getBoundingClientRect) de cada lado. Critério: zona ≥ zonaMin e acima, abaixo ≥ ladoMin.
+function testarNivelB(arg) {
+  const sels = arg.sels, zonaMin = arg.zonaMin, ladoMin = arg.ladoMin;
+  const r1 = v => Math.round(v * 10) / 10, r2 = v => Math.round(v * 100) / 100;
   const desc = e => e ? (e.id ? '#' + e.id : e.tagName.toLowerCase() + (e.classList.length ? '.' + [...e.classList].slice(0, 2).join('.') : '')) : null;
   const out = {};
   for (const [k, s] of Object.entries(sels)) {
     const els = [...document.querySelectorAll(s)].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility === 'visible'; });
-    const reg = { n: els.length, hMin: null, hMax: null, acertos: 0, centralizados: 0, falhas: [] };
+    const reg = { n: els.length, hMin: null, hMax: null, zMin: null, zMax: null, acimaMin: null, abaixoMin: null, acertos: 0, centralizados: 0, falhas: [] };
+    const mn = (a, b) => a == null ? b : Math.min(a, b), mx = (a, b) => a == null ? b : Math.max(a, b);
     for (const el of els) {
       el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
       const r = el.getBoundingClientRect();
-      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-      const centralizado = Math.abs(cy - innerHeight / 2) <= innerHeight / 4;
+      const cx = r.left + r.width / 2, meio = r.top + r.height / 2;
+      const centralizado = Math.abs(meio - innerHeight / 2) <= innerHeight / 4;
       if (centralizado) reg.centralizados++;
-      const a = document.elementFromPoint(cx, r.top - 6), b = document.elementFromPoint(cx, r.bottom + 6);
-      const okA = !!a && (a === el || el.contains(a)), okB = !!b && (b === el || el.contains(b));
-      reg.hMin = reg.hMin == null ? r1(r.height) : Math.min(reg.hMin, r1(r.height));
-      reg.hMax = reg.hMax == null ? r1(r.height) : Math.max(reg.hMax, r1(r.height));
-      if (okA && okB) reg.acertos++;
-      else if (reg.falhas.length < 4) reg.falhas.push({ texto: el.textContent.trim().slice(0, 24), h: r1(r.height), cy: r1(cy), centralizado, acima: okA ? 'ok' : desc(a), abaixo: okB ? 'ok' : desc(b) });
+      const acerta = y => { const e = document.elementFromPoint(cx, y); return !!e && (e === el || el.contains(e)); };
+      const fronteira = dir => {
+        let bom = meio, d = 0.25;
+        for (; d <= r.height / 2 + 40; d += 0.25) { const y = meio + dir * d; if (acerta(y)) bom = y; else break; }
+        let a = bom, b = meio + dir * d;
+        for (let i = 0; i < 12; i++) { const m = (a + b) / 2; if (acerta(m)) a = m; else b = m; }
+        return { y: a, vizinho: desc(document.elementFromPoint(cx, b)) };
+      };
+      let zona = 0, acima = -Infinity, abaixo = -Infinity, vizCima = null, vizBaixo = null;
+      if (acerta(meio)) {
+        const t = fronteira(-1), b = fronteira(+1);
+        zona = b.y - t.y; acima = r.top - t.y; abaixo = b.y - r.bottom; vizCima = t.vizinho; vizBaixo = b.vizinho;
+      } else vizCima = vizBaixo = desc(document.elementFromPoint(cx, meio));
+      reg.hMin = mn(reg.hMin, r1(r.height)); reg.hMax = mx(reg.hMax, r1(r.height));
+      reg.zMin = mn(reg.zMin, r2(zona)); reg.zMax = mx(reg.zMax, r2(zona));
+      reg.acimaMin = mn(reg.acimaMin, r2(acima)); reg.abaixoMin = mn(reg.abaixoMin, r2(abaixo));
+      if (zona >= zonaMin - 1e-6 && acima >= ladoMin - 1e-6 && abaixo >= ladoMin - 1e-6) reg.acertos++;
+      else if (reg.falhas.length < 4) reg.falhas.push({ texto: el.textContent.trim().slice(0, 24), h: r1(r.height), zona: r2(zona), acima: r2(acima), abaixo: r2(abaixo), centralizado, vizCima, vizBaixo });
     }
     out[k] = reg;
   }
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   return out;
+}
+
+// Rodada 2 (R6): zonas de toque geométricas dos interativos de cada cartão (.task-card) e pares sobrepostos.
+// Zona = caixa do elemento unida ao ::before absoluto (que é posicionado contra a caixa de padding: as bordas
+// entram na conta). Pares aninhados (um contém o outro) não contam. Sobreposição = interseção > tol nos dois eixos.
+function paresZonas(arg) {
+  const tol = arg.tol;
+  const r1 = v => Math.round(v * 10) / 10;
+  const nome = e => e.id ? '#' + e.id : e.tagName.toLowerCase() + (e.classList.length ? '.' + [...e.classList].slice(0, 2).join('.') : '');
+  const zona = el => {
+    const r = el.getBoundingClientRect(), cs = getComputedStyle(el), b = getComputedStyle(el, '::before');
+    let L = r.left, T = r.top, R = r.right, B = r.bottom;
+    if (b.position === 'absolute' && b.content !== 'none' && cs.position !== 'static') {
+      const n = x => (x === 'auto' ? 0 : parseFloat(x));
+      const pl = r.left + parseFloat(cs.borderLeftWidth), pt = r.top + parseFloat(cs.borderTopWidth);
+      const pr = r.right - parseFloat(cs.borderRightWidth), pb = r.bottom - parseFloat(cs.borderBottomWidth);
+      L = Math.min(L, pl + n(b.left)); R = Math.max(R, pr - n(b.right)); T = Math.min(T, pt + n(b.top)); B = Math.max(B, pb - n(b.bottom));
+    }
+    return { L, T, R, B };
+  };
+  const cartoes = [...document.querySelectorAll('#viewContent .task-card')].filter(c => c.getBoundingClientRect().height > 0);
+  const pares = [], tipos = {};
+  let nInter = 0;
+  for (const c of cartoes) {
+    const els = [...c.querySelectorAll('button, a, input, select, textarea, summary, [role=button]')]
+      .filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility === 'visible'; });
+    nInter += els.length;
+    for (const e of els) tipos[nome(e)] = (tipos[nome(e)] || 0) + 1;
+    const zs = els.map(e => ({ e, z: zona(e) }));
+    for (let i = 0; i < zs.length; i++) for (let j = i + 1; j < zs.length; j++) {
+      const a = zs[i], b = zs[j];
+      if (a.e.contains(b.e) || b.e.contains(a.e)) continue;
+      const w = Math.min(a.z.R, b.z.R) - Math.max(a.z.L, b.z.L), hh = Math.min(a.z.B, b.z.B) - Math.max(a.z.T, b.z.T);
+      if (w > tol && hh > tol) pares.push(`${nome(a.e)} [${r1(a.z.T)}..${r1(a.z.B)}] × ${nome(b.e)} [${r1(b.z.T)}..${r1(b.z.B)}]: ${r1(w)}×${r1(hh)}`);
+    }
+  }
+  return { cartoes: cartoes.length, nInter, tipos, nPares: pares.length, pares: pares.slice(0, 4) };
 }
 
 // Estilo do véu (body::before) e comparação com o fundo do body.
@@ -284,6 +388,14 @@ async function capturar(page, nomeArq) {
   catch (e) { nota(`captura ${nomeArq} falhou: ${e.message}`); }
 }
 
+// Rodada 2 (R5): linha do transbordo bruto (mesmo recortado), com os contêineres excluídos listados.
+const fmtExcl = o => Object.keys(o || {}).length ? Object.entries(o).map(([k, n]) => `${k} (${n} filhos)`).join(', ') : 'nenhum';
+function chkBruto(id, onde, c, W) {
+  chk(id, `nenhum elemento visível fora do viewport ${onde}, mesmo recortado (exceto rolagem horizontal intencional)`, c.nFora === 0,
+    `fora ${c.nFora}${c.nFora ? ' [' + c.fora.join('; ') + (c.nFora > c.fora.length ? ` …+${c.nFora - c.fora.length}` : '') + ']' : ''}; excluídos: ${fmtExcl(c.excluidos)}`,
+    `0 elementos com left < −0,5 ou right > ${W} + 0,5`);
+}
+
 const sobIlha = (c, ins) => c.itens.filter(x => x.naTela && x.cT < ins.top - 0.5);
 const fixosSobIndicador = (c, ins) => c.itens.filter(x => x.naTela && x.fixo && x.cB > c.H - ins.bottom + 0.5);
 const folga = (c, ins, x) => Math.round((c.H - ins.bottom - x.cB) * 10) / 10;
@@ -302,6 +414,15 @@ function checarAlvosA(prefixo, rects, especs) {
     if (!ok) falhas.push(sel);
   }
   return falhas;
+}
+
+// Nível B (rodada 2): h ≥ 28, zona medida ≥ ZONA_MIN e ≥ LADO_MIN de cada lado, em todos os botões.
+function chkNivelB(id, rotulo, r) {
+  const ok = r.n > 0 && ge(r.hMin, 28) && r.acertos === r.n;
+  chk(id, `${rotulo}: h ≥ 28 e zona de toque medida ≥ ${ZONA_MIN} (≥ ${LADO_MIN} px acima e abaixo)`, ok,
+    `${r.n} botões, h ${f1(r.hMin)}–${f1(r.hMax)}, zona ${f2(r.zMin)}–${f2(r.zMax)}, menor extensão acima ${f2(r.acimaMin)} / abaixo ${f2(r.abaixoMin)}, ok ${r.acertos}/${r.n}` +
+      (r.falhas.length ? ' [falhas: ' + r.falhas.map(x => `"${x.texto}" h${x.h} zona ${f2(x.zona)} (acima ${f2(x.acima)}→${x.vizCima}, abaixo ${f2(x.abaixo)}→${x.vizBaixo})${x.centralizado ? '' : ' não centralizável'}`).join('; ') + ']' : ''),
+    `≥1 botão, h ≥ 28, zona ≥ ${ZONA_MIN} e ≥ ${LADO_MIN} de cada lado em todos`);
 }
 
 // Pequenos (< 44 em w ou h) permitidos pela especificação, por vista (seção 6, item 3).
@@ -349,7 +470,7 @@ async function etapaRetrato(browser, perfil, acum) {
   for (const vista of h.VISTAS) {
     try {
       await h.irPara(page, vista);
-      const c = await page.evaluate(coletarPagina, { ins });
+      const c = await page.evaluate(coletarPagina, { ins, rolagem: ROLAGEM_INTENCIONAL });
       let hm = null;
       try { hm = await h.medir(page, perfil, vista); } catch (e) { nota('medir() do harness falhou em ' + vista + ': ' + e.message); }
       reg.vistas[vista] = { sw: c.sw, W: c.W, H: c.H, nTransb: c.nTransb, transb: c.transb, n: c.itens.length };
@@ -358,6 +479,7 @@ async function etapaRetrato(browser, perfil, acum) {
       chk(`S6.1.${t}.${vista}`, `sem rolagem lateral em ${vista}`, c.sw === perfil.width && c.nTransb === 0,
         `scrollWidth ${c.sw}, transbordando ${c.nTransb}${c.nTransb ? ' [' + c.transb.join('; ') + ']' : ''}${hm ? `; medir(): sw ${hm.scrollWidth}, transb ${hm.transbordando.length}` : ''}`,
         `scrollWidth ${perfil.width}, transbordando 0`);
+      chkBruto(`S6.1.${t}.${vista}.bruto`, `em ${vista}`, c, perfil.width);
 
       // S6.2 — ilha e indicador
       const si = sobIlha(c, ins), fi = fixosSobIndicador(c, ins);
@@ -504,14 +626,14 @@ async function etapaRetrato(browser, perfil, acum) {
       }
       if (NIVEL_B_POR_VISTA[vista]) {
         const sels = Object.fromEntries(NIVEL_B_POR_VISTA[vista].map(k => [k, NIVEL_B[k]]));
-        const nb = await page.evaluate(testarNivelB, sels);
+        const nb = await page.evaluate(testarNivelB, { sels, zonaMin: ZONA_MIN, ladoMin: LADO_MIN });
         reg.medidas['nivelB-' + vista] = nb;
-        for (const [k, r] of Object.entries(nb)) {
-          const ok = r.n > 0 && ge(r.hMin, 28) && r.acertos === r.n;
-          chk(`S6.3.${t}.${vista}.B.${k}`, `nível B ${NIVEL_B[k]}: h ≥ 28 e toque 6 px acima/abaixo cai no botão`, ok,
-            `${r.n} botões, h ${f1(r.hMin)}–${f1(r.hMax)}, toque ok ${r.acertos}/${r.n}${r.falhas.length ? ' [falhas: ' + r.falhas.map(x => `"${x.texto}" h${x.h} cy${x.cy}${x.centralizado ? '' : ' (não centralizável)'} acima→${x.acima} abaixo→${x.abaixo}`).join('; ') + ']' : ''}`,
-            '≥1 botão, h ≥ 28, toque ok em todos');
-        }
+        for (const [k, r] of Object.entries(nb)) chkNivelB(`S6.3.${t}.${vista}.B.${k}`, `nível B ${NIVEL_B[k]}`, r);
+        // Zonas entre botões do mesmo cartão: nenhum par sobreposto
+        const pz = await page.evaluate(paresZonas, { tol: TOL });
+        reg.medidas['pares-' + vista] = pz;
+        chk(`S6.3.${t}.${vista}.B.pares`, `zonas de toque sem sobreposição entre interativos do mesmo cartão em ${vista}`, pz.cartoes > 0 && pz.nPares === 0,
+          `${pz.cartoes} cartões, ${pz.nInter} interativos, ${pz.nPares} pares sobrepostos${pz.nPares ? ' [' + pz.pares.join('; ') + ']' : ''}`, `≥1 cartão e 0 pares (interseção > ${TOL} px nos dois eixos)`);
         await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: 'instant' }));
       }
     } catch (e) {
@@ -532,8 +654,9 @@ async function etapaRetrato(browser, perfil, acum) {
         await page.waitForSelector('#alertsDialog[open]', { timeout: 4000 });
       }
       await page.waitForTimeout(500);
-      const c = await page.evaluate(coletarPagina, { ins });
+      const c = await page.evaluate(coletarPagina, { ins, rolagem: ROLAGEM_INTENCIONAL });
       chk(`S6.1.${t}.${dlg}`, `sem rolagem lateral com o diálogo ${dlg} aberto`, c.sw === perfil.width, `scrollWidth ${c.sw}`, `${perfil.width}`);
+      chkBruto(`S6.1.${t}.${dlg}.bruto`, `com o diálogo ${dlg} aberto`, c, perfil.width);
       const sels = dlg === 'reagendar' ? [['.reschedule-preset', 3], ['#rescheduleForm .secondary', 1], ['#rescheduleForm .primary', 1]] : [['#activateAlerts', 1], ['#exportCalendar', 1], ['#closeAlertsDialog', 1]];
       const rects = await page.evaluate(retangulos, sels.map(x => x[0]));
       reg.medidas['alvos-' + dlg] = rects;
@@ -575,32 +698,43 @@ async function etapaPaisagem(browser, acum) {
   const perfil = PAISAGEM, ins = perfil.insets;
   const reg = acum[perfil.nome] = { vistas: {}, erros: [] };
   const { context, page } = await abrir(browser, perfil);
-  for (const vista of ['mes', 'lista', 'jarvis']) {
+  for (const vista of ['mes', 'lista', 'jarvis', 'nova-tarefa']) {
     try {
       await h.irPara(page, vista);
-      const c = await page.evaluate(coletarPagina, { ins });
+      const c = await page.evaluate(coletarPagina, { ins, rolagem: ROLAGEM_INTENCIONAL });
       const fora = c.itens.filter(x => x.naTela && x.fixo && (x.cL < ins.left - 0.5 || x.cR > perfil.width - ins.right + 0.5));
-      reg.vistas[vista] = { sw: c.sw, fora };
-      chk(`S6.10.paisagem.${vista}.sw`, `paisagem ${vista}: scrollWidth ≤ 956`, c.sw <= perfil.width, `scrollWidth ${c.sw}`, '≤ 956');
-      chk(`S6.10.paisagem.${vista}.lados`, `paisagem ${vista}: nenhum fixo interativo com left < 62 ou right > 894`, fora.length === 0,
-        fora.length ? fora.slice(0, 6).map(x => `${x.sel} ${f1(x.cL)}..${f1(x.cR)}`).join(', ') : `${c.itens.filter(x => x.naTela && x.fixo).length} fixos, todos em [62, 894]`, 'left ≥ 62 e right ≤ 894');
+      reg.vistas[vista] = { sw: c.sw, fora, nFora: c.nFora };
+      if (vista !== 'nova-tarefa') { // a especificação pede sw e lados em mes, lista e jarvis
+        chk(`S6.10.paisagem.${vista}.sw`, `paisagem ${vista}: scrollWidth ≤ 956`, c.sw <= perfil.width, `scrollWidth ${c.sw}`, '≤ 956');
+        chk(`S6.10.paisagem.${vista}.lados`, `paisagem ${vista}: nenhum fixo interativo com left < 62 ou right > 894`, fora.length === 0,
+          fora.length ? fora.slice(0, 6).map(x => `${x.sel} ${f1(x.cL)}..${f1(x.cR)}`).join(', ') : `${c.itens.filter(x => x.naTela && x.fixo).length} fixos, todos em [62, 894]`, 'left ≥ 62 e right ≤ 894');
+      }
+      chkBruto(`S6.10.paisagem.${vista}.bruto`, `na paisagem, ${vista} (extra)`, c, perfil.width);
+      if (vista === 'nova-tarefa') {
+        const d = await page.evaluate(() => { const e = document.getElementById('taskDialog'); if (!e || !e.open) return null; const r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, w: r.width, h: r.height }; });
+        reg.taskDialog = d;
+        chk('S6.10.paisagem.nova-tarefa.dialogo', 'paisagem: #taskDialog com top ≥ 20 e bottom ≤ 420', !!d && d.top >= ins.top - EPS && d.bottom <= perfil.height - ins.bottom + EPS,
+          d ? `top ${f1(d.top)}, bottom ${f1(d.bottom)} (${f1(d.w)}×${f1(d.h)})` : 'diálogo não abriu', 'top ≥ 20 e bottom ≤ 420');
+      }
       if (vista === 'jarvis') {
         const p = await page.evaluate(() => { const e = document.querySelector('#jarvis-panel.open'); if (!e) return null; const r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, h: r.height }; });
         reg.painel = p;
         chk('S6.10.paisagem.jarvis.painel', 'paisagem: #jarvis-panel.open com top ≥ 20 e bottom ≤ 420', p && p.top >= 20 - EPS && p.bottom <= 420 + EPS,
           p ? `top ${f1(p.top)}, bottom ${f1(p.bottom)} (altura ${f1(p.h)})` : 'painel não abriu', 'top ≥ 20 e bottom ≤ 420');
-        // Extra (fora da lista fechada da seção 6; "paisagem: só não quebrar"): a linha de entrada do Jarvis
-        // (microfone, campo e enviar) cabe inteira dentro do painel, que tem overflow:hidden.
+        // Critério da rodada 2 (S6.10 emendado): microfone, campo e enviar inteiros dentro do painel (overflow:hidden),
+        // nos quatro lados, com a tolerância de 0,5 px.
         const e = await page.evaluate(() => {
           const p = document.querySelector('#jarvis-panel.open'); if (!p) return null;
           const pr = p.getBoundingClientRect();
-          return { painelTop: pr.top, painelBottom: pr.bottom, itens: ['jarvis-mic', 'jarvis-input', 'jarvis-send'].map(id => { const el = document.getElementById(id); const r = el ? el.getBoundingClientRect() : null; return { id, top: r ? r.top : null, bottom: r ? r.bottom : null }; }) };
+          return { painel: { top: pr.top, bottom: pr.bottom, left: pr.left, right: pr.right }, itens: ['jarvis-mic', 'jarvis-input', 'jarvis-send'].map(id => { const el = document.getElementById(id); const r = el ? el.getBoundingClientRect() : null; return { id, top: r ? r.top : null, bottom: r ? r.bottom : null, left: r ? r.left : null, right: r ? r.right : null }; }) };
         });
         reg.entrada = e;
-        const cortados = e ? e.itens.filter(x => x.top == null || x.top < e.painelTop - TOL || x.bottom > e.painelBottom + TOL) : [];
-        chk('S6.10.paisagem.jarvis.entrada', 'paisagem (extra): microfone, campo e enviar do Jarvis inteiros dentro do painel', !!e && cortados.length === 0,
-          e ? `painel ${f1(e.painelTop)}..${f1(e.painelBottom)}; ${e.itens.map(x => `#${x.id} ${f1(x.top)}..${f1(x.bottom)}`).join(', ')}${cortados.length ? `; cortados ${cortados.length} (${f1(Math.max(...cortados.map(x => x.bottom - e.painelBottom)))} px escondidos)` : ''}` : 'painel não abriu',
-          'bottom de cada um ≤ bottom do painel');
+        const P = e && e.painel;
+        const cortados = e ? e.itens.filter(x => x.top == null || x.top < P.top - TOL || x.bottom > P.bottom + TOL || x.left < P.left - TOL || x.right > P.right + TOL) : [];
+        const escondido = x => Math.max(0, x.bottom - P.bottom, P.top - x.top, x.right - P.right, P.left - x.left);
+        chk('S6.10.paisagem.jarvis.entrada', 'paisagem: microfone, campo e enviar do Jarvis inteiros dentro do painel', !!e && cortados.length === 0,
+          e ? `painel ${f1(P.top)}..${f1(P.bottom)} × ${f1(P.left)}..${f1(P.right)}; ${e.itens.map(x => `#${x.id} ${f1(x.top)}..${f1(x.bottom)} × ${f1(x.left)}..${f1(x.right)}`).join(', ')}${cortados.length ? `; cortados ${cortados.length} (${f1(Math.max(...cortados.map(escondido)))} px escondidos)` : ''}` : 'painel não abriu',
+          'os três inteiros dentro do painel (± 0,5)');
       }
       await capturar(page, `${perfil.nome}-${vista}`);
     } catch (e) {
@@ -630,7 +764,7 @@ const AUX = [
 ];
 // Alvos por página: [seletor, regra, quantidade esperada (null = ≥1)]; regra: 'h44', 'a44' (w e h ≥ 44), 'b' (nível B)
 const ALVOS_AUX = {
-  financeiro: [['.filters button', 'h44', 6], ['.sa-foot button', 'b', null], ['.iv-foot button', 'b', null]],
+  financeiro: [['.filters button', 'h44', 6], ['.sa-foot button', 'b', null], ['.iv-foot button', 'b', null], ['#pluxeeEdit', 'b', 1]],
   investimentos: [['.savebtn', 'h44', null], ['.editbtn', 'b', null]],
   'fatura-inter': [['.tabs button', 'h44', 2]],
   refaturamento: [['.sim-toggle', 'h44', null]],
@@ -684,7 +818,7 @@ async function etapaAux(browser, acum) {
       reg.url = url;
       const ehPaginaCerta = url.split('?')[0].replace(/index\.html$/, '') === a.caminho.split('?')[0];
       const topo = await page.evaluate(topoConteudo);
-      const c = await page.evaluate(coletarPagina, { ins });
+      const c = await page.evaluate(coletarPagina, { ins, rolagem: ROLAGEM_INTENCIONAL });
       let hm = null;
       try { hm = await h.medir(page, perfil, 'aux-' + a.nome); } catch (_) {}
       const si = sobIlha(c, ins), fi = fixosSobIndicador(c, ins);
@@ -692,6 +826,7 @@ async function etapaAux(browser, acum) {
       const pfx = `S6.6.${a.nome}`;
       chk(`${pfx}.pagina`, `${a.nome}: abriu a própria página`, ehPaginaCerta, url, a.caminho.replace('MES', MES));
       chk(`${pfx}.sw`, `${a.nome}: scrollWidth == 440`, c.sw === perfil.width, `scrollWidth ${c.sw}${c.nTransb ? ', transbordando ' + c.nTransb + ' [' + c.transb.slice(0, 3).join('; ') + ']' : ''}`, '440');
+      chkBruto(`${pfx}.bruto`, `em ${a.nome} (extra)`, c, perfil.width);
       chk(`${pfx}.cabecalho`, `${a.nome}: conteúdo do topo fora da ilha (≥ 62)`, topo.top != null && topo.top >= ins.top - 0.5,
         `primeiro conteúdo em ${f1(topo.top)} (${topo.quem}); cabeçalho ${topo.cabecalho ? topo.cabecalho.sel + ' ' + topo.cabecalho.top + '–' + topo.cabecalho.bottom : '—'}${hm && hm.cabecalho ? `; medir(): conteudoTop ${hm.cabecalho.conteudoTop}, sobIlha ${hm.cabecalho.sobIlha}` : ''}`, '≥ 62');
       chk(`${pfx}.ilha`, `${a.nome}: nenhum interativo sob a ilha`, si.length === 0, `${si.length}${si.length ? ': ' + lista(si) : ''}`, '0');
@@ -701,10 +836,11 @@ async function etapaAux(browser, acum) {
       // Alvos específicos
       for (const [sel, regra, n] of (ALVOS_AUX[a.nome] || [])) {
         if (regra === 'b') {
-          const nb = await page.evaluate(testarNivelB, { [sel]: sel });
+          const nb = await page.evaluate(testarNivelB, { sels: { [sel]: sel }, zonaMin: ZONA_MIN, ladoMin: LADO_MIN });
           const r = nb[sel];
-          chk(`${pfx}.B.${sel.replace(/\s+/g, '')}`, `${a.nome}: nível B ${sel} (h ≥ 28 e toque 6 px acima/abaixo)`, r.n > 0 && ge(r.hMin, 28) && r.acertos === r.n,
-            `${r.n} botões, h ${f1(r.hMin)}–${f1(r.hMax)}, toque ok ${r.acertos}/${r.n}${r.falhas.length ? ' [falhas: ' + r.falhas.map(x => `"${x.texto}" acima→${x.acima} abaixo→${x.abaixo}`).join('; ') + ']' : ''}`, '≥1, h ≥ 28, toque ok em todos');
+          (reg.nivelB = reg.nivelB || {})[sel] = r;
+          if (n != null && r.n !== n) chk(`${pfx}.B.${sel.replace(/\s+/g, '')}`, `${a.nome}: nível B ${sel} (quantidade)`, false, `${r.n} elementos`, `${n}`);
+          else chkNivelB(`${pfx}.B.${sel.replace(/\s+/g, '')}`, `${a.nome}: nível B ${sel}`, r);
         } else {
           const rs = (await page.evaluate(retangulos, [sel]))[sel];
           const okTam = rs.every(r => ge(r.h, 44) && (regra === 'h44' || ge(r.w, 44)));
@@ -768,7 +904,9 @@ const TRECHOS = [
     '.check{appearance:none;position:relative;width:44px;height:44px;display:grid;place-items:center;margin:-10px -5px;border:0;background:transparent;color:var(--accentInk);font-size:14px;font-weight:900}.check::before{content:"";grid-area:1/1;width:23px;height:23px;box-sizing:border-box;border:1.5px solid var(--faint);border-radius:8px;background:transparent}.check:checked::before{border-color:var(--accent);background:var(--accent)}.check:checked::after{content:"✓";grid-area:1/1}'],
   ['index.html', '.clear-done{padding:4px 0;border:0;', '.clear-done{min-height:44px;padding:0 4px;margin:-10px -4px;border:0;'],
   ['index.html', 'color:var(--text);font-size:8.5px;font-weight:800;line-height:1.1;white-space:nowrap;text-overflow:ellipsis}', 'color:var(--text);font-size:9px;font-weight:800;line-height:1.1;white-space:nowrap;text-overflow:ellipsis}'],
-  ['index.html', 'dialog{width:min(calc(100% - 32px),480px);max-height:calc(100dvh - 32px);', 'dialog{width:min(calc(100% - 32px),480px);max-width:calc(100% - 32px);max-height:calc(100dvh - 32px);'],
+  // emenda (R3, decisão do coordenador): max-height do dialog desconta os insets; o new da 3.13 vira old.
+  ['index.html', ['dialog{width:min(calc(100% - 32px),480px);max-height:calc(100dvh - 32px);', 'max-width:calc(100% - 32px);max-height:calc(100dvh - 32px);'],
+    'dialog{width:min(calc(100% - 32px),480px);max-width:calc(100% - 32px);max-height:calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));'],
   ['index.html', '.secondary,.primary{padding:11px 15px;border-radius:13px;', '.secondary,.primary{min-height:44px;padding:10px 16px;border-radius:13px;'],
   ['index.html', '.toast{position:fixed;z-index:20;left:50%;bottom:calc(93px + env(safe-area-inset-bottom));', '.toast{position:fixed;z-index:20;left:50%;bottom:calc(184px + env(safe-area-inset-bottom));'],
   ['index.html', null, 'body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);z-index:60;background:var(--bg)}#jarvis-locbar{min-height:44px!important;padding-top:0!important;padding-bottom:0!important}#equipamentosBtn::after,#atualizarBtn::after{content:attr(aria-label)}#equipamentosBtn svg,#atualizarBtn svg{width:20px;height:20px;margin:0 2px}'],
@@ -786,7 +924,13 @@ const TRECHOS = [
   ['index.html', '.reschedule-task-name{margin:3px 0 0!important;max-width:245px;', '.reschedule-task-name{margin:3px 0 0!important;max-width:100%;'],
   ['index.html', '.reschedule-preset{min-height:38px;', '.reschedule-preset{min-height:44px;'],
   ['index.html', '.field-check{display:flex;align-items:center;gap:9px;margin-top:8px;', '.field-check{display:flex;align-items:center;gap:9px;min-height:44px;margin-top:4px;'],
-  ['index.html', 'bottom:calc(90px + env(safe-area-inset-bottom));max-width:420px;max-height:72dvh;', 'bottom:calc(90px + env(safe-area-inset-bottom));max-height:72dvh;'],
+  // emenda (R2, decisão do coordenador): painel do Jarvis limitado pelos insets e #jarvis-msgs que encolhe.
+  ['index.html', ['bottom:calc(90px + env(safe-area-inset-bottom));max-width:420px;max-height:72dvh;', 'bottom:calc(90px + env(safe-area-inset-bottom));max-height:72dvh;'],
+    'bottom:calc(90px + env(safe-area-inset-bottom));max-height:min(72dvh,calc(100dvh - 90px - env(safe-area-inset-bottom,0px) - env(safe-area-inset-top,0px)));'],
+  ['index.html', 'gap:10px;min-height:120px}', 'gap:10px;min-height:min(120px,15dvh)}'],
+  // emenda (ponto de projeto P2): rodapé do cartão com gap 6 e 16 px entre linhas só nos cartões com .tr-open.
+  ['index.html', '.task-footer{display:flex;flex-wrap:wrap;align-items:center;gap:16px 6px;margin-top:6px}',
+    '.task-footer{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px}.task-footer:has(.tr-open){row-gap:16px}'],
   ['index.html', '#jarvis-header{display:flex;align-items:center;gap:10px;padding:14px 16px 12px;', '#jarvis-header{display:flex;align-items:center;gap:8px;padding:10px 16px 8px;'],
   ['index.html', '.jarvis-hbtn{width:30px;height:30px;border:0;border-radius:9px;', '.jarvis-hbtn{width:44px;height:44px;border:0;border-radius:12px;'],
   ['index.html', '#jarvis-mic{width:40px;height:40px;', '#jarvis-mic{width:44px;height:44px;'],
@@ -795,21 +939,22 @@ const TRECHOS = [
   ['index.html', 'font-weight:700;padding:7px 13px;border-radius:99px;cursor:pointer}', 'font-weight:700;min-height:44px;padding:0 13px;border-radius:99px;cursor:pointer}'],
   ['index.html', 'bottom:calc(6px + env(safe-area-inset-bottom));z-index:99;', 'bottom:calc(10px + env(safe-area-inset-bottom));z-index:99;'],
   ['index.html', 'justify-content:center;width:34px;height:34px;padding:0;', 'justify-content:center;width:44px;height:44px;padding:0;'],
-  // item 29 e item 8 da seção 6 (versões)
-  ['index.html', 'treino.js?v=12', 'treino.js?v=13'],
-  ['index.html', 'notas.js?v=9', 'notas.js?v=10'],
-  ['index.html', 'agenda-sharing.js?v=4', 'agenda-sharing.js?v=5'],
+  // item 29 e item 8 da seção 6 (versões). Emenda da rodada 2: notas v11, agenda-sharing v6, treino v14 (index e
+  // treino.html); as versões intermediárias também têm de ter sumido.
+  ['index.html', ['treino.js?v=12', 'treino.js?v=13'], 'treino.js?v=14'],
+  ['index.html', ['notas.js?v=9', 'notas.js?v=10'], 'notas.js?v=11'],
+  ['index.html', ['agenda-sharing.js?v=4', 'agenda-sharing.js?v=5'], 'agenda-sharing.js?v=6'],
   ['index.html', 'sequencial.js?v=3', 'sequencial.js?v=4'],
   ['index.html', 'vozes-neurais.js?v=1', 'vozes-neurais.js?v=2'],
-  ['treino.html', 'treino.js?v=10', 'treino.js?v=13'],
-  // scripts do app
+  ['treino.html', ['treino.js?v=10', 'treino.js?v=13'], 'treino.js?v=14'],
+  // scripts do app. Emenda (R1, contrato do nível B = −(8 px + borda)): pílulas com borda de 1 px usam −9px.
   ['notas.js', '.notas-toggle{margin-left:auto;display:inline-flex;', '.notas-toggle{position:relative;margin-left:auto;display:inline-flex;min-height:28px;'],
-  ['notas.js', null, '.notas-toggle::before{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}'],
+  ['notas.js', '.notas-toggle::before{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}', '.notas-toggle::before{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}'],
   ['agenda-sharing.js', '.agenda-share{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;', '.agenda-share{position:relative;display:inline-flex;align-items:center;gap:4px;min-height:28px;padding:3px 7px;'],
-  ['agenda-sharing.js', null, '.agenda-share::before{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}'],
+  ['agenda-sharing.js', '.agenda-share::before{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}', '.agenda-share::before{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}'],
   ['sequencial.js', 'margin:0 0 14px;padding:11px 14px;', 'margin:0 0 14px;min-height:44px;padding:0 14px;'],
   ['treino.js', '.tr-open{margin-left:auto;display:inline-flex;align-items:center;gap:5px;padding:4px 11px;', '.tr-open{position:relative;margin-left:auto;display:inline-flex;align-items:center;gap:5px;min-height:28px;padding:4px 11px;'],
-  ['treino.js', null, '.tr-open::before{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}'],
+  ['treino.js', '.tr-open::before{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}', '.tr-open::before{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}'],
   ['treino.js', '.tr-close{position:absolute;top:14px;right:14px;width:34px;height:34px;', '.tr-close{position:absolute;top:14px;right:14px;width:44px;height:44px;'],
   ['treino.js', 'gap:6px;min-height:36px;padding:0 12px;', 'gap:6px;min-height:44px;padding:0 12px;'],
   ['treino.js', '.tr-preset{padding:5px 10px;', '.tr-preset{min-height:44px;min-width:44px;padding:0 10px;'],
@@ -826,12 +971,15 @@ const TRECHOS = [
   // 4.1 financeiro
   ['financeiro.html', '.filters button{padding:9px 11px;font-weight:800}', '.filters button{min-height:44px;padding:0 11px;font-weight:800}'],
   ['financeiro.html', '.sa-foot button{background:#2a2d35;', '.sa-foot button{position:relative;min-height:28px;background:#2a2d35;'],
-  ['financeiro.html', null, '.sa-foot button::before{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}'],
+  // emenda (R1): .sa-foot button tem borda de 1 px → −9px; .iv-foot button (sem borda) fica em −8px.
+  ['financeiro.html', '.sa-foot button::before{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}', '.sa-foot button::before{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}'],
   ['financeiro.html', '.iv-foot button{background:rgba(255,255,255,.24);', '.iv-foot button{position:relative;min-height:28px;background:rgba(255,255,255,.24);'],
   ['financeiro.html', null, '.iv-foot button::before{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}'],
-  // 4.3 investimentos
+  // emenda (R4): #pluxeeEdit vira nível B (borda de 1 px → −9px).
+  ['financeiro.html', null, '#pluxeeEdit{position:relative;min-height:28px}#pluxeeEdit::before{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}'],
+  // 4.3 investimentos (emenda R1 no ::before do .editbtn, borda de 1 px)
   ['investimentos.html', '.editbtn{background:#2a2d35;', '.editbtn{position:relative;background:#2a2d35;'],
-  ['investimentos.html', null, '.editbtn::before{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}'],
+  ['investimentos.html', '.editbtn::before{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}', '.editbtn::before{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}'],
   ['investimentos.html', '.savebtn{width:100%;margin-top:14px;padding:13px;', '.savebtn{width:100%;min-height:44px;margin-top:14px;padding:13px;'],
   // 4.4 fatura-inter, 4.5 refaturamento
   ['fatura-inter.html', '.tabs button{padding:10px 8px;border:0;', '.tabs button{min-height:44px;padding:0 8px;border:0;'],
@@ -840,8 +988,9 @@ const TRECHOS = [
   ['marketplace/index.html', '.barra{position:sticky;top:0;', '.barra{position:sticky;top:env(safe-area-inset-top,0px);'],
   ['marketplace/index.html', '#cats button{flex:1 0 auto;min-height:37px;', '#cats button{flex:1 0 auto;min-height:44px;'],
   ['marketplace/index.html', '.views button{flex:0 0 auto;padding:8px 13px;', '.views button{flex:0 0 auto;min-height:44px;padding:0 13px;'],
-  ['marketplace/index.html', 'width:38px;height:38px;', 'width:44px;height:44px;'],
-  ['marketplace/index.html', '#cofre label{display:flex;gap:8px;align-items:center;', '#cofre label{display:flex;gap:8px;align-items:center;min-height:44px;'],
+  // emenda da especificação (rodada 2, item 3): new do .x é o trecho longo; no #cofre label, só grep -c new == 1.
+  ['marketplace/index.html', 'width:38px;height:38px;', '.x{float:right;display:grid;place-items:center;width:44px;height:44px;'],
+  ['marketplace/index.html', null, '#cofre label{display:flex;gap:8px;align-items:center;min-height:44px;'],
   ['marketplace/index.html', null, '#cofre label input{width:22px;height:22px;margin:0}'],
   // 4.7 equipamentos-especiais
   ['equipamentos-especiais.html', 'border-radius:100px;padding:7px 14px;', 'border-radius:100px;min-height:44px;padding:0 14px;'],
@@ -851,31 +1000,44 @@ const TRECHOS = [
   ['equipamentos-especiais.html', '.buscabar select{width:100%;margin-top:7px;padding:10px 12px;', '.buscabar select{width:100%;min-height:44px;margin-top:7px;padding:10px 12px;'],
   ['equipamentos-especiais.html', 'bottom:calc(6px + env(safe-area-inset-bottom))', 'bottom:calc(10px + env(safe-area-inset-bottom))'],
   ['equipamentos-especiais.html', 'width:34px;height:34px;', 'width:44px;height:44px;'],
+  // emenda (R4): botões da .toolbar e da .catbar com 44 de altura
+  ['equipamentos-especiais.html', '.toolbar button{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);color:#fff;padding:9px 12px;',
+    '.toolbar button{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);color:#fff;min-height:44px;padding:9px 12px;'],
+  ['equipamentos-especiais.html', '.catbar button{flex:1;min-width:132px;border:none;border-radius:10px;padding:11px 8px;',
+    '.catbar button{flex:1;min-width:132px;min-height:44px;border:none;border-radius:10px;padding:11px 8px;'],
 ];
 
 function etapaTextos() {
   const cache = {};
   const ler = f => (cache[f] = cache[f] ?? fs.readFileSync(path.join(REPO, f), 'utf8'));
   const linhasCom = (txt, s) => txt.split('\n').filter(l => l.includes(s)).length; // = grep -cF
-  // versões (seção 6 item 8, primeira frase)
-  const versoes = [['index.html', 'treino.js?v=13'], ['index.html', 'notas.js?v=10'], ['index.html', 'agenda-sharing.js?v=5'], ['index.html', 'sequencial.js?v=4'], ['index.html', 'vozes-neurais.js?v=2'], ['treino.html', 'treino.js?v=13']];
-  const faltam = versoes.filter(([f, s]) => !ler(f).includes(s));
-  chk('S6.8.versoes', 'index.html e treino.html carregam as versões novas dos scripts', faltam.length === 0,
-    faltam.length ? 'faltam: ' + faltam.map(x => x.join(':')).join(', ') : versoes.map(x => x[1]).join(', '), 'todas presentes');
+  // versões (seção 6 item 8, primeira frase; emenda da rodada 2): TODAS as referências ao script no arquivo têm a
+  // versão esperada (e há pelo menos uma).
+  const versoes = [['index.html', 'treino.js', 14], ['index.html', 'notas.js', 11], ['index.html', 'agenda-sharing.js', 6], ['index.html', 'sequencial.js', 4], ['index.html', 'vozes-neurais.js', 2], ['treino.html', 'treino.js', 14]];
+  const achadas = versoes.map(([f, s, v]) => {
+    const re = new RegExp('(?<![\\w.-])' + s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\?v=(\\d+)', 'g');
+    const vs = [...ler(f).matchAll(re)].map(m => +m[1]);
+    return { f, s, v, vs, ok: vs.length >= 1 && vs.every(x => x === v) };
+  });
+  chk('S6.8.versoes', 'index.html e treino.html carregam as versões esperadas dos scripts (e nenhuma outra)', achadas.every(x => x.ok),
+    achadas.map(x => `${x.f}: ${x.s}?v=${x.vs.length ? x.vs.join('/') : 'ausente'}`).join(', '),
+    achadas.map(x => `${x.s}?v=${x.v}`).join(', '));
   const porArq = new Map();
   for (const [f, old, novo] of TRECHOS) {
     if (!porArq.has(f)) porArq.set(f, []);
     const txt = ler(f);
-    const nOld = old == null ? 0 : linhasCom(txt, old), nNew = linhasCom(txt, novo);
+    const olds = old == null ? [] : Array.isArray(old) ? old : [old];
+    const nOlds = olds.map(o => linhasCom(txt, o));
+    const nOld = nOlds.reduce((s, n) => s + n, 0), nNew = linhasCom(txt, novo);
     // "intenção": o old não aparece fora de uma ocorrência do new, e o new aparece (para trechos genéricos ou old ⊂ new)
-    const nOldFora = old == null ? 0 : txt.split('\n').filter(l => l.split(novo).join('\u0000').includes(old)).length;
-    porArq.get(f).push({ old, novo, nOld, nNew, nOldFora, oldDentroDoNew: old != null && novo.includes(old), ok: nOld === 0 && nNew === 1 });
+    const nOldFora = olds.reduce((s, o) => s + txt.split('\n').filter(l => l.split(novo).join('\u0000').includes(o)).length, 0);
+    porArq.get(f).push({ old: olds.length ? olds.map((o, i) => `${o.slice(0, 36)}${o.length > 36 ? '…' : ''}" → ${nOlds[i]}`).join(' | old "') : null, olds, novo, nOld, nNew, nOldFora, oldDentroDoNew: olds.some(o => novo.includes(o)), ok: nOld === 0 && nNew === 1 });
   }
-  bruto.textos = Object.fromEntries([...porArq].map(([f, arr]) => [f, arr.map(x => ({ old: x.old, novo: x.novo, nOld: x.nOld, nNew: x.nNew }))]));
+  bruto.textos = Object.fromEntries([...porArq].map(([f, arr]) => [f, arr.map(x => ({ olds: x.olds, novo: x.novo, nOld: x.nOld, nNew: x.nNew }))]));
   for (const [f, arr] of porArq) {
     const ruins = arr.filter(x => !x.ok);
     chk(`S6.8.${f}`, `${f}: grep -c de cada old = 0 e de cada new = 1`, ruins.length === 0,
-      `${arr.length - ruins.length}/${arr.length} trechos ok${ruins.length ? ' [' + ruins.map(x => `new "${x.novo.slice(0, 48)}${x.novo.length > 48 ? '…' : ''}" → ${x.nNew}${x.old ? `, old "${x.old.slice(0, 36)}${x.old.length > 36 ? '…' : ''}" → ${x.nOld}` : ''}`).join('; ') + ']' : ''}`,
+      `${arr.length - ruins.length}/${arr.length} trechos ok${ruins.length ? ' [' + ruins.map(x => `new "${x.novo.slice(0, 48)}${x.novo.length > 48 ? '…' : ''}" → ${x.nNew}${x.old ? `, old "${x.old}` : ''}`).join('; ') + ']' : ''}`,
       `${arr.length}/${arr.length} (old 0, new 1)`);
     if (ruins.length) {
       // Conferência da intenção da mudança, só informativa sobre o porquê do FALHOU literal acima.
