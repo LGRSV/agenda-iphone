@@ -21,14 +21,14 @@ button,input,select{font:inherit}button{cursor:pointer}
 h1{margin:0;font-size:clamp(28px,7vw,40px);line-height:.98;letter-spacing:-.06em}
 .sub{display:block;margin-top:8px;color:var(--muted);font-size:13.5px}
 /* abas das buscas (segmentado do Jarvis), presas no alto */
-.barra{position:sticky;top:0;z-index:5;padding:8px 0;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.barra{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;padding:8px 0;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 #cats{display:flex;gap:4px;overflow-x:auto;padding:4px;border:1px solid var(--line);border-radius:15px;background:var(--soft);scrollbar-width:none}#cats::-webkit-scrollbar{display:none}
-#cats button{flex:1 0 auto;min-height:37px;padding:0 14px;border:0;border-radius:11px;background:transparent;color:var(--muted);font-size:13px;font-weight:800;white-space:nowrap;transition:transform .14s cubic-bezier(.23,1,.32,1)}
+#cats button{flex:1 0 auto;min-height:44px;padding:0 14px;border:0;border-radius:11px;background:transparent;color:var(--muted);font-size:13px;font-weight:800;white-space:nowrap;transition:transform .14s cubic-bezier(.23,1,.32,1)}
 #cats button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 7px rgba(0,0,0,.16)}#cats button small{margin-left:3px;color:var(--faint);font-weight:700}
 #cats button:active,.views button:active,.c:active,.voltar:active{transform:scale(.96)}
 /* visões (chips) */
 .views{display:flex;gap:8px;overflow-x:auto;padding:12px 1px 2px;scrollbar-width:none}.views::-webkit-scrollbar{display:none}
-.views button{flex:0 0 auto;padding:8px 13px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);font-size:13px;font-weight:700;transition:transform .14s cubic-bezier(.23,1,.32,1)}
+.views button{flex:0 0 auto;min-height:44px;padding:0 13px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);font-size:13px;font-weight:700;transition:transform .14s cubic-bezier(.23,1,.32,1)}
 .views button.on{border-color:var(--accent);background:var(--accent);color:var(--accentInk)}
 /* resumo */
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0 0;padding:16px;border:1px solid var(--line);border-radius:24px;background:linear-gradient(135deg,var(--surface),var(--soft));box-shadow:var(--shadow)}
@@ -82,7 +82,7 @@ table.md td:first-child,table.md th:first-child{text-align:left}table.md tr.z td
 .desc{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
 .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .acts a{padding:11px 15px;border:1px solid var(--accent);border-radius:13px;background:var(--accent);color:var(--accentInk);font-size:14px;font-weight:750;text-decoration:none}
-.x{float:right;display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--muted);font-size:22px;line-height:1}
+.x{float:right;display:grid;place-items:center;width:44px;height:44px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--muted);font-size:22px;line-height:1}
 footer{padding:24px 0 calc(40px + env(safe-area-inset-bottom));color:var(--faint);font-size:12px}
 @media (max-width:760px){#mod{padding:8px}#mod .box{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr;padding:14px}.filtros{grid-template-columns:1fr 1fr}.filtros input{grid-column:1/-1}
  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.row{grid-auto-columns:46%}.c{border-radius:17px}.p{font-size:17px}.c .b{padding:9px 10px 11px}}
@@ -93,10 +93,10 @@ html.trancado #cofre{display:block}
 #cofre form{display:grid;gap:12px;padding:22px;border:1px solid var(--line);border-radius:24px;background:var(--surface);box-shadow:var(--shadow)}
 #cofre h2{margin:0;font-size:20px}#cofre p{margin:0;color:var(--muted);font-size:14px;line-height:1.45}
 #cofre input[type=password]{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:15px;background:var(--soft);color:var(--text);font:inherit;font-size:16px}
-#cofre label{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:14px}
+#cofre label{display:flex;gap:8px;align-items:center;min-height:44px;color:var(--muted);font-size:14px}#cofre label input{width:22px;height:22px;margin:0}
 #cofre button{padding:13px;border:0;border-radius:15px;background:var(--accent);color:var(--accentInk);font:inherit;font-weight:750;font-size:15px}
 #cofre button:disabled{opacity:.6}#cofreMsg{min-height:1.2em;font-size:14px;color:var(--muted)}#cofreMsg.erro{color:var(--bad)}
-.esquecer{display:block;margin:-30px 0 40px;color:var(--faint);font-size:12px;background:none;border:0;padding:0;text-decoration:underline}
+.esquecer{display:block;margin:-30px 0 40px;color:var(--faint);font-size:12px;background:none;border:0;padding:0;text-decoration:underline}body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);z-index:60;background:var(--bg)}
 </style></head><body>
 <header class="in"><div class="topbar"><a class="voltar" href="../" aria-label="Voltar para a agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></a>
 <div><span class="eyebrow">Marketplace · Palmas/TO</span><h1>Oportunidades</h1><span class="sub" id="sub"></span></div></div></header>

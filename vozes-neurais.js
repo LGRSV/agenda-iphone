@@ -94,12 +94,12 @@
 
   // ---- Seletor ----
   const CSS = `
-  #voz-dialog{width:min(420px,calc(100vw - 24px));max-height:86dvh;padding:0;border:1px solid rgba(117,203,255,.25);border-radius:22px;background:rgba(22,25,32,.98);color:#e8edf4;box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden}
+  #voz-dialog{width:min(420px,calc(100vw - 32px));max-width:calc(100vw - 32px);max-height:86dvh;padding:0;border:1px solid rgba(117,203,255,.25);border-radius:22px;background:rgba(22,25,32,.98);color:#e8edf4;box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden}
   #voz-dialog::backdrop{background:rgba(0,0,0,.55)}
   #voz-dialog .vz-wrap{display:flex;flex-direction:column;max-height:86dvh}
   #voz-dialog header{display:flex;align-items:center;gap:10px;padding:16px 16px 10px}
   #voz-dialog h3{flex:1;margin:0;font-size:16px;font-weight:800;color:#f7f8fb;letter-spacing:-.02em}
-  #voz-dialog .vz-x{width:30px;height:30px;border:0;border-radius:9px;background:rgba(255,255,255,.07);color:#a6acb8;font-size:18px;cursor:pointer}
+  #voz-dialog .vz-x{width:44px;height:44px;border:0;border-radius:12px;background:rgba(255,255,255,.07);color:#a6acb8;font-size:18px;cursor:pointer}
   #voz-dialog .vz-sub{margin:0 16px 10px;font-size:12px;line-height:1.45;color:#9aa3b2}
   #voz-dialog .vz-lista{overflow-y:auto;padding:0 10px 6px;display:flex;flex-direction:column;gap:8px}
   #voz-dialog .vz-item{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid rgba(255,255,255,.07);border-radius:15px;background:rgba(255,255,255,.04);cursor:pointer;text-align:left;color:inherit;font:inherit;width:100%;box-sizing:border-box;outline:0}
@@ -117,7 +117,7 @@
   #voz-dialog .vz-estado.err{color:#ff9c9c}
   #voz-dialog .vz-barra{height:4px;border-radius:4px;background:rgba(255,255,255,.08);margin-top:6px;overflow:hidden}
   #voz-dialog .vz-barra i{display:block;height:100%;width:0;background:linear-gradient(90deg,#0d72aa,#3baee8);transition:width .2s}
-  #voz-dialog .vz-ouvir{flex:0 0 auto;border:1px solid rgba(117,203,255,.35);background:rgba(117,203,255,.08);color:#9fd8ff;font-size:12px;font-weight:700;padding:7px 11px;border-radius:99px;cursor:pointer}
+  #voz-dialog .vz-ouvir{flex:0 0 auto;border:1px solid rgba(117,203,255,.35);background:rgba(117,203,255,.08);color:#9fd8ff;font-size:12px;font-weight:700;min-height:44px;padding:0 12px;border-radius:99px;cursor:pointer}
   #voz-dialog footer{padding:10px 16px 14px;border-top:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;gap:8px}
   #voz-dialog .vz-apagar{align-self:flex-start;border:0;background:none;color:#ff9c9c;font-size:12px;font-weight:700;padding:0;cursor:pointer}
   #voz-dialog .vz-cred{font-size:10.5px;line-height:1.45;color:#6f7888}

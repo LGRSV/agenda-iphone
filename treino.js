@@ -399,7 +399,8 @@
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-      .tr-open{margin-left:auto;display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border:1px solid var(--accent);border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);font-size:11px;font-weight:800;line-height:1;transition:transform .13s ease}
+      .tr-open{position:relative;margin-left:auto;display:inline-flex;align-items:center;gap:5px;min-height:28px;padding:4px 11px;border:1px solid var(--accent);border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);font-size:11px;font-weight:800;line-height:1;transition:transform .13s ease}
+      .tr-open::before{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}
       .tr-open:active{transform:scale(.94)}
       #${DIALOG_ID},#cardioDiaDialog{width:min(calc(100% - 24px),520px);max-height:calc(100dvh - 24px);padding:0;border:1px solid var(--line);border-radius:24px;background:var(--bg);color:var(--text);box-shadow:0 30px 90px rgba(0,0,0,.56)}
       #${DIALOG_ID}::backdrop,#cardioDiaDialog::backdrop{background:rgba(0,0,0,.6);backdrop-filter:blur(4px)}
@@ -408,8 +409,8 @@
       .tr-eyebrow{display:block;color:var(--accent);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:5px}
       .tr-head h3{margin:0;font-size:24px;letter-spacing:-.04em}
       .tr-sub{margin:5px 0 0;color:var(--muted);font-size:13px;text-transform:capitalize}
-      .tr-close{position:absolute;top:14px;right:14px;width:34px;height:34px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--text);font-size:19px;line-height:1;display:grid;place-items:center}
-      .tr-home{display:none;position:absolute;top:14px;right:14px;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font-size:12px;font-weight:800}.tr-home svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+      .tr-close{position:absolute;top:14px;right:14px;width:44px;height:44px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--text);font-size:19px;line-height:1;display:grid;place-items:center}
+      .tr-home{display:none;position:absolute;top:14px;right:14px;align-items:center;gap:6px;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font-size:12px;font-weight:800}.tr-home svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
       .tr-timer{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--line);background:var(--surface)}
       .tr-ring{position:relative;width:52px;height:52px;flex:0 0 auto}
       .tr-ring svg{transform:rotate(-90deg)}
@@ -420,10 +421,10 @@
       .tr-timer-main{flex:1;min-width:0}
       .tr-timer-label{color:var(--faint);font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
       .tr-presets{display:flex;gap:6px;margin-top:6px}
-      .tr-preset{padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--soft);color:var(--text);font-size:11px;font-weight:800;line-height:1}
+      .tr-preset{min-height:44px;min-width:44px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--soft);color:var(--text);font-size:11px;font-weight:800;line-height:1}
       .tr-preset.on{border-color:var(--accent);background:var(--accent);color:var(--accentInk)}
       .tr-timer-btns{display:flex;gap:7px;flex:0 0 auto}
-      .tr-tbtn{width:42px;height:42px;border:1px solid var(--line);border-radius:13px;background:var(--soft);color:var(--text);font-size:17px;line-height:1;display:grid;place-items:center}
+      .tr-tbtn{width:44px;height:44px;border:1px solid var(--line);border-radius:13px;background:var(--soft);color:var(--text);font-size:17px;line-height:1;display:grid;place-items:center}
       .tr-tbtn.play{border-color:var(--accent);background:var(--accent);color:var(--accentInk)}
       .tr-cardio{margin:0 0 12px;padding:12px 13px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(135deg,var(--surface),var(--soft))}
       .tr-cardio-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:9px}
@@ -454,7 +455,7 @@
       .tr-ex-meta b{color:var(--accent)}
       .tr-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
       .tr-inputs label{display:block;margin:0 0 4px;color:var(--faint);font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
-      .tr-inputs input{width:100%;min-height:42px;padding:9px 11px;border:1px solid var(--line);border-radius:12px;outline:0;background:var(--surface);color:var(--text);font-size:16px;font-weight:700}
+      .tr-inputs input{width:100%;min-height:44px;padding:9px 11px;border:1px solid var(--line);border-radius:12px;outline:0;background:var(--surface);color:var(--text);font-size:16px;font-weight:700}
       .tr-inputs input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(117,203,255,.2)}
       .tr-evo{display:flex;align-items:center;gap:8px;margin-top:8px;min-height:20px}
       .tr-last{color:var(--muted);font-size:11px;font-weight:700}

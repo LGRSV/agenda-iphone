@@ -30,7 +30,7 @@ h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 9px;text-tran
 .ep-stat{border:1px solid #ffb74d2e;background:#17181c88;border-radius:12px;padding:10px}
 .ep-stat span{display:block;color:#a6acb8;font-size:10px;font-weight:700;line-height:1.25}
 .ep-stat b{display:block;color:#f7f8fb;font-size:14px;margin-top:4px}
-.editbtn{background:#2a2d35;border:1px solid #3b404a;color:#f7f8fb;font-weight:800;font-size:11px;padding:7px 13px;border-radius:999px;cursor:pointer}
+.editbtn{position:relative;background:#2a2d35;border:1px solid #3b404a;color:#f7f8fb;font-weight:800;font-size:11px;padding:7px 13px;border-radius:999px;cursor:pointer}.editbtn::before{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}
 .editbtn:active{transform:scale(.95)}
 .sim label{display:block;color:#a6acb8;font-size:11px;font-weight:800;margin:12px 0 6px;letter-spacing:.04em}
 .sim input{width:100%;min-height:44px;padding:10px 12px;border-radius:11px;border:1px solid #3b404a;background:#17181c;color:#f7f8fb;font-size:16px}
@@ -60,9 +60,9 @@ h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 9px;text-tran
 .params .p b{display:block;font-size:19px;font-weight:850}
 .params .p span{display:block;color:#a6acb8;font-size:10px;font-weight:700;margin-top:4px}
 .params .p.in b{color:#78d88b}.params .p.pend b{color:#ffb74d}
-.savebtn{width:100%;margin-top:14px;padding:13px;border:0;border-radius:13px;background:#6ec9ff;color:#0a1017;font-weight:850;font-size:15px;cursor:pointer}
+.savebtn{width:100%;min-height:44px;margin-top:14px;padding:13px;border:0;border-radius:13px;background:#6ec9ff;color:#0a1017;font-weight:850;font-size:15px;cursor:pointer}
 .savebtn:active{transform:scale(.98)}
-.hint{color:#a6acb8;font-size:11px;margin-top:9px;line-height:1.5}
+.hint{color:#a6acb8;font-size:11px;margin-top:9px;line-height:1.5}body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);z-index:60;background:#17181c}
 </style>
 </head>
 <body>
