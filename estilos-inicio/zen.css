@@ -1,0 +1,129 @@
+/* Variante "zen" (Zen tipográfico) da tela de início.
+   Só vale com <html data-home="zen">; sem o atributo nada aqui se aplica.
+   Ideia: a tela vira uma página de texto com ar. Margens de 28 px, título grande
+   em peso 500, data em minúsculas, nenhuma caixa e separações só por fios de 1 px.
+   Abas, filtros e "Modo sequencial" viram texto; no Mês as etiquetas viram pontos.
+   Não toca em body::before, .quick-menu, diálogos nem #jarvis-panel. */
+
+/* ---------- Página ----------
+   --zen-quiet: cor do texto "baixo" (abas e filtros inativos, link do modo sequencial,
+   frase do progresso, dias da semana). No escuro é --faint (4,97:1 sobre --bg); no claro
+   --faint daria 2,87:1, então ali vira --muted (4,64:1). */
+html[data-home="zen"]{--zen-quiet:var(--faint)}
+html[data-home="zen"][data-theme="light"]{--zen-quiet:var(--muted)}
+html[data-home="zen"] .app{padding-top:calc(18px + env(safe-area-inset-top));padding-left:28px;padding-right:28px}
+
+/* ---------- Cabeçalho ---------- */
+/* column-gap 0: com o clamp de 28–36 o h1 do iPhone 13 (29,64 px) mede 189,7 px e a coluna
+   ao lado dos botões tinha 184 (gap 12); sem o gap ela tem 196 e o título fica numa linha.
+   Os botões são fantasmas de 46 px com o ícone centrado, então o respiro visual continua */
+html[data-home="zen"] .topbar{margin:0 0 20px;column-gap:0}
+html[data-home="zen"] .eyebrow{display:none}
+/* clamp 28–36: "Minha agenda" cabe numa linha ao lado dos três botões nos dois iPhones */
+html[data-home="zen"] .topbar h1{font-size:clamp(28px,7.6vw,36px);font-weight:500;letter-spacing:-.03em;line-height:1}
+html[data-home="zen"] .subhead{margin:10px 0 0;color:var(--muted);font-size:15px;text-transform:none}
+/* header-cleanup.js põe gap:6px!important */
+html[data-home="zen"] .head-actions{gap:0!important}
+html[data-home="zen"] .head-actions>.icon-btn{border:0;background:transparent;box-shadow:none;color:var(--muted)}
+/* estado ligado (Sequência aberta / parceiro ativo): sem borda, fica a cor --accent
+   que sequencial.js e parceiro.js já pintam com seletor de id */
+
+/* ---------- Progresso em texto ---------- */
+html[data-home="zen"] .summary{margin:0 0 18px;padding:0;border:0;border-radius:0;background:none;box-shadow:none}
+html[data-home="zen"] .summary-top{justify-content:flex-start;gap:8px}
+html[data-home="zen"] .summary-label{color:var(--muted);font-size:14px}
+html[data-home="zen"] .summary-number,
+html[data-home="zen"] .summary-number small{color:var(--text);font-size:14px;font-weight:600;letter-spacing:0}
+html[data-home="zen"] .progress{height:1px;margin:12px 0 10px;border-radius:0;background:var(--line)}
+html[data-home="zen"] .summary-message{color:var(--zen-quiet);font-size:13px}
+
+/* ---------- Abas tipográficas ---------- */
+html[data-home="zen"] .view-tabs{display:flex;justify-content:space-between;gap:0;margin:0 0 6px;padding:0;border:0;border-radius:0;background:none}
+html[data-home="zen"] .view-tabs::before{display:none}
+/* flex 0 0 auto para o space-between valer: os rótulos ficam com vãos iguais e o primeiro e o
+   último encostam nas margens de 28 px; o padding de 10 px alarga o toque e as margens
+   negativas das pontas devolvem o alinhamento */
+html[data-home="zen"] .view-tab{flex:0 0 auto;min-width:44px;min-height:44px;padding:0 10px;border-radius:0;background:transparent;color:var(--zen-quiet);font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase}
+html[data-home="zen"] .view-tab:first-child{margin-left:-10px}
+html[data-home="zen"] .view-tab:last-child{margin-right:-10px}
+/* ativa marcada também pelo sublinhado, como o filtro ativo (não só pela cor) */
+html[data-home="zen"] .view-tab.active{background:transparent;box-shadow:none;color:var(--text);text-decoration-line:underline;text-decoration-thickness:1px;text-underline-offset:8px}
+
+/* ---------- "Modo sequencial": sai da tela de início ----------
+   O botão só faz goToSequencia() (sequencial.js), o mesmo clique da aba Sequência e do
+   cronômetro #seqTimerBtn do cabeçalho; os dois continuam na tela. Recupera 62 px (44 + 18). */
+html[data-home="zen"] #seqEntryBtn{display:none}
+
+/* ---------- Filtros em texto ---------- */
+html[data-home="zen"] .filters{gap:14px;padding:0 0 14px}
+html[data-home="zen"] .chip{min-width:44px;padding:0;border:0;border-radius:0;background:transparent;color:var(--zen-quiet);font-size:13px;font-weight:600}
+/* "Todas" é mais estreito que 44: alinha o texto à margem em vez de centrar no mínimo de 44 */
+html[data-home="zen"] .chip:first-child{text-align:left}
+html[data-home="zen"] .chip.active{background:transparent;color:var(--text);text-decoration-line:underline;text-decoration-thickness:1px;text-underline-offset:6px}
+html[data-home="zen"] .chip.chip-late,
+html[data-home="zen"] .chip.chip-late.active{border:0;background:transparent;color:var(--danger)}
+
+/* ---------- Conteúdo sem caixas ---------- */
+html[data-home="zen"] .view-shell{border:0;border-radius:0;background:transparent;box-shadow:none}
+html[data-home="zen"] .toolbar{margin:0;padding:4px 0 14px;border:0;border-radius:0;background:none}
+html[data-home="zen"] .toolbar-title{font-size:20px;font-weight:600}
+html[data-home="zen"] .nav-btn,
+html[data-home="zen"] .today-btn{border:0;background:transparent;color:var(--muted)}
+html[data-home="zen"] .today-btn{min-height:44px}
+html[data-home="zen"] .list-header{padding-left:0;padding-right:0;border:0;border-radius:0;background:none}
+html[data-home="zen"] .group-title{padding-left:0;padding-right:0;border:0;background:none}
+html[data-home="zen"] .day-content{padding:0}
+html[data-home="zen"] .list-body{padding:0 0 9px}
+
+/* ---------- Cartões com ar ---------- */
+/* padding lateral fica nos 5 px do app: .check e .task-reschedule têm margem de -5 px e o
+   .task-swipe recorta (overflow:hidden); com 0 a área de toque cairia para 39 px de largura */
+html[data-home="zen"] .task-card{padding-top:14px;padding-bottom:14px;gap:10px}
+/* opaco para cobrir o trilho de apagar/editar; Sequência e lembrete mantêm a cor própria */
+html[data-home="zen"] .task-swipe .task-card{background:var(--bg)}
+html[data-home="zen"] .seq-row .task-card{background:var(--surface)}
+html[data-home="zen"] .task-card.lembrete-card{background:var(--soft)}
+html[data-home="zen"] .task-title{font-size:16px;font-weight:500;line-height:1.4}
+html[data-home="zen"] .tag-pill{padding:0;border:0;background:none;color:var(--muted);font-size:11px;font-weight:600}
+html[data-home="zen"] .task-time{font-size:12px}
+/* coluna do texto 10 px mais estreita que no padrão: o rodapé quebra mais vezes e as faixas
+   de toque de 44 px das pílulas de linhas vizinhas se sobreporiam com o vão de 6 px.
+   16 px é o vão que o app já usa quando há .tr-open (.task-footer:has(.tr-open)) */
+html[data-home="zen"] .task-footer{row-gap:16px}
+/* pílulas do rodapé (Detalhes, Compartilhar, Abrir treino) sem caixa: a borda só fica
+   transparente, então tamanho e faixa de toque ::before (nível B) não mudam */
+html[data-home="zen"] .notas-toggle,
+html[data-home="zen"] .agenda-share,
+html[data-home="zen"] .tr-open{border-color:transparent;background:transparent}
+/* Sequência sem o painel cinza (os cartões da linha do tempo mantêm borda e fundo) */
+html[data-home="zen"] .seq-progress-wrap,
+html[data-home="zen"] .seq-timeline{background:transparent}
+
+/* ---------- Mês em pontos ---------- */
+html[data-home="zen"] .month-grid-wrap{padding:6px 0}
+html[data-home="zen"] .month-grid,
+html[data-home="zen"] .week-labels{gap:2px}
+html[data-home="zen"] .week-labels{color:var(--zen-quiet);font-weight:600;letter-spacing:.12em}
+/* min-height 60 vence o 78 (max-width:390) e o 110 (min-width:600) por especificidade.
+   Sem caixa nos dias do mês: número e pontos centrados sob o dia da semana;
+   ficam o círculo de hoje e a moldura do dia selecionado */
+html[data-home="zen"] .calendar-day{min-height:60px;padding:6px 2px;border-radius:10px;text-align:center}
+html[data-home="zen"] .calendar-day.current{border-color:transparent;background:transparent}
+html[data-home="zen"] .calendar-day.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+html[data-home="zen"] .day-number{width:26px;height:26px;margin:0 auto;font-size:13px;font-weight:600}
+/* atrasada vira um traço de 10×3 acima do número: distinta pela forma do ponto "Financeiro"
+   (#ff7f91), que tem matiz parecido com o vermelho da atrasada (#ff453a) */
+html[data-home="zen"] .calendar-overdue{top:3px;right:auto;left:50%;width:10px;height:3px;border-radius:2px;transform:translateX(-50%);box-shadow:none}
+html[data-home="zen"] .calendar-tags{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:3px;margin:6px 0 0}
+html[data-home="zen"] .calendar-tag{flex:0 0 6px;width:6px;height:6px;padding:0;border:0;border-radius:50%;background:var(--tag);font-size:0;overflow:hidden}
+html[data-home="zen"] .calendar-tag.cal-done{opacity:.35}
+/* no claro o ponto a .35 quase some sobre --bg */
+html[data-home="zen"][data-theme="light"] .calendar-tag.cal-done{opacity:.55}
+html[data-home="zen"] .calendar-more{padding-left:1px;font-size:9px;line-height:1}
+html[data-home="zen"] .calendar-legend{padding:12px 0 0;border-top:0}
+
+/* ---------- Flutuantes ---------- */
+html[data-home="zen"] .fab{justify-content:center;width:56px;height:56px;min-height:56px;padding:0;gap:0;border:1px solid var(--text);border-radius:50%;background:var(--bg);color:var(--text);box-shadow:none;font-size:0}
+html[data-home="zen"] .fab .plus{font-size:28px;font-weight:300}
+html[data-home="zen"] #cardioFab{border-color:var(--line);background:var(--bg);box-shadow:none}
+html[data-home="zen"] #app-ver{opacity:.45}

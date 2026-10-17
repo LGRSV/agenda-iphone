@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v247-iphone17promax';
+const CACHE = 'agenda-lagares-v248-tela-inicio';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=14" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
