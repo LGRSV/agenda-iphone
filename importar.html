@@ -33,7 +33,7 @@ input[type=file]{display:none}
 .status.ok{color:#4fd1c5;font-weight:800}.status.err{color:#ff7a90;font-weight:700}
 .help{margin-top:16px;border:1px solid #26324a;border-radius:14px;background:#0e1626;padding:13px 15px}
 .help h3{margin:0 0 7px;font-size:11px;color:#4fd1c5;letter-spacing:.05em}
-.help li{font-size:12px;color:#93a1b8;line-height:1.6;margin-bottom:3px}.help ul{margin:0;padding-left:17px}
+.help li{font-size:12px;color:#93a1b8;line-height:1.6;margin-bottom:3px}.help ul{margin:0;padding-left:17px}body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);z-index:60;background:#0b1220}
 </style></head><body>
 <script>
 (function(){function h(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||"null");var s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return true;}}catch(_){}return false;}if(!h()){location.replace("./?locked=1");}})();

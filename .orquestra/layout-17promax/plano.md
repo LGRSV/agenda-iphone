@@ -90,3 +90,5 @@ O cérebro é o Fable: escreve a especificação e faz a revisão final adversar
 | C1 especificação | rodada 1 (claude-fable-5-1, conferido no transcript) | aprovado | 7 seções; A1–A6/M1–M10 rastreados em 3.1; 72 trechos old conferidos pelo maestro, cada um 1× no arquivo certo; seção 6 com 10 critérios numéricos; divisão de arquivos coerente (treino.js na F3) |
 | F3 app principal | workflow (opus) | despachada | — |
 | F4 páginas auxiliares | workflow (opus) | despachada | — |
+| F3 app principal | rodada 1 | refazer (1 item) | maestro conferiu: 69/69 trechos aplicados; medição própria nos 2 perfis (sw 440/390, 0 sob ilha, 0 fixos sob indicador, alvos 44, véu 62/47 com cor do fundo, rolado → body, 0 erros JS); 18 arquivos alterados, todos previstos. Falha: nível B do `.tr-open` (rodapé quebrado com vão de 6 px) → rodada 2 com `.task-footer` gap 16px 6px (emenda à spec) |
+| F4 páginas auxiliares | rodada 1 | refazer (1 item) | maestro conferiu: trechos aplicados, versão `treino.js?v=13`; defeito visual do `.chip` em equipamentos (texto 13,5 px fora do centro) → rodada 2 com `align-content:center` |
