@@ -253,3 +253,132 @@ quadrado preenchido com ✓ (concluída), como antes.
    rodapé dos cartões de treino, que já existia, com 6 px entre as linhas. Decisão de layout para o maestro/C2:
    por exemplo, `row-gap` ≥ 7 px no `.task-footer` dos cartões de treino, ou aceitar o teste só de cima nesses casos.
 2. **18b:** `grep -c` do `old` continua 1 por construção. O verificador deve aceitar.
+
+## Rodada 2 (devolução do coordenador: critério 3, `.tr-open` nível B)
+
+Data: 17/10/2026. Briefing: `briefings/F3-rodada2.md`. Mudei só uma regra, como o coordenador decidiu:
+
+- `index.html:21`: `.task-footer{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px}` →
+  `.task-footer{display:flex;flex-wrap:wrap;align-items:center;gap:16px 6px;margin-top:6px}`.
+- `git diff --stat`: `index.html | 2 +-` (1 linha trocada). Não há outra regra `.task-footer` em `index.html` nem
+  nos `.js` (`grep -o '[^{}]*task-footer[^{]*{[^}]*}'`). Nenhum outro arquivo da F3 foi tocado.
+
+Scripts e saídas desta rodada ficam em `scratchpad/f3/`:
+- `medir-f3-r2.cjs`: o mesmo `medir-f3.cjs` da rodada 1, gravando em `medicoes-f3-r2.json`;
+- `cmp-r2.cjs`: compara com `medicoes-f3-rodada1.json` (cópia do JSON da rodada 1);
+- `ab-footer-r2.cjs`: A/B da altura dos cartões;
+- `dbg-tropen-r2.cjs`: vão e teste de toque do `.tr-open`;
+- `e2e/r2/`: logs das suítes.
+
+As capturas da rodada 1 foram guardadas em `scratchpad/layout/depois-rodada1/`. As de `scratchpad/layout/depois/`
+foram regravadas com o CSS desta rodada (mesmos nomes).
+
+### Critério 1: grep
+
+| Trecho | `grep -c` em `index.html` |
+|---|---|
+| old (`gap:6px;margin-top:6px}` do `.task-footer`) | 0 |
+| new (`gap:16px 6px;margin-top:6px}`) | 1 |
+
+### Critério 2: nível B (`medicoes-f3-r2.json`, mesmo método da rodada 1)
+
+A tabela vale igual para os dois perfis (17PM e 13). Em todas as linhas, h mín = 28.
+
+| Alvo | ocorrências (vistas) | acima ok | abaixo ok |
+|---|---|---|---|
+| `.tr-open` (lista) | 17 | 17/17 | **17/17** (rodada 1: 8/17) |
+| `.notas-toggle` | 8 dia, 52 lista, 24 atrasadas, 8 sequência | todas | todas |
+| `.agenda-share` | 8 dia, 60 lista, 24 atrasadas, 8 sequência | todas | todas |
+| `.list-previous` | 2 (lista) | 2/2 | 2/2 |
+
+Detalhe do `.tr-open` (`dbg-tropen-r2.cjs`):
+- 17PM: nas 17 ocorrências, o `.agenda-share` fica na linha de baixo, a **16 px** (rodada 1: 6 px). `bottom+6`
+  devolve o próprio `.tr-open`.
+- `bottom+8` cai no `div.task-footer`, porque a borda da faixa é exclusiva. `bottom+9` cai no `.agenda-share` nos 9
+  cartões de treino e no `.task-footer` nos 8 de cardio.
+- 13: nos 9 cartões de treino, o vão é de 16 px e o resultado é o mesmo do 17PM. Nos 8 de cardio, o `.agenda-share`
+  fica na mesma linha, e `bottom+6` devolve o `.tr-open`.
+
+`medir().alvosPequenos` ficou idêntico ao da rodada 1 nas 9 vistas e nos 2 perfis (comparação de string em
+`cmp-r2.cjs`). No 17PM, a lista continua com `.list-previous` 118.5×28, `.notas-toggle` ×52, `.agenda-share` ×60,
+`.tr-open` 88.7×28 ×9 e 86.3×28 ×8.
+
+### Critério 3: itens 1, 2, 4 e 9 da seção 6, e altura dos cartões
+
+Os valores dos itens abaixo são iguais aos da rodada 1 nos dois perfis (`cmp-r2.cjs`).
+`page.__erros` ficou vazio nas vistas e nos diálogos.
+
+- **Item 1:**
+  - `scrollWidth` é 440 (17PM) e 390 (13) nas 9 vistas, no Reagendar e nos Alertas.
+  - `transbordando` ficou vazio em todas.
+- **Item 2:**
+  - `interativosSobIlha` = 0 e nenhum fixo sob o indicador, nas 9 vistas.
+  - Folgas `#app-update` / `#jarvis-btn` / `#openDialog` / `#cardioFab` = 10 / 12 / 62 / 125.
+- **Item 4 (17PM × 13):**
+  - `larguraConteudo` 440 × 390 e interna 408 × 358;
+  - célula 52.6×91 × 46×78;
+  - `#taskDialog`, `#voz-dialog` e `#alertsDialog`: 408 × 358;
+  - `#rescheduleDialog` 400 × 358;
+  - `.reschedule-task-name` 303 × 261;
+  - `#jarvis-panel` 416 × 366;
+  - `.task-main` com largura 296 × 246;
+  - `.calendar-tag` 9px × 8px.
+- **Item 9 (17PM / 13):**
+  - `#viewTabs` 54, `#seqEntryBtn` 44, `#filters` 60 e `.toolbar` 62 nos dois;
+  - 1ª `.calendar-day` em top 598.2 / 611.9;
+  - toast com bottom 738 / 626, abaixo do `#cardioFab` (749 / 637).
+- Item 7 (véu, não pedido nesta rodada) também ficou igual: 62/47 px, 7/7 e 3/3 cobertos.
+
+**Altura dos cartões (`ab-footer-r2.cjs`).** Medi na mesma página, cartão a cartão, de dois jeitos:
+- com o CSS atual;
+- com `.task-footer{row-gap:6px !important}` injetado, que é o espaçamento antigo.
+
+O critério foi: a altura só muda quando o rodapé quebra linha, e a mudança é de (linhas − 1) × 10 px. Resultado: os
+8 casos (4 vistas × 2 perfis) passaram, sem nenhum cartão fora da regra.
+
+| Perfil | Vista | rodapé 1 linha (Δ 0) | 2 linhas (Δ +10) | 3 linhas (Δ +20) |
+|---|---|---|---|---|
+| 17PM | dia | 2 | 6 | 0 |
+| 17PM | lista | 9 | 51 | 0 |
+| 17PM | atrasadas | 5 | 19 | 0 |
+| 17PM | sequência | 0 | 8 | 0 |
+| 13 | dia | 0 | 8 | 0 |
+| 13 | lista | 0 | 51 | 9 |
+| 13 | atrasadas | 2 | 21 | 1 |
+| 13 | sequência | 0 | 8 | 0 |
+
+**Atenção para a C2.** A quebra de linha do rodapé não acontece só nos cartões de treino:
+- Ela acontece na maioria dos cartões. Por exemplo, tag + hora + "Detalhes" + "Compartilhar" não cabem em uma linha.
+- Por isso a regra deixa a maior parte dos cartões 10 px mais alta (no 13, até 20 px).
+- No dia do 17PM, o `.task-main` passou de 97.6/88.3/126.9 para 107.6/98.3/136.9.
+- Na captura `depois/iphone17promax-lista.png`, os botões "Detalhes"/"Compartilhar" ficam mais afastados da linha da tag.
+- Isso não muda nenhum item medido da seção 6. Mas a lista rola mais.
+
+### Critério 4: suítes E2E e teste de unidade (logs em `scratchpad/f3/e2e/r2/`)
+
+| Suíte | ok | FALHOU | rc |
+|---|---|---|---|
+| e2e-so-claude | 10 | 0 | 0 |
+| e2e-voz-saida | 6 | 0 | 0 |
+| e2e-voz | 6 | 0 | 0 |
+| e2e-gasto | 4 | 0 | 0 |
+| e2e-multi | 4 | 0 | 0 |
+| e2e-atualiza | 7 | 0 | 0 |
+| e2e-lista | 7 | 0 | 0 |
+| e2e-ouvindo | 1 | 0 | 0 |
+| e2e-vozes-app | 8 | 0 | 0 |
+| `tests/jarvis-claude.test.mjs` | pass 1 | fail 0 | 0 |
+
+### Critério 5: nenhum outro arquivo
+
+Saída de `git status --short` depois dos testes:
+- `M index.html`: o único arquivo desta rodada.
+- `M equipamentos-especiais.html` e `M .orquestra/layout-17promax/relatorio-F4.md`: são da F4, que está trabalhando
+  ao mesmo tempo. Não mexi neles.
+
+Não fiz commit, stash nem checkout.
+
+### Pendências da rodada 1, atualizadas
+
+1. **`.tr-open`:** resolvido (17/17 dos dois lados, nos dois perfis).
+2. **18b:** continua como na rodada 1 (`old`=1 por construção).

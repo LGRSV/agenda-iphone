@@ -164,3 +164,50 @@ Correção proposta para o `.chip` (só injetada, não aplicada):
 Aparecem só os 12 arquivos da F4: `carteira.html`, `equipamentos-especiais.html`, `extrato-saldo.html`,
 `fatura-inter.html`, `financeiro-compartilhado.html`, `financeiro.html`, `gamificacao.html`, `importar.html`,
 `investimentos.html`, `marketplace/index.html`, `refaturamento.html` e `treino.html`. São 28 linhas trocadas (`git diff --stat`), além deste relatório.
+
+---
+
+## Rodada 2 (correção do `.chip`)
+
+Feito em 17/10/2026, sobre o HEAD `7d536da`, conforme `briefings/F4-rodada2.md`. A única mudança no repositório é uma linha
+de `equipamentos-especiais.html`. Não fiz commit, stash nem checkout.
+
+### O que mudou
+- `equipamentos-especiais.html:149`, regra `.chip{…}`:
+  - old: `min-height:44px;padding:0 14px;font-weight:600;font-size:12.5px;`
+  - new: `min-height:44px;padding:0 14px;align-content:center;font-weight:600;font-size:12.5px;`
+- Antes de trocar, o `old` aparecia **1 vez**, dentro da regra `.chip{…}` (a troca foi feita por script com `assert`).
+- Depois, com `grep -c`: `old` = 0; `new` = 1; `align-content:center` = 1 (só nessa regra); o `new` da spec 4.7
+  (`border-radius:100px;min-height:44px;padding:0 14px;`) continua com 1 ocorrência.
+- `git diff --numstat`: `equipamentos-especiais.html` 1 linha trocada. O `index.html` também aparece modificado, mas é da F3
+  (paralela), e eu não mexi nele.
+
+### Evidência (critérios da rodada 2)
+Arquivos em `/tmp/claude-0/-home-user-agenda-iphone/3207d749-cbff-51f4-a8a2-534b7b3c7cb3/scratchpad/layout/f4/rodada2/`.
+
+1. **Centralização.** `sonda-chip-r2.cjs` mede, no mesmo processo, as duas versões. A **r1** é o arquivo do HEAD, servido por
+   interceptação a partir de `equipamentos-especiais.HEAD.html`. A **r2** é o arquivo do disco.
+   - Mede os 13 chips nos dois perfis.
+   - r1: o desvio entre o centro do texto (Range) e o centro da pílula é de −13,5 px nos 13 chips.
+   - r2: o desvio do Range é **0,0** nos 13 chips. O desvio do filho `<b class="cnt">` é de 0,5 px nos 6 chips que têm
+     contagem. O máximo é **0,5 px**, abaixo do limite de 1 px. Isso vale nos dois perfis.
+   - `align-content` computado: `normal` na r1 e `center` na r2. `display` continua `block`.
+2. **Altura, largura e texto.** Nos 13 chips, nos dois perfis, a r2 tem `textContent` idêntico ao da r1, largura idêntica
+   (66,3 a 144,2) e altura 44. A sonda deu 0 falhas.
+3. **Itens 6 e 7 da seção 6.** Rodei de novo o `medir-f4.cjs` nas 12 páginas e nos 2 perfis, e o resultado está em
+   `depois-r2.json`. Comparei campo a campo com o `depois-f4.json` da rodada 1: scrollWidth, cabeçalho, sob ilha, fixos sob
+   indicador, alvos, nível B, folga, véu, transbordando, erros de JS e marketplace destrancado. Deu **0 diferenças em
+   24 registros**.
+   - `equipamentos-especiais`, 17 Pro Max: sw 440, `conteudoTop` 144, `sobIlha` false, 0 interativos sob a ilha.
+     Alvos: `.chip` 13× h 44, `.appswitch a` 2× 197×44, `.quickbar button` 3× 132×44, `.buscabar input` 408×44,
+     `#cidadeFiltro` 408×44 e `#app-update` 44×44 com folga 10, todos ok.
+     Véu: fixed, h 62px, z 60, `content ""`, cor `rgb(16, 16, 23)` (esperado `#101017`). Ok.
+   - No iPhone 13: sw 390, `conteudoTop` 129, alvos ok e véu com h 47px. Ok.
+4. **Nenhum outro arquivo.** `git status --short`: ` M equipamentos-especiais.html` e ` M index.html` (este é da F3).
+   Também muda este relatório.
+
+### Capturas novas
+- 17 Pro Max: `rodada2/aux-equipamentos-especiais.png`. Os 13 chips aparecem com o texto no meio da pílula.
+- iPhone 13: `rodada2/aux-equipamentos-especiais-iphone13.png`.
+- As outras 11 páginas também foram capturadas de novo em `rodada2/aux-<pagina>[-iphone13].png`.
+- Não sobrescrevi `depois/aux-equipamentos-especiais*.png`. Elas continuam mostrando o estado da rodada 1, com o defeito.

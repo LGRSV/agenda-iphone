@@ -92,3 +92,6 @@ O cérebro é o Fable: escreve a especificação e faz a revisão final adversar
 | F4 páginas auxiliares | workflow (opus) | despachada | — |
 | F3 app principal | rodada 1 | refazer (1 item) | maestro conferiu: 69/69 trechos aplicados; medição própria nos 2 perfis (sw 440/390, 0 sob ilha, 0 fixos sob indicador, alvos 44, véu 62/47 com cor do fundo, rolado → body, 0 erros JS); 18 arquivos alterados, todos previstos. Falha: nível B do `.tr-open` (rodapé quebrado com vão de 6 px) → rodada 2 com `.task-footer` gap 16px 6px (emenda à spec) |
 | F4 páginas auxiliares | rodada 1 | refazer (1 item) | maestro conferiu: trechos aplicados, versão `treino.js?v=13`; defeito visual do `.chip` em equipamentos (texto 13,5 px fora do centro) → rodada 2 com `align-content:center` |
+| F3 app principal | rodada 2 | aprovado | maestro: `.task-footer` gap 16px 6px aplicado (old 0 / new 1). Efeito colateral medido pela F3: o rodapé quebra em quase todos os cartões (51/60 no 17PM, 60/60 no 13), então quase todos ficam +10 px. Vai para a C2 decidir |
+| F4 páginas auxiliares | rodada 2 | aprovado | maestro: 13 chips do equipamentos com desvio 0,0 px e h 44 nos dois perfis; sw 440/390 |
+| F5 verificação | workflow (opus) | despachada | — |
