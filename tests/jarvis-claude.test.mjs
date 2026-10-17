@@ -123,4 +123,19 @@ t('resumo do gasto: hoje e mês no horário de Brasília, ignora chamadas sem to
   assert.equal(r.desde_mes, '2026-10-01T03:00:00.000Z');
 });
 
+t('várias ações: lista vira "acoes" (máx. 10, sem pesquisa na web, sem duplicar a principal)', () => {
+  const add = n => ({ action: 'add_task', task: { text: 'T' + n, date: '2026-10-20', time: '', tag: 'pessoal' } });
+  const r = sanitizeAction({ action: 'none', reply: 'Feito.', acoes: [add(1), add(2), { action: 'complete_task', query: 'dentista' }, { action: 'web_search', query: 'clima' }, { action: 'hackear' }] });
+  assert.equal(r.action, 'none');
+  assert.deepEqual(r.acoes.map(a => a.action), ['add_task', 'add_task', 'complete_task']);
+  assert.equal(r.acoes[0].task.text, 'T1');
+  assert.equal(sanitizeAction({ action: 'none', reply: 'x', acoes: Array.from({ length: 15 }, (_, n) => add(n)) }).acoes.length, 10);
+  // uma so na lista vira acao principal (apps antigos entendem)
+  assert.deepEqual(sanitizeAction({ action: 'none', reply: 'ok', acoes: [{ action: 'delete_task', query: 'x' }] }), { action: 'delete_task', query: 'x', reply: 'ok' });
+  // principal repetida dentro da lista nao duplica; principal diferente entra no inicio
+  assert.equal(sanitizeAction({ ...add(1), reply: 'r', acoes: [add(1), add(2)] }).acoes.length, 2);
+  assert.deepEqual(sanitizeAction({ ...add(9), reply: 'r', acoes: [add(1), add(2)] }).acoes.map(a => a.task.text), ['T9', 'T1', 'T2']);
+  assert.equal(TOOL.input_schema.properties.acoes.maxItems, 10);
+});
+
 console.log(`\n${ok} testes passaram`);
