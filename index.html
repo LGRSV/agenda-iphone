@@ -1168,8 +1168,7 @@ ${SO_CLAUDE?'MODO ATUAL: so texto e sem internet. NAO use web_search: se pedirem
     // Voz do proprio aparelho (pt-BR), sem rede: usada no modo so Claude.
     function speakNative(t){
       if(!('speechSynthesis'in window))return;
-      const u=new SpeechSynthesisUtterance(t);u.lang='pt-BR';
-      try{const v=window.speechSynthesis.getVoices().find(v=>/^pt[-_]BR/i.test(v.lang));if(v)u.voice=v;}catch(_){}
+      const u=new SpeechSynthesisUtterance(t);u.lang='pt-BR'; // sem escolher voz: o iOS usa a padrao do idioma
       u.onstart=animOn;u.onend=animOff;u.onerror=animOff;
       window.speechSynthesis.speak(u);
     }
@@ -1657,18 +1656,26 @@ ${SO_CLAUDE?'MODO ATUAL: so texto e sem internet. NAO use web_search: se pedirem
       ask([{inlineData:{mimeType:(blob.type||'audio/mp4').split(';')[0],data:b64}},{text:'(mensagem de voz do usuario: transcreva em transcript e responda)'}],bubble,'(mensagem de voz)');
     }
     // Modo so Claude: o navegador transcreve a fala e o texto vai para o Claude.
-    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-    let reco=null;
+    // No app instalado na tela inicial do iPhone o reconhecimento de fala nao
+    // funciona (WebKit bug 225298): ali o microfone abre o teclado para o ditado.
+    const STANDALONE=navigator.standalone===true||!!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
+    const SR=STANDALONE?null:(window.SpeechRecognition||window.webkitSpeechRecognition);
+    let reco=null,recoTimer=null;
+    const avisar=(t,ms)=>{statusEl.textContent=t;setTimeout(()=>{if(statusEl.textContent===t)statusEl.textContent=STATUS_OK;},ms||3500);};
+    function fimEscuta(){clearTimeout(recoTimer);reco=null;mic.classList.remove('rec');if(/OUVINDO/.test(statusEl.textContent))statusEl.textContent=STATUS_OK;}
     function ouvirTexto(){
+      if(reco){try{reco.stop();}catch(_){}fimEscuta();return;} // segundo toque sempre para
       if(busy)return;
-      if(reco){try{reco.stop();}catch(_){}return;}
-      if(!SR){statusEl.textContent='VOZ INDISPONIVEL NESTE APARELHO \u00B7 DIGITE';setTimeout(()=>statusEl.textContent=STATUS_OK,3000);return;}
+      if(!SR){input.focus();avisar('USE O MICROFONE DO TECLADO PARA DITAR',4500);return;}
       stopSpeech();
-      reco=new SR();reco.lang='pt-BR';reco.interimResults=false;reco.maxAlternatives=1;
-      reco.onresult=e=>{const tx=Array.from(e.results).map(r=>(r[0]&&r[0].transcript)||'').join(' ').trim();if(tx){input.value=tx;sendText();}};
-      reco.onerror=e=>{statusEl.textContent='NAO ENTENDI A VOZ ('+String((e&&e.error)||'erro')+') \u00B7 DIGITE';setTimeout(()=>statusEl.textContent=STATUS_OK,3000);};
-      reco.onend=()=>{reco=null;mic.classList.remove('rec');if(/OUVINDO/.test(statusEl.textContent))statusEl.textContent=STATUS_OK;};
-      try{reco.start();mic.classList.add('rec');statusEl.textContent='OUVINDO\u2026 FALE E AGUARDE';}catch(_){reco=null;}
+      const r=new SR();reco=r;r.lang='pt-BR';r.interimResults=false;r.maxAlternatives=1;
+      r.onresult=e=>{const tx=Array.from(e.results).map(x=>(x[0]&&x[0].transcript)||'').join(' ').trim();if(!tx)return;input.value=tx;if(busy)avisar('AGUARDE A RESPOSTA E TOQUE EM ENVIAR',5000);else sendText();};
+      r.onerror=e=>{const c=String((e&&e.error)||'erro');
+        avisar(c==='not-allowed'?'PERMITA O MICROFONE PARA USAR A VOZ':(c==='service-not-allowed'||c==='audio-capture')?'VOZ INDISPONIVEL \u00B7 USE O DITADO DO TECLADO':(c==='no-speech'||c==='no-match')?'NAO OUVI NADA \u00B7 TENTE DE NOVO':'ERRO NA VOZ ('+c+') \u00B7 DIGITE');};
+      r.onend=()=>{if(reco===r)fimEscuta();};
+      try{r.start();mic.classList.add('rec');statusEl.textContent='OUVINDO\u2026 FALE E AGUARDE';}catch(_){fimEscuta();return;}
+      // trava de seguranca: se o iOS nao mandar nenhum evento, libera o microfone
+      recoTimer=setTimeout(()=>{if(reco===r){try{r.abort();}catch(_){}fimEscuta();avisar('VOZ NAO RESPONDEU \u00B7 USE O DITADO DO TECLADO',4500);}},15000);
     }
     mic.addEventListener('click',()=>{
       if(SO_CLAUDE){ouvirTexto();return;}
@@ -1676,7 +1683,8 @@ ${SO_CLAUDE?'MODO ATUAL: so texto e sem internet. NAO use web_search: se pedirem
       startRec();
     });
     if(SO_CLAUDE?!SR:(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)||!window.MediaRecorder)){
-      mic.style.opacity='.3';mic.style.cursor='not-allowed';mic.title='Microfone nao suportado neste navegador';
+      if(SO_CLAUDE){mic.style.opacity='.45';mic.title='Use o microfone do teclado para ditar';}
+      else{mic.style.opacity='.3';mic.style.cursor='not-allowed';mic.title='Microfone nao suportado neste navegador';}
     }
   })();
   </script>
