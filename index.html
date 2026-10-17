@@ -730,6 +730,7 @@
     window.AgendaAPI={
       addTask(o){o=o||{};const text=String(o.text||'').trim();const date=String(o.date||'');if(!text||!/^\d{4}-\d{2}-\d{2}$/.test(date))return false;const time=/^\d{2}:\d{2}$/.test(String(o.time||''))?String(o.time):'';tasks.push({id:id(),text,date,time,tag:tagKey(o.tag||'pessoal'),reminder:time?15:-1,done:false});save();render();showToast('Jarvis adicionou: '+text);return true},
       completeTask(query){const q=String(query||'').toLowerCase().trim();if(!q)return false;const t=tasks.find(t=>!t.done&&!isManualFinancialOutput(t)&&t.text.toLowerCase().includes(q));if(!t)return false;t.done=true;save();render();showToast('Jarvis concluiu: '+t.text);return t.text},
+      findForDelete(query){const q=String(query||'').toLowerCase().trim();if(!q)return false;const t=tasks.find(t=>!isManualFinancialOutput(t)&&t.text.toLowerCase().includes(q));return t?t.text:false},
       deleteTask(query){const q=String(query||'').toLowerCase().trim();if(!q)return false;const i=tasks.findIndex(t=>!isManualFinancialOutput(t)&&t.text.toLowerCase().includes(q));if(i<0)return false;const rem=tasks.splice(i,1)[0];trashPush(rem);save();render();showToast('Jarvis removeu: '+rem.text);return rem.text},
       editTask(query,ch){const q=String(query||'').toLowerCase().trim();if(!q)return false;const t=tasks.find(t=>!t.done&&!isManualFinancialOutput(t)&&t.text.toLowerCase().includes(q));if(!t)return false;ch=ch||{};const nt=String(ch.text||'').trim();if(nt)t.text=nt;if(/^\d{4}-\d{2}-\d{2}$/.test(String(ch.date||'')))t.date=String(ch.date);if(/^\d{2}:\d{2}$/.test(String(ch.time||''))){t.time=String(ch.time);if(t.reminder<0)t.reminder=15;}if(ch.tag)t.tag=tagKey(ch.tag);save();render();showToast('Jarvis atualizou: '+t.text);return t.text},
       getTasks(){return tasks.filter(t=>!isManualFinancialOutput(t)).map(t=>({text:t.text,date:t.date,time:t.time,tag:t.tag,done:t.done}))},
@@ -1352,6 +1353,11 @@ Quando receber AUDIO, preencha transcript com a transcricao exata em PT-BR do qu
           return r?('Concluida: '+r):'Tarefa nao encontrada para concluir';
         }
         if(j.action==='delete_task'&&j.query){
+          // Apagar sempre pede confirmacao na tela: um texto malicioso dentro de
+          // uma tarefa compartilhada nao consegue fazer o Jarvis apagar sozinho.
+          const alvo=window.AgendaAPI.findForDelete?window.AgendaAPI.findForDelete(j.query):null;
+          if(!alvo)return'Tarefa nao encontrada para remover';
+          if(!confirm('O Jarvis quer apagar a tarefa:\n\n“'+alvo+'”\n\nConfirmar? (ela vai para a lixeira)'))return{erro:'Certo, Senhor. Nao apaguei nada.'};
           const r=window.AgendaAPI.deleteTask(j.query);
           return r?('Removida: '+r):'Tarefa nao encontrada para remover';
         }
@@ -1401,6 +1407,31 @@ Quando receber AUDIO, preencha transcript com a transcricao exata em PT-BR do qu
       }
       throw new Error(lastErr);
     }
+    // Claude pela Edge Function jarvis-claude do Supabase: a chave da Anthropic fica
+    // so no servidor; o app manda a sessao de login e recebe o mesmo JSON de acao
+    // que o Gemini devolve. Audio continua no Gemini (o Claude nao ouve audio).
+    // Recusas definitivas (nao configurado, sem permissao, sem login) pausam o
+    // Claude por 10 min para nao atrasar cada pergunta.
+    let claudeOffUntil=0;
+    async function callClaude(contents){
+      const S=window.SupabaseAgenda;
+      if(!S||!S.getAccessToken||!(S.getUser&&S.getUser()))throw new Error('CLAUDE_OFF');
+      const cfg=(S.getConfig&&S.getConfig())||{};
+      const base=String(cfg.url||'').replace(/\/$/,'');
+      if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(base))throw new Error('CLAUDE_OFF');
+      const tok=await S.getAccessToken();
+      if(!tok)throw new Error('CLAUDE_OFF');
+      const messages=contents.map(c=>({role:c.role==='model'?'assistant':'user',text:(c.parts||[]).map(p=>(p&&typeof p.text==='string')?p.text:'').join('\n').trim().slice(0,8000)})).filter(m=>m.text).slice(-40);
+      let res,data;
+      try{
+        res=await jfetch(base+'/functions/v1/jarvis-claude',{method:'POST',headers:{'Content-Type':'application/json',apikey:String(cfg.publishableKey||''),Authorization:'Bearer '+tok},body:JSON.stringify({system:systemPrompt(),messages})},30000);
+        data=await res.json().catch(()=>null);
+      }catch(_){throw new Error('CLAUDE_network');}
+      if(res.ok&&data&&data.ok&&typeof data.text==='string')return data.text;
+      const code=String((data&&data.error)||('http_'+res.status)).replace(/[^a-z0-9_]/gi,'').slice(0,40);
+      if(res.status===401||res.status===403||code==='not_configured')claudeOffUntil=Date.now()+10*60*1000;
+      throw new Error('CLAUDE_'+code);
+    }
     // Pesquisa na web via grounding do Google Search: da ao Jarvis informacao
     // em tempo real (noticias, clima, cotacoes, fatos). Sem schema JSON aqui —
     // o grounding nao aceita responseMimeType, entao a resposta vem em texto puro.
@@ -1447,7 +1478,15 @@ Quando receber AUDIO, preencha transcript com a transcricao exata em PT-BR do qu
       const typing=addMsg('bot typing','');typing.innerHTML='<span class="jdot"></span><span class="jdot"></span><span class="jdot"></span>';
       const contents=history.concat([{role:'user',parts:userParts}]);
       try{
-        const raw=await callGemini(contents);
+        // Texto: Claude primeiro (servidor seguro). Falhou e ha chave do Gemini
+        // neste aparelho: usa o Gemini como reserva. Audio: direto no Gemini.
+        let raw;
+        const temAudio=userParts.some(p=>p&&p.inlineData);
+        if(!temAudio&&Date.now()>=claudeOffUntil){
+          try{raw=await callClaude(contents);}
+          catch(e){if(!jarvisKeys().length)throw e;}
+        }
+        if(raw===undefined)raw=await callGemini(contents);
         const j=parseJarvis(raw);
         let reply=j.reply||'Feito.';
         if(j.transcript&&userBubble)userBubble.textContent=j.transcript;
@@ -1486,7 +1525,16 @@ Quando receber AUDIO, preencha transcript com a transcricao exata em PT-BR do qu
         const emsg=String((e&&e.message)||e||'').toLowerCase();
         const semChave=/no_key/.test(emsg);
         const cota=/quota|resource_exhausted|exhausted|rate.?limit|exceeded|credit|deplet|billing|prepay|\b429\b/.test(emsg);
-        const reply=semChave
+        const claudeLimite=/^claude_rate_limited/.test(emsg);
+        const claudeOcupado=/^claude_upstream_busy/.test(emsg);
+        const claudeFora=/^claude_(off|not_configured|forbidden|unauthorized|http_401|http_403)/.test(emsg)||(semChave&&claudeOffUntil>Date.now());
+        const reply=claudeLimite
+          ?'Senhor, atingi o limite de segurança de uso do Claude por agora. Tente de novo em alguns minutos.'
+          :claudeOcupado
+          ?'Os servidores do Claude estão sobrecarregados neste momento, Senhor. Tente de novo em instantes.'
+          :claudeFora
+          ?'Meu núcleo Claude não está disponível agora, Senhor. Confira se você entrou na sua conta da Agenda. Enquanto isso, sigo cuidando da agenda normalmente.'
+          :semChave
           ?'Preciso de uma chave de API para pensar, Senhor. Toque no ícone de chave aqui em cima e cole a sua — fica salva só neste aparelho.'
           :cota
           ?'Senhor, meu núcleo de inteligência ficou sem créditos de uso no momento. Enquanto isso, sigo cuidando da sua agenda normalmente — pode adicionar, concluir e apagar tarefas à vontade.'
@@ -1580,7 +1628,7 @@ Quando receber AUDIO, preencha transcript com a transcricao exata em PT-BR do qu
   <script src="./calendario-cheio.js?v=3" defer></script>
   <script src="./header-cleanup.js?v=6" defer></script>
   <script src="./supabase-project-config.js?v=1" defer></script>
-  <script src="./supabase-shared-storage.js?v=10" defer></script>
+  <script src="./supabase-shared-storage.js?v=11" defer></script>
   <script src="./supabase-login-ui.js?v=4" defer></script>
   <script src="./supabase-simple-access.js?v=5" defer></script>
   <script src="./auth-gate.js?v=1" defer></script>

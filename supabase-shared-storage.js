@@ -410,6 +410,12 @@
     setInterval(() => { if (!Object.keys(dirty()).length) resyncIfLinked(); }, 60000);
   }
 
-  window.SupabaseAgenda = { getConfig: cfg, openDialog, pushAll: () => pushDocs(), pullAll, pushDirty: syncNow, syncNow, getUser: () => session?.user || null };
+  // getAccessToken: token da sessão atual (renovado pelo cliente se expirou), para
+  // chamar Edge Functions protegidas como a jarvis-claude.
+  const getAccessToken = async () => {
+    try { const sb = await getClient(); const r = await sb.auth.getSession(); return r?.data?.session?.access_token || null; }
+    catch (_) { return null; }
+  };
+  window.SupabaseAgenda = { getConfig: cfg, openDialog, pushAll: () => pushDocs(), pullAll, pushDirty: syncNow, syncNow, getUser: () => session?.user || null, getAccessToken };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
