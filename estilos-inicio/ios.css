@@ -1,0 +1,97 @@
+/* Variante "ios" da tela de início: lista agrupada à moda do iOS.
+   Título grande, botões do cabeçalho só com o glifo, blocos como células agrupadas
+   (raio 12, sem borda, sombra nem gradiente) e as abas como tab bar fixa no rodapé.
+   Tudo sob html[data-home="ios"]. */
+
+/* Cor da célula e do segmento ativo. Claro: --surface (#fff) sobre --bg, como o iOS.
+   Escuro: --surface sobre --bg mede 1,04:1 e a célula some sem a borda; --soft (1,12:1)
+   fica perto do #1c1c1e sobre preto do iOS, e o segmento ativo sobe para --line. */
+html[data-home="ios"]{--ios-celula:var(--surface);--ios-segmento:var(--soft2)}
+html[data-home="ios"]:not([data-theme="light"]){--ios-celula:var(--soft);--ios-segmento:var(--line)}
+
+/* Base */
+html[data-home="ios"] .app{padding-left:16px;padding-right:16px}
+html[data-home="ios"] .eyebrow{display:none}
+html[data-home="ios"] .topbar{margin:0 0 14px}
+/* 34 px no 17 Pro Max; em telas mais estreitas o título encolhe para caber numa linha ao lado dos
+   3 botões (150 px): "Minha agenda" mede 6,67 × o corpo na fonte de teste. No 13 dá 27,5 px. */
+html[data-home="ios"] .topbar h1{font-size:clamp(26px,calc((100vw - 206px)/6.7),34px);font-weight:700;letter-spacing:-.02em;line-height:1.1}
+/* Data como no iOS: "Sábado, 17 de outubro" (o capitalize do padrão gera "De Outubro") */
+html[data-home="ios"] .subhead{margin:2px 0 0;color:var(--muted);font-size:15px;text-transform:none}
+html[data-home="ios"] .subhead::first-letter{text-transform:uppercase}
+
+/* Nav-bar: só o glifo, em azul (46×46 continuam vindo do header-cleanup.js) */
+html[data-home="ios"] .head-actions>.icon-btn{border:0;background:transparent;box-shadow:none;color:var(--accent)}
+html[data-home="ios"] .menu-toggle i{width:20px;height:2.5px}
+/* Sem a borda, o estado ligado do olho (parceiro) e do cronômetro (aba Sequência) vira um fundo leve */
+html[data-home="ios"] .head-actions>.icon-btn.on,
+html[data-home="ios"] .head-actions>.icon-btn.seq-active{background:color-mix(in srgb,var(--accent) 16%,transparent)}
+
+/* Célula de progresso */
+html[data-home="ios"] .summary{margin:0 0 12px;padding:12px 16px;border:0;border-radius:12px;background:var(--ios-celula);box-shadow:none}
+html[data-home="ios"] .summary-label{color:var(--text);font-size:15px;font-weight:600}
+html[data-home="ios"] .summary-number{font-size:17px;letter-spacing:-.02em}
+html[data-home="ios"] .progress{height:4px;margin:10px 0 0}
+/* A frase repete o número e a barra: sai da tela (a célula vira uma linha só), mas fica para o VoiceOver */
+html[data-home="ios"] .summary-message{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+
+/* Filtros como segmented control */
+html[data-home="ios"] #filters{margin:0 0 12px;padding:4px;gap:2px;border-radius:12px;background:var(--ios-celula)}
+html[data-home="ios"] .chip{flex:1 0 auto;min-width:44px;border:0;border-radius:9px;background:transparent;font-weight:650}
+html[data-home="ios"] .chip.active{background:var(--ios-segmento);color:var(--text)}
+html[data-home="ios"] .chip.chip-late.active{background:var(--danger);color:#2a0808}
+/* Claro: segmento branco com sombra sobre trilho cinza, como o iOS (Atrasadas ativa segue vermelha) */
+html[data-home="ios"][data-theme="light"] #filters{background:var(--soft2)}
+html[data-home="ios"][data-theme="light"] .chip.active{box-shadow:0 1px 3px rgba(0,0,0,.14)}
+html[data-home="ios"][data-theme="light"] .chip.active:not(.chip-late){background:#fff}
+
+/* Modo sequencial: a aba Sequência está na tab bar e #seqTimerBtn no cabeçalho */
+html[data-home="ios"] #seqEntryBtn{display:none}
+
+/* Conteúdo agrupado */
+html[data-home="ios"] .view-shell{border:0;border-radius:12px;background:var(--ios-celula);box-shadow:none}
+html[data-home="ios"] .toolbar{margin:0;padding:10px 12px;border:0;background:transparent}
+html[data-home="ios"] .list-header{margin:0;padding:10px 12px;border:0;border-radius:12px 12px 0 0;background:transparent}
+html[data-home="ios"] :where(.task-card){padding:12px}
+html[data-home="ios"] .task-swipe .task-card{background:var(--ios-celula)}
+/* Na Sequência os cartões continuam --surface sobre a trilha --soft, como no padrão */
+html[data-home="ios"] .seq-row .task-swipe .task-card{background:var(--surface)}
+html[data-home="ios"] .today-btn{min-height:44px;border:0}
+html[data-home="ios"] .nav-btn{border:0;background:transparent;color:var(--accent)}
+/* Escuro: os dias do mês usavam --soft, o mesmo da célula, e ficavam só com o contorno.
+   Em --surface eles se destacam da célula; o dia selecionado mantém o fundo de acento do app. */
+html[data-home="ios"]:not([data-theme="light"]) .calendar-day.current:not(.selected){background:var(--surface)}
+
+/* FAB redondo, como o compor do Notas (o rótulo segue no DOM) */
+html[data-home="ios"] .fab{width:56px;height:56px;min-height:56px;gap:0;padding:0;justify-content:center;border-radius:50%;font-size:0}
+html[data-home="ios"] .fab .plus{font-size:30px}
+html[data-home="ios"] #cardioFab{border-color:var(--line);border-radius:50%;box-shadow:none}
+
+/* Tab bar fixa e flutuantes acima dela: só no mesmo escopo do header-cleanup (até 760 px).
+   A barra mede 1 (borda) + 6 + 49 + 2 = 58 px acima da área segura; os botões terminam 2 px
+   acima da faixa do indicador. */
+@media (max-width:760px){
+  html[data-home="ios"] #viewTabs{position:fixed;left:0;right:0;bottom:0;z-index:46;margin:0;padding:6px 8px calc(env(safe-area-inset-bottom) + 8px);gap:0;border:0;border-top:1px solid var(--line);border-radius:0;background:var(--ios-celula)}
+  html[data-home="ios"] .view-tabs::before{display:none}
+  html[data-home="ios"] .view-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:49px;padding:0;border-radius:0;background:transparent;color:var(--muted);font-size:11px;font-weight:650;line-height:1.15}
+  html[data-home="ios"] .view-tab.active{background:transparent;box-shadow:none;color:var(--accent);font-weight:800}
+  /* Claro: --accent sobre branco dá 4,42:1 no rótulo de 11 px; --accent2 dá 5,24:1 */
+  html[data-home="ios"][data-theme="light"] .view-tab.active{color:var(--accent2)}
+  /* Glifo de cada aba (máscara pintada com a cor do texto); Sequência usa o mesmo cronômetro do #seqTimerBtn */
+  html[data-home="ios"] .view-tab::before{content:"";flex:0 0 auto;width:24px;height:24px;background:currentColor;-webkit-mask:var(--ios-tab-glifo) center/24px 24px no-repeat;mask:var(--ios-tab-glifo) center/24px 24px no-repeat}
+  html[data-home="ios"] .view-tab[data-view="day"]{--ios-tab-glifo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15.5' rx='3'/%3E%3Cpath d='M3.5 9.8h17M8 3v4M16 3v4'/%3E%3Crect x='9.6' y='12.6' width='4.8' height='4.8' rx='1.2' fill='black' stroke='none'/%3E%3C/svg%3E")}
+  html[data-home="ios"] .view-tab[data-view="month"]{--ios-tab-glifo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15.5' rx='3'/%3E%3Cpath d='M3.5 9.8h17M8 3v4M16 3v4'/%3E%3Cg fill='black' stroke='none'%3E%3Ccircle cx='8' cy='13.3' r='1.2'/%3E%3Ccircle cx='12' cy='13.3' r='1.2'/%3E%3Ccircle cx='16' cy='13.3' r='1.2'/%3E%3Ccircle cx='8' cy='17' r='1.2'/%3E%3Ccircle cx='12' cy='17' r='1.2'/%3E%3Ccircle cx='16' cy='17' r='1.2'/%3E%3C/g%3E%3C/svg%3E")}
+  html[data-home="ios"] .view-tab[data-view="list"]{--ios-tab-glifo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 6h11M9.5 12h11M9.5 18h11'/%3E%3Cg fill='black' stroke='none'%3E%3Ccircle cx='4.8' cy='6' r='1.5'/%3E%3Ccircle cx='4.8' cy='12' r='1.5'/%3E%3Ccircle cx='4.8' cy='18' r='1.5'/%3E%3C/g%3E%3C/svg%3E")}
+  html[data-home="ios"] .view-tab[data-view="sequencia"]{--ios-tab-glifo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='13' r='8.5'/%3E%3Cpath d='M12 9v4l3 2M9 2h6'/%3E%3C/svg%3E")}
+
+  /* Flutuantes acima da barra. + Nova tarefa e Jarvis 16 px acima dela, na mesma linha;
+     o #app-ver (Atualizar + versão) fica à direita do Jarvis, centrado na altura dele, e deixa o
+     meio da tela livre; o painel do Jarvis abre 8 px acima do botão. */
+  html[data-home="ios"] .app{padding-bottom:calc(253px + env(safe-area-inset-bottom))}
+  html[data-home="ios"] .agenda-actions{bottom:calc(74px + env(safe-area-inset-bottom))}
+  html[data-home="ios"] .agenda-actions #jarvis-btn{bottom:calc(74px + env(safe-area-inset-bottom))}
+  html[data-home="ios"] #app-ver{right:auto;left:calc(max(18px,env(safe-area-inset-left)) + 66px);bottom:calc(80px + env(safe-area-inset-bottom))}
+  html[data-home="ios"] #jarvis-panel{bottom:calc(138px + env(safe-area-inset-bottom));max-height:min(72dvh,calc(100dvh - 138px - env(safe-area-inset-bottom,0px) - env(safe-area-inset-top,0px)))}
+  /* O aviso (toast) continua 11 px acima da pilha + / cardio, como no padrão */
+  html[data-home="ios"] .toast{bottom:calc(198px + env(safe-area-inset-bottom))}
+}

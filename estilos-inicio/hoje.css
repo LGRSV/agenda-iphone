@@ -1,0 +1,74 @@
+/* Variante "hoje" da tela de início: Hoje no centro.
+   A data de hoje vira o título; o progresso do dia fica logo abaixo, sem cartão;
+   abas e Modo sequencial dividem uma linha só. Tudo sob html[data-home="hoje"]. */
+
+/* Base: a grade do .app (2 colunas; a 2a só existe quando o ícone sequencial está visível) */
+html[data-home="hoje"] .app{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:0;row-gap:12px;align-content:start;padding-left:20px;padding-right:20px}
+html[data-home="hoje"] .app>*{grid-column:1/-1;min-width:0}
+html[data-home="hoje"] .topbar,
+html[data-home="hoje"] .summary,
+html[data-home="hoje"] .view-tabs,
+html[data-home="hoje"] .seq-entry-btn{margin-top:0;margin-bottom:0}
+html[data-home="hoje"] .filters{padding-bottom:0}
+
+/* Data-herói */
+html[data-home="hoje"] .eyebrow{display:none}
+html[data-home="hoje"] .topbar>div:first-child{display:flex;flex-direction:column}
+html[data-home="hoje"] .subhead{order:-1;margin:0 0 4px;color:var(--text);font-size:clamp(24px,6.4vw,32px);font-weight:800;letter-spacing:-.04em;line-height:1.05;text-transform:none;text-wrap:balance}
+html[data-home="hoje"] .subhead::first-letter{text-transform:uppercase}
+html[data-home="hoje"] .topbar h1{margin:0;color:var(--muted);font-size:11px;font-weight:800;line-height:1.3;letter-spacing:.12em;text-transform:uppercase}
+
+/* Cabeçalho: botões fantasmas de 46 (sem borda, fundo nem sombra) para não competir com a data */
+html[data-home="hoje"] .head-actions>.icon-btn{background:transparent;border:0;box-shadow:none}
+
+/* Painel de hoje, sem cartão */
+html[data-home="hoje"] .summary{margin:-4px 0 0;padding:0;border:0;border-radius:0;background:none;box-shadow:none}
+html[data-home="hoje"] .summary-top{justify-content:flex-start;align-items:baseline;gap:10px}
+html[data-home="hoje"] .summary-number{order:-1;font-size:32px;line-height:1;letter-spacing:-.05em}
+html[data-home="hoje"] .summary-number small{font-size:16px}
+html[data-home="hoje"] .summary-label{color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+/* a frase some (número e barra já dizem); sem ela, a margem de baixo da barra viraria sobra antes do row-gap */
+html[data-home="hoje"] .progress{height:6px;margin:10px 0 0}
+html[data-home="hoje"] .summary-message{display:none}
+
+/* Abas secundárias: texto pequeno, sem trilho nem pílula deslizante */
+html[data-home="hoje"] #viewTabs{grid-column:1;margin:0;padding:0;border:0;background:none;gap:2px;grid-template-columns:repeat(4,minmax(44px,1fr))}
+html[data-home="hoje"] .view-tabs::before{display:none}
+html[data-home="hoje"] .view-tab{min-height:44px;padding:0;border-radius:10px;color:var(--faint);font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+html[data-home="hoje"] .view-tab.active{background:var(--soft);color:var(--text);box-shadow:none}
+/* iPhone 13 e menores: SEQUÊNCIA cabe em 11 px por 1,5 px de cada lado na fonte de teste; 10,5 px dá folga para a SF Pro */
+@media (max-width:400px){html[data-home="hoje"] .view-tab{font-size:10.5px}}
+
+/* Modo sequencial vira ícone de 44 na mesma linha das abas, sem caixa, em acento (o app esconde com [hidden] na vista Sequência) */
+html[data-home="hoje"] #seqEntryBtn{grid-column:2;position:relative;width:44px;min-height:44px;margin:0 0 0 10px;padding:0;justify-content:center;border:0;border-radius:10px;background:transparent;color:var(--accent)}
+html[data-home="hoje"] #seqEntryBtn span{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+html[data-home="hoje"] #seqEntryBtn svg{width:18px;height:18px}
+
+/* Filtros discretos */
+html[data-home="hoje"] #filters{grid-column:1/-1;margin:-4px 0 0;padding:0;gap:6px}
+html[data-home="hoje"] .chip{min-width:44px;border-color:transparent;background:var(--soft);font-size:12px;font-weight:650}
+/* só o filtro ativo fica preenchido */
+html[data-home="hoje"] .chip:not(.active){background:transparent;color:var(--muted)}
+html[data-home="hoje"] .chip.active{border-color:var(--accent);background:var(--accent);color:var(--accentInk)}
+html[data-home="hoje"] .chip-late.active{border-color:var(--danger);background:var(--danger);color:#2a0808}
+
+/* Hoje em destaque no conteúdo */
+html[data-home="hoje"] .calendar-day.today{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--surface))}
+html[data-home="hoje"] .calendar-day:not(.today) .calendar-tag:not(.cal-done){opacity:.75}
+html[data-home="hoje"] .toolbar-title{font-size:19px}
+html[data-home="hoje"] .view-shell{border:0;border-radius:16px;box-shadow:none}
+/* sem a borda da casca, o contorno de raio 20 do cabeçalho apareceria nos cantos: fica só a linha divisória de baixo */
+html[data-home="hoje"] .view-shell>.toolbar,
+html[data-home="hoje"] .view-shell>.list-header{margin:0;border-width:0 0 1px;border-radius:0}
+
+/* Flutuantes: + Nova tarefa vira círculo de 56 (o texto continua no DOM e dá o nome acessível); o selo da versão recua */
+html[data-home="hoje"] .fab{width:56px;min-height:56px;padding:0;gap:0;justify-content:center;border-radius:50%;font-size:0}
+html[data-home="hoje"] .fab .plus{font-size:30px}
+/* cardio (48) e + (56) empilhados pelo centro, não pela borda direita */
+html[data-home="hoje"] .agenda-actions{align-items:center}
+html[data-home="hoje"] #app-ver{opacity:.6}
+
+/* Tema claro: --soft quase some sobre --bg, então a aba ativa sobe para --soft2 */
+html[data-home="hoje"][data-theme="light"] .view-tab.active{background:var(--soft2)}
+/* --faint sobre --bg no claro dá 2,9:1 em texto de 11 px; --muted dá 4,6:1 */
+html[data-home="hoje"][data-theme="light"] .view-tab:not(.active){color:var(--muted)}
