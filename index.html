@@ -909,8 +909,9 @@
       localStorage.setItem('jarvis_keys',arr.join('\n'));
       if(isOpen)addMsg('bot',arr.length?('Pronto, Senhor. '+arr.length+' chave'+(arr.length>1?'s':'')+' guardada'+(arr.length>1?'s':'')+' neste aparelho. Já posso operar em pleno vapor.'):'Chaves removidas deste aparelho, Senhor.');
     }
-    keyBtn.addEventListener('click',configureKeys);
-    if(SO_CLAUDE)keyBtn.style.display='none'; // chave do Gemini nao e usada neste modo
+    // No modo so Claude a chave do Gemini nao e usada: o botao vira "trocar a voz".
+    keyBtn.addEventListener('click',()=>SO_CLAUDE?trocarVoz():configureKeys());
+    if(SO_CLAUDE){keyBtn.title='Trocar a voz';keyBtn.setAttribute('aria-label','Trocar a voz do Jarvis');keyBtn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg>';}
 
     function addMsg(cls,text){const d=document.createElement('div');d.className='j-msg '+cls;d.textContent=text;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d;}
 
@@ -1166,11 +1167,28 @@ ${SO_CLAUDE?'MODO ATUAL: so texto e sem internet. NAO use web_search: se pedirem
       return chunks.filter(Boolean);
     }
     // Voz do proprio aparelho (pt-BR), sem rede: usada no modo so Claude.
+    // O dono escolhe a voz entre as vozes em portugues instaladas no aparelho (botao
+    // de ondas no cabecalho); sem escolha, o iOS usa a padrao do idioma. Tom mais
+    // grave para lembrar o Jarvis.
+    const VOZ_KEY='jarvis_voz_nome',VOZ_TOM=0.85;
+    function vozesPt(){try{return window.speechSynthesis.getVoices().filter(v=>/^pt/i.test(v.lang));}catch(_){return[];}}
+    function vozEscolhida(){let n='';try{n=localStorage.getItem(VOZ_KEY)||'';}catch(_){}return n?(vozesPt().find(v=>v.name===n)||null):null;}
     function speakNative(t){
       if(!('speechSynthesis'in window))return;
-      const u=new SpeechSynthesisUtterance(t);u.lang='pt-BR'; // sem escolher voz: o iOS usa a padrao do idioma
+      const u=new SpeechSynthesisUtterance(t);u.lang='pt-BR';u.pitch=VOZ_TOM;
+      const v=vozEscolhida();if(v){u.voice=v;u.lang=v.lang;}
       u.onstart=animOn;u.onend=animOff;u.onerror=animOff;
       window.speechSynthesis.speak(u);
+    }
+    function trocarVoz(){
+      if(!('speechSynthesis'in window)){addMsg('action','Este aparelho nao tem voz sintetizada.');return;}
+      const vs=vozesPt();
+      if(!vs.length){addMsg('action','Nenhuma voz em portugues instalada. No iPhone: Ajustes > Acessibilidade > Conteudo Falado > Vozes > Portugues.');return;}
+      let atual='';try{atual=localStorage.getItem(VOZ_KEY)||'';}catch(_){}
+      const i=(vs.findIndex(v=>v.name===atual)+1)%vs.length,v=vs[i];
+      try{localStorage.setItem(VOZ_KEY,v.name);}catch(_){}
+      addMsg('action','Voz '+(i+1)+' de '+vs.length+': '+v.name+' (toque de novo para a proxima)');
+      stopSpeech();speakNative('As suas ordens, Senhor.'); // amostra mesmo com a voz desligada: foi um toque do usuario
     }
     async function speak(text,prefetch){
       if(!voiceOn)return;
