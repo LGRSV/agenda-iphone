@@ -400,7 +400,7 @@
     style.id = STYLE_ID;
     style.textContent = `
       .tr-open{position:relative;margin-left:auto;display:inline-flex;align-items:center;gap:5px;min-height:28px;padding:4px 11px;border:1px solid var(--accent);border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);font-size:11px;font-weight:800;line-height:1;transition:transform .13s ease}
-      .tr-open::before{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}
+      .tr-open::before{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}
       .tr-open:active{transform:scale(.94)}
       #${DIALOG_ID},#cardioDiaDialog{width:min(calc(100% - 24px),520px);max-height:calc(100dvh - 24px);padding:0;border:1px solid var(--line);border-radius:24px;background:var(--bg);color:var(--text);box-shadow:0 30px 90px rgba(0,0,0,.56)}
       #${DIALOG_ID}::backdrop,#cardioDiaDialog::backdrop{background:rgba(0,0,0,.6);backdrop-filter:blur(4px)}

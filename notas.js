@@ -58,7 +58,7 @@
     s.id = STYLE_ID;
     s.textContent = `
       .notas-toggle{position:relative;margin-left:auto;display:inline-flex;min-height:28px;align-items:center;gap:5px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);font-size:11px;font-weight:800;line-height:1;transition:transform .13s ease}
-      .notas-toggle::before{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}
+      .notas-toggle::before{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}
       .notas-toggle:active{transform:scale(.94)}
       .notas-toggle.has{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
       .notas-panel{grid-column:1/-1;margin-top:10px;padding:12px 13px;border:1px solid var(--line);border-radius:14px;background:var(--soft)}

@@ -211,3 +211,107 @@ Arquivos em `/tmp/claude-0/-home-user-agenda-iphone/3207d749-cbff-51f4-a8a2-534b
 - iPhone 13: `rodada2/aux-equipamentos-especiais-iphone13.png`.
 - As outras 11 páginas também foram capturadas de novo em `rodada2/aux-<pagina>[-iphone13].png`.
 - Não sobrescrevi `depois/aux-equipamentos-especiais*.png`. Elas continuam mostrando o estado da rodada 1, com o defeito.
+
+---
+
+## Rodada 3 (R1 e R4 da revisão final, versão do treino)
+
+Feito em 17/10/2026, sobre o HEAD `0f7e5b2`, conforme `briefings/F4-rodada3.md`. Não fiz commit, stash nem checkout.
+Arquivos de trabalho em `/tmp/claude-0/-home-user-agenda-iphone/3207d749-cbff-51f4-a8a2-534b7b3c7cb3/scratchpad/layout/f4/rodada3/`
+(abaixo, `rodada3/`).
+
+### O que mudou (6 trocas exatas, por `rodada3/edicoes-r3.py`)
+O script confere, antes de trocar, que cada `old` aparece 1 vez e cada `new` 0 vez.
+1. **R1** `financeiro.html` (linha 2): `.sa-foot button::before{…top:-8px;bottom:-8px}` → `…top:-9px;bottom:-9px}`.
+   O `.iv-foot button::before` (borda 0) continua em `-8px`.
+2. **R1** `investimentos.html`: `.editbtn::before{…top:-8px;bottom:-8px}` → `…top:-9px;bottom:-9px}`.
+3. **R4** `equipamentos-especiais.html:61`: `.toolbar button{…color:#fff;padding:9px 12px;` → `…color:#fff;min-height:44px;padding:9px 12px;`.
+4. **R4** `equipamentos-especiais.html:66`: `.catbar button{flex:1;min-width:132px;border:none;…` → `…min-width:132px;min-height:44px;border:none;…`.
+5. **R4** `financeiro.html`, no fim do `<style>` da linha 2 (logo depois do véu, antes do `</style>`):
+   `#pluxeeEdit{position:relative;min-height:28px}#pluxeeEdit::before{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}`.
+   - Borda conferida: o `#pluxeeEdit` recebe `border:1px solid #15233d66!important` de `.pluxee-foot button` (`finance-pluxee.js:180`).
+     Computado: `border-top/bottom-width` 1px/1px nos dois perfis. Por isso ficou `-9px`, como pedido.
+6. `treino.html:14`: `treino.js?v=13` → `treino.js?v=14`.
+
+`git diff --word-diff` nos 4 arquivos mostra só isso: 2× `+min-height:44px;`, 2× `-8px` → `-9px` (top e bottom) em 2 regras,
+o bloco `#pluxeeEdit` acrescentado e `?v=13` → `?v=14`.
+
+### Critério 1 — contagens (`grep -c`, por script)
+| arquivo | texto | esperado | medido |
+|---|---|---|---|
+| financeiro | `.sa-foot button::before{…top:-8px;bottom:-8px}` | 0 | 0 |
+| financeiro | `.sa-foot button::before{…top:-9px;bottom:-9px}` | 1 | 1 |
+| financeiro | `.iv-foot button::before{…top:-8px;bottom:-8px}` (fica) | 1 | 1 |
+| financeiro | `#pluxeeEdit{position:relative;min-height:28px}#pluxeeEdit::before{…top:-9px;bottom:-9px}` | 1 | 1 |
+| investimentos | `.editbtn::before{…-8px…}` / `{…-9px…}` | 0 / 1 | 0 / 1 |
+| equipamentos | `.toolbar button{…color:#fff;padding:9px 12px;` / com `min-height:44px;` | 0 / 1 | 0 / 1 |
+| equipamentos | `.catbar button{flex:1;min-width:132px;border:none;…` / com `min-height:44px;` | 0 / 1 | 0 / 1 |
+| treino.html | `treino.js?v=13` / `?v=14` / `?v=10` | 0 / 1 / 0 | 0 / 1 / 0 |
+
+### Critério 2 — zona de toque (varredura de `elementFromPoint` a 0,25 px)
+Script `rodada3/zona-r3.cjs` (saídas `zona-r3.txt` e `zona-r3.json`). Para cada botão: rola até o centro e varre `y` no `x` do centro,
+de topo − 40 a fundo + 40, a cada 0,25 px e também a cada 1/64 px. Mede as duas versões no mesmo processo: **r2** = HEAD, servido por
+interceptação, e **r3** = disco. Para calibrar, varre também uma caixa de referência com exatamente 44,00 px (`h + 16`), posta 8 px acima
+do topo do botão, no mesmo `x`.
+"Vão" = última amostra que acerta − primeira.
+
+| botão (borda) | ::before | vão 0,25 r2 → r3 | ref. 44,00 no mesmo lugar (0,25) | vão 1/64 r3 = ref.? | zona corrigida r2 → r3 |
+|---|---|---|---|---|---|
+| `.sa-foot button` (1 px) | −8 → −9 | 42,5 → **44,5** | 44,5 | 44,97 = 44,97 | 42 → **44** |
+| `.editbtn` ×4 (1 px) | −8 → −9 | 42,5 → **44,5** | 44,5 | 44,97 = 44,97 | 42 → **44** |
+| `#pluxeeEdit` (1 px) | nenhum → −9 (h 25 → 28) | 25,75 → **44,75** | 44,5 | 44,97 = 44,97 | 25 → **44** |
+| `.iv-foot button` ×2 (0 px, controle, sem mudança) | −8 | 44,75 → 44,75 | 44,5 | 44,97 = 44,97 | 44 → 44 |
+
+Os números são iguais nos dois perfis (17 Pro Max e 13). Em todos os casos as amostras que acertam são contíguas e o centro acerta o botão.
+"Zona corrigida" = vão 1/64 do botão − (vão 1/64 da referência − 44).
+
+**Ressalva de método (o `#pluxeeEdit` dá 44,75 na varredura crua de 0,25):**
+- Na varredura crua de 0,25, `.sa-foot` e `.editbtn` dão 44,5, dentro de 44 ± 0,5. O `#pluxeeEdit` dá **44,75**, 0,25 acima da tolerância.
+- Isso é artefato de medição, não zona maior. As provas:
+  - Na varredura de 1/64, o vão do `#pluxeeEdit` é 44,97, idêntico ao da caixa de referência de 44,00 px no mesmo lugar.
+  - O controle `.iv-foot button` (borda 0, `-8px`, que a revisão final já dá como 44) dá os mesmos 44,75 na mesma posição.
+- A causa, medida em `rodada3/diag-pluxee.cjs`:
+  - O hit test de ponto do Chromium soma ~1 px a qualquer varredura: 44,00 vira 44,97 a 1/64.
+  - Dentro do `.pager` (rolagem horizontal), a faixa que acerta fica deslocada 0,41 px em relação à referência `fixed` (455,02 contra 454,61).
+  - Com a grade de 0,25 ancorada no topo fracionário (463,59), esse deslocamento faz cair uma amostra a mais.
+- A geometria é a mesma do `.sa-foot` (borda 1 + `-9px` = topo − 8 a fundo + 8 = 44). Não mudei nada além do pedido.
+- O valor r2 de 42,5 bate com o que a devolução cita para o R1, então o método é o mesmo.
+
+### Critério 3 — `equipamentos-especiais` (`rodada3/sonda-equip-r3.cjs`, r2 = HEAD × r3 = disco, mesmo processo)
+| | 17 Pro Max r2 → r3 | iPhone 13 r2 → r3 |
+|---|---|---|
+| `.toolbar button` ×5 | 130,7×48 (3), 200×**34** (2) → 130,7×48 (3), 200×**44** (2) | 175×34 (4), 358×34 → 175×**44** (4), 358×**44** |
+| `button.prim` ×2 | 130,7×48, 200×34 → 130,7×48, 200×**44** | 175×34 (2) → 175×**44** (2) |
+| `.catbar button` ×5 | 132×50 (3), 201×**36** (2) → 132×50 (3), 201×**44** (2) | 176×50 (2), 176×36 (2), 358×36 → 176×50 (2), 176×**44** (2), 358×**44** |
+| `.cb-analise` | 201×36 → 201×**44** | 176×36 → 176×**44** |
+| `.cb-ncon` | 201×36 → 201×**44** | 358×36 → 358×**44** |
+| extra: `.cb-execucao`, `button.obr` | 132×50 e 130,7×48 (iguais) | 176×36 → 176×44; 175×34 → 175×44 |
+| texto dos botões acima (desvio vertical, Range) | — | 0,0 em todos, nos dois perfis |
+| `scrollWidth` | 440 → 440 | 390 → 390 |
+| `.chip` ×13 | texto, largura (66,3–144,2) e altura 44 iguais à r2; desvio máximo 0,5 px (Range e `<b>`) | idem |
+| `.catbar` / `.toolbar` (altura) | 92 → 100 / 90 → 100; `scrollHeight` 1409 → 1427 | 134 → 150 / 118 → 148; 1476 → 1522 |
+
+Não houve erros de JavaScript. Capturas: `rodada3/equip-catbar-toolbar.png` e `equip-catbar-toolbar-iphone13.png` (as duas barras
+com 44), além de `rodada3/aux-equipamentos-especiais[-iphone13].png`.
+
+### Critério 4 — itens 6 e 7 da seção 6
+- Rodei de novo o `medir-f4.cjs` nas 12 páginas e nos 2 perfis (`rodada3/depois-r3.json`, `medir-r3.txt`, capturas em `rodada3/capturas/`).
+- **Os itens 6 e 7 batem em 24 de 24 registros:**
+  - `scrollWidth` 440/390;
+  - cabeçalho fora da ilha (`conteudoTop` 80/65; equipamentos 144/129; treino 76/61);
+  - 0 interativos sob a ilha e 0 fixos sob o indicador;
+  - todos os alvos esperados ok e todos os nível B ok;
+  - `#app-update` com folga 10;
+  - véu ok nas 11 páginas com véu (h 62px/47px, z 60, cor esperada);
+  - `transbordando` vazio e 0 erros de JS.
+- A comparação campo a campo com `rodada2/depois-r2.json` (`rodada3/comparar-r2-r3.py`) dá 24 diferenças, todas as esperadas:
+  - `before.top/bottom` de `-8px` para `-9px`: `.sa-foot button` (1) e `.editbtn` (4), nos dois perfis.
+  - `alvosPequenos` do financeiro: `#pluxeeEdit` h de 25 para 28, nos dois perfis.
+  - `alvosPequenos` de `equipamentos-especiais` agora vazio, nos dois perfis.
+    - Antes, no 17 Pro Max: `cb-analise`, `cb-ncon`, `button.prim` e `div.toolbar > button`.
+    - Antes, no 13: também `cb-execucao` e `button.obr`.
+
+### Critério 5 — arquivos
+- `git status --short` mostra os meus 4 arquivos: `equipamentos-especiais.html`, `financeiro.html`, `investimentos.html` e `treino.html`.
+- Também aparecem `index.html`, `notas.js`, `agenda-sharing.js` e `treino.js`. Esses são da F3, em paralelo, e eu não mexi neles.
+- Neste relatório só acrescentei esta seção.

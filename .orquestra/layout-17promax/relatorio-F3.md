@@ -382,3 +382,129 @@ Não fiz commit, stash nem checkout.
 
 1. **`.tr-open`:** resolvido (17/17 dos dois lados, nos dois perfis).
 2. **18b:** continua como na rodada 1 (`old`=1 por construção).
+
+## Rodada 3 (devolução consolidada: R2, R3, P2 e R1)
+
+Data: 17/10/2026. Briefing: `briefings/F3-rodada3.md`. Base: HEAD `0f7e5b2`. Apliquei os 10 trechos old → new do
+briefing. Não mudei mais nada. Não fiz commit, stash nem checkout.
+
+Scripts e saídas desta rodada ficam em `scratchpad/f3/r3/`:
+- `trechos-r3.cjs`: lista old→new, contagem e aplicação (`node trechos-r3.cjs aplicar`);
+- `medir-r3.cjs <rótulo>`: mede os critérios 2, 3 e 4 (paisagem, painel e diálogos no retrato, varredura de zona e
+  pares sobrepostos). Rodei antes de aplicar (`r3-antes.json`) e depois (`r3-depois.json`);
+- `../medir-f3-r3.cjs` + `../cmp-r3.cjs`: a medição completa das rodadas 1 e 2, comparada com a rodada 2
+  (`medicoes-f3-r3.json`);
+- `../e2e/r3/`: logs das suítes.
+
+Capturas desta rodada: `scratchpad/layout/rodada3/` (antes/depois de paisagem-jarvis, paisagem-nova-tarefa,
+jarvis e lista nos dois perfis). As de `layout/depois/` foram regravadas, e as da rodada 2 estão guardadas em
+`layout/depois-rodada2/`.
+
+### Critério 1: trechos e versões (`node trechos-r3.cjs`)
+
+| id | arquivo:linha | old | new |
+|---|---|---|---|
+| R2a `#jarvis-panel` `max-height:min(72dvh,calc(100dvh - 90px - env(bottom) - env(top)))` | index.html:801 | 0 | 1 |
+| R2b `#jarvis-msgs` `min-height:min(120px,15dvh)` | index.html:811 | 0 | 1 |
+| R3 `dialog` `max-height:calc(100dvh - 32px - env(top) - env(bottom))` | index.html:21 | 0 | 1 |
+| P2 `.task-footer{…gap:6px…}.task-footer:has(.tr-open){row-gap:16px}` | index.html:21 | 0 | 1 |
+| R1 `.notas-toggle::before{…top:-9px;bottom:-9px}` | notas.js:61 | 0 | 1 |
+| R1 `.agenda-share::before{…top:-9px;bottom:-9px}` | agenda-sharing.js:40 | 0 | 1 |
+| R1 `.tr-open::before{…top:-9px;bottom:-9px}` | treino.js:403 | 0 | 1 |
+| `notas.js?v=10` → `?v=11` | index.html:1842 | 0 | 1 |
+| `agenda-sharing.js?v=5` → `?v=6` | index.html:1852 | 0 | 1 |
+| `treino.js?v=13` → `?v=14` | index.html:1839 | 0 | 1 |
+
+O `.list-previous::before` continua em `-8px` (`grep -c` = 1). O `treino.html` (da F4) já mostra `treino.js?v=14`.
+
+### Critério 2: paisagem 956×440, insets 20/20/62/62 (`env` medido 20/62/20/62, método cdp)
+
+| medida | antes | depois | critério | OK |
+|---|---|---|---|---|
+| `#jarvis-panel` top..bottom (h) | 13,2..330 (316,8) | **20..330** (310) | top ≥ 20, bottom ≤ 420 | sim |
+| `#jarvis-mic` / `#jarvis-input` / `#jarvis-send` | 308,2..352,2 (22,2 px fora do painel) | **261..305**, x 75..119 / 127..397 / 405..449, dentro do painel 62..462 | inteiros no painel | sim |
+| centro dos 3 acerta o próprio elemento (`elementFromPoint`) | não | sim | — | sim |
+| `#jarvis-msgs` h | 120 | 66 | — | — |
+| `#taskDialog` top..bottom (w×h) | 16..424 (480×408) | **36..404** (480×368) | top ≥ 20, bottom ≤ 420 | sim |
+
+Captura: `layout/rodada3/depois-paisagem-jarvis.png`. Conferi a olho: a linha microfone/campo/enviar aparece
+inteira, e o painel fica abaixo da faixa de 20 px.
+
+### Critério 3: retrato, painel e diálogos (antes = depois, valores em `r3-antes.json` e `r3-depois.json`)
+
+| | 17PM | 13 |
+|---|---|---|
+| `#jarvis-panel` | 416×477,11 (354,89..832); msgs 213,11; mic 743..787 | 366×506,34 (213,66..720); msgs 232,34; mic 631..675 |
+| `#taskDialog` | 408×583,8 (186,09..769,89) | 358×583,8 (130,09..713,89) |
+| `#voz-dialog` | 408×722,66 | 358×725,83 |
+| `#alertsDialog` | 408×603,97 | 358×641,66 |
+| `#rescheduleDialog` | 400×293,8 | 358×293,8 |
+
+Os números são idênticos antes e depois, nos dois perfis. `page.__erros` ficou vazio.
+
+### Critério 4: zona de toque do nível B e sobreposição
+
+Método: varredura de `elementFromPoint` a cada 0,25 px a partir das bordas, no centro horizontal. Cada ocorrência
+foi rolada para o meio da tela. A zona é a distância entre o último ponto acima e o último ponto abaixo que
+devolvem o próprio botão. Os valores são iguais nos dois perfis.
+
+| alvo (ocorrências: dia/lista/atrasadas/sequência) | antes | depois | 44 ± 0,5 |
+|---|---|---|---|
+| `.notas-toggle` (8/52/24/8) | 42,5 em todas (−7,75..+6,75) | **44,5** em todas (−8,75..+7,75) | 92/92 |
+| `.agenda-share` (8/60/24/8) | 42,5 em todas | **44,5** em todas | 100/100 |
+| `.tr-open` (lista, 17) | 42,5 em todas | **44,5** ×8 (cardio), **43,75** ×9 (treino) | 17/17 |
+| `.list-previous` (sem borda, não mudou) | 44,5 | 44,5 | — |
+
+- **Por que 44,5 e não 44.** A borda de cima medida passa 0,75 px do valor geométrico, e a de baixo fica 0,25 px
+  antes. Isso acontece igual no `.list-previous`, que não mudou: geometria de 44 e medida de 44,5. Pelo estilo
+  calculado, a zona vale 28 − 2 + 2×9 = 44.
+- **Por que 43,75 nos 9 cartões de treino.** Embaixo do `.tr-open` fica o `.agenda-share` da linha seguinte, a
+  16 px. As duas zonas se encostam (+8 de um e −8 do outro), sem sobrepor. O ponto da fronteira fica com o
+  `.agenda-share`.
+- **Sobreposição na Lista.** São 60 cartões e 249 interativos (`.check`, `.task-reschedule` e as pílulas). A zona de
+  cada um é a caixa da borda unida ao `::before` absoluto. Resultado: **0 pares sobrepostos** no 17PM e no 13,
+  antes e depois.
+- **Efeito do P2 na Lista.** A altura média do cartão foi de 119,09 para **113,42** no 17PM e de 135,72 para
+  **128,56** no 13. O `scrollHeight` foi de 8696 para **8356** e de 9708 para **9278**. Os números são os mesmos
+  que a C2 previu.
+
+### Regressão no retrato (`medir-f3-r3.cjs` + `cmp-r3.cjs` contra a rodada 2)
+
+Itens 1, 2, 4, 7 e 9, `alvosPequenos`, as folgas, os diálogos Reagendar e Alertas, os alvos de nível A e o teste
+±6 px do nível B continuam idênticos aos da rodada 2, nos dois perfis. Detalhe:
+- `scrollWidth` 440/390, 0 sob a ilha, folgas 10/12/62/125;
+- 1ª célula do Mês em 598,2/611,9, toast em 738/626;
+- véu de 62/47, com 7/7 e 3/3 interativos cobertos;
+- nível B ±6: tudo passa (`.tr-open` 17/17 dos dois lados).
+
+A única diferença é a altura do `.task-main` nos cartões cujo rodapé quebra linha sem `.tr-open`: −10 px. Na vista
+dia do 17PM, por exemplo, 107,6/98,3/136,9 → 97,6/88,3/126,9. A largura não muda (296/246). É o efeito pedido pelo P2.
+
+### Critério 5: suítes E2E e teste de unidade (logs em `scratchpad/f3/e2e/r3/`)
+
+| Suíte | ok | FALHOU | rc |
+|---|---|---|---|
+| e2e-so-claude | 10 | 0 | 0 |
+| e2e-voz-saida | 6 | 0 | 0 |
+| e2e-voz | 6 | 0 | 0 |
+| e2e-gasto | 4 | 0 | 0 |
+| e2e-multi | 4 | 0 | 0 |
+| e2e-atualiza | 7 | 0 | 0 |
+| e2e-lista | 7 | 0 | 0 |
+| e2e-ouvindo | 1 | 0 | 0 |
+| e2e-vozes-app | 8 | 0 | 0 |
+| `tests/jarvis-claude.test.mjs` | pass 1 | fail 0 | 0 |
+
+### Critério 6: arquivos
+
+`git diff --numstat` nos meus arquivos: `index.html` 6+/6−, `notas.js` 1+/1−, `agenda-sharing.js` 1+/1−,
+`treino.js` 1+/1−.
+
+O `git status --short` também lista `equipamentos-especiais.html`, `financeiro.html`, `investimentos.html` e
+`treino.html`. Esses são da F4, que trabalha ao mesmo tempo, e não mexi neles.
+
+### Pendências
+
+- O 18b das rodadas anteriores continua como estava.
+- Não testei no WebKit nem no aparelho, só no Chromium 141. O `:has()` do P2 e o `dvh` no `min()` ainda precisam
+  ser conferidos num iPhone real.
