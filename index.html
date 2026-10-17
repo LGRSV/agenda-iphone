@@ -324,7 +324,7 @@
       const btn=document.getElementById('app-update');
       try{if(btn){btn.classList.add('spin');btn.disabled=true;}}catch(_){}
       try{if(typeof showToast==='function')showToast('Buscando atualização…');}catch(_){}
-      try{if('caches'in window){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));}}catch(_){}
+      try{if('caches'in window){const ks=await caches.keys();await Promise.all(ks.filter(k=>k!=='jarvis-vozes-v1').map(k=>caches.delete(k)));}}catch(_){} // vozes baixadas do Jarvis ficam
       try{if('serviceWorker'in navigator){const r=await navigator.serviceWorker.getRegistration();if(r&&r.update)await r.update();}}catch(_){}
       try{sessionStorage.removeItem('sw_reloaded');}catch(_){}
       setTimeout(()=>{try{location.reload();}catch(_){location.href=location.href;}},250);
@@ -936,8 +936,8 @@
       if(isOpen)addMsg('bot',arr.length?('Pronto, Senhor. '+arr.length+' chave'+(arr.length>1?'s':'')+' guardada'+(arr.length>1?'s':'')+' neste aparelho. Já posso operar em pleno vapor.'):'Chaves removidas deste aparelho, Senhor.');
     }
     // No modo so Claude a chave do Gemini nao e usada: o botao vira "trocar a voz".
-    keyBtn.addEventListener('click',()=>SO_CLAUDE?trocarVoz():configureKeys());
-    if(SO_CLAUDE){keyBtn.title='Trocar a voz';keyBtn.setAttribute('aria-label','Trocar a voz do Jarvis');keyBtn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg>';}
+    keyBtn.addEventListener('click',()=>SO_CLAUDE?abrirVozes():configureKeys());
+    if(SO_CLAUDE){keyBtn.title='Escolher a voz';keyBtn.setAttribute('aria-label','Escolher a voz do Jarvis');keyBtn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg>';}
 
     function addMsg(cls,text){const d=document.createElement('div');d.className='j-msg '+cls;d.textContent=text;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d;}
 
@@ -949,7 +949,7 @@
       // Ao abrir: puxa o mais recente do Supabase para o Jarvis nunca responder
       // com uma copia velha das tarefas (o evento agenda:remote-sync recarrega
       // o AgendaAPI assim que o pull chega).
-      if(isOpen&&SO_CLAUDE)atualizarUso();
+      if(isOpen&&SO_CLAUDE){atualizarUso();try{window.JarvisVozes&&window.JarvisVozes.aquecer();}catch(_){}}
       if(isOpen){try{const S=window.SupabaseAgenda;if(S&&S.getUser&&S.getUser()&&(S.pullAll||S.syncNow))(S.pullAll||S.syncNow)();}catch(_){}}
       if(isOpen&&!voiceOn)statusEl.textContent='VOZ DESLIGADA · TOQUE NO ALTO-FALANTE ACIMA';
       if(isOpen&&!msgs.children.length){
@@ -1219,13 +1219,66 @@ ${SO_CLAUDE?'MODO ATUAL: so texto e sem internet. NAO use web_search: se pedirem
       addMsg('action','Voz '+(i+1)+' de '+vs.length+': '+v.name+' (toque de novo para a proxima)');
       stopSpeech();speakNative('As suas ordens, Senhor.'); // amostra mesmo com a voz desligada: foi um toque do usuario
     }
+    // ---- Vozes neurais (vozes-neurais.js + vozes-worker.js): geradas no aparelho ----
+    function abrirVozes(){
+      if(!window.JarvisVozes){trocarVoz();return;}
+      window.JarvisVozes.abrir({amostra:id=>{unlockTTS();stopSpeech();return falarNeural(id,'As suas ordens, Senhor. Esta e a voz '+window.JarvisVozes.nome(id)+'.',speakGen);},vozAparelho:trocarVoz});
+    }
+    // Texto falado: valores, horas e abreviacoes do jeito que se fala.
+    function textoFalado(t){
+      return t.replace(/R\$\s?(\d[\d.]*)(?:,(\d{2}))?/g,(m,r,c)=>r+' reais'+(c&&c!=='00'?' e '+c+' centavos':''))
+        .replace(/\b(\d{1,2})h(\d{2})\b/g,'$1 e $2').replace(/\b(\d{1,2})h\b/g,'$1 horas')
+        .replace(/\bDra\.\s/g,'Doutora ').replace(/\bDr\.\s/g,'Doutor ').replace(/\bSr\.\s/g,'Senhor ').replace(/\bSra\.\s/g,'Senhora ')
+        .replace(/https?:\/\/\S+/g,'o link').replace(/\s+/g,' ').trim();
+    }
+    // Trechos por frase: o 1o curto (a fala comeca logo); os seguintes sao gerados
+    // enquanto o anterior toca. Limite por trecho para o modelo (Kokoro: 510 sons).
+    function trechosFala(t){
+      const fr=t.replace(/([.!?\u2026;])\s+/g,'$1\n').split('\n').map(f=>f+' '),out=[];let cur=''; // ponto de numero (1.200) nao corta
+      const corta=x=>{while(x.length>280){let i=x.lastIndexOf(',',280);if(i<80)i=x.lastIndexOf(' ',280);if(i<80)i=280;out.push(x.slice(0,i+1).trim());x=x.slice(i+1);}return x;};
+      for(const f of fr){const lim=out.length?240:60;if(cur&&(cur+f).length>lim){out.push(cur.trim());cur='';}cur=corta(cur+f);}
+      if(cur.trim())out.push(cur.trim());
+      return out.filter(x=>/[\p{L}\p{N}]/u.test(x));
+    }
+    async function wavNeural(id,texto){
+      const {pcm,sr}=await window.JarvisVozes.gerar(id,texto);
+      const OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+      let buf;try{buf=new AudioBuffer({numberOfChannels:1,length:pcm.length,sampleRate:sr});}catch(_){buf=new OAC(1,pcm.length,sr).createBuffer(1,pcm.length,sr);}
+      let pico=0;for(let i=0;i<pcm.length;i++){const a=Math.abs(pcm[i]);if(a>pico)pico=a;}
+      const ganho=pico>0?Math.min(4,0.9/pico):1; // vozes baixas (Edresson) no mesmo volume das outras
+      const ch=buf.getChannelData(0);for(let i=0;i<pcm.length;i++)ch[i]=pcm[i]*ganho;
+      let wav;try{wav=await renderJarvis(buf);}catch(_){wav=bufToWav(buf);} // timbre do Jarvis; se falhar, a voz pura
+      return URL.createObjectURL(wav);
+    }
+    async function falarNeural(id,t,gen){
+      const partes=trechosFala(textoFalado(t));
+      if(!partes.length)return;
+      statusEl.textContent='GERANDO VOZ\u2026';
+      const pede=i=>{const p=wavNeural(id,partes[i]);p.catch(()=>{});return p;};
+      let prox=pede(0);
+      for(let i=0;i<partes.length;i++){
+        let url;
+        try{url=await prox;}
+        catch(_){ // a voz neural falhou (memoria, arquivo): o resto vai na voz do aparelho
+          if(gen!==speakGen)return;
+          animOff();speakNative(partes.slice(i).join(' '));return;
+        }
+        if(gen!==speakGen){URL.revokeObjectURL(url);return;}
+        prox=i+1<partes.length?pede(i+1):null;
+        const ok=await playUrl(url);
+        if(gen!==speakGen)return;
+        if(!ok&&i===0){speakNative(partes.join(' '));return;} // o iPhone nao deixou tocar: voz do aparelho
+        if(i+1<partes.length)statusEl.textContent='GERANDO VOZ\u2026'; // o proximo trecho pode ainda estar sendo gerado
+      }
+      animOff();
+    }
     async function speak(text,prefetch){
       if(!voiceOn)return;
       stopSpeech();
       const gen=speakGen;
       let t=stripForSpeech(text).trim();
       if(!t)return;
-      if(SO_CLAUDE){speakNative(t);return;}
+      if(SO_CLAUDE){const vz=window.JarvisVozes,vid=vz&&vz.escolhida();if(vid&&vid!=='aparelho'){falarNeural(vid,t,gen);return;}speakNative(t);return;}
       statusEl.textContent='GERANDO VOZ\u2026';
       // VOZ UNICA: somente o Charon (Gemini) com o timbre Jarvis. Sem camadas
       // reservas com outras vozes — se um trecho falhar, tentamos DE NOVO o
@@ -1793,5 +1846,6 @@ ${SO_CLAUDE?'MODO ATUAL: so texto e sem internet. NAO use web_search: se pedirem
   <script src="./mesada-sync.js?v=1" defer></script>
   <script src="./lembrete-persistente.js?v=1" defer></script>
   <script src="./localizacao.js?v=1" defer></script>
+  <script src="./vozes-neurais.js?v=1" defer></script>
 </body>
 </html>

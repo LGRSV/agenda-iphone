@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v244-varias-acoes';
+const CACHE = 'agenda-lagares-v245-vozes-neurais';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=13" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -36,7 +36,8 @@ self.addEventListener('install', () => { self.skipWaiting(); });
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const names = await caches.keys();
-    await Promise.all(names.filter(name => name !== CACHE).map(name => caches.delete(name)));
+    // 'jarvis-vozes-v1' guarda as vozes baixadas do Jarvis (60 a 90 MB cada): nunca apagar aqui.
+    await Promise.all(names.filter(name => name !== CACHE && name !== 'jarvis-vozes-v1').map(name => caches.delete(name)));
     await self.clients.claim();
   })());
 });
