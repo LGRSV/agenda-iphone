@@ -97,3 +97,7 @@ O cérebro é o Fable: escreve a especificação e faz a revisão final adversar
 | F5 verificação | workflow (opus) | despachada | — |
 | F5 verificação | rodada 1 | aprovado (entrega do verificador) | 384 linhas, todos os ids S6.1–S6.10 e P1–P6 com medida; maestro reproduziu a regressão de paisagem do Jarvis (painel até 330, linha de entrada 308–352). Falhas vão para a C2 e depois para a rodada 3 consolidada |
 | C2 revisão final | workflow (fable) | despachada | — |
+| C2 revisão final | rodada 1 (claude-fable-5-1) | reprovado → rodada 3 consolidada | R2 bloqueante (paisagem Jarvis), R1 (zona 42,5 — maestro confirmou: 42,5 medido), R3, R4, R5/R6 (lacunas do teste), R7 (sw.js, maestro); 16/16 mutantes pegos; validação cruzada 5 tamanhos sem divergência. Decisões do maestro: aplicar R1, R2, R3, R4, P2, R5, R6, R7; aceitar B1, P3 (opcional, não aplicado), R8, R9 como fora do escopo |
+| F3 | rodada 3 | despachada | — |
+| F4 | rodada 3 | despachada | — |
+| F5 | rodada 2 | aguarda F3/F4 r3 | — |
