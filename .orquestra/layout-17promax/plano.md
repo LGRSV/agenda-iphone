@@ -95,3 +95,5 @@ O cérebro é o Fable: escreve a especificação e faz a revisão final adversar
 | F3 app principal | rodada 2 | aprovado | maestro: `.task-footer` gap 16px 6px aplicado (old 0 / new 1). Efeito colateral medido pela F3: o rodapé quebra em quase todos os cartões (51/60 no 17PM, 60/60 no 13), então quase todos ficam +10 px. Vai para a C2 decidir |
 | F4 páginas auxiliares | rodada 2 | aprovado | maestro: 13 chips do equipamentos com desvio 0,0 px e h 44 nos dois perfis; sw 440/390 |
 | F5 verificação | workflow (opus) | despachada | — |
+| F5 verificação | rodada 1 | aprovado (entrega do verificador) | 384 linhas, todos os ids S6.1–S6.10 e P1–P6 com medida; maestro reproduziu a regressão de paisagem do Jarvis (painel até 330, linha de entrada 308–352). Falhas vão para a C2 e depois para a rodada 3 consolidada |
+| C2 revisão final | workflow (fable) | despachada | — |

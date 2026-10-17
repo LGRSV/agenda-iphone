@@ -86,6 +86,15 @@ depois.
 3. **Orçamento vertical:** o topo cresceu 22 px nos dois aparelhos (abas, filtros e modo sequencial
    em 44). Vale no iPhone 13?
 
+4. **Falhas que a verificação (F5) achou**, em `verificacao.md` seção c. O maestro reproduziu a
+   segunda com medição própria.
+   - **Paisagem, painel do Jarvis invadindo o topo:** `top` 13,2 < 20. Já acontecia antes.
+   - **Regressão desta missão:** em paisagem, a linha microfone/campo/enviar do Jarvis fica cortada
+     22 px (painel termina em 330, a linha ocupa 308–352).
+   - **Critério de grep do marketplace:** defeito do texto da especificação, não do app.
+   Para as duas primeiras, proponha a correção concreta (old → new) e meça antes e depois em paisagem e
+   nos dois perfis em retrato.
+
 ## Entregável
 `/home/user/agenda-iphone/.orquestra/layout-17promax/revisao-final.md` com:
 - (a) o veredito: **aprovado** ou **reprovado**, com a lista de defeitos que impedem;
