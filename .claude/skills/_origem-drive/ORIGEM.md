@@ -1,6 +1,6 @@
 # Origem das skills desta pasta
 
-Baixadas do Google Drive de joaoantonio.negocios@gmail.com em 16/10/2026 (conector
+Baixadas do Google Drive do dono deste repositório em 16/10/2026 (conector
 do Drive, `download_file_content`), sem nenhuma alteração de conteúdo. Cada arquivo
 abaixo confere byte a byte com o `fileSize` que o Drive informa e tem o md5 listado.
 
