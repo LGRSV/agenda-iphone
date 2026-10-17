@@ -18,7 +18,7 @@
       #seqTimerBtn{position:relative}
       #seqTimerBtn svg{width:20px;height:20px}
       #seqTimerBtn.seq-active{color:var(--accent);border-color:var(--accent)}
-      .seq-entry-btn{display:flex;align-items:center;gap:8px;width:100%;margin:0 0 14px;padding:11px 14px;border:1px dashed var(--accent);border-radius:14px;background:color-mix(in srgb,var(--accent) 8%,var(--surface));color:var(--accent);font-size:12.5px;font-weight:800;transition:transform .14s ease}
+      .seq-entry-btn{display:flex;align-items:center;gap:8px;width:100%;margin:0 0 14px;min-height:44px;padding:0 14px;border:1px dashed var(--accent);border-radius:14px;background:color-mix(in srgb,var(--accent) 8%,var(--surface));color:var(--accent);font-size:12.5px;font-weight:800;transition:transform .14s ease}
       .seq-entry-btn svg{width:16px;height:16px;flex:0 0 auto}
       .seq-entry-btn:active{transform:scale(.98)}
       .seq-entry-btn[hidden]{display:none}
