@@ -105,3 +105,5 @@ O cérebro é o Fable: escreve a especificação e faz a revisão final adversar
 | F4 | rodada 3 | aprovado | maestro: trechos 1×; treino.js?v=14 no treino.html; arquivos alterados = os 4 previstos |
 | F5 | rodada 2 | aprovado (entrega do verificador) | teste pega M7 (transbordo recortado) e zona 42 (mutantes em cópias); 430/431; única falha pré-existente: `.filters` do financeiro com 518 px (Extrato inalcançável) → nova frente F6 (F4 já usou 3 rodadas) |
 | F6 financeiro filtros | workflow (opus) | despachada | flex-wrap:wrap medido pela F5 |
+| F6 financeiro filtros | rodada 1 | aprovado | trecho aplicado; incluso na execução final do maestro |
+| **Verificação final do maestro** | — | **431/431, rc 0** | `layout.cjs` rodado pelo maestro contra a entrega final: P1–P6, S6.1–S6.10, 9 suítes E2E e teste de unidade ok |
