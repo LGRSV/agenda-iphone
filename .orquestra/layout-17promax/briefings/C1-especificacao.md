@@ -60,11 +60,19 @@ que o verificador vai conferir.
 7. **Fora do escopo e riscos.** O que você decidiu NÃO mudar e por quê.
 
 ## Contratos com as outras frentes
-- Respeite a divisão de arquivos do plano:
-  - F3 só `index.html` e `vozes-neurais.js`;
-  - F4 só páginas auxiliares e os CSS/JS delas;
+- Divisão de arquivos atualizada no plano (seção "Contratos"):
+  - a F3 é dona de `index.html`, de `vozes-neurais.js` e do CSS injetado pelos scripts que o
+    `index.html` carrega;
+  - a F4 é dona das páginas auxiliares e dos CSS/JS que só elas carregam;
   - ninguém mexe em `sw.js`.
-- As vistas e os perfis usam os nomes do plano e do harness.
+  Atribua cada arquivo a exatamente uma frente. Se um arquivo for usado pelos dois lados (por exemplo,
+  `treino.js` na agenda e em `treino.html`), dê o arquivo à F3 e diga à F4 que não toque nele.
+- O critério 2 do plano foi ajustado: o indicador de início só vale para elementos fixos. Use a
+  versão atual.
+- O achado M10 (conteúdo rolando sob a ilha e o relógio com a status bar `black-translucent`) precisa
+  de decisão sua: resolver (com seletor e valor) ou justificar.
+- As vistas e os perfis usam os nomes do plano e do harness. A assinatura real do harness é
+  `abrirApp(browser, perfil, {sementes, caminho, metodo})`.
 
 ## Critérios de aceite
 1. O arquivo tem as 7 seções.

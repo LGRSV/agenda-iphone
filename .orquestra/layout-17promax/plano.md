@@ -13,9 +13,11 @@ Perfis de medição (valores definitivos vêm da frente F1; até lá são HIPÓT
 1. **Sem rolagem lateral** nos dois perfis: em Mês, Dia, Lista, Atrasadas e Sequência, no painel do
    Jarvis, no seletor de voz e no diálogo de nova tarefa, `document.documentElement.scrollWidth <=
    largura do viewport`. Conferido por script.
-2. **Nada clicável sob a Dynamic Island nem sob o indicador de início:** com rolagem 0, nenhum
-   elemento interativo visível tem `top < inset_top` nem `bottom > altura - inset_bottom`, nos dois
-   perfis. Conferido por script com a área segura emulada.
+2. **Nada clicável sob a Dynamic Island nem sob o indicador de início** (ajustado na rodada 1, a
+   partir do achado da F2): com rolagem 0, nenhum elemento interativo visível tem `top < inset_top`;
+   nenhum elemento interativo **fixo** (`position: fixed` ou `sticky`) tem
+   `bottom > altura - inset_bottom`, nos dois perfis. O conteúdo que rola pode passar pela dobra.
+   Conferido por script com a área segura emulada.
 3. **Alvos de toque ≥ 44×44 px** (HIG da Apple) no perfil 17 Pro Max: botão +, botão do Jarvis,
    setas de navegação, abas de visão, filtros, microfone e enviar do Jarvis, e botões do cabeçalho.
    Conferido por script (getBoundingClientRect).
@@ -67,8 +69,11 @@ O cérebro é o Fable: escreve a especificação e faz a revisão final adversar
   - `abrirApp(page, perfil)`;
   - `medir(page, perfil, vista)`, que devolve JSON;
   - `capturar(page, caminho)`.
-- **Arquivos:**
-  - F3 só mexe em `index.html` e `vozes-neurais.js`;
+- **Arquivos** (ajustado na rodada 1: a F2 mostrou CSS injetado por scripts da página principal):
+  - F3 mexe em `index.html`, `vozes-neurais.js` e no CSS que os scripts carregados pelo `index.html`
+    injetam (notas.js, agenda-sharing.js, sequencial.js, localizacao.js, header-cleanup.js,
+    agenda-notas-rapidas.js, treino.js na parte da agenda). Ao mudar um script, aumenta o `?v=` dele
+    no `index.html`;
   - F4 só nas páginas auxiliares e nos CSS/JS próprios delas;
   - ninguém mexe em `sw.js` (o maestro aumenta o CACHE) nem em `.orquestra/` fora da própria saída.
 - **Servidor local:** http://127.0.0.1:8765/ serve o diretório do repositório. As capturas ficam
@@ -80,3 +85,5 @@ O cérebro é o Fable: escreve a especificação e faz a revisão final adversar
 |---|---|---|---|
 | F1 pesquisa | workflow wf_182b1ed9-2a8 (opus) | 2026-10-17 08:27 | despachada |
 | F2 auditoria | workflow wf_182b1ed9-2a8 (opus) | 2026-10-17 08:27 | despachada |
+| F1 pesquisa | rodada 1 | aprovado | JSON válido; 440×956 e 62/34 conferidos pelo maestro na fonte primária (Use Your Loaf); bug WebKit 301994 conferido no Bugzilla |
+| F2 auditoria | rodada 1 | aprovado | harness exporta as 4 funções; emulação conferida pelo maestro com elemento próprio (62/34 e 47/34); 18+12 capturas; defeitos A1–A6, M1–M10, B1–B7 com seletor, medida e linha |
