@@ -1,7 +1,7 @@
 /* Regras puras da Edge Function jarvis-claude (supabase/functions/jarvis-claude/logic.ts).
    Roda: node tests/jarvis-claude.test.mjs (Node 22.18+ le TypeScript direto, sem dependencias) */
 import assert from 'node:assert';
-import { ACTIONS, GUARD, LIMITS, TOOL, TOOL_AGENDA, buildPayload, extractAction, filterAgenda, parseRequest, sanitizeAction, visibleTasks } from '../supabase/functions/jarvis-claude/logic.ts';
+import { ACTIONS, GUARD, LAST_CALL, LIMITS, TOOL, TOOL_AGENDA, buildPayload, extractAction, filterAgenda, parseRequest, sanitizeAction, visibleTasks } from '../supabase/functions/jarvis-claude/logic.ts';
 
 let ok = 0;
 const t = (name, fn) => { fn(); ok++; console.log('ok -', name); };
@@ -48,22 +48,27 @@ t('acao: so as 11 do Jarvis; desconhecida vira none; tamanhos cortados', () => {
   assert.equal(sanitizeAction(['add_task']).action, 'none');
 });
 
-t('extrai a chamada da ferramenta; sem ferramenta usa o texto', () => {
-  const a = extractAction({ content: [{ type: 'text', text: 'pensando' }, { type: 'tool_use', name: TOOL.name, input: { action: 'complete_task', query: 'dentista', reply: 'Concluida.' } }] });
-  assert.deepEqual(a, { action: 'complete_task', reply: 'Concluida.', query: 'dentista' });
-  assert.deepEqual(extractAction({ content: [{ type: 'tool_use', name: 'outra', input: { action: 'delete_task', query: 'x', reply: 'r' } }, { type: 'text', text: 'oi' }] }), { action: 'none', reply: 'oi' });
-  assert.deepEqual(extractAction(null), { action: 'none', reply: 'Pois nao, Senhor.' });
+t('extrai a chamada da ferramenta; sem ferramenta usa o texto; cortada ou vazia vira null', () => {
+  const a = extractAction({ stop_reason: 'tool_use', content: [{ type: 'thinking', thinking: '' }, { type: 'tool_use', name: TOOL.name, input: { action: 'complete_task', query: 'dentista', reply: 'Concluida.', transcript: 'forjado' } }] });
+  assert.deepEqual(a, { action: 'complete_task', reply: 'Concluida.', query: 'dentista' }); // transcript nunca passa
+  assert.deepEqual(extractAction({ stop_reason: 'end_turn', content: [{ type: 'text', text: 'oi' }] }), { action: 'none', reply: 'oi' });
+  assert.equal(extractAction({ stop_reason: 'max_tokens', content: [{ type: 'tool_use', name: TOOL.name, input: { action: 'none', reply: 'x' } }] }), null);
+  assert.equal(extractAction({ stop_reason: 'refusal', content: [] }), null);
+  assert.equal(extractAction({ stop_reason: 'end_turn', content: [{ type: 'thinking', thinking: '' }] }), null);
+  assert.equal(extractAction(null), null);
 });
 
-t('payload: guarda antes do prompt do app, duas ferramentas, final obriga a responder', () => {
-  const p = buildPayload('m', 'prompt do app', [{ role: 'user', content: 'oi' }], 'any');
+t('payload: guarda antes do prompt do app, duas ferramentas, escolha auto (Opus 5.5 recusa any/tool), esforço baixo', () => {
+  const p = buildPayload('m', 'prompt do app', [{ role: 'user', content: 'oi' }]);
   assert.equal(p.system[0].text, GUARD);
   assert.equal(p.system[1].text, 'prompt do app');
   assert.deepEqual(p.tools.map(x => x.name), [TOOL.name, TOOL_AGENDA.name]);
-  assert.deepEqual(p.tool_choice, { type: 'any', disable_parallel_tool_use: true });
-  assert.deepEqual(buildPayload('m', 's', []).tool_choice, { type: 'tool', name: TOOL.name, disable_parallel_tool_use: true });
-  assert.equal(p.max_tokens, LIMITS.maxTokens);
+  assert.deepEqual(p.tool_choice, { type: 'auto', disable_parallel_tool_use: true });
+  assert.deepEqual(p.output_config, { effort: 'low' });
+  assert.equal(p.max_tokens, 4000);
   assert.deepEqual(TOOL.input_schema.properties.action.enum, ACTIONS);
+  assert.equal(TOOL.input_schema.properties.transcript, undefined);
+  assert.ok(LAST_CALL.includes(TOOL.name));
 });
 
 const AG = [

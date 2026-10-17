@@ -6,7 +6,7 @@
 // app, com as validacoes do Jarvis (apagar pede confirmacao na tela).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { LIMITS, TOOL, type Msg, buildPayload, extractAction, filterAgenda, parseRequest, visibleTasks } from "./logic.ts";
+import { LAST_CALL, LIMITS, TOOL, type Msg, buildPayload, extractAction, filterAgenda, parseRequest, visibleTasks } from "./logic.ts";
 
 const ORIGIN = "https://lgrsv.github.io";
 const OWNER = "718266ce-ac47-4ab9-ac39-4fde8344c9d7";
@@ -57,23 +57,23 @@ async function loadAgenda(userId: string) {
 }
 
 async function chat(userId: string, body: unknown, apiKey: string) {
-  const [n10, nDay] = await Promise.all([recent("jarvis_claude_calls", userId, 10 * 60_000), recent("jarvis_claude_calls", userId, 24 * 3_600_000)]);
-  if (n10 === null || nDay === null) return fail("unavailable", 503); // falha fechada
-  if (n10 >= CHAT_10MIN || nDay >= CHAT_DAY) return fail("rate_limited", 429);
   const parsed = parseRequest(body);
   if (!parsed.ok) return fail(parsed.error, 400);
 
-  // Registro antes de chamar: rajadas simultaneas tambem contam no limite.
+  // Limite de uso: reserva primeiro, conta depois (incluindo a propria reserva).
+  // Assim, mesmo em rajadas simultaneas, no maximo o limite passa.
   const { data: row, error: insertError } = await admin.from("jarvis_claude_calls")
     .insert({ user_id: userId, model: MODEL }).select("id").single();
-  if (insertError || !row) return fail("unavailable", 503);
+  if (insertError || !row) return fail("unavailable", 503); // falha fechada
+  const [n10, nDay] = await Promise.all([recent("jarvis_claude_calls", userId, 10 * 60_000), recent("jarvis_claude_calls", userId, 24 * 3_600_000)]);
+  if (n10 === null || nDay === null) { await patch("jarvis_claude_calls", row.id, { status: "unavailable" }); return fail("unavailable", 503); }
+  if (n10 > CHAT_10MIN || nDay > CHAT_DAY) { await patch("jarvis_claude_calls", row.id, { status: "rejected" }); return fail("rate_limited", 429); }
 
   const deadline = Date.now() + 50_000;
   const messages: Msg[] = [...parsed.messages];
   let agenda: Record<string, unknown>[] | null | undefined;
-  let tokensIn = 0, tokensOut = 0, action: Record<string, unknown> | null = null, status = "ok";
-  for (let turn = 0; turn < LIMITS.turns && !action; turn++) {
-    const mode = turn === LIMITS.turns - 1 ? "final" : "any";
+  let tokensIn = 0, tokensOut = 0, action: Record<string, unknown> | null = null, status = "incomplete";
+  for (let turn = 0; turn < LIMITS.turns; turn++) {
     const left = deadline - Date.now();
     if (left < 3_000) { status = "timeout"; break; }
     let res: Response;
@@ -81,7 +81,7 @@ async function chat(userId: string, body: unknown, apiKey: string) {
       res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-        body: JSON.stringify(buildPayload(MODEL, parsed.system, messages, mode)),
+        body: JSON.stringify(buildPayload(MODEL, parsed.system, messages)),
         signal: AbortSignal.timeout(Math.min(25_000, left)),
       });
     } catch (e) {
@@ -98,18 +98,23 @@ async function chat(userId: string, body: unknown, apiKey: string) {
     tokensIn += Number(data.usage?.input_tokens) || 0;
     tokensOut += Number(data.usage?.output_tokens) || 0;
     const blocks = Array.isArray(data.content) ? data.content : [];
-    const consulta = blocks.find((b: { type?: string; name?: string }) => b?.type === "tool_use" && b.name !== TOOL.name);
-    if (!consulta) { action = extractAction(data); break; }
+    const consulta = data.stop_reason === "tool_use"
+      ? blocks.find((b: { type?: string; name?: string }) => b?.type === "tool_use" && b.name !== TOOL.name)
+      : null;
+    if (!consulta) { action = extractAction(data); if (!action) status = "incomplete_" + String(data.stop_reason || ""); break; }
+    if (turn === LIMITS.turns - 1) break; // pediu mais uma consulta na ultima volta: sem resposta
     // Leitura da agenda inteira (so leitura; nada e gravado no servidor).
     if (agenda === undefined) agenda = await loadAgenda(userId);
     const result = consulta.name === "consultar_agenda" && agenda
       ? filterAgenda(agenda, consulta.input)
       : { erro: agenda === null ? "agenda indisponivel" : "ferramenta desconhecida" };
-    messages.push({ role: "assistant", content: blocks });
-    messages.push({ role: "user", content: [{ type: "tool_result", tool_use_id: consulta.id, content: JSON.stringify(result) }] });
+    const content: unknown[] = [{ type: "tool_result", tool_use_id: consulta.id, content: JSON.stringify(result) }];
+    if (turn === LIMITS.turns - 2) content.push({ type: "text", text: LAST_CALL });
+    messages.push({ role: "assistant", content: blocks }); // devolvido sem mudar (inclui o raciocinio assinado)
+    messages.push({ role: "user", content });
   }
   await patch("jarvis_claude_calls", row.id, { status: action ? "ok" : status, input_tokens: tokensIn, output_tokens: tokensOut });
-  if (!action) return fail(status.startsWith("upstream_429") || status.startsWith("upstream_529") ? "upstream_busy" : "upstream_error", 502);
+  if (!action) return fail(/^upstream_(429|529)$/.test(status) ? "upstream_busy" : status.startsWith("incomplete") ? "incomplete" : "upstream_error", 502);
   return out({ ok: true, text: JSON.stringify(action) });
 }
 
@@ -118,7 +123,10 @@ Deno.serve(async (req) => {
   if (origin && origin !== ORIGIN) return fail("forbidden_origin", 403);
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
   if (req.method !== "POST") return fail("method_not_allowed", 405);
-  if (Number(req.headers.get("content-length") || 0) > LIMITS.bodyChars * 4) return fail("too_large", 413);
+  // O app sempre manda Content-Length; sem ele (corpo em partes) a leitura nao teria teto.
+  const length = Number(req.headers.get("content-length") || NaN);
+  if (!Number.isFinite(length)) return fail("length_required", 411);
+  if (length > LIMITS.bodyChars * 4) return fail("too_large", 413);
 
   // 1) Sessao do Supabase (o gateway ja confere o JWT; aqui confirmamos o usuario).
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
