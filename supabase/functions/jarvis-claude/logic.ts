@@ -186,3 +186,37 @@ export function filterAgenda(tasks: Record<string, unknown>[], input: unknown) {
     }),
   };
 }
+
+// Precos oficiais por milhao de tokens (platform.claude.com/docs/en/about-claude/pricing, 17/10/2026).
+export const PRECOS: Record<string, { entrada: number; saida: number }> = {
+  "claude-opus-5-5": { entrada: 4, saida: 20 },
+  "claude-sonnet-5-5": { entrada: 2, saida: 10 },
+};
+
+export function custoUsd(model: string, entrada: number, saida: number): number | null {
+  const p = PRECOS[model];
+  return p ? (entrada * p.entrada + saida * p.saida) / 1_000_000 : null;
+}
+
+type Chamada = { model?: string | null; status?: string | null; input_tokens?: number | null; output_tokens?: number | null; created_at: string };
+
+// Resumo do gasto do Jarvis: hoje e no mes, no horario de Brasilia (UTC-3, sem
+// horario de verao desde 2019). So conta chamadas que chegaram a usar tokens.
+export function resumoUso(rows: Chamada[], agoraMs: number) {
+  const brt = new Date(agoraMs - 3 * 3_600_000);
+  const y = brt.getUTCFullYear(), m = brt.getUTCMonth(), d = brt.getUTCDate();
+  const iniDia = Date.UTC(y, m, d) + 3 * 3_600_000, iniMes = Date.UTC(y, m, 1) + 3 * 3_600_000;
+  const soma = (desde: number) => {
+    let chamadas = 0, usd = 0, semPreco = 0;
+    for (const r of rows) {
+      const t = Date.parse(r.created_at);
+      const tin = Number(r.input_tokens) || 0, tout = Number(r.output_tokens) || 0;
+      if (!(t >= desde) || (tin + tout) === 0) continue;
+      chamadas++;
+      const c = custoUsd(String(r.model || ""), tin, tout);
+      if (c === null) semPreco++; else usd += c;
+    }
+    return { chamadas, usd: Math.round(usd * 10000) / 10000, semPreco };
+  };
+  return { hoje: soma(iniDia), mes: soma(iniMes), desde_mes: new Date(iniMes).toISOString() };
+}
