@@ -31,6 +31,9 @@ que o verificador vai conferir.
 - O código em `/home/user/agenda-iphone/` (somente leitura para você).
 - O harness `/home/user/agenda-iphone/.orquestra/layout-17promax/harness/medir.cjs`. Rode-o para
   testar uma hipótese, se precisar.
+- Referência opcional do repositório: `/home/user/agenda-iphone/.claude/skills/apple-design/SKILL.md`.
+  Use as seções de tipografia, contenção e feedback de toque. O resto (gestos, molas) não entra no
+  escopo.
 
 ## Entregável
 `/home/user/agenda-iphone/.orquestra/layout-17promax/especificacao.md` com as seções:
