@@ -6,7 +6,7 @@
 // app, com as validacoes do Jarvis (apagar pede confirmacao na tela).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { LAST_CALL, LIMITS, TOOL, type Msg, buildPayload, extractAction, filterAgenda, parseRequest, resumoUso, visibleTasks } from "./logic.ts";
+import { LAST_CALL, LIMITS, TOOL, TOOL_AGENDA, TOOL_CEREBRO, type Msg, buildPayload, cortarNota, extractAction, filterAgenda, parseRequest, resumoUso, visibleTasks } from "./logic.ts";
 
 const ORIGIN = "https://lgrsv.github.io";
 const OWNER = "718266ce-ac47-4ab9-ac39-4fde8344c9d7";
@@ -56,6 +56,24 @@ async function loadAgenda(userId: string) {
   return visibleTasks(by.tasks, by.notes);
 }
 
+// Cerebro do dono (tabela fechada public.jarvis_cerebro, enviada pelo PC dele). So leitura.
+async function consultarCerebro(input: unknown) {
+  const i = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
+  const nota = typeof i.nota === "string" ? i.nota.trim().slice(0, 600) : "";
+  if (nota) {
+    const { data, error } = await admin.from("jarvis_cerebro").select("caminho,conteudo,atualizado").eq("caminho", nota).maybeSingle();
+    if (error) return { erro: "cerebro indisponivel" };
+    if (!data) return { erro: "nota nao encontrada: use o caminho exato que veio na busca" };
+    return { caminho: data.caminho, atualizado: data.atualizado, texto: cortarNota(data.conteudo) };
+  }
+  const busca = typeof i.busca === "string" ? i.busca.trim().slice(0, 200) : "";
+  if (!busca) return { erro: "informe busca ou nota" };
+  const { data, error } = await admin.rpc("jarvis_cerebro_buscar", { q: busca, lim: 8 });
+  if (error) return { erro: "cerebro indisponivel" };
+  const notas = (data || []) as { caminho: string; pasta: string; trecho: string }[];
+  return { total: notas.length, notas: notas.map((r) => ({ caminho: r.caminho, pasta: r.pasta, trecho: r.trecho })) };
+}
+
 // Gasto do Jarvis (estimativa pelos tokens registrados e pelos precos oficiais).
 // O saldo da conta nao tem consulta na API da Anthropic: so no Console.
 async function uso(userId: string) {
@@ -86,6 +104,7 @@ async function chat(userId: string, body: unknown, apiKey: string) {
   if (n10 > CHAT_10MIN || nDay > CHAT_DAY) { await patch("jarvis_claude_calls", row.id, { status: "rejected" }); return fail("rate_limited", 429); }
 
   const deadline = Date.now() + 50_000;
+  const cerebro = userId === OWNER; // o cerebro e so do dono, mesmo que outros usem o Jarvis
   const messages: Msg[] = [...parsed.messages];
   let agenda: Record<string, unknown>[] | null | undefined;
   let tokensIn = 0, tokensOut = 0, action: Record<string, unknown> | null = null, status = "incomplete";
@@ -97,7 +116,7 @@ async function chat(userId: string, body: unknown, apiKey: string) {
       res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-        body: JSON.stringify(buildPayload(MODEL, parsed.system, messages)),
+        body: JSON.stringify(buildPayload(MODEL, parsed.system, messages, cerebro)),
         signal: AbortSignal.timeout(Math.min(25_000, left)),
       });
     } catch (e) {
@@ -119,11 +138,16 @@ async function chat(userId: string, body: unknown, apiKey: string) {
       : null;
     if (!consulta) { action = extractAction(data); if (!action) status = "incomplete_" + String(data.stop_reason || ""); break; }
     if (turn === LIMITS.turns - 1) break; // pediu mais uma consulta na ultima volta: sem resposta
-    // Leitura da agenda inteira (so leitura; nada e gravado no servidor).
-    if (agenda === undefined) agenda = await loadAgenda(userId);
-    const result = consulta.name === "consultar_agenda" && agenda
-      ? filterAgenda(agenda, consulta.input)
-      : { erro: agenda === null ? "agenda indisponivel" : "ferramenta desconhecida" };
+    // Consultas so de leitura (agenda inteira ou cerebro); nada e gravado no servidor.
+    let result: unknown;
+    if (consulta.name === TOOL_AGENDA.name) {
+      if (agenda === undefined) agenda = await loadAgenda(userId);
+      result = agenda ? filterAgenda(agenda, consulta.input) : { erro: "agenda indisponivel" };
+    } else if (consulta.name === TOOL_CEREBRO.name && cerebro) {
+      result = await consultarCerebro(consulta.input);
+    } else {
+      result = { erro: "ferramenta desconhecida" };
+    }
     const content: unknown[] = [{ type: "tool_result", tool_use_id: consulta.id, content: JSON.stringify(result) }];
     if (turn === LIMITS.turns - 2) content.push({ type: "text", text: LAST_CALL });
     messages.push({ role: "assistant", content: blocks }); // devolvido sem mudar (inclui o raciocinio assinado)

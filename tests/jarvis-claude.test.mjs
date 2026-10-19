@@ -1,7 +1,7 @@
 /* Regras puras da Edge Function jarvis-claude (supabase/functions/jarvis-claude/logic.ts).
    Roda: node tests/jarvis-claude.test.mjs (Node 22.18+ le TypeScript direto, sem dependencias) */
 import assert from 'node:assert';
-import { ACTIONS, GUARD, LAST_CALL, LIMITS, TOOL, TOOL_AGENDA, buildPayload, extractAction, custoUsd, filterAgenda, parseRequest, resumoUso, sanitizeAction, visibleTasks } from '../supabase/functions/jarvis-claude/logic.ts';
+import { ACTIONS, GUARD, GUARD_CEREBRO, LAST_CALL, LIMITS, TOOL, TOOL_AGENDA, TOOL_CEREBRO, buildPayload, cortarNota, extractAction, custoUsd, filterAgenda, parseRequest, resumoUso, sanitizeAction, visibleTasks } from '../supabase/functions/jarvis-claude/logic.ts';
 
 let ok = 0;
 const t = (name, fn) => { fn(); ok++; console.log('ok -', name); };
@@ -69,6 +69,24 @@ t('payload: guarda antes do prompt do app, duas ferramentas, escolha auto (Opus 
   assert.deepEqual(TOOL.input_schema.properties.action.enum, ACTIONS);
   assert.equal(TOOL.input_schema.properties.transcript, undefined);
   assert.ok(LAST_CALL.includes(TOOL.name));
+});
+
+t('cérebro: só com cerebro=true entra a terceira ferramenta e as regras 6 e 7', () => {
+  const sem = buildPayload('m', 'app', [{ role: 'user', content: 'oi' }]);
+  assert.ok(!sem.system[0].text.includes('CEREBRO'));
+  assert.equal(sem.tools.length, 2);
+  const com = buildPayload('m', 'app', [{ role: 'user', content: 'oi' }], true);
+  assert.equal(com.system[0].text, GUARD + '\n' + GUARD_CEREBRO);
+  assert.deepEqual(com.tools.map(x => x.name), [TOOL.name, TOOL_AGENDA.name, TOOL_CEREBRO.name]);
+  assert.equal(com.system[1].text, 'app');
+});
+
+t('cérebro: nota longa é cortada no limite e avisa; não-texto vira vazio', () => {
+  assert.equal(cortarNota('abc'), 'abc');
+  const c = cortarNota('x'.repeat(LIMITS.notaChars + 50));
+  assert.equal(c.length, LIMITS.notaChars + '\n[... nota cortada]'.length);
+  assert.ok(c.endsWith('[... nota cortada]'));
+  assert.equal(cortarNota(null), '');
 });
 
 const AG = [
