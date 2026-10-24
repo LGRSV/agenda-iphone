@@ -1,0 +1,34 @@
+{
+  "name": "agenda-tools",
+  "owner": {
+    "name": "lgrsv",
+    "url": "https://github.com/lgrsv"
+  },
+  "description": "Plugins do projeto agenda-iphone",
+  "plugins": [
+    {
+      "name": "analise-verificada",
+      "source": "./plugins/analise-verificada",
+      "description": "Numero sem origem registrada nao sai na resposta.",
+      "version": "1.0.0",
+      "category": "quality",
+      "keywords": [
+        "analise",
+        "verificacao",
+        "auditoria"
+      ]
+    },
+    {
+      "name": "orquestra",
+      "source": "./plugins/orquestra",
+      "description": "Agente-cerebro que divide o trabalho entre subagentes e cobra qualidade com evidencia.",
+      "version": "1.0.0",
+      "category": "productivity",
+      "keywords": [
+        "orquestra",
+        "multi-agente",
+        "subagentes"
+      ]
+    }
+  ]
+}
