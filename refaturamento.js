@@ -124,7 +124,9 @@
       invoiceCents:realInvoice||invoiceFromSnapshot||FALLBACK_INVOICE_CENTS,
       invoiceLabel:realInvoice?`Fatura ${String(sim.fatura.mes||'').split('-').reverse().join('/')} · vence ${String(sim.fatura.vencimento).split('-').reverse().slice(0,2).join('/')}`:'',
       sales:refundableSales(sim),
-      limit:sim?.limiteInter&&Number(sim.limiteInter.total)>0?{totalCents:Math.round(Number(sim.limiteInter.total)*100),usedCents:Math.round(Number(sim.limiteInter.usado||0)*100),em:sim.limiteInter.em||''}:null,
+      limit:sim?.limiteInter&&Number(sim.limiteInter.total)>0?{totalCents:Math.round(Number(sim.limiteInter.total)*100),usedCents:Math.round(Number(sim.limiteInter.usado||0)*100),em:sim.limiteInter.em||'',
+        parts:[['Fatura fechada',sim.limiteInter.faturaFechada,'#ff8a1f'],['Próxima fatura',sim.limiteInter.proximaFatura,'#1aa3ff'],['Lançamentos futuros',sim.limiteInter.lancamentosFuturos,'#0b74b0']]
+          .filter(([, v])=>Number(v)>0).map(([n,v,c])=>({name:n,cents:Math.round(Number(v)*100),color:c}))}:null,
       mpCents:globalCents!=null?globalCents-giroCents:(simMpNewer?Math.round(Number(sim.saldoContaMp)*100):accountsMp),
       giroCents:giro?.saldo!=null?Math.round(Number(giro.saldo)*100):FALLBACK_GIRO_CENTS
     };
@@ -167,6 +169,16 @@
       el('simLimitHint').textContent=anySimulation
         ?`Antes: ${money(freeBefore)} · libera +${money(freeAfter-freeBefore)} · usado passa a ${money(limit.totalCents-freeAfter)} de ${money(limit.totalCents)}`
         :`Usado ${money(limit.usedCents)} de ${money(limit.totalCents)}${limit.em?` · ${String(limit.em).split('-').reverse().slice(0,2).join('/')}`:''}`;
+      // barra como a do app do Inter: usado (por parte), liberado pela devolução (verde) e disponível (cinza)
+      const freed=freeAfter-freeBefore, pct=v=>`${Math.max(0,v)/limit.totalCents*100}%`;
+      let left=freed;
+      const segs=limit.parts.map(part=>{const cut=Math.min(part.cents,left);left-=cut;return {...part,cents:part.cents-cut};});
+      const bar=segs.map(seg=>`<i style="width:${pct(seg.cents)};background:${seg.color}"></i>`).join('')
+        +(freed?`<i style="width:${pct(freed)};background:var(--green)"></i>`:'')+`<i style="width:${pct(freeBefore)};background:#5b5f68"></i>`;
+      el('simLimitBar').innerHTML=bar;
+      el('simLimitLegend').innerHTML=segs.map(part=>`<span><i style="background:${part.color}"></i>${esc(part.name)} ${money(part.cents)}</span>`).join('')
+        +(freed?`<span><i style="background:var(--green)"></i>Liberado pela devolução ${money(freed)}</span>`:'')
+        +`<span><i style="background:#5b5f68"></i>Disponível ${money(freeAfter)}</span>`;
       limitCard.classList.toggle('changed',anySimulation);
     } else limitCard.hidden=true;
     ['simInvoiceCard','simCombinedCard'].forEach(id=>el(id).classList.toggle('changed',anySimulation));
