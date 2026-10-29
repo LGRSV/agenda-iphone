@@ -124,6 +124,7 @@
       invoiceCents:realInvoice||invoiceFromSnapshot||FALLBACK_INVOICE_CENTS,
       invoiceLabel:realInvoice?`Fatura ${String(sim.fatura.mes||'').split('-').reverse().join('/')} · vence ${String(sim.fatura.vencimento).split('-').reverse().slice(0,2).join('/')}`:'',
       sales:refundableSales(sim),
+      limit:sim?.limiteInter&&Number(sim.limiteInter.total)>0?{totalCents:Math.round(Number(sim.limiteInter.total)*100),usedCents:Math.round(Number(sim.limiteInter.usado||0)*100),em:sim.limiteInter.em||''}:null,
       mpCents:globalCents!=null?globalCents-giroCents:(simMpNewer?Math.round(Number(sim.saldoContaMp)*100):accountsMp),
       giroCents:giro?.saldo!=null?Math.round(Number(giro.saldo)*100):FALLBACK_GIRO_CENTS
     };
@@ -155,8 +156,19 @@
       ? `−${money(refundTotal)} + ${money(feeReturnTotal)} = −${money(refundTotal-feeReturnTotal)}`
       :'sem devolução da taxa';
     el('simNote').textContent=anySimulation
-      ? `Projeção: a fatura cai para ${money(invoice)} e o saldo global Mercado Pago + Giro fica em ${money(combined)}. Nenhum valor foi lançado.`
+      ? `Projeção: a fatura cai para ${money(invoice)}, o saldo global Mercado Pago + Giro fica em ${money(combined)}${base.limit?` e o limite disponível do Inter vai a ${money(Math.min(base.limit.totalCents,Math.max(0,base.limit.totalCents-base.limit.usedCents)+refundTotal))}`:''}. Nenhum valor foi lançado.`
       : 'A simulação não altera sua fatura nem seus saldos reais.';
+    // devolver a venda credita o valor inteiro no cartão Inter: o limite volta na mesma medida (até o teto)
+    const limit=base.limit, limitCard=el('simLimitCard');
+    if(limit){
+      const freeBefore=Math.max(0,limit.totalCents-limit.usedCents), freeAfter=Math.min(limit.totalCents,freeBefore+refundTotal);
+      limitCard.hidden=false;
+      el('simLimit').textContent=money(freeAfter);
+      el('simLimitHint').textContent=anySimulation
+        ?`Antes: ${money(freeBefore)} · libera +${money(freeAfter-freeBefore)} · usado passa a ${money(limit.totalCents-freeAfter)} de ${money(limit.totalCents)}`
+        :`Usado ${money(limit.usedCents)} de ${money(limit.totalCents)}${limit.em?` · ${String(limit.em).split('-').reverse().slice(0,2).join('/')}`:''}`;
+      limitCard.classList.toggle('changed',anySimulation);
+    } else limitCard.hidden=true;
     ['simInvoiceCard','simCombinedCard'].forEach(id=>el(id).classList.toggle('changed',anySimulation));
     el('simInvoiceCard').classList.toggle('credit-balance',invoice<0);
     el('simCombinedCard').classList.toggle('negative-balance',combined<0);
