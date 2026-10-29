@@ -40,6 +40,7 @@
   const uuid = () => globalThis.crypto?.randomUUID?.() || `refat-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   let editingId = '';
   const activeRefunds = new Set();
+  let selectedInvoiceId = '';
 
   const el = id => document.getElementById(id);
   const fields = {
@@ -114,7 +115,12 @@
     const investments=Array.isArray(localInvestments?.cofres)?localInvestments:(snapshot?.investments||{});
     const giro=(Array.isArray(investments?.cofres)?investments.cofres:[]).find(item=>item?.id==='giro'||/giro mensal/i.test(item?.nome||''));
     const invoiceFromSnapshot=currencyTextToCents(snapshot?.summary?.currentInvoice);
-    const realInvoice=sim?.fatura&&String(sim.fatura.vencimento||'')>=today()?Math.round(Number(sim.fatura.total||0)*100):0;
+    // faturas ainda não vencidas (fechada e/ou aberta); o João escolhe qual simular
+    const invoices=(Array.isArray(sim?.faturas)?sim.faturas:(sim?.fatura?[{id:'f',...sim.fatura}]:[]))
+      .filter(f=>f&&Number(f.total)>0&&String(f.vencimento||'')>=today())
+      .sort((a,b)=>String(a.vencimento).localeCompare(String(b.vencimento)));
+    const chosen=invoices.find(f=>String(f.id||f.mes)===selectedInvoiceId)||invoices[0]||null;
+    const realInvoice=chosen?Math.round(Number(chosen.total)*100):0;
     const accountsMp=Math.round(Number(accounts?.mp||snapshot?.accounts?.mp||0)*100);
     const simMpNewer=sim?.saldoContaMp!=null&&String(sim.saldoContaMpEm||'')>=String(accounts?.updMp||'');
     const giroCents=giro?.saldo!=null?Math.round(Number(giro.saldo)*100):FALLBACK_GIRO_CENTS;
@@ -122,7 +128,8 @@
     const globalCents=sim?.saldoGlobal!=null?Math.round(Number(sim.saldoGlobal)*100):null;
     return {
       invoiceCents:realInvoice||invoiceFromSnapshot||FALLBACK_INVOICE_CENTS,
-      invoiceLabel:realInvoice?`Fatura ${String(sim.fatura.mes||'').split('-').reverse().join('/')} · vence ${String(sim.fatura.vencimento).split('-').reverse().slice(0,2).join('/')}`:'',
+      invoices, chosen,
+      invoiceLabel:chosen?`Fatura ${String(chosen.mes||'').split('-').reverse().join('/')}${chosen.status?` (${chosen.status})`:''} · vence ${String(chosen.vencimento).split('-').reverse().slice(0,2).join('/')}`:'',
       sales:refundableSales(sim),
       limit:sim?.limiteInter&&Number(sim.limiteInter.total)>0?{totalCents:Math.round(Number(sim.limiteInter.total)*100),usedCents:Math.round(Number(sim.limiteInter.usado||0)*100),em:sim.limiteInter.em||'',
         parts:[['Fatura fechada',sim.limiteInter.faturaFechada,'#ff8a1f'],['Próxima fatura',sim.limiteInter.proximaFatura,'#1aa3ff'],['Lançamentos futuros',sim.limiteInter.lancamentosFuturos,'#0b74b0']]
@@ -144,6 +151,9 @@
     const mp=base.mpCents-refundTotal+feeReturnTotal;
     const combined=mp+base.giroCents;
     const shortDate=value=>String(value||'').split('-').reverse().slice(0,2).join('/');
+    const monthName=mes=>['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][Number(String(mes).slice(5,7))-1]||mes;
+    el('simInvoicePick').innerHTML=base.invoices.length>1?base.invoices.map(f=>{const id=String(f.id||f.mes),on=base.chosen&&String(base.chosen.id||base.chosen.mes)===id;
+      return `<button type="button" class="pick${on?' on':''}" data-invoice="${esc(id)}" aria-pressed="${on}">Fatura ${monthName(f.mes)} ${f.status==='fechada'?'(fechada)':'(aberta)'} · ${money(Math.round(Number(f.total)*100))}</button>`;}).join(''):'';
     el('simActions').innerHTML=sales.length?sales.map(item=>{
       const on=activeRefunds.has(item.id), fee=item.taxa!=null?`taxa ${money(Math.round(Number(item.taxa)*100))}`:'taxa ?';
       const who=item.conta==='ana'?' · Ana':'';
@@ -151,7 +161,8 @@
     }).join(''):'<p class="sim-note">Nenhuma venda dentro dos 180 dias para devolver.</p>';
     el('simInvoice').textContent=money(invoice);
     el('simCombined').textContent=money(combined);
-    el('simInvoiceHint').textContent=anySimulation?`Antes: ${money(base.invoiceCents)}`:(base.invoiceLabel||'Antes do crédito de estorno');
+    const closedNote=base.chosen?.status==='fechada'?' · no app do Inter o crédito entra na fatura aberta; a dívida total cai igual':'';
+    el('simInvoiceHint').textContent=(anySimulation?`Antes: ${money(base.invoiceCents)}`:(base.invoiceLabel||'Antes do crédito de estorno'))+(anySimulation?closedNote:'');
     el('simCombinedHint').textContent=anySimulation?`Antes: ${money(base.mpCents+base.giroCents)}`:'Saldo global disponível';
     el('simInvoiceDelta').textContent=anySimulation?`−${money(refundTotal)}`:'sem abatimento';
     el('simCombinedDelta').textContent=anySimulation
@@ -303,6 +314,10 @@
   });
 
   el('reset').addEventListener('click',reset);
+  el('simInvoicePick').addEventListener('click',event=>{
+    const button=event.target.closest('[data-invoice]'); if(!button)return;
+    selectedInvoiceId=button.dataset.invoice; renderSimulator();
+  });
   el('simActions').addEventListener('click',event=>{
     const button=event.target.closest('[data-refund]'); if(!button)return;
     const id=button.dataset.refund;
