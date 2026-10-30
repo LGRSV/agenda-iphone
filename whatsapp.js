@@ -27,10 +27,14 @@ async function iniciar() {
   const { data } = await sb.auth.getSession();
   uid = data?.session?.user?.id;
   if (!uid) { location.replace('./?locked=1'); return; }
+  // o canal do Realtime precisa do login, senão o RLS descarta os eventos sem avisar
+  sb.realtime.setAuth(data.session.access_token);
+  sb.auth.onAuthStateChange((_, sess) => { if (sess?.access_token) sb.realtime.setAuth(sess.access_token); });
   await carregarChats();
   await status();
   setInterval(status, 30000);
   ouvir();
+  setInterval(conferir, 3000);   // reserva: se o Realtime cair, a tela segue atualizando
   const alvo = decodeURIComponent((location.hash.match(/chat=([^&]+)/) || [])[1] || '');
   if (alvo) abrir(alvo, false);
 }
@@ -115,6 +119,25 @@ function pintarMsgs(rolar) {
   }
   box.innerHTML = html || '<div class="vazio">Sem mensagens recentes.</div>';
   if (rolar || perto) box.scrollTop = box.scrollHeight;
+}
+
+let conferindo = false;
+async function conferir() {   // busca só o que chegou depois da última mensagem/conversa vista
+  if (conferindo || document.hidden) return;
+  conferindo = true;
+  try {
+    const ultChat = chats.reduce((m, c) => (String(c.ultima_ts) > m ? String(c.ultima_ts) : m), '');
+    const { data: cs } = await sb.from('whatsapp_chats').select('*').gt('ultima_ts', ultChat || '1970-01-01');
+    if (cs?.length) { for (const c of cs) { const i = chats.findIndex(x => x.jid === c.jid); if (i >= 0) chats[i] = c; else chats.unshift(c); } pintarChats(); }
+    if (atual) {
+      const jid = atual, ultMsg = msgs.length ? msgs[msgs.length - 1].ts : '1970-01-01';
+      const { data: ms } = await sb.from('whatsapp_mensagens').select('*').eq('chat_jid', jid).gt('ts', ultMsg).order('ts');
+      if (ms?.length && atual === jid) {
+        for (const x of ms) { if (!msgs.some(y => y.id === x.id)) msgs.push(x); if (x.id.startsWith('app-')) saidas.delete(x.id.slice(4)); }
+        await assinar(ms); pintarMsgs(false);
+      }
+    }
+  } catch (_) { } finally { conferindo = false; }
 }
 
 function ouvir() {
