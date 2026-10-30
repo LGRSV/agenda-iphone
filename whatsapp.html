@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#050506">
+  <meta name="app-page" content="whatsapp.html">
+  <title>WhatsApp</title>
+  <style>
+    :root{color-scheme:dark;--bg:#111216;--surface:#1c1e23;--soft:#24272e;--line:#343943;--text:#f7f8fb;--muted:#9da5b3;--green:#25d366;--green2:#1e6f4a;--blue:#69c8ff;--red:#ff7f91}
+    *{box-sizing:border-box}html,body{height:100%}html{-webkit-text-size-adjust:100%;background:var(--bg)}
+    body{margin:0;background:var(--bg);color:var(--text);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
+    button,input,textarea{font:inherit;color:inherit}
+    .wrap{height:100%;display:grid;grid-template-columns:1fr;padding-top:env(safe-area-inset-top)}
+    @media(min-width:820px){.wrap{grid-template-columns:340px 1fr}}
+    .pane{display:flex;flex-direction:column;min-height:0;height:100%}
+    .list-pane{border-right:1px solid var(--line)}
+    .head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--surface)}
+    .back{width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--line);border-radius:12px;background:var(--soft);text-decoration:none;color:var(--text);font-size:26px;flex:0 0 auto;cursor:pointer}
+    .head h1{margin:0;font-size:20px;letter-spacing:-.02em}.head .sub{margin:2px 0 0;color:var(--muted);font-size:12px}
+    .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#666;margin-right:5px;vertical-align:middle}.dot.on{background:var(--green)}
+    .search{margin:10px 12px;padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);width:calc(100% - 24px)}
+    .chats{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
+    .chat{display:flex;gap:11px;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(52,57,67,.5);cursor:pointer}
+    .chat:hover,.chat.on{background:var(--soft)}
+    .av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#2a3a33;color:#bfe8cf;font-weight:800;flex:0 0 auto}
+    .av.g{background:#2b3346;color:#c3d4ff}
+    .ci{min-width:0;flex:1}.ci .l1{display:flex;justify-content:space-between;gap:8px}.ci b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ci time{color:var(--muted);font-size:11px;flex:0 0 auto}.ci .pv{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+    .msgs{flex:1;overflow-y:auto;padding:12px 10px;background:#0c0d10;-webkit-overflow-scrolling:touch}
+    .day{text-align:center;margin:10px 0}.day span{background:var(--soft);color:var(--muted);font-size:11px;padding:4px 10px;border-radius:8px}
+    .m{max-width:82%;margin:3px 0;padding:7px 10px 5px;border-radius:12px;background:var(--surface);line-height:1.35;word-wrap:break-word;white-space:pre-wrap;position:relative}
+    .m.eu{margin-left:auto;background:var(--green2)}
+    .m .who{display:block;font-size:12px;font-weight:700;color:var(--blue);margin-bottom:2px}
+    .m .t{display:block;text-align:right;font-size:10px;color:rgba(255,255,255,.55);margin-top:2px}
+    .m img{display:block;max-width:100%;max-height:340px;border-radius:9px;margin-bottom:4px;cursor:zoom-in}
+    .m audio{width:240px;max-width:100%;margin-bottom:2px}
+    .m .tag{color:var(--muted);font-style:italic}
+    .composer{display:flex;gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface)}
+    .composer textarea{flex:1;resize:none;max-height:120px;min-height:42px;padding:10px 12px;border:1px solid var(--line);border-radius:20px;background:var(--soft);outline:none}
+    .composer button{width:44px;height:44px;border:0;border-radius:50%;background:var(--green);color:#063;font-size:20px;font-weight:900;cursor:pointer}
+    .composer button:disabled{opacity:.4}
+    .vazio{margin:auto;color:var(--muted);text-align:center;padding:30px}
+    @media(max-width:819px){.wrap.aberto .list-pane{display:none}.wrap:not(.aberto) .chat-pane{display:none}}
+    @media(min-width:820px){.chat-pane .back.voltar{display:none}}
+    .zoom{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;place-items:center;z-index:9}.zoom.on{display:grid}.zoom img{max-width:96vw;max-height:92vh}
+  </style>
+</head>
+<body>
+  <script>(function(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null'),s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return;}}catch(_){}location.replace('./?locked=1');})();</script>
+  <div class="wrap" id="wrap">
+    <section class="pane list-pane">
+      <header class="head"><a class="back" href="./" aria-label="Voltar à agenda">‹</a><div><h1>WhatsApp</h1><p class="sub" id="status"><span class="dot"></span>conectando…</p></div></header>
+      <input class="search" id="busca" type="search" placeholder="Buscar conversa" autocomplete="off">
+      <div class="chats" id="chats"><div class="vazio">Carregando conversas…</div></div>
+    </section>
+    <section class="pane chat-pane">
+      <header class="head"><button class="back voltar" id="voltar" aria-label="Voltar às conversas">‹</button><div class="av" id="cav"></div><div style="min-width:0"><h1 id="cnome" style="font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Escolha uma conversa</h1><p class="sub" id="csub"></p></div></header>
+      <div class="msgs" id="msgs"><div class="vazio">As mensagens aparecem aqui.</div></div>
+      <form class="composer" id="form"><textarea id="txt" rows="1" placeholder="Mensagem" disabled></textarea><button id="enviar" disabled aria-label="Enviar">➤</button></form>
+    </section>
+  </div>
+  <div class="zoom" id="zoom"><img alt=""></div>
+  <script src="./supabase-project-config.js?v=1"></script>
+  <script type="module" src="./whatsapp.js?v=1"></script>
+</body>
+</html>
