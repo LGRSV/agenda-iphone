@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#050506">
+  <meta name="app-page" content="pc.html">
+  <title>PC remoto</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0c0d10;--surface:#1c1e23;--soft:#24272e;--line:#343943;--text:#f7f8fb;--muted:#9da5b3;--green:#25d366;--blue:#69c8ff;--red:#ff7f91}
+    *{box-sizing:border-box}html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+    button,input{font:inherit;color:inherit}
+    .head{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--surface)}
+    .back{width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--line);border-radius:12px;background:var(--soft);text-decoration:none;color:var(--text);font-size:26px;flex:0 0 auto}
+    .head h1{margin:0;font-size:19px}.head .sub{margin:2px 0 0;color:var(--muted);font-size:12px}
+    .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#666;margin-right:5px;vertical-align:middle}.dot.on{background:var(--green)}
+    .modos{margin-left:auto;display:flex;gap:4px}
+    .modos button,.barra button{border:1px solid var(--line);background:var(--soft);border-radius:10px;padding:7px 10px;cursor:pointer;white-space:nowrap}
+    .modos button.on{background:var(--blue);color:#032;border-color:var(--blue);font-weight:700}
+    .tela{flex:1;min-height:0;overflow:auto;display:grid;place-items:center;background:#000;position:relative;touch-action:pan-x pan-y pinch-zoom}
+    .tela img{max-width:100%;max-height:100%;display:block;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:crosshair}
+    .tela.grande img{max-width:none;max-height:none;width:180%}
+    .vazio{color:var(--muted);padding:30px;text-align:center}
+    .marca{position:fixed;width:26px;height:26px;margin:-13px 0 0 -13px;border:3px solid var(--red);border-radius:50%;pointer-events:none;opacity:0;transition:opacity .6s}
+    .barra{display:flex;gap:6px;padding:8px 10px;overflow-x:auto;background:var(--surface);border-top:1px solid var(--line)}
+    .digitar{display:flex;gap:6px;padding:0 10px calc(8px + env(safe-area-inset-bottom));background:var(--surface)}
+    .digitar input{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);outline:none}
+    .digitar button{border:0;border-radius:12px;background:var(--green);color:#063;font-weight:800;padding:0 16px;cursor:pointer}
+  </style>
+</head>
+<body>
+  <script>(function(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null'),s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return;}}catch(_){}location.replace('./?locked=1');})();</script>
+  <header class="head">
+    <a class="back" href="./" aria-label="Voltar à agenda">‹</a>
+    <div><h1>PC remoto</h1><p class="sub" id="status"><span class="dot"></span>conectando…</p></div>
+    <div class="modos" id="modos" aria-label="O que o toque faz">
+      <button data-modo="clique" class="on">Clique</button><button data-modo="duplo">2×</button><button data-modo="direito">Direito</button>
+    </div>
+  </header>
+  <main class="tela" id="tela"><div class="vazio" id="vazio">Ligando a tela do PC…</div><img id="img" alt="Tela do PC" hidden></main>
+  <div class="marca" id="marca"></div>
+  <nav class="barra" aria-label="Teclas">
+    <button data-scroll="3">▲ rolar</button><button data-scroll="-3">▼ rolar</button>
+    <button data-tecla="enter">Enter</button><button data-tecla="backspace">⌫</button><button data-tecla="tab">Tab</button>
+    <button data-tecla="esc">Esc</button><button data-tecla="left">←</button><button data-tecla="up">↑</button>
+    <button data-tecla="down">↓</button><button data-tecla="right">→</button><button data-tecla="ctrl+c">Ctrl+C</button>
+    <button data-tecla="ctrl+v">Ctrl+V</button><button data-tecla="ctrl+a">Ctrl+A</button><button data-tecla="alt+tab">Alt+Tab</button>
+    <button data-tecla="win">Win</button><button data-tecla="f5">F5</button><button id="zoom">Zoom</button>
+  </nav>
+  <form class="digitar" id="form"><input id="txt" placeholder="Digitar no PC…" autocomplete="off" autocapitalize="off"><button>Enviar</button></form>
+  <script src="./supabase-project-config.js?v=1"></script>
+  <script type="module" src="./pc.js?v=1"></script>
+</body>
+</html>
