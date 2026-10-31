@@ -14,8 +14,27 @@ let pc = null, dc = null, video = false, fps = 0;          // modo vídeo
 let foto = false, urlAtual = '', quadroOk = 0, timerAtivo = null; // modo foto (abre na hora)
 let tentando = false, retry = null;
 const LIMITE_VIDEO_MS = 8000, NOVA_TENTATIVA_MS = 90000;
-// STUN público; em 4G/CGNAT o vídeo direto só fecha com um servidor TURN (ver pc_remoto_rtc.py). Se um dia houver, entra aqui.
-const ICE = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }];
+// STUN público; em 4G/CGNAT o vídeo direto só fecha com TURN. As credenciais (1 h) vêm da Edge Function pc-turn,
+// que guarda a chave da Cloudflare; sem a chave configurada ela devolve só STUN e tudo segue como antes.
+const ICE_STUN = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }];
+let iceProm = null, iceTurn = false;
+function carregarIce() {
+  if (iceProm) return iceProm;
+  iceProm = (async () => {
+    try {
+      const r = await Promise.race([sb.functions.invoke('pc-turn', { body: {} }), esperar(2500).then(() => ({ error: new Error('lento') }))]);
+      const lista = r?.data?.iceServers;
+      if (Array.isArray(lista) && lista.length) {
+        iceTurn = !!r.data.turn;
+        setTimeout(() => { iceProm = null; }, 30 * 60 * 1000);   // credenciais valem 1 h: renova a cada 30 min
+        return lista;
+      }
+    } catch (_) { }
+    setTimeout(() => { iceProm = null; }, 60 * 1000);
+    return ICE_STUN;
+  })();
+  return iceProm;
+}
 
 async function iniciar() {
   const conf = cfg.url ? cfg : (window.getSupabaseAgendaConfig ? window.getSupabaseAgendaConfig() : {});
@@ -29,6 +48,7 @@ async function iniciar() {
   setInterval(status, 4000);
   el('vazio').textContent = 'Abrindo a tela do PC…';
   modoFoto();       // imagem já na primeira volta
+  carregarIce();    // credenciais TURN já a caminho
   tentarVideo();    // e o vídeo em paralelo
 }
 
@@ -47,9 +67,11 @@ function novaTentativa() {
 
 // ---------------------------------------------------------------- vídeo ao vivo (WebRTC)
 async function conectarVideo(limite) {
+  const ice = await carregarIce();
+  if (iceTurn) limite = Math.max(limite, 12000);   // via relay o ICE precisa de um pouco mais
   const fim = Date.now() + limite, restante = () => fim - Date.now();
   fechar();
-  pc = new RTCPeerConnection({ iceServers: ICE });
+  pc = new RTCPeerConnection({ iceServers: ice });
   const tr = pc.addTransceiver('video', { direction: 'recvonly' });
   try {   // H.264 primeiro: o PC codifica bem mais rápido
     const cs = RTCRtpReceiver.getCapabilities('video').codecs;
@@ -71,7 +93,7 @@ async function conectarVideo(limite) {
   await pc.setLocalDescription(await pc.createOffer());
   await new Promise(ok => {   // junta os candidatos de rede (no máx. 1,2 s)
     if (pc.iceGatheringState === 'complete') return ok();
-    const t = setTimeout(ok, 1200);
+    const t = setTimeout(ok, iceTurn ? 2000 : 1200);
     pc.addEventListener('icegatheringstatechange', () => { if (pc.iceGatheringState === 'complete') { clearTimeout(t); ok(); } });
   });
   const { data: s, error } = await sb.from('pc_remoto_sinal').insert({ oferta: pc.localDescription.sdp }).select('id').single();
