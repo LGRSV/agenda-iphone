@@ -1,7 +1,8 @@
 // PC remoto do João (o "AnyDesk" do app). Modo principal: vídeo ao vivo por WebRTC, ~30 quadros/s,
 // direto entre o celular e o PC (pc_remoto_rtc.py), com mouse e teclado pelo canal de dados "controle".
-// Sinalização em pc_remoto_sinal (só o dono, RLS). Se o vídeo não conectar, cai para o modo foto:
-// pc_remoto.py manda uma imagem por segundo para o bucket privado pc-remoto e os comandos vão por pc_remoto_comandos.
+// Sinalização em pc_remoto_sinal (só o dono, RLS). A página abre NA HORA em modo foto (pc_remoto.py manda uma imagem
+// por segundo para o bucket privado pc-remoto; comandos por pc_remoto_comandos) e tenta o vídeo em paralelo: se ficar
+// "connected" em até 8 s troca para o vídeo; senão fica na foto e tenta de novo a cada 90 s (ou ao tocar no status).
 const MODULE_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const cfg = (window.AgendaSupabaseConfig || window.SUPABASE_AGENDA_CONFIG || {});
 const el = id => document.getElementById(id);
@@ -10,7 +11,11 @@ const lim = v => Math.min(1, Math.max(0, v));
 
 let sb, uid, url, key, modo = 'clique', ultimoXY = { x: 0.5, y: 0.5 };
 let pc = null, dc = null, video = false, fps = 0;          // modo vídeo
-let foto = false, urlAtual = '', quadroOk = 0;             // modo foto (reserva)
+let foto = false, urlAtual = '', quadroOk = 0, timerAtivo = null; // modo foto (abre na hora)
+let tentando = false, retry = null;
+const LIMITE_VIDEO_MS = 8000, NOVA_TENTATIVA_MS = 90000;
+// STUN público; em 4G/CGNAT o vídeo direto só fecha com um servidor TURN (ver pc_remoto_rtc.py). Se um dia houver, entra aqui.
+const ICE = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }];
 
 async function iniciar() {
   const conf = cfg.url ? cfg : (window.getSupabaseAgendaConfig ? window.getSupabaseAgendaConfig() : {});
@@ -22,20 +27,29 @@ async function iniciar() {
   uid = data?.session?.user?.id;
   if (!uid) { location.replace('./?locked=1'); return; }
   setInterval(status, 4000);
-  conectar();
+  el('vazio').textContent = 'Abrindo a tela do PC…';
+  modoFoto();       // imagem já na primeira volta
+  tentarVideo();    // e o vídeo em paralelo
 }
 
-async function conectar() {
-  el('vazio').textContent = 'Conectando ao vídeo do PC…'; el('vazio').hidden = false;
-  try { await conectarVideo(); }
-  catch (e) { console.warn('vídeo:', e); fechar(); modoFoto(); }
-  status();
+async function tentarVideo() {
+  if (video || tentando || document.hidden) return;
+  tentando = true; clearTimeout(retry); status();
+  try { await conectarVideo(LIMITE_VIDEO_MS); }
+  catch (e) { console.warn('vídeo:', e.message); fechar(); novaTentativa(); }
+  finally { tentando = false; status(); }
+}
+
+function novaTentativa() {
+  clearTimeout(retry);
+  retry = setTimeout(() => { if (!video && !document.hidden) tentarVideo(); }, NOVA_TENTATIVA_MS);
 }
 
 // ---------------------------------------------------------------- vídeo ao vivo (WebRTC)
-async function conectarVideo() {
+async function conectarVideo(limite) {
+  const fim = Date.now() + limite, restante = () => fim - Date.now();
   fechar();
-  pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+  pc = new RTCPeerConnection({ iceServers: ICE });
   const tr = pc.addTransceiver('video', { direction: 'recvonly' });
   try {   // H.264 primeiro: o PC codifica bem mais rápido
     const cs = RTCRtpReceiver.getCapabilities('video').codecs;
@@ -50,30 +64,32 @@ async function conectarVideo() {
   };
   pc.onconnectionstatechange = () => {
     status();
-    if (pc && ['failed', 'disconnected'].includes(pc.connectionState) && !document.hidden) {
-      setTimeout(() => { if (pc && pc.connectionState !== 'connected') conectar(); }, 3000);
+    if (video && pc && ['failed', 'disconnected', 'closed'].includes(pc.connectionState)) {   // o vídeo caiu: volta para a foto
+      fechar(); modoFoto(); novaTentativa();
     }
   };
   await pc.setLocalDescription(await pc.createOffer());
-  await new Promise(ok => {   // junta os candidatos de rede (no máx. 2,5 s)
+  await new Promise(ok => {   // junta os candidatos de rede (no máx. 1,2 s)
     if (pc.iceGatheringState === 'complete') return ok();
-    const t = setTimeout(ok, 2500);
+    const t = setTimeout(ok, 1200);
     pc.addEventListener('icegatheringstatechange', () => { if (pc.iceGatheringState === 'complete') { clearTimeout(t); ok(); } });
   });
   const { data: s, error } = await sb.from('pc_remoto_sinal').insert({ oferta: pc.localDescription.sdp }).select('id').single();
   if (error) throw error;
   let resposta = '';
-  for (let i = 0; i < 40 && !resposta; i++) {   // o PC responde em ~1 s
-    await esperar(400);
+  while (!resposta && restante() > 0) {   // o PC responde em ~1,5 s
+    await esperar(300);
     const { data } = await sb.from('pc_remoto_sinal').select('resposta').eq('id', s.id).maybeSingle();
     resposta = data?.resposta || '';
   }
-  if (!resposta) throw new Error('o PC não respondeu');
+  if (!resposta) throw new Error('o PC não respondeu a tempo');
+  const meu = pc;
   await pc.setRemoteDescription({ type: 'answer', sdp: resposta });
-  for (let i = 0; i < 40 && pc.connectionState !== 'connected'; i++) await esperar(250);
-  if (pc.connectionState !== 'connected') throw new Error('sem conexão direta');
-  video = true; foto = false;
+  while (pc === meu && pc.connectionState !== 'connected' && restante() > 0) await esperar(200);
+  if (pc !== meu || pc.connectionState !== 'connected') throw new Error('sem conexão direta em ' + Math.round(limite / 1000) + ' s');
+  video = true; foto = false; clearInterval(timerAtivo); timerAtivo = null;
   el('img').hidden = true; el('video').hidden = false; el('vazio').hidden = true;
+  sb.from('pc_remoto_estado').update({ ativo_ate: new Date().toISOString() }).eq('owner_id', uid).then(() => { });   // o PC para de mandar fotos
   medirFps();
 }
 
@@ -99,8 +115,7 @@ function medirFps() {
 function modoFoto() {
   if (foto) return;
   foto = true;
-  el('video').hidden = true;
-  manterAtivo(); setInterval(manterAtivo, 20000);
+  manterAtivo(); clearInterval(timerAtivo); timerAtivo = setInterval(manterAtivo, 20000);
   quadros();
 }
 
@@ -134,10 +149,10 @@ async function status() {
   const { data } = await sb.from('pc_remoto_estado').select('pc_visto').maybeSingle();
   const seg = data?.pc_visto ? (Date.now() - new Date(data.pc_visto)) / 1000 : Infinity;
   el('status').innerHTML = seg < 15
-    ? `<span class="dot on"></span>PC online · ${foto ? (Date.now() - quadroOk < 5000 ? 'modo foto (toque aqui p/ vídeo)' : 'aguardando tela…') : 'conectando vídeo…'}`
+    ? `<span class="dot on"></span>PC online · ${foto ? (Date.now() - quadroOk < 6000 ? (tentando ? 'foto · conectando vídeo…' : 'modo foto · toque aqui p/ vídeo') : 'aguardando tela…') : 'conectando…'}`
     : `<span class="dot"></span>PC offline${isFinite(seg) ? ` há ${Math.round(seg / 60)} min` : ''}`;
 }
-el('status').addEventListener('click', () => { if (!video) { foto = false; conectar(); } });
+el('status').addEventListener('click', () => { if (!video && !tentando) { clearTimeout(retry); tentarVideo(); } });
 
 // ---------------------------------------------------------------- controle
 function enviar(m) {
@@ -168,14 +183,46 @@ function cliqueDoModo(p) {
   if (modo !== 'clique') escolherModo('clique');   // 2× e direito valem para um toque só
 }
 
-// Toque (celular): toque = clique · segurar = direito · arrastar = arrastar com o botão esquerdo
+// ---- zoom: dois dedos ampliam e movem (transform nas mídias); o botão Zoom alterna 1× → 2× → 3×
+let zoom = 1, tx = 0, ty = 0;
+const midias = () => [el('img'), el('video')];
+function aplicarZoom() {
+  const r = el('tela').getBoundingClientRect();
+  zoom = Math.min(6, Math.max(1, zoom));
+  tx = Math.min(0, Math.max(r.width * (1 - zoom), tx)); ty = Math.min(0, Math.max(r.height * (1 - zoom), ty));
+  if (zoom === 1) { tx = 0; ty = 0; }
+  midias().forEach(m => { m.style.transform = zoom === 1 ? '' : `translate(${tx}px,${ty}px) scale(${zoom})`; });
+}
+function zoomEm(z, cx, cy) {   // mantém o ponto (cx,cy), em coordenadas da área da tela, parado
+  const c = { x: (cx - tx) / zoom, y: (cy - ty) / zoom };
+  zoom = z; tx = cx - zoom * c.x; ty = cy - zoom * c.y; aplicarZoom();
+}
+window.addEventListener('resize', aplicarZoom);
+const dedos = new Map();
+let pinca = null;
+function dedosPonto() {
+  const r = el('tela').getBoundingClientRect(), [a, b] = [...dedos.values()];
+  return { mx: (a.x + b.x) / 2 - r.left, my: (a.y + b.y) / 2 - r.top, d: Math.hypot(a.x - b.x, a.y - b.y) || 1 };
+}
+
+// Toque (celular): toque = clique · segurar = direito · arrastar = arrastar com o botão esquerdo · dois dedos = zoom
+
 // Mouse (computador): movimento, botões e rodinha vão direto, igual a estar no PC.
 let toque = null, pendente = null;
 function ligar(alvo) {
   alvo.addEventListener('contextmenu', e => e.preventDefault());
   alvo.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'touch') {
+      dedos.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (dedos.size === 2) {   // começou o zoom: cancela o toque/arrasto de um dedo
+        if (toque?.arrasto) enviar({ t: 'up', b: 'left', ...ultimoXY });
+        clearTimeout(toque?.timer); toque = null;
+        pinca = { ...dedosPonto(), z: zoom, tx, ty }; return;
+      }
+      if (dedos.size > 2) return;
+    }
     const p = posicao(e, alvo); ultimoXY = p;
-    if (e.pointerType === 'mouse') {
+    if (e.pointerType === 'mouse' && video) {
       enviar({ t: 'down', b: ['left', 'middle', 'right'][e.button] || 'left', ...p });
       alvo.setPointerCapture(e.pointerId); e.preventDefault(); return;
     }
@@ -183,12 +230,20 @@ function ligar(alvo) {
     toque.timer = setTimeout(() => { if (toque && !toque.arrasto) { toque.feito = true; marcar(e.clientX, e.clientY); enviar({ t: 'click', b: 'right', ...p }); } }, 600);
   });
   alvo.addEventListener('pointermove', e => {
+    if (e.pointerType === 'touch' && dedos.has(e.pointerId)) {
+      dedos.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pinca && dedos.size === 2) {
+        const n = dedosPonto(), z = Math.min(6, Math.max(1, pinca.z * n.d / pinca.d));
+        const c = { x: (pinca.mx - pinca.tx) / pinca.z, y: (pinca.my - pinca.ty) / pinca.z };
+        zoom = z; tx = n.mx - z * c.x; ty = n.my - z * c.y; aplicarZoom(); return;
+      }
+    }
     const p = posicao(e, alvo);
-    if (e.pointerType === 'mouse') {   // um movimento por quadro de tela, no máximo
+    if (e.pointerType === 'mouse' && video) {   // um movimento por quadro de tela, no máximo
       if (!pendente) requestAnimationFrame(() => { enviar({ t: 'move', ...pendente }); pendente = null; });
       pendente = p; return;
     }
-    if (!toque || toque.feito || el('tela').classList.contains('grande') || !video) return;
+    if (!toque || toque.feito || !video) return;
     if (!toque.arrasto && Math.hypot(e.clientX - toque.x, e.clientY - toque.y) > 12) {
       toque.arrasto = true; clearTimeout(toque.timer);
       enviar({ t: 'down', b: 'left', ...toque.p });
@@ -196,15 +251,21 @@ function ligar(alvo) {
     if (toque.arrasto) enviar({ t: 'move', ...p });
   });
   alvo.addEventListener('pointerup', e => {
+    if (e.pointerType === 'touch') {
+      const eraPinca = !!pinca;
+      dedos.delete(e.pointerId);
+      if (eraPinca) { if (dedos.size < 2) pinca = null; if (dedos.size === 0) toque = null; return; }
+    }
     const p = posicao(e, alvo);
-    if (e.pointerType === 'mouse') { enviar({ t: 'up', b: ['left', 'middle', 'right'][e.button] || 'left', ...p }); return; }
+    if (e.pointerType === 'mouse' && video) { enviar({ t: 'up', b: ['left', 'middle', 'right'][e.button] || 'left', ...p }); return; }
     if (!toque) return;
     clearTimeout(toque.timer);
     if (toque.arrasto) enviar({ t: 'up', b: 'left', ...p });
     else if (!toque.feito && Math.hypot(e.clientX - toque.x, e.clientY - toque.y) <= 12) { marcar(e.clientX, e.clientY); ultimoXY = p; cliqueDoModo(p); }
     toque = null;
   });
-  alvo.addEventListener('pointercancel', () => { if (toque?.arrasto) enviar({ t: 'up', b: 'left', ...ultimoXY }); clearTimeout(toque?.timer); toque = null; });
+  alvo.addEventListener('pointercancel', e => {
+    dedos.delete(e.pointerId); if (dedos.size < 2) pinca = null; if (toque?.arrasto) enviar({ t: 'up', b: 'left', ...ultimoXY }); clearTimeout(toque?.timer); toque = null; });
   alvo.addEventListener('wheel', e => {
     e.preventDefault();
     enviar({ t: 'wheel', d: -Math.sign(e.deltaY) * Math.max(1, Math.round(Math.abs(e.deltaY) / 100)), ...posicao(e, alvo) });
@@ -220,7 +281,7 @@ el('modos').addEventListener('click', e => { const b = e.target.closest('[data-m
 
 document.querySelector('.barra').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
-  if (b.id === 'zoom') { el('tela').classList.toggle('grande'); return; }
+  if (b.id === 'zoom') { const r = el('tela').getBoundingClientRect(); zoomEm(zoom >= 3 ? 1 : zoom < 2 ? 2 : 3, r.width / 2, r.height / 2); return; }
   if (b.dataset.tecla) enviar({ t: 'key', k: b.dataset.tecla });
   if (b.dataset.scroll) enviar({ t: 'wheel', d: Number(b.dataset.scroll), ...ultimoXY });
 });
@@ -237,7 +298,7 @@ el('form').addEventListener('submit', e => {
 const ESPECIAIS = { Enter: 'enter', Backspace: 'backspace', Tab: 'tab', Escape: 'esc', Delete: 'delete', Home: 'home', End: 'end',
   PageUp: 'pageup', PageDown: 'pagedown', ArrowLeft: 'left', ArrowUp: 'up', ArrowRight: 'right', ArrowDown: 'down', F5: 'f5', F11: 'f11', ' ': 'space' };
 document.addEventListener('keydown', e => {
-  if (e.target === el('txt') || !video) return;
+  if (e.target === el('txt') || !(video || foto)) return;
   const mods = [e.ctrlKey && 'ctrl', e.altKey && 'alt', e.metaKey && 'win'].filter(Boolean);
   if (!mods.length && e.key.length === 1) { enviar({ t: 'text', s: e.key }); e.preventDefault(); return; }
   const k = ESPECIAIS[e.key] || (e.key.length === 1 ? e.key.toLowerCase() : '');
@@ -248,10 +309,13 @@ document.addEventListener('keydown', e => {
 
 document.addEventListener('visibilitychange', async () => {
   if (document.hidden) {   // saiu da página: libera o PC
-    if (video) fechar();
-    if (foto) await sb.from('pc_remoto_estado').update({ ativo_ate: new Date().toISOString() }).eq('owner_id', uid);
-  } else if (!video && !foto) conectar();
-  else if (foto) manterAtivo();
+    clearTimeout(retry);
+    if (video) { fechar(); foto = false; }
+    await sb.from('pc_remoto_estado').update({ ativo_ate: new Date().toISOString() }).eq('owner_id', uid);
+  } else {
+    if (!video && !foto) modoFoto(); else if (foto) manterAtivo();
+    if (!video) tentarVideo();
+  }
 });
 
 iniciar().catch(err => { el('vazio').textContent = 'Erro: ' + err.message; });
