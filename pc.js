@@ -13,7 +13,7 @@ let sb, uid, url, key, modo = 'clique', ultimoXY = { x: 0.5, y: 0.5 };
 let pc = null, dc = null, video = false, fps = 0;          // modo vídeo
 let foto = false, urlAtual = '', quadroOk = 0, timerAtivo = null; // modo foto (abre na hora)
 let tentando = false, retry = null;
-const LIMITE_VIDEO_MS = 8000, NOVA_TENTATIVA_MS = 90000;
+const LIMITE_VIDEO_MS = 25000, NOVA_TENTATIVA_MS = 4000;   // vídeo é o modo principal: espera até 25 s e reconecta em 4 s; a foto só cobre o intervalo
 // STUN público; em 4G/CGNAT o vídeo direto só fecha com TURN. As credenciais (1 h) vêm da Edge Function pc-turn,
 // que guarda a chave da Cloudflare; sem a chave configurada ela devolve só STUN e tudo segue como antes.
 const ICE_STUN = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }];
