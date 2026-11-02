@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v255-pc-video-sempre';
+const CACHE = 'agenda-lagares-v256-financeiro-dias-uteis';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=14" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
