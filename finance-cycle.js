@@ -328,6 +328,80 @@
     }).join('');
   }
 
+  // ---- Gráfico de desembolso: saídas do mês (por data do lançamento) ----
+  const FORMA_NOME = { inter: 'Cartão Inter', pix: 'Pix', dinheiro: 'Dinheiro', mp: 'Mercado Pago' };
+  function desembolsoMes(key) {
+    const notes = read(NOTES_KEY, {});
+    const ref = parseKey(key);
+    const dias = new Date(ref.year, ref.month, 0).getDate();
+    const itens = read(TASKS_KEY, [])
+      .filter(task => task && task.text && task.tag === 'financeiro' && String(task.date || '').startsWith(`${key}-`))
+      .map(task => ({ ...task, n: notes[task.id] || {} }))
+      .filter(task => kind(task, task.n) === 'saida' && !isCancelled(task, task.n) && !task.n.processando && amount(task.n.valor) > 0);
+    const pago = Array(dias + 1).fill(0), apagar = Array(dias + 1).fill(0);
+    const porCat = {}, porForma = {};
+    itens.forEach(task => {
+      const dia = Number(task.date.slice(8, 10)), valor = amount(task.n.valor);
+      if (task.n.programada && !task.done) apagar[dia] += valor; else pago[dia] += valor;
+      const cat = task.n.categoria || 'Sem categoria', forma = FORMA_NOME[task.n.forma] || 'Outras formas';
+      porCat[cat] = (porCat[cat] || 0) + valor; porForma[forma] = (porForma[forma] || 0) + valor;
+    });
+    const totalPago = pago.reduce((a, b) => a + b, 0), totalAPagar = apagar.reduce((a, b) => a + b, 0);
+    return { ref, dias, itens, pago, apagar, porCat, porForma, totalPago, totalAPagar, total: totalPago + totalAPagar };
+  }
+
+  function barrasHtml(mapa, total) {
+    const linhas = Object.entries(mapa).sort((a, b) => b[1] - a[1]);
+    const top = linhas.slice(0, 6), resto = linhas.slice(6).reduce((sum, [, v]) => sum + v, 0);
+    if (resto > 0) top.push(['Outras', resto]);
+    return top.map(([nome, valor]) => {
+      const pct = total ? valor / total * 100 : 0;
+      return `<div class="dz-bar"><div class="dz-bar-top"><span>${esc(nome)}</span><b>${money(valor)} <small>${pct.toFixed(0)}%</small></b></div><div class="dz-track"><i style="width:${Math.max(2, pct).toFixed(1)}%"></i></div></div>`;
+    }).join('');
+  }
+
+  function graficoHtml(key) {
+    const d = desembolsoMes(key);
+    if (!d.itens.length) return '<div class="empty">Sem saídas neste mês.</div>';
+    const W = 340, H = 170, L = 6, R = 6, T = 10, B = 22, cw = W - L - R, ch = H - T - B, slot = cw / d.dias;
+    const maxDia = Math.max(...d.pago.map((v, i) => v + d.apagar[i]), 1);
+    const hoje = new Date(), diaHoje = (hoje.getFullYear() === d.ref.year && hoje.getMonth() + 1 === d.ref.month) ? hoje.getDate() : 0;
+    let acum = 0;
+    const pts = [], barras = [];
+    for (let i = 1; i <= d.dias; i += 1) {
+      const x = L + (i - 1) * slot, hp = d.pago[i] / maxDia * ch, ha = d.apagar[i] / maxDia * ch, w = Math.max(1.5, slot - 2);
+      if (hp > 0) barras.push(`<rect x="${(x + 1).toFixed(1)}" y="${(T + ch - hp).toFixed(1)}" width="${w.toFixed(1)}" height="${hp.toFixed(1)}" rx="1.5" fill="#ff7f91"/>`);
+      if (ha > 0) barras.push(`<rect x="${(x + 1).toFixed(1)}" y="${(T + ch - hp - ha).toFixed(1)}" width="${w.toFixed(1)}" height="${ha.toFixed(1)}" rx="1.5" fill="rgba(255,127,145,.30)" stroke="#ff7f91" stroke-dasharray="2 2" stroke-width=".8"/>`);
+      acum += d.pago[i] + d.apagar[i];
+      pts.push(`${(x + slot / 2).toFixed(1)},${(T + ch - acum / d.total * ch).toFixed(1)}`);
+    }
+    const rotulos = [1, 5, 10, 15, 20, 25, d.dias].filter((v, i, a) => a.indexOf(v) === i && v <= d.dias)
+      .map(i => `<text x="${(L + (i - 0.5) * slot).toFixed(1)}" y="${H - 6}" text-anchor="middle">${i}</text>`).join('');
+    const marcaHoje = diaHoje ? `<line x1="${(L + (diaHoje - 0.5) * slot).toFixed(1)}" x2="${(L + (diaHoje - 0.5) * slot).toFixed(1)}" y1="${T}" y2="${T + ch}" stroke="#aeb5c1" stroke-dasharray="3 3" stroke-width=".8"/><text x="${(L + (diaHoje - 0.5) * slot).toFixed(1)}" y="${T - 2}" text-anchor="middle" class="dz-hoje">hoje</text>` : '';
+    let maiorDia = 1;
+    for (let i = 1; i <= d.dias; i += 1) if (d.pago[i] + d.apagar[i] > d.pago[maiorDia] + d.apagar[maiorDia]) maiorDia = i;
+    const valMaior = d.pago[maiorDia] + d.apagar[maiorDia];
+    const mes = String(d.ref.month).padStart(2, '0');
+    return `<section class="dz">
+      <div class="dz-cards">
+        <div><span>Desembolso do mês</span><b>${money(d.total)}</b></div>
+        <div><span>Já saiu</span><b>${money(d.totalPago)}</b></div>
+        <div><span>A pagar (programado)</span><b>${money(d.totalAPagar)}</b></div>
+        <div><span>Maior dia</span><b>${money(valMaior)}</b><small>${String(maiorDia).padStart(2, '0')}/${mes}</small></div>
+      </div>
+      <svg class="dz-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Desembolso por dia e acumulado">
+        <line x1="${L}" x2="${W - R}" y1="${T + ch}" y2="${T + ch}" stroke="#3b404a"/>
+        ${barras.join('')}${marcaHoje}
+        <polyline points="${pts.join(' ')}" fill="none" stroke="#6ec9ff" stroke-width="1.8" stroke-linejoin="round"/>
+        <g class="dz-eixo">${rotulos}</g>
+      </svg>
+      <div class="dz-legenda"><span><i style="background:#ff7f91"></i>Saiu no dia</span><span><i class="dz-prog"></i>A pagar</span><span><i style="background:#6ec9ff"></i>Acumulado até ${money(d.total)}</span></div>
+      <h3 class="dz-h">Por categoria</h3>${barrasHtml(d.porCat, d.total)}
+      <h3 class="dz-h">Por forma de pagamento</h3>${barrasHtml(d.porForma, d.total)}
+      <p class="dz-nota">Considera todas as saídas lançadas de 01/${mes} a ${String(d.dias).padStart(2, '0')}/${mes} (pela data do lançamento, inclusive compras no cartão). Canceladas ficam de fora.</p>
+    </section>`;
+  }
+
   function render() {
     const items = invoiceItems();
     const financialItems = financialInvoiceItems();
@@ -389,11 +463,16 @@
     }
 
     const heading = document.querySelector('#list')?.previousElementSibling;
-    if (heading?.tagName === 'H2') heading.textContent = 'LANÇAMENTOS DO PERÍODO';
+    if (heading?.tagName === 'H2') heading.textContent = filter === 'grafico' ? 'DESEMBOLSO DO MÊS' : 'LANÇAMENTOS DO PERÍODO';
     document.querySelectorAll('.filters [data-f]').forEach(button => {
       button.classList.toggle('on', button.dataset.f === filter);
     });
-    renderList(visibleFinancial);
+    if (filter === 'grafico') {
+      const list = document.querySelector('#list');
+      if (list) list.innerHTML = graficoHtml(cursor);
+    } else {
+      renderList(visibleFinancial);
+    }
   }
 
   function markDirty(documentKey) {
@@ -520,6 +599,25 @@
     .pending-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #ff5d73;border-radius:999px;background:rgba(255,93,115,.14);color:#ff7f91;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
     .subscription-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #6ec9ff;border-radius:999px;background:rgba(110,201,255,.13);color:#82d2ff;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
     .refund-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #78d88b;border-radius:999px;background:rgba(120,216,139,.13);color:#8ce59d;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
+    .dz-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+    .dz-cards>div{padding:10px 12px;border:1px solid #343841;border-radius:12px;background:#1d2026}
+    .dz-cards span{display:block;color:#8f96a3;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    .dz-cards b{display:block;margin-top:4px;color:#ff7f91;font-size:17px}
+    .dz-cards small{color:#8f96a3;font-size:10px;font-weight:700}
+    .dz-svg{width:100%;height:auto;display:block;border:1px solid #343841;border-radius:12px;background:#1d2026}
+    .dz-svg text{fill:#8f96a3;font-size:8px;font-weight:700}
+    .dz-svg .dz-hoje{fill:#aeb5c1;font-size:7px}
+    .dz-legenda{display:flex;flex-wrap:wrap;gap:6px 12px;margin:8px 2px 4px;color:#aeb5c1;font-size:10px;font-weight:700}
+    .dz-legenda i{display:inline-block;width:9px;height:9px;margin-right:5px;border-radius:2px;vertical-align:-1px}
+    .dz-legenda i.dz-prog{background:rgba(255,127,145,.30);border:1px dashed #ff7f91}
+    .dz-h{margin:16px 2px 8px;color:#aeb5c1;font-size:11px;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
+    .dz-bar{margin-bottom:9px}
+    .dz-bar-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#d8dbe2}
+    .dz-bar-top b{font-weight:800;white-space:nowrap}
+    .dz-bar-top small{color:#8f96a3;font-weight:700}
+    .dz-track{height:7px;margin-top:4px;border-radius:99px;background:#2a2e36;overflow:hidden}
+    .dz-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#ff7f91,#ff5d73)}
+    .dz-nota{margin:14px 2px 0;color:#8f96a3;font-size:10px;line-height:1.5}
     .receive-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:8px;color:#aeb5c1;font-size:10px;font-weight:800}
     .receive-actions button{border:1px solid #ff5d73;border-radius:999px;background:rgba(255,93,115,.12);color:#ff7f91;padding:7px 11px;font:inherit;cursor:pointer}
     .invoice-details{display:grid;gap:5px;margin-top:8px;padding:8px 9px;border:1px solid #343841;border-radius:10px;background:#181a1f}
