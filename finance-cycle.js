@@ -367,69 +367,60 @@
     }).join('');
   }
 
+  const compacto = v => v >= 1000 ? `${(v / 1000).toFixed(1).replace('.', ',')} mil` : String(Math.round(v));
   function fluxoHtml(d) {
-    const W = 340, H = 190, L = 6, R = 6, T = 14, B = 22, cw = W - L - R, slot = cw / d.dias;
-    const porDia = i => ({ e: d.recebido[i] + d.areceber[i], s: d.pago[i] + d.apagar[i] });
-    let acum = 0, minA = 0, maxA = 0, maxB = 1;
-    const serie = [];
+    const W = 340, H = 180, L = 6, R = 6, T = 18, B = 22, cw = W - L - R, slot = cw / d.dias, ch = H - T - B, base = H - B;
+    let maxB = 1;
+    for (let i = 1; i <= d.dias; i += 1) maxB = Math.max(maxB, d.recebido[i] + d.areceber[i], d.pago[i] + d.apagar[i]);
+    const yb = v => base - v / maxB * ch, bw = Math.max(1.4, slot / 2 - 1.2);
+    const barras = [], valores = [];
     for (let i = 1; i <= d.dias; i += 1) {
-      const v = porDia(i); acum += v.e - v.s; serie.push(acum);
-      minA = Math.min(minA, acum); maxA = Math.max(maxA, acum); maxB = Math.max(maxB, v.e, v.s);
-    }
-    // barras e linha de resultado em escalas próprias (senão o acumulado esmaga as barras do dia)
-    const ch = H - T - B, base = H - B;
-    const yb = v => base - v / maxB * ch;
-    const topo = Math.max(0, maxA), fundo = Math.min(0, minA);
-    const yv = v => T + (topo - v) / ((topo - fundo) || 1) * ch;
-    const y0 = yv(0), bw = Math.max(1.2, slot / 2 - 1.2);
-    const barras = [], pts = [];
-    for (let i = 1; i <= d.dias; i += 1) {
-      const x = L + (i - 1) * slot;
-      const rec = d.recebido[i], arec = d.areceber[i], pg = d.pago[i], ap = d.apagar[i];
+      const x = L + (i - 1) * slot, rec = d.recebido[i], arec = d.areceber[i], pg = d.pago[i], ap = d.apagar[i];
       const rect = (xx, de, ate, estilo) => ate > de ? `<rect x="${xx.toFixed(1)}" y="${yb(ate).toFixed(1)}" width="${bw.toFixed(1)}" height="${(yb(de) - yb(ate)).toFixed(1)}" rx="1.2" ${estilo}/>` : '';
       barras.push(rect(x + .6, 0, rec, 'fill="#78d88b"'), rect(x + .6, rec, rec + arec, 'fill="rgba(120,216,139,.28)" stroke="#78d88b" stroke-dasharray="2 2" stroke-width=".8"'),
         rect(x + .6 + bw + .6, 0, pg, 'fill="#ff7f91"'), rect(x + .6 + bw + .6, pg, pg + ap, 'fill="rgba(255,127,145,.30)" stroke="#ff7f91" stroke-dasharray="2 2" stroke-width=".8"'));
-      pts.push(`${(x + slot / 2).toFixed(1)},${yv(serie[i - 1]).toFixed(1)}`);
+      // valor escrito acima das barras grandes (a partir de 35% do maior dia)
+      const e = rec + arec, sv = pg + ap;
+      if (e >= maxB * .35) valores.push(`<text x="${(x + .6 + bw / 2).toFixed(1)}" y="${(yb(e) - 3).toFixed(1)}" text-anchor="middle" class="dz-val dz-val-e">${compacto(e)}</text>`);
+      if (sv >= maxB * .35) valores.push(`<text x="${(x + 1.2 + bw * 1.5).toFixed(1)}" y="${(yb(sv) - 3).toFixed(1)}" text-anchor="middle" class="dz-val dz-val-s">${compacto(sv)}</text>`);
     }
     const hoje = new Date(), diaHoje = (hoje.getFullYear() === d.ref.year && hoje.getMonth() + 1 === d.ref.month) ? hoje.getDate() : 0;
     const xh = L + (diaHoje - 0.5) * slot;
-    const marcaHoje = diaHoje ? `<line x1="${xh.toFixed(1)}" x2="${xh.toFixed(1)}" y1="${T}" y2="${H - B}" stroke="#aeb5c1" stroke-dasharray="3 3" stroke-width=".8"/><text x="${xh.toFixed(1)}" y="${T - 4}" text-anchor="middle" class="dz-hoje">hoje</text>` : '';
+    const marcaHoje = diaHoje ? `<line x1="${xh.toFixed(1)}" x2="${xh.toFixed(1)}" y1="${T}" y2="${base}" stroke="#aeb5c1" stroke-dasharray="3 3" stroke-width=".8"/><text x="${xh.toFixed(1)}" y="${T - 6}" text-anchor="middle" class="dz-hoje">hoje</text>` : '';
     const rotulos = [1, 5, 10, 15, 20, 25, d.dias].filter((v, i, a) => a.indexOf(v) === i && v <= d.dias)
       .map(i => `<text x="${(L + (i - 0.5) * slot).toFixed(1)}" y="${H - 6}" text-anchor="middle">${i}</text>`).join('');
-    const res = d.entradas - d.total, sinal = res >= 0 ? '+ ' : '− ';
+    const res = d.entradas - d.total, nomeMes = MONTHS[d.ref.month - 1];
+    const frase = res >= 0
+      ? `Em ${nomeMes} entram ${money(d.entradas)} e saem ${money(d.total)}: <b class="dz-ent">sobram ${money(res)}</b>.`
+      : `Em ${nomeMes} entram ${money(d.entradas)} e saem ${money(d.total)}: <b>faltam ${money(-res)}</b>.`;
     return `<section class="dz">
       <div class="dz-cards dz-cards3">
-        <div><span>Entradas</span><b class="dz-ent">${money(d.entradas)}</b><small>${money(d.totalRecebido)} recebido</small></div>
+        <div><span>Entradas</span><b class="dz-ent">${money(d.entradas)}</b><small>${money(d.totalRecebido)} já recebido</small></div>
         <div><span>Saídas</span><b>${money(d.total)}</b><small>${money(d.totalPago)} já saiu</small></div>
-        <div><span>Resultado</span><b class="${res >= 0 ? 'dz-ent' : ''}">${sinal}${money(Math.abs(res))}</b><small>entradas − saídas</small></div>
+        <div><span>${res >= 0 ? 'Sobra' : 'Falta'}</span><b class="${res >= 0 ? 'dz-ent' : ''}">${money(Math.abs(res))}</b><small>entradas − saídas</small></div>
       </div>
-      <svg class="dz-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Entradas e saídas por dia e resultado acumulado">
+      <svg class="dz-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Entradas e saídas por dia">
         <line x1="${L}" x2="${W - R}" y1="${base}" y2="${base}" stroke="#3b404a"/>
-        <line x1="${L}" x2="${W - R}" y1="${y0.toFixed(1)}" y2="${y0.toFixed(1)}" stroke="#6ec9ff" stroke-opacity=".45" stroke-dasharray="1 3"/>
-        ${barras.join('')}${marcaHoje}
-        <polyline points="${pts.join(' ')}" fill="none" stroke="#6ec9ff" stroke-width="1.8" stroke-linejoin="round"/>
+        ${barras.join('')}${valores.join('')}${marcaHoje}
         <g class="dz-eixo">${rotulos}</g>
       </svg>
-      <div class="dz-legenda"><span><i style="background:#78d88b"></i>Entrou</span><span><i class="dz-prog dz-prog-e"></i>A receber</span><span><i style="background:#ff7f91"></i>Saiu</span><span><i class="dz-prog"></i>A pagar</span><span><i style="background:#6ec9ff"></i>Resultado acumulado (${sinal}${money(Math.abs(res))}) · linha pontilhada = zero</span></div>
-      <p class="dz-nota">Barras e linha usam escalas diferentes: as barras mostram o dia; a linha mostra o resultado acumulado.</p>
+      <div class="dz-legenda"><span><i style="background:#78d88b"></i>Entrou</span><span><i class="dz-prog dz-prog-e"></i>Ainda vai entrar</span><span><i style="background:#ff7f91"></i>Saiu</span><span><i class="dz-prog"></i>Ainda vai sair</span></div>
+      <p class="dz-frase">${frase}</p>
     </section>`;
   }
 
   function graficoHtml(key) {
     const d = desembolsoMes(key);
     if (!d.itens.length && !d.entradas) return '<div class="empty">Sem lançamentos neste mês.</div>';
-    if (!d.itens.length) return `<h3 class="dz-h">Entradas × saídas</h3>${fluxoHtml(d)}<div class="empty">Sem saídas neste mês.</div>`;
+    if (!d.itens.length) return `<h3 class="dz-h">Entrou × saiu, dia a dia</h3>${fluxoHtml(d)}<div class="empty">Sem saídas neste mês.</div>`;
     const W = 340, H = 170, L = 6, R = 6, T = 10, B = 22, cw = W - L - R, ch = H - T - B, slot = cw / d.dias;
     const maxDia = Math.max(...d.pago.map((v, i) => v + d.apagar[i]), 1);
     const hoje = new Date(), diaHoje = (hoje.getFullYear() === d.ref.year && hoje.getMonth() + 1 === d.ref.month) ? hoje.getDate() : 0;
-    let acum = 0;
-    const pts = [], barras = [];
+    const barras = [];
     for (let i = 1; i <= d.dias; i += 1) {
       const x = L + (i - 1) * slot, hp = d.pago[i] / maxDia * ch, ha = d.apagar[i] / maxDia * ch, w = Math.max(1.5, slot - 2);
       if (hp > 0) barras.push(`<rect x="${(x + 1).toFixed(1)}" y="${(T + ch - hp).toFixed(1)}" width="${w.toFixed(1)}" height="${hp.toFixed(1)}" rx="1.5" fill="#ff7f91"/>`);
       if (ha > 0) barras.push(`<rect x="${(x + 1).toFixed(1)}" y="${(T + ch - hp - ha).toFixed(1)}" width="${w.toFixed(1)}" height="${ha.toFixed(1)}" rx="1.5" fill="rgba(255,127,145,.30)" stroke="#ff7f91" stroke-dasharray="2 2" stroke-width=".8"/>`);
-      acum += d.pago[i] + d.apagar[i];
-      pts.push(`${(x + slot / 2).toFixed(1)},${(T + ch - acum / d.total * ch).toFixed(1)}`);
     }
     const rotulos = [1, 5, 10, 15, 20, 25, d.dias].filter((v, i, a) => a.indexOf(v) === i && v <= d.dias)
       .map(i => `<text x="${(L + (i - 0.5) * slot).toFixed(1)}" y="${H - 6}" text-anchor="middle">${i}</text>`).join('');
@@ -438,20 +429,19 @@
     for (let i = 1; i <= d.dias; i += 1) if (d.pago[i] + d.apagar[i] > d.pago[maiorDia] + d.apagar[maiorDia]) maiorDia = i;
     const valMaior = d.pago[maiorDia] + d.apagar[maiorDia];
     const mes = String(d.ref.month).padStart(2, '0');
-    return `<h3 class="dz-h dz-h0">Entradas × saídas</h3>${fluxoHtml(d)}<h3 class="dz-h">Desembolso (saídas)</h3><section class="dz">
+    return `<h3 class="dz-h dz-h0">Entrou × saiu, dia a dia</h3>${fluxoHtml(d)}<h3 class="dz-h">Só as saídas, dia a dia</h3><section class="dz">
       <div class="dz-cards">
         <div><span>Desembolso do mês</span><b>${money(d.total)}</b></div>
         <div><span>Já saiu</span><b>${money(d.totalPago)}</b></div>
-        <div><span>A pagar (programado)</span><b>${money(d.totalAPagar)}</b></div>
+        <div><span>Ainda vai sair</span><b>${money(d.totalAPagar)}</b></div>
         <div><span>Maior dia</span><b>${money(valMaior)}</b><small>${String(maiorDia).padStart(2, '0')}/${mes}</small></div>
       </div>
-      <svg class="dz-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Desembolso por dia e acumulado">
+      <svg class="dz-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Saídas por dia">
         <line x1="${L}" x2="${W - R}" y1="${T + ch}" y2="${T + ch}" stroke="#3b404a"/>
         ${barras.join('')}${marcaHoje}
-        <polyline points="${pts.join(' ')}" fill="none" stroke="#6ec9ff" stroke-width="1.8" stroke-linejoin="round"/>
         <g class="dz-eixo">${rotulos}</g>
       </svg>
-      <div class="dz-legenda"><span><i style="background:#ff7f91"></i>Saiu no dia</span><span><i class="dz-prog"></i>A pagar</span><span><i style="background:#6ec9ff"></i>Acumulado até ${money(d.total)}</span></div>
+      <div class="dz-legenda"><span><i style="background:#ff7f91"></i>Saiu no dia</span><span><i class="dz-prog"></i>Ainda vai sair</span></div>
       <h3 class="dz-h">Por categoria</h3>${barrasHtml(d.porCat, d.total)}
       <h3 class="dz-h">Por forma de pagamento</h3>${barrasHtml(d.porForma, d.total)}
       <p class="dz-nota">Considera todas as saídas lançadas de 01/${mes} a ${String(d.dias).padStart(2, '0')}/${mes} (pela data do lançamento, inclusive compras no cartão). Canceladas ficam de fora.</p>
@@ -672,6 +662,12 @@
     .dz-cards3 small{display:block;margin-top:2px}
     .dz-legenda i.dz-prog-e{background:rgba(120,216,139,.28);border-color:#78d88b}
     .dz-h0{margin-top:4px}
+    .dz-svg .dz-val{font-size:7.5px;font-weight:800}
+    .dz-svg .dz-val-e{fill:#78d88b}
+    .dz-svg .dz-val-s{fill:#ff7f91}
+    .dz-frase{margin:10px 2px 0;color:#d8dbe2;font-size:13px;line-height:1.45}
+    .dz-frase b{color:#ff7f91}
+    .dz-frase b.dz-ent{color:#78d88b}
     .dz-h{margin:16px 2px 8px;color:#aeb5c1;font-size:11px;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
     .dz-bar{margin-bottom:9px}
     .dz-bar-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#d8dbe2}
