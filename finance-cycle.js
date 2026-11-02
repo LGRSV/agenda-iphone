@@ -334,10 +334,17 @@
     const notes = read(NOTES_KEY, {});
     const ref = parseKey(key);
     const dias = new Date(ref.year, ref.month, 0).getDate();
-    const itens = read(TASKS_KEY, [])
+    const doMes = read(TASKS_KEY, [])
       .filter(task => task && task.text && task.tag === 'financeiro' && String(task.date || '').startsWith(`${key}-`))
       .map(task => ({ ...task, n: notes[task.id] || {} }))
-      .filter(task => kind(task, task.n) === 'saida' && !isCancelled(task, task.n) && !task.n.processando && amount(task.n.valor) > 0);
+      .filter(task => !isCancelled(task, task.n) && !task.n.processando && amount(task.n.valor) > 0);
+    const itens = doMes.filter(task => kind(task, task.n) === 'saida');
+    const recebido = Array(dias + 1).fill(0), areceber = Array(dias + 1).fill(0);
+    doMes.filter(task => kind(task, task.n) === 'entrada').forEach(task => {
+      const dia = Number(task.date.slice(8, 10)), valor = amount(task.n.valor);
+      if (task.done) recebido[dia] += valor; else areceber[dia] += valor;
+    });
+    const totalRecebido = recebido.reduce((a, b) => a + b, 0), totalAReceber = areceber.reduce((a, b) => a + b, 0);
     const pago = Array(dias + 1).fill(0), apagar = Array(dias + 1).fill(0);
     const porCat = {}, porForma = {};
     itens.forEach(task => {
@@ -347,7 +354,7 @@
       porCat[cat] = (porCat[cat] || 0) + valor; porForma[forma] = (porForma[forma] || 0) + valor;
     });
     const totalPago = pago.reduce((a, b) => a + b, 0), totalAPagar = apagar.reduce((a, b) => a + b, 0);
-    return { ref, dias, itens, pago, apagar, porCat, porForma, totalPago, totalAPagar, total: totalPago + totalAPagar };
+    return { ref, dias, itens, pago, apagar, porCat, porForma, totalPago, totalAPagar, total: totalPago + totalAPagar, recebido, areceber, totalRecebido, totalAReceber, entradas: totalRecebido + totalAReceber };
   }
 
   function barrasHtml(mapa, total) {
@@ -360,9 +367,58 @@
     }).join('');
   }
 
+  function fluxoHtml(d) {
+    const W = 340, H = 190, L = 6, R = 6, T = 14, B = 22, cw = W - L - R, slot = cw / d.dias;
+    const porDia = i => ({ e: d.recebido[i] + d.areceber[i], s: d.pago[i] + d.apagar[i] });
+    let acum = 0, minA = 0, maxA = 0, maxB = 1;
+    const serie = [];
+    for (let i = 1; i <= d.dias; i += 1) {
+      const v = porDia(i); acum += v.e - v.s; serie.push(acum);
+      minA = Math.min(minA, acum); maxA = Math.max(maxA, acum); maxB = Math.max(maxB, v.e, v.s);
+    }
+    // barras e linha de resultado em escalas próprias (senão o acumulado esmaga as barras do dia)
+    const ch = H - T - B, base = H - B;
+    const yb = v => base - v / maxB * ch;
+    const topo = Math.max(0, maxA), fundo = Math.min(0, minA);
+    const yv = v => T + (topo - v) / ((topo - fundo) || 1) * ch;
+    const y0 = yv(0), bw = Math.max(1.2, slot / 2 - 1.2);
+    const barras = [], pts = [];
+    for (let i = 1; i <= d.dias; i += 1) {
+      const x = L + (i - 1) * slot;
+      const rec = d.recebido[i], arec = d.areceber[i], pg = d.pago[i], ap = d.apagar[i];
+      const rect = (xx, de, ate, estilo) => ate > de ? `<rect x="${xx.toFixed(1)}" y="${yb(ate).toFixed(1)}" width="${bw.toFixed(1)}" height="${(yb(de) - yb(ate)).toFixed(1)}" rx="1.2" ${estilo}/>` : '';
+      barras.push(rect(x + .6, 0, rec, 'fill="#78d88b"'), rect(x + .6, rec, rec + arec, 'fill="rgba(120,216,139,.28)" stroke="#78d88b" stroke-dasharray="2 2" stroke-width=".8"'),
+        rect(x + .6 + bw + .6, 0, pg, 'fill="#ff7f91"'), rect(x + .6 + bw + .6, pg, pg + ap, 'fill="rgba(255,127,145,.30)" stroke="#ff7f91" stroke-dasharray="2 2" stroke-width=".8"'));
+      pts.push(`${(x + slot / 2).toFixed(1)},${yv(serie[i - 1]).toFixed(1)}`);
+    }
+    const hoje = new Date(), diaHoje = (hoje.getFullYear() === d.ref.year && hoje.getMonth() + 1 === d.ref.month) ? hoje.getDate() : 0;
+    const xh = L + (diaHoje - 0.5) * slot;
+    const marcaHoje = diaHoje ? `<line x1="${xh.toFixed(1)}" x2="${xh.toFixed(1)}" y1="${T}" y2="${H - B}" stroke="#aeb5c1" stroke-dasharray="3 3" stroke-width=".8"/><text x="${xh.toFixed(1)}" y="${T - 4}" text-anchor="middle" class="dz-hoje">hoje</text>` : '';
+    const rotulos = [1, 5, 10, 15, 20, 25, d.dias].filter((v, i, a) => a.indexOf(v) === i && v <= d.dias)
+      .map(i => `<text x="${(L + (i - 0.5) * slot).toFixed(1)}" y="${H - 6}" text-anchor="middle">${i}</text>`).join('');
+    const res = d.entradas - d.total, sinal = res >= 0 ? '+ ' : '− ';
+    return `<section class="dz">
+      <div class="dz-cards dz-cards3">
+        <div><span>Entradas</span><b class="dz-ent">${money(d.entradas)}</b><small>${money(d.totalRecebido)} recebido</small></div>
+        <div><span>Saídas</span><b>${money(d.total)}</b><small>${money(d.totalPago)} já saiu</small></div>
+        <div><span>Resultado</span><b class="${res >= 0 ? 'dz-ent' : ''}">${sinal}${money(Math.abs(res))}</b><small>entradas − saídas</small></div>
+      </div>
+      <svg class="dz-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Entradas e saídas por dia e resultado acumulado">
+        <line x1="${L}" x2="${W - R}" y1="${base}" y2="${base}" stroke="#3b404a"/>
+        <line x1="${L}" x2="${W - R}" y1="${y0.toFixed(1)}" y2="${y0.toFixed(1)}" stroke="#6ec9ff" stroke-opacity=".45" stroke-dasharray="1 3"/>
+        ${barras.join('')}${marcaHoje}
+        <polyline points="${pts.join(' ')}" fill="none" stroke="#6ec9ff" stroke-width="1.8" stroke-linejoin="round"/>
+        <g class="dz-eixo">${rotulos}</g>
+      </svg>
+      <div class="dz-legenda"><span><i style="background:#78d88b"></i>Entrou</span><span><i class="dz-prog dz-prog-e"></i>A receber</span><span><i style="background:#ff7f91"></i>Saiu</span><span><i class="dz-prog"></i>A pagar</span><span><i style="background:#6ec9ff"></i>Resultado acumulado (${sinal}${money(Math.abs(res))}) · linha pontilhada = zero</span></div>
+      <p class="dz-nota">Barras e linha usam escalas diferentes: as barras mostram o dia; a linha mostra o resultado acumulado.</p>
+    </section>`;
+  }
+
   function graficoHtml(key) {
     const d = desembolsoMes(key);
-    if (!d.itens.length) return '<div class="empty">Sem saídas neste mês.</div>';
+    if (!d.itens.length && !d.entradas) return '<div class="empty">Sem lançamentos neste mês.</div>';
+    if (!d.itens.length) return `<h3 class="dz-h">Entradas × saídas</h3>${fluxoHtml(d)}<div class="empty">Sem saídas neste mês.</div>`;
     const W = 340, H = 170, L = 6, R = 6, T = 10, B = 22, cw = W - L - R, ch = H - T - B, slot = cw / d.dias;
     const maxDia = Math.max(...d.pago.map((v, i) => v + d.apagar[i]), 1);
     const hoje = new Date(), diaHoje = (hoje.getFullYear() === d.ref.year && hoje.getMonth() + 1 === d.ref.month) ? hoje.getDate() : 0;
@@ -382,7 +438,7 @@
     for (let i = 1; i <= d.dias; i += 1) if (d.pago[i] + d.apagar[i] > d.pago[maiorDia] + d.apagar[maiorDia]) maiorDia = i;
     const valMaior = d.pago[maiorDia] + d.apagar[maiorDia];
     const mes = String(d.ref.month).padStart(2, '0');
-    return `<section class="dz">
+    return `<h3 class="dz-h dz-h0">Entradas × saídas</h3>${fluxoHtml(d)}<h3 class="dz-h">Desembolso (saídas)</h3><section class="dz">
       <div class="dz-cards">
         <div><span>Desembolso do mês</span><b>${money(d.total)}</b></div>
         <div><span>Já saiu</span><b>${money(d.totalPago)}</b></div>
@@ -463,7 +519,7 @@
     }
 
     const heading = document.querySelector('#list')?.previousElementSibling;
-    if (heading?.tagName === 'H2') heading.textContent = filter === 'grafico' ? 'DESEMBOLSO DO MÊS' : 'LANÇAMENTOS DO PERÍODO';
+    if (heading?.tagName === 'H2') heading.textContent = filter === 'grafico' ? 'ENTRADAS, SAÍDAS E DESEMBOLSO DO MÊS' : 'LANÇAMENTOS DO PERÍODO';
     document.querySelectorAll('.filters [data-f]').forEach(button => {
       button.classList.toggle('on', button.dataset.f === filter);
     });
@@ -610,6 +666,12 @@
     .dz-legenda{display:flex;flex-wrap:wrap;gap:6px 12px;margin:8px 2px 4px;color:#aeb5c1;font-size:10px;font-weight:700}
     .dz-legenda i{display:inline-block;width:9px;height:9px;margin-right:5px;border-radius:2px;vertical-align:-1px}
     .dz-legenda i.dz-prog{background:rgba(255,127,145,.30);border:1px dashed #ff7f91}
+    .dz-cards3{grid-template-columns:repeat(3,1fr)}
+    .dz-cards3 b{font-size:14px}
+    .dz-cards b.dz-ent{color:#78d88b}
+    .dz-cards3 small{display:block;margin-top:2px}
+    .dz-legenda i.dz-prog-e{background:rgba(120,216,139,.28);border-color:#78d88b}
+    .dz-h0{margin-top:4px}
     .dz-h{margin:16px 2px 8px;color:#aeb5c1;font-size:11px;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
     .dz-bar{margin-bottom:9px}
     .dz-bar-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#d8dbe2}
