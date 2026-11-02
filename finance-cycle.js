@@ -330,6 +330,7 @@
 
   // ---- Gráfico de desembolso: saídas do mês (por data do lançamento) ----
   const FORMA_NOME = { inter: 'Cartão Inter', pix: 'Pix', dinheiro: 'Dinheiro', mp: 'Mercado Pago' };
+  const hojeLocal = () => { const h = new Date(); return `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`; };
   function desembolsoMes(key) {
     const notes = read(NOTES_KEY, {});
     const ref = parseKey(key);
@@ -349,7 +350,9 @@
     const porCat = {}, porForma = {};
     itens.forEach(task => {
       const dia = Number(task.date.slice(8, 10)), valor = amount(task.n.valor);
-      if (task.n.programada && !task.done) apagar[dia] += valor; else pago[dia] += valor;
+      // "saiu" só o que já tem data de hoje ou antes (ou foi marcado como feito); o resto ainda vai sair
+      const futura = task.date > hojeLocal();
+      if ((task.n.programada || futura) && !task.done) apagar[dia] += valor; else pago[dia] += valor;
       const cat = task.n.categoria || 'Sem categoria', forma = FORMA_NOME[task.n.forma] || 'Outras formas';
       porCat[cat] = (porCat[cat] || 0) + valor; porForma[forma] = (porForma[forma] || 0) + valor;
     });
