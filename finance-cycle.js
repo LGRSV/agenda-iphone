@@ -405,17 +405,30 @@
     dias.forEach(d => { const o = dia[d]; maxB = Math.max(maxB, o.ef + o.ep, o.sf + o.sp - o.fat); });
     const W = 340, H = 176, L = 6, R = 6, T = 20, B = 22, cw = W - L - R, slot = cw / dias.length, ch = H - T - B, base = H - B;
     const alt = v => Math.min(ch, v / maxB * ch), bw = Math.max(1.4, slot / 2 - 1.2);
-    const partes = [];
+    const partes = [], rotulos = [];
+    // rótulos disputam espaço: entram por prioridade e o que colidiria fica de fora
+    const rotulo = (x, y, txt, cls, anchor, prio) => rotulos.push({ x, y, txt, cls, anchor, prio });
     dias.forEach((d, i) => {
       const o = dia[d], x = L + i * slot;
       const rect = (xx, de, ate, estilo) => ate > de ? `<rect x="${xx.toFixed(1)}" y="${(base - alt(ate)).toFixed(1)}" width="${bw.toFixed(1)}" height="${(alt(ate) - alt(de)).toFixed(1)}" rx="1.2" ${estilo}/>` : '';
       partes.push(rect(x + .6, 0, o.ef, 'fill="#78d88b"'), rect(x + .6, o.ef, o.ef + o.ep, 'class="dz-prev-e"'),
         rect(x + 1.2 + bw, 0, o.sf, 'fill="#ff7f91"'), rect(x + 1.2 + bw, o.sf, o.sf + o.sp, 'class="dz-prev-s"'));
       const e = o.ef + o.ep, sv = o.sf + o.sp;
-      if (e >= maxB * .4) partes.push(`<text x="${(x + .6 + bw / 2).toFixed(1)}" y="${(base - alt(e) - 3).toFixed(1)}" text-anchor="middle" class="dz-val dz-val-e">${compacto(e)}</text>`);
-      if (o.fat) partes.push(`<text x="${(x + 1.2 + bw * 1.5).toFixed(1)}" y="${(base - alt(sv) - 3).toFixed(1)}" text-anchor="end" class="dz-val dz-val-s">fatura ${compacto(o.fat)}</text>`);
-      else if (sv >= maxB * .4) partes.push(`<text x="${(x + 1.2 + bw * 1.5).toFixed(1)}" y="${(base - alt(sv) - 3).toFixed(1)}" text-anchor="middle" class="dz-val dz-val-s">${compacto(sv)}</text>`);
-      if (d === r.hoje) partes.push(`<line x1="${(x + slot / 2).toFixed(1)}" x2="${(x + slot / 2).toFixed(1)}" y1="${T}" y2="${base}" class="dz-hoje-l"/><text x="${(x + slot / 2).toFixed(1)}" y="${T - 8}" text-anchor="middle" class="dz-hoje">hoje</text>`);
+      if (e >= maxB * .4) rotulo(x + .6 + bw / 2, base - alt(e) - 3, compacto(e), 'dz-val dz-val-e', 'middle', e);
+      if (o.fat) rotulo(x + 1.2 + bw * 1.5, base - alt(sv) - 3, `fatura ${compacto(o.fat)}`, 'dz-val dz-val-s', 'end', Infinity);
+      else if (sv >= maxB * .4) rotulo(x + 1.2 + bw * 1.5, base - alt(sv) - 3, compacto(sv), 'dz-val dz-val-s', 'middle', sv);
+      if (d === r.hoje) {
+        partes.push(`<line x1="${(x + slot / 2).toFixed(1)}" x2="${(x + slot / 2).toFixed(1)}" y1="${T}" y2="${base}" class="dz-hoje-l"/>`);
+        rotulo(x + slot / 2, T - 8, 'hoje', 'dz-hoje', 'middle', 1e15);
+      }
+    });
+    const caixa = l => { const w = l.txt.length * 4.4 + 2, x0 = l.anchor === 'end' ? l.x - w : l.anchor === 'middle' ? l.x - w / 2 : l.x; return { x0, x1: x0 + w, y0: l.y - 8, y1: l.y + 1 }; };
+    const postos = [];
+    rotulos.sort((a, b) => b.prio - a.prio).forEach(l => {
+      const c = caixa(l);
+      if (postos.some(o => c.x0 < o.x1 && c.x1 > o.x0 && c.y0 < o.y1 && c.y1 > o.y0)) return;
+      postos.push(c);
+      partes.push(`<text x="${l.x.toFixed(1)}" y="${l.y.toFixed(1)}" text-anchor="${l.anchor}" class="${l.cls}">${l.txt}</text>`);
     });
     const marcas = [0, 7, 14, 21, dias.length - 1].filter((v, i, a) => a.indexOf(v) === i && v < dias.length)
       .map(i => `<text x="${(L + (i + .5) * slot).toFixed(1)}" y="${H - 6}" text-anchor="middle">${ddmm(dias[i])}</text>`).join('');
