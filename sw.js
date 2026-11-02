@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v262-rotulos-grafico';
+const CACHE = 'agenda-lagares-v263-web-push-na-agenda';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=14" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -11,7 +11,7 @@ const SUPABASE_SCRIPT = '<script src="./supabase-shared-storage.js?v=13" defer><
 const SUPABASE_LOGIN_SCRIPT = '<script src="./supabase-login-ui.js?v=4" defer><\/script>';
 const SIMPLE_ACCESS_SCRIPT = '<script src="./supabase-simple-access.js?v=5" defer><\/script>';
 const SHARING_SCRIPT = '<script src="./agenda-sharing.js?v=6" defer><\/script>';
-const WEB_PUSH_SCRIPT = '<script src="./web-push.js?v=1" defer><\/script>';
+const WEB_PUSH_SCRIPT = '<script src="./web-push.js?v=2" defer><\/script>';
 const VIEWMODE_SCRIPT = '<script src="./viewmode.js?v=2" defer><\/script>';
 const HEADER_CLEANUP_SCRIPT = '<script src="./header-cleanup.js?v=6" defer><\/script>';
 const UNDO_SCRIPT = '<script src="./undo.js?v=1" defer><\/script>';
@@ -62,6 +62,10 @@ self.addEventListener('fetch', event => {
       const isEquip = html.includes('Equipamentos Especiais DCMD') || new URL(request.url).pathname.includes('equipamentos-especiais');
       const isMarket = new URL(request.url).pathname.includes('/marketplace/');
       const isAuxPage = isFinance || isGame || isTraining || isInvest || isCarteira || isTreinoAna || isImportar || isEquip || isMarket;
+      // A agenda principal tem links para financeiro.html e gamificacao.html no menu,
+      // então o teste por conteúdo acima a confundia com uma página auxiliar e o
+      // Web Push nunca era carregado (só o aviso antigo, que funciona com o app aberto).
+      const isMain = /\/(index\.html)?$/.test(new URL(request.url).pathname);
       if (!isAuxPage && !html.includes('interface-polish.css')) html = html.replace('</head>', `${POLISH_STYLE}</head>`);
       if (!isAuxPage && !html.includes('edit-enhancement.js')) html = html.replace('</body>', `${EDIT_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('treino.js')) html = html.replace('</body>', `${TREINO_SCRIPT}</body>`);
@@ -74,7 +78,7 @@ self.addEventListener('fetch', event => {
       if (!html.includes('supabase-shared-storage.js')) html = html.replace('</body>', `${SUPABASE_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('supabase-login-ui.js')) html = html.replace('</body>', `${SUPABASE_LOGIN_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('supabase-simple-access.js')) html = html.replace('</body>', `${SIMPLE_ACCESS_SCRIPT}</body>`);
-      if (!isAuxPage && !html.includes('web-push.js')) html = html.replace('</body>', `${WEB_PUSH_SCRIPT}</body>`);
+      if ((isMain || !isAuxPage) && !html.includes('web-push.js')) html = html.replace('</body>', `${WEB_PUSH_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('viewmode.js')) html = html.replace('</body>', `${VIEWMODE_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('header-cleanup.js')) html = html.replace('</body>', `${HEADER_CLEANUP_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('undo.js')) html = html.replace('</body>', `${UNDO_SCRIPT}</body>`);

@@ -264,6 +264,9 @@
 
     const oldActivate = document.getElementById('activateAlerts');
     if (oldActivate) oldActivate.hidden = true;
+    // o texto "Como funciona" ao lado do botão antigo fala em avisos só com o app aberto
+    const oldNotice = oldActivate?.previousElementSibling;
+    if (oldNotice?.classList.contains('notice')) oldNotice.hidden = true;
 
     const panel = document.createElement('section');
     panel.id = PANEL_ID;
