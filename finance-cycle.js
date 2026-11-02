@@ -196,7 +196,7 @@
     return regular.concat([...grouped.values()]);
   }
 
-  function financialInvoiceItems() {
+  function financialInvoiceItems(key = cursor) {
     const notes = read(NOTES_KEY, {});
     const matches = read(TASKS_KEY, [])
       .filter(task => task && task.text)
@@ -204,13 +204,13 @@
       .filter(task => task.tag === 'financeiro'
         && (!task.n.excludeFromInvoice || task.n.processando)
         && (kind(task, task.n) === 'saida' || kind(task, task.n) === 'entrada')
-        && invoiceKey(task.date, task.n) === cursor);
+        && invoiceKey(task.date, task.n) === key);
     return dedupeInstallments(matches)
       .sort((a, b) => `${a.date}${a.time || ''}`.localeCompare(`${b.date}${b.time || ''}`));
   }
 
-  function invoiceItems() {
-    return financialInvoiceItems().filter(task => isInter(task, task.n));
+  function invoiceItems(key = cursor) {
+    return financialInvoiceItems(key).filter(task => isInter(task, task.n));
   }
 
   // A tela inicial também precisa mostrar cobranças ainda abertas do mês em
@@ -227,17 +227,17 @@
       .sort((a, b) => `${a.date}${a.time || ''}`.localeCompare(`${b.date}${b.time || ''}`));
   }
 
+  // Lista do período: compras do cartão desta fatura + todo o resto do dia 03
+  // ao dia 02 (o período fecha no vencimento da fatura).
   function visibleFinancialItems(items) {
-    const byId = new Map(items.map(item => [String(item.id), item]));
-    const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const byId = new Map(items.filter(item => item.n.forma === 'inter').map(item => [String(item.id), item]));
+    const { ini, fim } = periodoDe(cursor);
     const notes = read(NOTES_KEY, {});
     read(TASKS_KEY, [])
-      .filter(task => task && task.tag === 'financeiro' && String(task.date || '').startsWith(currentMonth))
+      .filter(task => task && task.tag === 'financeiro' && String(task.date || '') >= ini && String(task.date || '') <= fim)
       .map(task => ({ ...task, n: notes[task.id] || {} }))
       .filter(task => task.n.forma !== 'inter')
       .forEach(item => byId.set(String(item.id), item));
-    pendingReceivables().forEach(item => byId.set(String(item.id), item));
     return [...byId.values()].sort((a, b) => `${a.date}${a.time || ''}`.localeCompare(`${b.date}${b.time || ''}`));
   }
 
@@ -328,126 +328,115 @@
     }).join('');
   }
 
-  // ---- Gráfico de desembolso: saídas do mês (por data do lançamento) ----
-  const FORMA_NOME = { inter: 'Cartão Inter', pix: 'Pix', dinheiro: 'Dinheiro', mp: 'Mercado Pago' };
+  // ---- Período do dia 03 ao dia 02: fecha no vencimento da fatura Inter ----
   const hojeLocal = () => { const h = new Date(); return `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`; };
-  function desembolsoMes(key) {
-    const notes = read(NOTES_KEY, {});
-    const ref = parseKey(key);
-    const dias = new Date(ref.year, ref.month, 0).getDate();
-    const doMes = read(TASKS_KEY, [])
-      .filter(task => task && task.text && task.tag === 'financeiro' && String(task.date || '').startsWith(`${key}-`))
-      .map(task => ({ ...task, n: notes[task.id] || {} }))
-      .filter(task => !isCancelled(task, task.n) && !task.n.processando && amount(task.n.valor) > 0);
-    const itens = doMes.filter(task => kind(task, task.n) === 'saida');
-    const recebido = Array(dias + 1).fill(0), areceber = Array(dias + 1).fill(0);
-    doMes.filter(task => kind(task, task.n) === 'entrada').forEach(task => {
-      const dia = Number(task.date.slice(8, 10)), valor = amount(task.n.valor);
-      if (task.done) recebido[dia] += valor; else areceber[dia] += valor;
-    });
-    const totalRecebido = recebido.reduce((a, b) => a + b, 0), totalAReceber = areceber.reduce((a, b) => a + b, 0);
-    const pago = Array(dias + 1).fill(0), apagar = Array(dias + 1).fill(0);
-    const porCat = {}, porForma = {};
-    itens.forEach(task => {
-      const dia = Number(task.date.slice(8, 10)), valor = amount(task.n.valor);
-      // "saiu" só o que já tem data de hoje ou antes (ou foi marcado como feito); o resto ainda vai sair
-      const futura = task.date > hojeLocal();
-      if ((task.n.programada || futura) && !task.done) apagar[dia] += valor; else pago[dia] += valor;
-      const cat = task.n.categoria || 'Sem categoria', forma = FORMA_NOME[task.n.forma] || 'Outras formas';
-      porCat[cat] = (porCat[cat] || 0) + valor; porForma[forma] = (porForma[forma] || 0) + valor;
-    });
-    const totalPago = pago.reduce((a, b) => a + b, 0), totalAPagar = apagar.reduce((a, b) => a + b, 0);
-    return { ref, dias, itens, pago, apagar, porCat, porForma, totalPago, totalAPagar, total: totalPago + totalAPagar, recebido, areceber, totalRecebido, totalAReceber, entradas: totalRecebido + totalAReceber };
-  }
-
-  function barrasHtml(mapa, total) {
-    const linhas = Object.entries(mapa).sort((a, b) => b[1] - a[1]);
-    const top = linhas.slice(0, 6), resto = linhas.slice(6).reduce((sum, [, v]) => sum + v, 0);
-    if (resto > 0) top.push(['Outras', resto]);
-    return top.map(([nome, valor]) => {
-      const pct = total ? valor / total * 100 : 0;
-      return `<div class="dz-bar"><div class="dz-bar-top"><span>${esc(nome)}</span><b>${money(valor)} <small>${pct.toFixed(0)}%</small></b></div><div class="dz-track"><i style="width:${Math.max(2, pct).toFixed(1)}%"></i></div></div>`;
-    }).join('');
-  }
-
   const compacto = v => v >= 1000 ? `${(v / 1000).toFixed(1).replace('.', ',')} mil` : String(Math.round(v));
-  function fluxoHtml(d) {
-    const W = 340, H = 180, L = 6, R = 6, T = 18, B = 22, cw = W - L - R, slot = cw / d.dias, ch = H - T - B, base = H - B;
-    let maxB = 1;
-    for (let i = 1; i <= d.dias; i += 1) maxB = Math.max(maxB, d.recebido[i] + d.areceber[i], d.pago[i] + d.apagar[i]);
-    const yb = v => base - v / maxB * ch, bw = Math.max(1.4, slot / 2 - 1.2);
-    const barras = [], valores = [];
-    for (let i = 1; i <= d.dias; i += 1) {
-      const x = L + (i - 1) * slot, rec = d.recebido[i], arec = d.areceber[i], pg = d.pago[i], ap = d.apagar[i];
-      const rect = (xx, de, ate, estilo) => ate > de ? `<rect x="${xx.toFixed(1)}" y="${yb(ate).toFixed(1)}" width="${bw.toFixed(1)}" height="${(yb(de) - yb(ate)).toFixed(1)}" rx="1.2" ${estilo}/>` : '';
-      barras.push(rect(x + .6, 0, rec, 'fill="#78d88b"'), rect(x + .6, rec, rec + arec, 'fill="rgba(120,216,139,.28)" stroke="#78d88b" stroke-dasharray="2 2" stroke-width=".8"'),
-        rect(x + .6 + bw + .6, 0, pg, 'fill="#ff7f91"'), rect(x + .6 + bw + .6, pg, pg + ap, 'fill="rgba(255,127,145,.30)" stroke="#ff7f91" stroke-dasharray="2 2" stroke-width=".8"'));
-      // valor escrito acima das barras grandes (a partir de 35% do maior dia)
-      const e = rec + arec, sv = pg + ap;
-      if (e >= maxB * .35) valores.push(`<text x="${(x + .6 + bw / 2).toFixed(1)}" y="${(yb(e) - 3).toFixed(1)}" text-anchor="middle" class="dz-val dz-val-e">${compacto(e)}</text>`);
-      if (sv >= maxB * .35) valores.push(`<text x="${(x + 1.2 + bw * 1.5).toFixed(1)}" y="${(yb(sv) - 3).toFixed(1)}" text-anchor="middle" class="dz-val dz-val-s">${compacto(sv)}</text>`);
+  const ddmm = d => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
+  function periodoDe(key) {
+    const ref = parseKey(key), ant = parseKey(shiftKey(key, -1));
+    return { ini: dateFor(ant.year, ant.month, 3), fim: dateFor(ref.year, ref.month, 2) };
+  }
+  // O mesmo valor do cartão "Inter Black": compras menos créditos da fatura.
+  function faturaDe(key) {
+    const ativos = invoiceItems(key).filter(t => !isCancelled(t, t.n) && !t.n.processando);
+    const soma = k => ativos.filter(t => kind(t, t.n) === k).reduce((s, t) => s + amount(t.n.valor), 0);
+    return { total: Math.max(0, soma('saida') - soma('entrada')), itens: ativos };
+  }
+  // Saldo = dinheiro no Mercado Pago (Giro) + Nubank, o mesmo do card "Saldo atual em conta".
+  const saldoHoje = () => { const c = read('agenda_contas_v1', {}); return (Number(c.mp) || 0) + (Number(c.nb) || 0); };
+
+  function periodoResumo(key, nivel = 0) {
+    const { ini, fim } = periodoDe(key);
+    const hoje = hojeLocal();
+    const notes = read(NOTES_KEY, {});
+    const lanc = read(TASKS_KEY, [])
+      .filter(t => t && t.text && t.tag === 'financeiro' && String(t.date || '') >= ini && String(t.date || '') <= fim)
+      .map(t => ({ ...t, n: notes[t.id] || {} }))
+      .filter(t => !isCancelled(t, t.n) && !t.n.processando && amount(t.n.valor) > 0 && t.n.forma !== 'inter'
+        && (kind(t, t.n) === 'entrada' || kind(t, t.n) === 'saida'))
+      .map(t => {
+        const ent = kind(t, t.n) === 'entrada';
+        // entrada só conta como recebida quando marcada; saída já saiu se a data passou (ou foi marcada)
+        const feito = ent ? !!t.done : (!!t.done || (t.date <= hoje && !t.n.programada));
+        return { date: t.date, valor: amount(t.n.valor), ent, feito, cat: t.n.categoria || 'Sem categoria' };
+      });
+    const fat = faturaDe(key);
+    // a fatura entra inteira no vencimento (considerada paga a partir do dia)
+    if (fat.total > 0) lanc.push({ date: fim, valor: fat.total, ent: false, feito: hoje >= fim, fatura: true });
+    const soma = f => lanc.filter(f).reduce((s, x) => s + x.valor, 0);
+    const entradas = soma(x => x.ent), saidas = soma(x => !x.ent);
+    const fase = hoje > fim ? 'passado' : hoje < ini ? 'futuro' : 'atual';
+    let base = 0, receber, pagar, atrasadas = 0;
+    if (fase === 'atual') {
+      base = saldoHoje();
+      receber = soma(x => x.ent && !x.feito && x.date >= hoje);
+      atrasadas = soma(x => x.ent && !x.feito && x.date < hoje);
+      pagar = soma(x => !x.ent && !x.feito && x.date >= hoje);
+    } else if (fase === 'futuro') {
+      base = nivel < 24 ? periodoResumo(shiftKey(key, -1), nivel + 1).sobra : 0;
+      receber = entradas; pagar = saidas;
+    } else {
+      receber = soma(x => x.ent && x.feito); pagar = saidas; atrasadas = soma(x => x.ent && !x.feito);
     }
-    const hoje = new Date(), diaHoje = (hoje.getFullYear() === d.ref.year && hoje.getMonth() + 1 === d.ref.month) ? hoje.getDate() : 0;
-    const xh = L + (diaHoje - 0.5) * slot;
-    const marcaHoje = diaHoje ? `<line x1="${xh.toFixed(1)}" x2="${xh.toFixed(1)}" y1="${T}" y2="${base}" stroke="#aeb5c1" stroke-dasharray="3 3" stroke-width=".8"/><text x="${xh.toFixed(1)}" y="${T - 6}" text-anchor="middle" class="dz-hoje">hoje</text>` : '';
-    const rotulos = [1, 5, 10, 15, 20, 25, d.dias].filter((v, i, a) => a.indexOf(v) === i && v <= d.dias)
-      .map(i => `<text x="${(L + (i - 0.5) * slot).toFixed(1)}" y="${H - 6}" text-anchor="middle">${i}</text>`).join('');
-    const res = d.entradas - d.total, nomeMes = MONTHS[d.ref.month - 1];
-    const frase = res >= 0
-      ? `Em ${nomeMes} entram ${money(d.entradas)} e saem ${money(d.total)}: <b class="dz-ent">sobram ${money(res)}</b>.`
-      : `Em ${nomeMes} entram ${money(d.entradas)} e saem ${money(d.total)}: <b>faltam ${money(-res)}</b>.`;
-    return `<section class="dz">
-      <div class="dz-cards dz-cards3">
-        <div><span>Entradas</span><b class="dz-ent">${money(d.entradas)}</b><small>${money(d.totalRecebido)} já recebido</small></div>
-        <div><span>Saídas</span><b>${money(d.total)}</b><small>${money(d.totalPago)} já saiu</small></div>
-        <div><span>${res >= 0 ? 'Sobra' : 'Falta'}</span><b class="${res >= 0 ? 'dz-ent' : ''}">${money(Math.abs(res))}</b><small>entradas − saídas</small></div>
-      </div>
-      <svg class="dz-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Entradas e saídas por dia">
-        <line x1="${L}" x2="${W - R}" y1="${base}" y2="${base}" stroke="#3b404a"/>
-        ${barras.join('')}${valores.join('')}${marcaHoje}
-        <g class="dz-eixo">${rotulos}</g>
-      </svg>
-      <div class="dz-legenda"><span><i style="background:#78d88b"></i>Entrou</span><span><i class="dz-prog dz-prog-e"></i>Ainda vai entrar</span><span><i style="background:#ff7f91"></i>Saiu</span><span><i class="dz-prog"></i>Ainda vai sair</span></div>
-      <p class="dz-frase">${frase}</p>
-    </section>`;
+    return { key, ini, fim, hoje, fase, lanc, fat, entradas, saidas, base, receber, pagar, atrasadas, sobra: base + receber - pagar };
+  }
+
+  function categoriasHtml(r) {
+    const mapa = {};
+    r.lanc.filter(x => !x.ent && !x.fatura).forEach(x => { mapa[x.cat] = (mapa[x.cat] || 0) + x.valor; });
+    r.fat.itens.filter(t => kind(t, t.n) === 'saida').forEach(t => { const c = t.n.categoria || 'Sem categoria'; mapa[c] = (mapa[c] || 0) + amount(t.n.valor); });
+    const linhas = Object.entries(mapa).sort((a, b) => b[1] - a[1]);
+    if (!linhas.length) return '';
+    const top = linhas.slice(0, 5), resto = linhas.slice(5).reduce((s, [, v]) => s + v, 0);
+    if (resto > 0) top.push(['Outras', resto]);
+    const max = top[0][1] || 1;
+    return `<h3 class="dz-h">Para onde vai</h3>${top.map(([nome, v]) =>
+      `<div class="dz-bar"><div class="dz-bar-top"><span>${esc(nome)}</span><b>${money(v)}</b></div><div class="dz-track"><i style="width:${Math.max(3, v / max * 100).toFixed(1)}%"></i></div></div>`).join('')}`;
   }
 
   function graficoHtml(key) {
-    const d = desembolsoMes(key);
-    if (!d.itens.length && !d.entradas) return '<div class="empty">Sem lançamentos neste mês.</div>';
-    if (!d.itens.length) return `<h3 class="dz-h">Entrou × saiu, dia a dia</h3>${fluxoHtml(d)}<div class="empty">Sem saídas neste mês.</div>`;
-    const W = 340, H = 170, L = 6, R = 6, T = 10, B = 22, cw = W - L - R, ch = H - T - B, slot = cw / d.dias;
-    const maxDia = Math.max(...d.pago.map((v, i) => v + d.apagar[i]), 1);
-    const hoje = new Date(), diaHoje = (hoje.getFullYear() === d.ref.year && hoje.getMonth() + 1 === d.ref.month) ? hoje.getDate() : 0;
-    const barras = [];
-    for (let i = 1; i <= d.dias; i += 1) {
-      const x = L + (i - 1) * slot, hp = d.pago[i] / maxDia * ch, ha = d.apagar[i] / maxDia * ch, w = Math.max(1.5, slot - 2);
-      if (hp > 0) barras.push(`<rect x="${(x + 1).toFixed(1)}" y="${(T + ch - hp).toFixed(1)}" width="${w.toFixed(1)}" height="${hp.toFixed(1)}" rx="1.5" fill="#ff7f91"/>`);
-      if (ha > 0) barras.push(`<rect x="${(x + 1).toFixed(1)}" y="${(T + ch - hp - ha).toFixed(1)}" width="${w.toFixed(1)}" height="${ha.toFixed(1)}" rx="1.5" fill="rgba(255,127,145,.30)" stroke="#ff7f91" stroke-dasharray="2 2" stroke-width=".8"/>`);
-    }
-    const rotulos = [1, 5, 10, 15, 20, 25, d.dias].filter((v, i, a) => a.indexOf(v) === i && v <= d.dias)
-      .map(i => `<text x="${(L + (i - 0.5) * slot).toFixed(1)}" y="${H - 6}" text-anchor="middle">${i}</text>`).join('');
-    const marcaHoje = diaHoje ? `<line x1="${(L + (diaHoje - 0.5) * slot).toFixed(1)}" x2="${(L + (diaHoje - 0.5) * slot).toFixed(1)}" y1="${T}" y2="${T + ch}" stroke="#aeb5c1" stroke-dasharray="3 3" stroke-width=".8"/><text x="${(L + (diaHoje - 0.5) * slot).toFixed(1)}" y="${T - 2}" text-anchor="middle" class="dz-hoje">hoje</text>` : '';
-    let maiorDia = 1;
-    for (let i = 1; i <= d.dias; i += 1) if (d.pago[i] + d.apagar[i] > d.pago[maiorDia] + d.apagar[maiorDia]) maiorDia = i;
-    const valMaior = d.pago[maiorDia] + d.apagar[maiorDia];
-    const mes = String(d.ref.month).padStart(2, '0');
-    return `<h3 class="dz-h dz-h0">Entrou × saiu, dia a dia</h3>${fluxoHtml(d)}<h3 class="dz-h">Só as saídas, dia a dia</h3><section class="dz">
-      <div class="dz-cards">
-        <div><span>Desembolso do mês</span><b>${money(d.total)}</b></div>
-        <div><span>Já saiu</span><b>${money(d.totalPago)}</b></div>
-        <div><span>Ainda vai sair</span><b>${money(d.totalAPagar)}</b></div>
-        <div><span>Maior dia</span><b>${money(valMaior)}</b><small>${String(maiorDia).padStart(2, '0')}/${mes}</small></div>
-      </div>
-      <svg class="dz-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Saídas por dia">
-        <line x1="${L}" x2="${W - R}" y1="${T + ch}" y2="${T + ch}" stroke="#3b404a"/>
-        ${barras.join('')}${marcaHoje}
-        <g class="dz-eixo">${rotulos}</g>
+    const r = periodoResumo(key);
+    const dias = [];
+    for (let d = r.ini; d && d <= r.fim; d = addDays(d, 1)) dias.push(d);
+    const dia = Object.fromEntries(dias.map(d => [d, { ef: 0, ep: 0, sf: 0, sp: 0, fat: 0 }]));
+    r.lanc.forEach(x => { const o = dia[x.date]; if (!o) return; if (x.fatura) o.fat = x.valor; o[(x.ent ? 'e' : 's') + (x.feito ? 'f' : 'p')] += x.valor; });
+    // escala pelos dias comuns; a fatura, se for maior, fica cortada no topo com o valor escrito
+    let maxB = 1;
+    dias.forEach(d => { const o = dia[d]; maxB = Math.max(maxB, o.ef + o.ep, o.sf + o.sp - o.fat); });
+    const W = 340, H = 176, L = 6, R = 6, T = 20, B = 22, cw = W - L - R, slot = cw / dias.length, ch = H - T - B, base = H - B;
+    const alt = v => Math.min(ch, v / maxB * ch), bw = Math.max(1.4, slot / 2 - 1.2);
+    const partes = [];
+    dias.forEach((d, i) => {
+      const o = dia[d], x = L + i * slot;
+      const rect = (xx, de, ate, estilo) => ate > de ? `<rect x="${xx.toFixed(1)}" y="${(base - alt(ate)).toFixed(1)}" width="${bw.toFixed(1)}" height="${(alt(ate) - alt(de)).toFixed(1)}" rx="1.2" ${estilo}/>` : '';
+      partes.push(rect(x + .6, 0, o.ef, 'fill="#78d88b"'), rect(x + .6, o.ef, o.ef + o.ep, 'class="dz-prev-e"'),
+        rect(x + 1.2 + bw, 0, o.sf, 'fill="#ff7f91"'), rect(x + 1.2 + bw, o.sf, o.sf + o.sp, 'class="dz-prev-s"'));
+      const e = o.ef + o.ep, sv = o.sf + o.sp;
+      if (e >= maxB * .4) partes.push(`<text x="${(x + .6 + bw / 2).toFixed(1)}" y="${(base - alt(e) - 3).toFixed(1)}" text-anchor="middle" class="dz-val dz-val-e">${compacto(e)}</text>`);
+      if (o.fat) partes.push(`<text x="${(x + 1.2 + bw * 1.5).toFixed(1)}" y="${(base - alt(sv) - 3).toFixed(1)}" text-anchor="end" class="dz-val dz-val-s">fatura ${compacto(o.fat)}</text>`);
+      else if (sv >= maxB * .4) partes.push(`<text x="${(x + 1.2 + bw * 1.5).toFixed(1)}" y="${(base - alt(sv) - 3).toFixed(1)}" text-anchor="middle" class="dz-val dz-val-s">${compacto(sv)}</text>`);
+      if (d === r.hoje) partes.push(`<line x1="${(x + slot / 2).toFixed(1)}" x2="${(x + slot / 2).toFixed(1)}" y1="${T}" y2="${base}" class="dz-hoje-l"/><text x="${(x + slot / 2).toFixed(1)}" y="${T - 8}" text-anchor="middle" class="dz-hoje">hoje</text>`);
+    });
+    const marcas = [0, 7, 14, 21, dias.length - 1].filter((v, i, a) => a.indexOf(v) === i && v < dias.length)
+      .map(i => `<text x="${(L + (i + .5) * slot).toFixed(1)}" y="${H - 6}" text-anchor="middle">${ddmm(dias[i])}</text>`).join('');
+    const card = (rotulo, valor, cls = '') => `<div><span>${rotulo}</span><b class="${cls}">${money(valor)}</b></div>`;
+    const cards = r.fase === 'passado'
+      ? card('Entrou', r.receber, 'dz-ent') + card('Saiu', r.pagar)
+      : card(r.fase === 'atual' ? 'Tenho hoje' : 'Começo', r.base, 'dz-base') + card('Vou receber', r.receber, 'dz-ent') + card('Vou pagar', r.pagar);
+    const rotuloSobra = r.fase === 'passado' ? 'Resultado' : `Sobra em ${ddmm(r.fim)}`;
+    const atraso = r.atrasadas > 0 ? `<p class="dz-nota">${money(r.atrasadas)} de entradas atrasadas fora da conta</p>` : '';
+    if (!r.lanc.length && !r.base) return '<div class="empty">Sem lançamentos neste período.</div>';
+    return `<section class="dz">
+      <div class="dz-cards ${r.fase === 'passado' ? 'dz-c2' : 'dz-c3'}">${cards}</div>
+      <div class="dz-sobra ${r.sobra < 0 ? 'neg' : ''}"><span>${rotuloSobra}</span><b>${r.sobra < 0 ? '− ' : ''}${money(Math.abs(r.sobra))}</b></div>
+      ${atraso}
+      <svg class="dz-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Entradas e saídas por dia de ${ddmm(r.ini)} a ${ddmm(r.fim)}">
+        <line x1="${L}" x2="${W - R}" y1="${base}" y2="${base}" class="dz-eixo-l"/>
+        ${partes.join('')}
+        <g class="dz-eixo">${marcas}</g>
       </svg>
-      <div class="dz-legenda"><span><i style="background:#ff7f91"></i>Saiu no dia</span><span><i class="dz-prog"></i>Ainda vai sair</span></div>
-      <h3 class="dz-h">Por categoria</h3>${barrasHtml(d.porCat, d.total)}
-      <h3 class="dz-h">Por forma de pagamento</h3>${barrasHtml(d.porForma, d.total)}
-      <p class="dz-nota">Considera todas as saídas lançadas de 01/${mes} a ${String(d.dias).padStart(2, '0')}/${mes} (pela data do lançamento, inclusive compras no cartão). Canceladas ficam de fora.</p>
+      <div class="dz-legenda"><span><i class="dz-q-e"></i>Entrada</span><span><i class="dz-q-s"></i>Saída</span><span><i class="dz-q-p"></i>Previsto</span></div>
+      ${categoriasHtml(r)}
     </section>`;
   }
 
@@ -474,20 +463,15 @@
 
     const title = document.querySelector('#mn');
     if (title) title.textContent = labelFor(cursor);
-    const saldoLabel = document.querySelector('.bar .muted');
-    if (saldoLabel) {
-      const today = new Date();
-      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      saldoLabel.textContent = `Saldo total previsto até ${formatShort(dateFor(lastDay.getFullYear(), lastDay.getMonth() + 1, lastDay.getDate()))}`;
-    }
-    const entradas = document.querySelector('#in');
-    if (entradas) entradas.textContent = money(totalGeneralCredits);
-    const saidas = document.querySelector('#out');
-    if (saidas) saidas.textContent = money(totalGeneralExpenses);
-    const entriesLabel = entradas?.nextElementSibling;
-    if (entriesLabel) entriesLabel.textContent = 'Entradas gerais';
-    const expensesLabel = saidas?.nextElementSibling;
-    if (expensesLabel) expensesLabel.textContent = 'Saídas gerais';
+    const periodo = periodoResumo(cursor);
+    fixar('#in', money(periodo.entradas));
+    fixar('#out', money(periodo.saidas));
+    fixar('#saldo', `${periodo.sobra < 0 ? '− ' : ''}${money(Math.abs(periodo.sobra))}`);
+    fixar('.saldo-previsto-card .muted', periodo.fase === 'passado' ? 'Resultado do período' : `Previsto em ${ddmm(periodo.fim)}`);
+    const entriesLabel = document.querySelector('#in')?.nextElementSibling;
+    if (entriesLabel) entriesLabel.textContent = 'Entradas';
+    const expensesLabel = document.querySelector('#out')?.nextElementSibling;
+    if (expensesLabel) expensesLabel.textContent = 'Saídas';
     const semValor = document.querySelector('#nv');
     if (semValor) semValor.textContent = String(items.filter(item => !amount(item.n.valor)).length);
     const abertos = document.querySelector('#ct');
@@ -506,13 +490,13 @@
       </div>
       <div class="ct-val">${money(total)}</div>
       <div class="ct-cardbot">
-        <span class="ct-sub">Ciclo ${formatShort(bounds.start)}–${formatShort(bounds.end)} · ${active.length} lançamento${active.length === 1 ? '' : 's'} · toque para ver extrato ›</span>
+        <span class="ct-sub">${formatShort(bounds.start)}–${formatShort(bounds.end)} ›</span>
         <span class="mc"><i></i><i></i></span>
       </div>`;
     }
 
     const heading = document.querySelector('#list')?.previousElementSibling;
-    if (heading?.tagName === 'H2') heading.textContent = filter === 'grafico' ? 'ENTRADAS, SAÍDAS E DESEMBOLSO DO MÊS' : 'LANÇAMENTOS DO PERÍODO';
+    if (heading?.tagName === 'H2') heading.textContent = `${ddmm(periodo.ini)} a ${ddmm(periodo.fim)}`;
     document.querySelectorAll('.filters [data-f]').forEach(button => {
       button.classList.toggle('on', button.dataset.f === filter);
     });
@@ -523,6 +507,17 @@
       renderList(visibleFinancial);
     }
   }
+
+  const fixos = new Map();
+  function fixar(sel, txt) {
+    fixos.set(sel, txt);
+    const el = document.querySelector(sel);
+    if (el && el.textContent !== txt) el.textContent = txt;
+  }
+  new MutationObserver(() => fixos.forEach((txt, sel) => {
+    const el = document.querySelector(sel);
+    if (el && el.textContent !== txt) el.textContent = txt;
+  })).observe(document.documentElement, { childList: true, subtree: true, characterData: true });
 
   function markDirty(documentKey) {
     const dirty = read(DIRTY_KEY, {});
@@ -648,37 +643,38 @@
     .pending-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #ff5d73;border-radius:999px;background:rgba(255,93,115,.14);color:#ff7f91;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
     .subscription-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #6ec9ff;border-radius:999px;background:rgba(110,201,255,.13);color:#82d2ff;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
     .refund-badge{display:inline-flex;margin-left:7px;padding:2px 6px;border:1px solid #78d88b;border-radius:999px;background:rgba(120,216,139,.13);color:#8ce59d;font-size:9px;font-weight:900;text-transform:uppercase;vertical-align:2px}
-    .dz-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-    .dz-cards>div{padding:10px 12px;border:1px solid #343841;border-radius:12px;background:#1d2026}
-    .dz-cards span{display:block;color:#8f96a3;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
-    .dz-cards b{display:block;margin-top:4px;color:#ff7f91;font-size:17px}
-    .dz-cards small{color:#8f96a3;font-size:10px;font-weight:700}
-    .dz-svg{width:100%;height:auto;display:block;border:1px solid #343841;border-radius:12px;background:#1d2026}
-    .dz-svg text{fill:#8f96a3;font-size:8px;font-weight:700}
-    .dz-svg .dz-hoje{fill:#aeb5c1;font-size:7px}
-    .dz-legenda{display:flex;flex-wrap:wrap;gap:6px 12px;margin:8px 2px 4px;color:#aeb5c1;font-size:10px;font-weight:700}
-    .dz-legenda i{display:inline-block;width:9px;height:9px;margin-right:5px;border-radius:2px;vertical-align:-1px}
-    .dz-legenda i.dz-prog{background:rgba(255,127,145,.30);border:1px dashed #ff7f91}
-    .dz-cards3{grid-template-columns:repeat(3,1fr)}
-    .dz-cards3 b{font-size:14px}
+    .dz-cards{display:grid;gap:8px;margin-bottom:8px}
+    .dz-c3{grid-template-columns:repeat(3,1fr)}
+    .dz-c2{grid-template-columns:1fr 1fr}
+    .dz-cards>div{padding:10px 11px;border:1px solid var(--ar-line,#2a2f33);border-radius:12px;background:var(--ar-paper,#111314)}
+    .dz-cards span{display:block;color:var(--ar-muted,#9aa4ab);font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+    .dz-cards b{display:block;margin-top:3px;color:#ff7f91;font-size:clamp(12px,3.5vw,15px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .dz-cards b.dz-ent{color:#78d88b}
-    .dz-cards3 small{display:block;margin-top:2px}
-    .dz-legenda i.dz-prog-e{background:rgba(120,216,139,.28);border-color:#78d88b}
-    .dz-h0{margin-top:4px}
+    .dz-cards b.dz-base{color:var(--ar-fg,#e7eaeb)}
+    .dz-sobra{display:flex;justify-content:space-between;align-items:baseline;padding:12px 14px;margin-bottom:10px;border:1px solid var(--ar-line,#2a2f33);border-radius:12px;background:var(--ar-paper,#111314)}
+    .dz-sobra span{color:var(--ar-muted,#9aa4ab);font-size:12px;font-weight:800}
+    .dz-sobra b{color:#78d88b;font-size:22px;font-weight:850}
+    .dz-sobra.neg b{color:#ff7f91}
+    .dz-svg{width:100%;height:auto;display:block;border:1px solid var(--ar-line,#2a2f33);border-radius:12px;background:var(--ar-paper,#111314)}
+    .dz-svg text{fill:var(--ar-muted,#9aa4ab);font-size:8px;font-weight:700}
     .dz-svg .dz-val{font-size:7.5px;font-weight:800}
     .dz-svg .dz-val-e{fill:#78d88b}
     .dz-svg .dz-val-s{fill:#ff7f91}
-    .dz-frase{margin:10px 2px 0;color:#d8dbe2;font-size:13px;line-height:1.45}
-    .dz-frase b{color:#ff7f91}
-    .dz-frase b.dz-ent{color:#78d88b}
-    .dz-h{margin:16px 2px 8px;color:#aeb5c1;font-size:11px;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
+    .dz-svg .dz-hoje{fill:var(--ar-fg,#e7eaeb);font-size:7px}
+    .dz-svg .dz-hoje-l{stroke:var(--ar-muted,#9aa4ab);stroke-dasharray:3 3;stroke-width:.8}
+    .dz-svg .dz-eixo-l{stroke:var(--ar-line,#2a2f33)}
+    .dz-svg .dz-prev-e{fill:rgba(120,216,139,.25);stroke:#78d88b;stroke-dasharray:2 2;stroke-width:.8}
+    .dz-svg .dz-prev-s{fill:rgba(255,127,145,.25);stroke:#ff7f91;stroke-dasharray:2 2;stroke-width:.8}
+    .dz-legenda{display:flex;gap:14px;margin:8px 2px 0;color:var(--ar-muted,#9aa4ab);font-size:10px;font-weight:700}
+    .dz-legenda i{display:inline-block;width:9px;height:9px;margin-right:5px;border-radius:2px;vertical-align:-1px}
+    .dz-q-e{background:#78d88b}.dz-q-s{background:#ff7f91}.dz-q-p{border:1px dashed var(--ar-muted,#9aa4ab)}
+    .dz-nota{margin:-2px 2px 10px;color:var(--ar-muted,#9aa4ab);font-size:11px}
+    .dz-h{margin:18px 2px 8px;color:var(--ar-muted,#9aa4ab);font-size:11px;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
     .dz-bar{margin-bottom:9px}
-    .dz-bar-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#d8dbe2}
+    .dz-bar-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--ar-fg,#e7eaeb)}
     .dz-bar-top b{font-weight:800;white-space:nowrap}
-    .dz-bar-top small{color:#8f96a3;font-weight:700}
-    .dz-track{height:7px;margin-top:4px;border-radius:99px;background:#2a2e36;overflow:hidden}
-    .dz-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#ff7f91,#ff5d73)}
-    .dz-nota{margin:14px 2px 0;color:#8f96a3;font-size:10px;line-height:1.5}
+    .dz-track{height:6px;margin-top:4px;border-radius:99px;background:#1c2124;overflow:hidden}
+    .dz-track i{display:block;height:100%;border-radius:inherit;background:#ff7f91}
     .receive-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:8px;color:#aeb5c1;font-size:10px;font-weight:800}
     .receive-actions button{border:1px solid #ff5d73;border-radius:999px;background:rgba(255,93,115,.12);color:#ff7f91;padding:7px 11px;font:inherit;cursor:pointer}
     .invoice-details{display:grid;gap:5px;margin-top:8px;padding:8px 9px;border:1px solid #343841;border-radius:10px;background:#181a1f}

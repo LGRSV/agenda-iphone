@@ -1,0 +1,36 @@
+/* Painel financeiro no tom do ARGOS: fundo preto, cartões grafite, pouco texto.
+   Paleta do tema escuro do ARGOS (assets/site.css): fundo #000, cartão #111314,
+   linha #2a2f33, texto #e7eaeb, secundário #9aa4ab. Carregado por último e com
+   !important porque os scripts do painel injetam estilos depois do HTML. */
+:root{--ar-bg:#000;--ar-paper:#111314;--ar-paper2:#1c2124;--ar-line:#2a2f33;--ar-fg:#e7eaeb;--ar-muted:#9aa4ab}
+html,body{background:var(--ar-bg)!important;color:var(--ar-fg)!important}
+body::before{background:var(--ar-bg)!important}
+
+/* superfícies: tudo grafite liso, sem degradê colorido */
+.bar,.cards,.card,.list,.form,.saldoatual,.saldo-pager .saldo-previsto-card,
+.slide.invest,.slide.eprev,.slide.pluxee,.day-card{
+  background:var(--ar-paper)!important;border:1px solid var(--ar-line)!important;box-shadow:none!important}
+.cards{gap:0!important}
+.card{border:0!important;border-right:1px solid var(--ar-line)!important}
+.card.out,.card:last-child{border-right:0!important}
+.slide.cartao{background:linear-gradient(140deg,#0a0b0c,#111314 60%,#1c2124)!important;border:1px solid var(--ar-line)!important;box-shadow:none!important}
+.slide.pluxee,.slide.pluxee *{color:var(--ar-fg)!important}
+.dc-head{background:var(--ar-paper2)!important;border-bottom:1px solid var(--ar-line)!important}
+.row,.sa-row{border-color:var(--ar-line)!important}
+.back,.nav,.add,.form button,.filters button:not(.on),.form input,.form select{
+  background:var(--ar-paper)!important;border-color:var(--ar-line)!important;color:var(--ar-fg)!important}
+.iv-foot button,.sa-foot button,.pluxee-foot button{background:var(--ar-paper2)!important;color:var(--ar-fg)!important}
+.slide.invest .ct-due,.slide.eprev .ct-due,.slide.cartao .ct-due{background:var(--ar-paper2)!important}
+.muted,.meta,.card span,h2,.dc-date em,.fin-updated{color:var(--ar-muted)!important}
+.dot,.saldo-dots span{background:var(--ar-line)!important}
+.dot.on{background:var(--ar-muted)!important}
+
+/* menos texto: só nome e valor */
+.head .ey,.head .muted,
+.sa-row small,.sa-foot>span,
+.iv-val small,.iv-foot>span,.slide.invest .ct-due,
+.slide.eprev .ct-due,.slide.eprev .ct-sub,.slide.eprev .iv-foot>span,
+.pluxee-body small,.pluxee-foot>span,
+h2:has(+ .add),#finUpdated,
+.card:has(#nv),.card:has(#ct){display:none!important}
+.sa-foot,.iv-foot,.pluxee-foot{justify-content:flex-end!important}
