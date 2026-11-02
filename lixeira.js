@@ -143,7 +143,8 @@
   function doRestore(idx) {
     const arr = readTrash(); const entry = arr[idx]; if (!entry || !entry.task) return;
     const tasks = readTasks();
-    if (!tasks.some(t => t.id === entry.task.id)) tasks.push(entry.task);
+    // syncRev novo: a restauração vence a lápide da lixeira na sincronização.
+    if (!tasks.some(t => t.id === entry.task.id)) tasks.push({ ...entry.task, syncRev: Date.now() });
     try { localStorage.setItem(TASK_KEY, JSON.stringify(tasks)); } catch (_) {}
     arr.splice(idx, 1); writeTrash(arr);
     try { sessionStorage.setItem('agenda_lix_flash', 'restore'); } catch (_) {}

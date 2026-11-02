@@ -122,12 +122,34 @@
     const t = read('trash');
     return new Set((Array.isArray(t) ? t : []).map(x => String(x && x.id)));
   }
-  function mergeTasks(localArr, serverArr) {
+  // Lápides: id -> quando foi para a lixeira (o mais recente entre a lixeira
+  // deste aparelho e a do servidor). Sem isso, um aparelho que ainda não tinha
+  // baixado a lixeira nova devolvia ao servidor as tarefas apagadas em outro
+  // lugar, porque a união por id abaixo sempre mantinha a cópia local.
+  function tombstones(serverTrash) {
+    const out = new Map();
+    const add = arr => (Array.isArray(arr) ? arr : []).forEach(e => {
+      const id = e && e.task ? e.task.id : e && e.id;
+      if (id == null) return;
+      const at = Number(e.at) || 0, k = String(id);
+      if (!out.has(k) || at > out.get(k)) out.set(k, at);
+    });
+    add(read('trash')); add(serverTrash);
+    return out;
+  }
+  // Apagada depois da última edição -> continua apagada. Restaurar da lixeira
+  // grava syncRev novo (lixeira.js), então a tarefa restaurada passa.
+  const enterrada = (it, tombs) => {
+    const at = tombs && tombs.get(String(it.id));
+    return at != null && at > 0 && (Number(it.syncRev) || 0) < at;
+  };
+  function mergeTasks(localArr, serverArr, tombs) {
     const drop = trashIdSet();
     const byId = new Map();
-    (Array.isArray(serverArr) ? serverArr : []).forEach(it => { if (it && it.id != null && !drop.has(String(it.id))) byId.set(String(it.id), it); });
+    (Array.isArray(serverArr) ? serverArr : []).forEach(it => { if (it && it.id != null && !drop.has(String(it.id)) && !enterrada(it, tombs)) byId.set(String(it.id), it); });
     (Array.isArray(localArr) ? localArr : []).forEach(it => {
       if (!it || it.id == null) return;
+      if (enterrada(it, tombs)) return;
       const id = String(it.id);
       const serverItem = byId.get(id);
       if (serverItem && Number(serverItem.syncRev || 0) > Number(it.syncRev || 0)) return;
@@ -208,7 +230,11 @@
     try {
       const server = await serverPayload(sb, key);
       if (server == null) return localPayload;
-      if (key === 'tasks' && Array.isArray(localPayload)) return mergeTasks(localPayload, server);
+      if (key === 'tasks' && Array.isArray(localPayload)) {
+        let serverTrash = [];
+        try { serverTrash = await serverPayload(sb, 'trash'); } catch (_) { /* sem a lixeira do servidor, usa só a local */ }
+        return mergeTasks(localPayload, server, tombstones(serverTrash));
+      }
       if (key === 'notes' && server && typeof server === 'object' && !Array.isArray(server) && localPayload && typeof localPayload === 'object' && !Array.isArray(localPayload)) return mergeNotes(localPayload, server);
     } catch (_) { /* em caso de falha, envia o local mesmo (comportamento antigo) */ }
     return localPayload;
