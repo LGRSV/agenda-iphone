@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v273-sem-faixa-diagnostico';
+const CACHE = 'agenda-lagares-v274-mapa';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=14" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -29,6 +29,7 @@ const PARCEIRO_SCRIPT = '<script src="./parceiro.js?v=2" defer><\/script>';
 const MESADA_SCRIPT = '<script src="./mesada-sync.js?v=1" defer><\/script>';
 const LEMBRETE_SCRIPT = '<script src="./lembrete-persistente.js?v=1" defer><\/script>';
 const LOCAL_SCRIPT = '<script src="./localizacao.js?v=1" defer><\/script>';
+const LOCAL_TAREFA_SCRIPT = '<script src="./local-tarefa.js?v=1" defer><\/script>';
 
 const STATIC_ASSET_RE = /\.(?:js|css|png|jpg|jpeg|svg|webp|woff2?)$/;
 
@@ -61,7 +62,9 @@ self.addEventListener('fetch', event => {
       const isImportar = html.includes('importar.html');
       const isEquip = html.includes('Equipamentos Especiais DCMD') || new URL(request.url).pathname.includes('equipamentos-especiais');
       const isMarket = new URL(request.url).pathname.includes('/marketplace/');
-      const isAuxPage = isFinance || isGame || isTraining || isInvest || isCarteira || isTreinoAna || isImportar || isEquip || isMarket;
+      // mapa.html carrega o que precisa por conta própria (Leaflet, localizacao.js, local-tarefa.js, mapa.js)
+      const isMapa = new URL(request.url).pathname.endsWith('/mapa.html');
+      const isAuxPage = isMapa || isFinance || isGame || isTraining || isInvest || isCarteira || isTreinoAna || isImportar || isEquip || isMarket;
       // A agenda principal tem links para financeiro.html e gamificacao.html no menu,
       // então o teste por conteúdo acima a confundia com uma página auxiliar e o
       // Web Push nunca era carregado (só o aviso antigo, que funciona com o app aberto).
@@ -96,6 +99,7 @@ self.addEventListener('fetch', event => {
       if (!isAuxPage && !html.includes('mesada-sync.js')) html = html.replace('</body>', `${MESADA_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('lembrete-persistente.js')) html = html.replace('</body>', `${LEMBRETE_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('localizacao.js')) html = html.replace('</body>', `${LOCAL_SCRIPT}</body>`);
+      if (!isAuxPage && !html.includes('local-tarefa.js')) html = html.replace('</body>', `${LOCAL_TAREFA_SCRIPT}</body>`);
       const headers = new Headers(response.headers);
       headers.delete('content-length');
       headers.delete('content-encoding');
