@@ -802,6 +802,8 @@
       getTasks(){return tasks.filter(t=>!isManualFinancialOutput(t)).map(t=>({text:t.text,date:t.date,time:t.time,tag:t.tag,done:t.done}))},
       getTasksFull(){return tasks.filter(t=>!isManualFinancialOutput(t)).map(t=>({id:t.id,text:t.text,date:t.date,time:t.time,tag:t.tag,done:t.done}))},
       completeById(taskId){const t=tasks.find(t=>String(t.id)===String(taskId));if(!t||t.done)return false;t.done=true;save();render();return true},
+      // conclusão automática por presença (auto-concluir.js): mesmo caminho do toque no check — compartilhadas avisam o parceiro; syncRev vence a cópia antiga na nuvem
+      completeAuto(taskId){const t=tasks.find(t=>String(t.id)===String(taskId));if(!t||t.done)return false;t.done=true;t.syncRev=Date.now();recentToggle.set(String(t.id),Date.now());try{window.AgendaShareSync&&window.AgendaShareSync.onToggle(t)}catch(_){}save();render();return true},
       upsertShared(share){
         if(!share||!share.shareId)return false;
         const payload=share.payload||{};
@@ -1885,10 +1887,11 @@ ${SO_CLAUDE?'MODO ATUAL: so texto e sem internet. NAO use web_search: se pedirem
   <script src="./sequencial.js?v=4" defer></script>
   <script src="./parceiro.js?v=2" defer></script>
   <script src="./mesada-sync.js?v=1" defer></script>
-  <script src="./lembrete-persistente.js?v=1" defer></script>
-  <script src="./nativo.js?v=10" defer></script>
-  <script src="./localizacao.js?v=1" defer></script>
-  <script src="./local-tarefa.js?v=1" defer></script>
+  <script src="./lembrete-persistente.js?v=2" defer></script>
+  <script src="./nativo.js?v=11" defer></script>
+  <script src="./localizacao.js?v=2" defer></script>
+  <script src="./local-tarefa.js?v=2" defer></script>
+  <script src="./auto-concluir.js?v=1" defer></script>
   <script src="./vozes-neurais.js?v=2" defer></script>
 </body>
 </html>

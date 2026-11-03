@@ -452,6 +452,7 @@
     opts = opts || {};
     const nome = titulo(nomeBruto);
     if (!nome) return { ok: false, msg: 'Preciso de um nome para o lugar, Senhor.' };
+    if (opts.lat != null && opts.lng != null) return salvarLugarEm(nome, opts);
     let fix = state.ultimoFix && (Date.now() - state.ultimoFix.ts) < FIX_FRESCO_MS ? state.ultimoFix : null;
     if (!fix) fix = await fixAvulso(10000); // o Jarvis fica "LOCALIZANDO…" enquanto isso: prazo curto
     let fixVelho = false;
@@ -510,8 +511,50 @@
     if (viz.length) msg += ` Atenção: fica perto de ${viz.map(o => o.nome).join(', ')} — entre lugares vizinhos só troco com sinal bem claro ou quando você me disser.`;
     return { ok: true, lugar, novo, movido, msg };
   }
+  // Lugar marcado no MAPA (coordenadas tocadas, não a posição atual): só cria ou
+  // move o lugar. Não afirma visita — quem decide chegada/saída é o motor, com as
+  // mesmas regras de sempre, quando os fixes reais entrarem no raio.
+  // opts: {lat, lng, raio?, id?} — com id (ou nome já existente) atualiza aquele lugar.
+  function salvarLugarEm(nome, opts) {
+    const lat = Number(opts.lat), lng = Number(opts.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return { ok: false, msg: 'Coordenadas inválidas.' };
+    const raio = clamp(Math.round(Number(opts.raio) || RAIO_PADRAO), RAIO_MIN, RAIO_MAX);
+    const agora = Date.now();
+    let lugar = (opts.id && lugarPorId(opts.id)) || lugarPorNome(nome), novo = false;
+    const outro = lugarPorNome(nome);
+    if (lugar && outro && outro.id !== lugar.id) return { ok: false, msg: `Já existe outro lugar chamado "${outro.nome}".` };
+    if (lugar) {
+      lugar.nome = nome; lugar.lat = lat; lugar.lng = lng; lugar.raio = raio; lugar.acc = 0;
+      delete lugar.pendenteAte; lugar.atualizadoEm = agora;
+    } else {
+      lugar = { id: novoId(), nome, lat, lng, raio, acc: 0, criadoEm: agora, atualizadoEm: agora };
+      lugares.push(lugar); novo = true;
+    }
+    salvarLugares(); emitir('lugares');
+    const viz = sobrepostos(lugar);
+    let msg = `Lugar "${lugar.nome}" ${novo ? 'salvo' : 'atualizado'} (raio ${raio} m).`;
+    if (viz.length) msg += ` Fica perto de ${viz.map(o => o.nome).join(', ')}.`;
+    return { ok: true, lugar: { ...lugar }, novo, movido: !novo, msg };
+  }
+  // Renomear e/ou mudar o raio. alvo = id ou nome.
+  function editarLugar(alvo, mud) {
+    mud = mud || {};
+    const lugar = lugarPorId(alvo) || lugarPorNome(alvo);
+    if (!lugar) return { ok: false, msg: 'Lugar não encontrado.' };
+    if (mud.nome != null) {
+      const nome = titulo(mud.nome);
+      if (!nome) return { ok: false, msg: 'O nome não pode ficar vazio.' };
+      const outro = lugarPorNome(nome);
+      if (outro && outro.id !== lugar.id) return { ok: false, msg: `Já existe outro lugar chamado "${outro.nome}".` };
+      lugar.nome = nome;
+    }
+    if (mud.raio != null) lugar.raio = clamp(Math.round(Number(mud.raio) || RAIO_PADRAO), RAIO_MIN, RAIO_MAX);
+    lugar.atualizadoEm = Date.now();
+    salvarLugares(); emitir('lugares');
+    return { ok: true, lugar: { ...lugar }, msg: `Lugar "${lugar.nome}" atualizado (raio ${lugar.raio} m).` };
+  }
   function removerLugar(nomeBruto) {
-    const lugar = lugarPorNome(nomeBruto);
+    const lugar = lugarPorId(nomeBruto) || lugarPorNome(nomeBruto);
     if (!lugar) return { ok: false, msg: `Não conheço um lugar chamado "${titulo(nomeBruto)}".` };
     lugares = lugares.filter(l => l.id !== lugar.id);
     removidos.push({ id: lugar.id, nome: lugar.nome, em: Date.now() });
@@ -756,7 +799,8 @@
 
   window.AgendaLocal = {
     ativar, desativar, ativo: () => !!state.ativo, permissao: () => state.permissao || '',
-    salvarLugar, removerLugar,
+    salvarLugar, removerLugar, editarLugar,
+    dispositivo: () => dev(), RAIO: { padrao: RAIO_PADRAO, min: RAIO_MIN, max: RAIO_MAX },
     lugares: () => lugares.map(l => ({ ...l })),
     visitas: dias => { const lim = Date.now() - (Number(dias) || 7) * 86400000; return visitas.filter(v => !v.descartada && (v.chegada >= lim || v.saida == null)).map(v => ({ ...v })); },
     visitasHoje: () => visitasDoDia(hojeIso()).map(v => ({ ...v })),

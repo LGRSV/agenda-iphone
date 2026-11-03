@@ -25,13 +25,16 @@
   const dataBr = d => /^\d{4}-\d{2}-\d{2}$/.test(d) ? d.slice(8, 10) + '/' + d.slice(5, 7) : '';
   const distDe = i => eu ? U.haversine(eu.lat, eu.lng, i.lat, i.lng) : NaN;
   const links = i => `<a class="pl" href="${U.rotaGoogle(i)}" target="_blank" rel="noopener">Google Maps</a><a class="pl" href="${U.rotaApple(i)}" target="_blank" rel="noopener">Apple Mapas</a>`;
-  const popupHtml = i => `<b>${esc(i.nome)}</b>${i.sub ? `<br><span style="color:#556">${esc(i.sub)}</span>` : ''}${eu ? `<br>a <b>${U.fmtDist(distDe(i))}</b> de você` : ''}<br>${links(i)}`;
+  const acoesItem = i => i.tipo === 'lugar'
+    ? `<br><button class="pl verde" type="button" data-acao="vincular" data-id="${esc(i.lid)}">Vincular tarefa</button><button class="pl" type="button" data-acao="editar" data-id="${esc(i.lid)}">Editar</button>`
+    : (U.lugarDoLocal({ lat: i.lat, lng: i.lng }) ? '' : `<br><button class="pl verde" type="button" data-acao="salvar-ponto" data-lat="${i.lat}" data-lng="${i.lng}" data-nome="${esc(i.nome)}">Salvar como lugar</button>`);
+  const popupHtml = i => `<b>${esc(i.nome)}</b>${i.sub ? `<br><span style="color:#556">${esc(i.sub)}</span>` : ''}${eu ? `<br>a <b>${U.fmtDist(distDe(i))}</b> de você` : ''}<br>${links(i)}${acoesItem(i)}`;
 
   // ---------------------------------------------------------------- itens
   function carregarItens() {
     const novos = [];
-    U.lugares().forEach(l => novos.push({ key: 'l:' + l.id, tipo: 'lugar', nome: l.nome, sub: 'Lugar salvo', lat: l.lat, lng: l.lng, raio: l.raio || 100 }));
-    U.tarefasComLocal().forEach(t => novos.push({ key: 't:' + t.id, tipo: 'tarefa', nome: t.local.nome, sub: [t.text, dataBr(t.date), t.time].filter(Boolean).join(' · '), lat: t.local.lat, lng: t.local.lng }));
+    U.lugares().forEach(l => novos.push({ key: 'l:' + l.id, lid: l.id, tipo: 'lugar', nome: l.nome, sub: `Lugar salvo · raio ${l.raio || 100} m`, lat: l.lat, lng: l.lng, raio: l.raio || 100 }));
+    U.tarefasComLocal().forEach(t => novos.push({ key: 't:' + t.id, tipo: 'tarefa', nome: t.local.nome, sub: (t.local.autoConcluir ? '⚡ ' : '') + [t.text, dataBr(t.date), t.time].filter(Boolean).join(' · '), lat: t.local.lat, lng: t.local.lng }));
     itens = novos;
     const vivos = new Set(itens.map(i => i.key));
     for (const [k, m] of marcas) if (!vivos.has(k)) { m.marker.remove(); if (m.circle) m.circle.remove(); marcas.delete(k); }
@@ -61,7 +64,7 @@
     if (!forcar && falta > 0) { tLista = setTimeout(() => desenharLista(true), falta); return; }
     ultimaLista = Date.now();
     if (!itens.length) {
-      listaEl.innerHTML = '<div class="vazio">Nenhum local ainda.<br>• Para marcar o local de uma tarefa: na agenda, crie ou edite a tarefa e use o campo <b>Local</b>.<br>• Para salvar um lugar (Casa, Trabalho): diga ao Jarvis "estou em Casa".<br>• Toque no mapa para medir a distância até qualquer ponto.</div>';
+      listaEl.innerHTML = '<div class="vazio">Nenhum local ainda.<br>• Para salvar um lugar (Casa, Energisa): toque no ponto do mapa (ou no seu ponto azul) e em <b>Salvar lugar</b> — ou diga ao Jarvis "estou em Casa".<br>• Para marcar o local de uma tarefa: na agenda, crie ou edite a tarefa e use o campo <b>Local</b>.<br>• Toque no mapa para medir a distância até qualquer ponto.</div>';
       assinatura = ''; return;
     }
     const ord = itens.map(i => ({ i, d: distDe(i) })).sort((a, b) => (Number.isFinite(a.d) && Number.isFinite(b.d)) ? a.d - b.d : a.i.nome.localeCompare(b.i.nome, 'pt-BR'));
@@ -97,6 +100,11 @@
     if (!euMarca) {
       euCirculo = L.circle(ll, { radius: eu.acc, color: '#1e88ff', weight: 1, fillOpacity: .12, interactive: false }).addTo(map);
       euMarca = L.marker(ll, { icon: L.divIcon({ className: '', html: '<div class="eu-pin"></div>', iconSize: [18, 18], iconAnchor: [9, 9] }), zIndexOffset: 1000, keyboard: false }).addTo(map);
+      euMarca.bindPopup(() => {
+        const l = U.lugarEm(eu);
+        return `<b>Você está aqui</b><br><span style="color:#556">precisão ±${Math.round(eu.acc)} m${l ? ` · dentro de “${esc(l.nome)}”` : ''}</span><br>` +
+          `<button class="pl verde" type="button" data-acao="salvar-ponto" data-lat="${eu.lat}" data-lng="${eu.lng}" data-nome="">Salvar como lugar</button>`;
+      });
     } else { euMarca.setLatLng(ll); euCirculo.setLatLng(ll).setRadius(eu.acc); }
     status(`você · precisão ±${Math.round(eu.acc)} m`, 'on');
     if (primeiroFix) {
@@ -150,7 +158,119 @@
     medida.line.setLatLngs(eu ? [[eu.lat, eu.lng], [medida.lat, medida.lng]] : []);
     $('#medidaTxt').textContent = eu ? `Ponto marcado: ${U.fmtDist(U.haversine(eu.lat, eu.lng, medida.lat, medida.lng))} de você` : 'Ponto marcado (esperando sua posição)';
   }
-  $('#medidaX').addEventListener('click', () => { if (medida) { medida.marker.remove(); medida.line.remove(); medida = null; } medidaEl.classList.remove('on'); });
+  function fecharMedida() { if (medida) { medida.marker.remove(); medida.line.remove(); medida = null; } medidaEl.classList.remove('on'); }
+  $('#medidaX').addEventListener('click', fecharMedida);
+  $('#medidaSalvar').addEventListener('click', () => { if (medida) abrirSalvar(medida.lat, medida.lng, ''); });
+
+  // ---------------------------------------------------------------- salvar / editar lugar
+  const AL = () => window.AgendaLocal;
+  const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const toastEl = $('#toast');
+  function avisar(txt, ms) {
+    toastEl.textContent = txt; toastEl.classList.add('show');
+    clearTimeout(avisar._t); avisar._t = setTimeout(() => toastEl.classList.remove('show'), ms || 3800);
+  }
+  const sheetLugar = $('#sheetLugar'), lgNome = $('#lgNome'), lgRaio = $('#lgRaio'), lgRaioTxt = $('#lgRaioTxt');
+  let edicao = null, previa = null; // edicao = {lat, lng, id?}
+  function abrirSalvar(lat, lng, nome) {
+    const dentro = U.lugarEm({ lat, lng });
+    edicao = { lat, lng };
+    $('#lgTit').textContent = 'Salvar como lugar';
+    lgNome.value = nome || '';
+    lgRaio.value = String(U.RAIO_AUTO || 120);
+    $('#lgRemover').hidden = true;
+    abrirSheet(lat, lng);
+    if (dentro) avisar(`Este ponto já fica dentro de “${dentro.nome}”.`);
+  }
+  function abrirEditar(id) {
+    const l = U.lugares().find(x => String(x.id) === String(id)); if (!l) return;
+    edicao = { lat: l.lat, lng: l.lng, id: l.id };
+    $('#lgTit').textContent = 'Editar lugar';
+    lgNome.value = l.nome; lgRaio.value = String(l.raio || 100);
+    $('#lgRemover').hidden = false;
+    abrirSheet(l.lat, l.lng);
+  }
+  function abrirSheet(lat, lng) {
+    map.closePopup(); pararSeguir();
+    lgRaioTxt.textContent = lgRaio.value + ' m';
+    if (previa) previa.remove();
+    previa = L.circle([lat, lng], { radius: Number(lgRaio.value), color: '#3ecf8e', weight: 2, dashArray: '6 6', fillOpacity: .12, interactive: false }).addTo(map);
+    map.fitBounds(previa.getBounds(), { padding: [30, 30], maxZoom: 18 });
+    sheetLugar.hidden = false;
+    setTimeout(() => lgNome.focus(), 50);
+  }
+  function fecharSheet() { sheetLugar.hidden = true; edicao = null; if (previa) { previa.remove(); previa = null; } }
+  lgRaio.addEventListener('input', () => { lgRaioTxt.textContent = lgRaio.value + ' m'; if (previa) previa.setRadius(Number(lgRaio.value)); });
+  lgNome.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#lgSalvar').click(); } });
+  $('#lgCancelar').addEventListener('click', fecharSheet);
+  sheetLugar.addEventListener('click', e => { if (e.target === sheetLugar) fecharSheet(); });
+  async function ligarLocalizacao() {
+    const a = AL();
+    if (!a || !a.ativar || a.ativo()) return '';
+    const r = await a.ativar();
+    return r && r.ok ? ' Localização ligada para reconhecer a chegada.' : (r ? ' ' + r.msg : '');
+  }
+  $('#lgSalvar').addEventListener('click', async () => {
+    const a = AL();
+    if (!a || !edicao) { avisar('Não consegui acessar os lugares agora. Abra a agenda e tente de novo.'); return; }
+    const nome = lgNome.value.trim(), raio = Number(lgRaio.value);
+    if (!nome) { lgNome.focus(); avisar('Dê um nome ao lugar (ex.: Energisa).'); return; }
+    let r;
+    if (edicao.id) r = a.editarLugar(edicao.id, { nome, raio });
+    else {
+      const igual = U.lugares().find(l => norm(l.nome) === norm(nome));
+      if (igual && !confirm(`Já existe o lugar “${igual.nome}”. Mover para este ponto?`)) return;
+      r = await a.salvarLugar(nome, { lat: edicao.lat, lng: edicao.lng, raio, id: igual ? igual.id : undefined });
+    }
+    if (!r || !r.ok) { avisar(r ? r.msg : 'Não deu para salvar.'); return; }
+    const novoId = r.lugar && r.lugar.id, eraNovo = !edicao.id;
+    fecharSheet(); fecharMedida();
+    carregarItens();
+    avisar(r.msg + (await ligarLocalizacao()), 5000);
+    if (eraNovo && novoId) setTimeout(() => focar('l:' + novoId), 150);
+  });
+  $('#lgRemover').addEventListener('click', () => {
+    const a = AL(); if (!a || !edicao || !edicao.id) return;
+    const l = U.lugares().find(x => String(x.id) === String(edicao.id));
+    if (!l || !confirm(`Remover o lugar “${l.nome}”? As tarefas ligadas a ele deixam de concluir sozinhas.`)) return;
+    const r = a.removerLugar(l.id);
+    fecharSheet(); carregarItens();
+    avisar(r.msg);
+  });
+
+  // ---------------------------------------------------------------- vincular tarefa a um lugar
+  const sheetTarefas = $('#sheetTarefas');
+  let vincLugar = null;
+  function abrirVincular(id) {
+    const l = U.lugares().find(x => String(x.id) === String(id)); if (!l) return;
+    vincLugar = l; map.closePopup();
+    $('#vtSub').textContent = `Toque numa tarefa: ela ganha o local “${l.nome}” e conclui sozinha quando você chegar lá (no dia dela, desde 2 h antes do horário).`;
+    const ts = U.tarefasPendentes(14);
+    $('#vtLista').innerHTML = ts.length ? ts.map(t => {
+      const ja = t.local && t.local.autoConcluir && U.lugarDoLocal(t.local) && U.lugarDoLocal(t.local).id === l.id;
+      return `<button type="button" data-tid="${esc(t.id)}" class="${ja ? 'on' : ''}">${esc(t.text)}<span>${dataBr(t.date)}${t.time ? ' · ' + t.time : ''}${ja ? ' · ⚡ já vinculada' : t.local ? ' · 📍 ' + esc(t.local.nome) : ''}</span></button>`;
+    }).join('') : '<div class="vazio">Nenhuma tarefa pendente nos próximos 14 dias.</div>';
+    sheetTarefas.hidden = false;
+  }
+  $('#vtFechar').addEventListener('click', () => { sheetTarefas.hidden = true; });
+  sheetTarefas.addEventListener('click', async e => {
+    if (e.target === sheetTarefas) { sheetTarefas.hidden = true; return; }
+    const b = e.target.closest('[data-tid]'); if (!b || !vincLugar) return;
+    const l = vincLugar;
+    U.gravarLocal(b.dataset.tid, { nome: l.nome, lat: l.lat, lng: l.lng, lugarId: l.id, autoConcluir: true });
+    sheetTarefas.hidden = true;
+    carregarItens();
+    avisar(`“${b.firstChild.textContent}” vinculada a ${l.nome}: conclui sozinha quando você chegar.` + (await ligarLocalizacao()), 5000);
+  });
+
+  // botões dentro dos popups do mapa
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('[data-acao]'); if (!b) return;
+    const ac = b.dataset.acao;
+    if (ac === 'salvar-ponto') abrirSalvar(Number(b.dataset.lat), Number(b.dataset.lng), b.dataset.nome || '');
+    else if (ac === 'editar') abrirEditar(b.dataset.id);
+    else if (ac === 'vincular') abrirVincular(b.dataset.id);
+  });
 
   // ---------------------------------------------------------------- início
   function focoInicial() {
