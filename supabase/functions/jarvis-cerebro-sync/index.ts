@@ -2,7 +2,9 @@
 // public.jarvis_cerebro, que só o Jarvis do app lê (pela chave de serviço).
 // Autenticação: header x-cerebro-key, conferido pelo hash SHA-256 em
 // public.jarvis_cerebro_tokens (a chave em si fica só no PC, cifrada).
-// Ações: estado (caminho+hash de tudo), gravar (até 400 notas / 4 MB), apagar.
+// Ações: estado (caminho+hash de tudo), gravar (até 400 notas / 4 MB), apagar,
+// pendentes (edições feitas no app que o PC ainda não baixou) e confirmar (o PC baixou).
+// Nota com edição do app pendente não é sobrescrita nem apagada pelo PC.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -43,11 +45,11 @@ Deno.serve(async (req) => {
   if (!body || typeof body !== "object") return out({ ok: false, error: "bad_request" }, 400);
 
   if (body.action === "estado") {
-    const lista: { caminho: string; hash: string }[] = [];
+    const lista: { caminho: string; hash: string; pendente?: boolean }[] = [];
     for (let de = 0; de < 100_000; de += 1000) {
-      const { data, error } = await admin.from("jarvis_cerebro").select("caminho,hash").order("caminho").range(de, de + 999);
+      const { data, error } = await admin.from("jarvis_cerebro").select("caminho,hash,pendente_pc").order("caminho").range(de, de + 999);
       if (error) return out({ ok: false, error: "unavailable" }, 503);
-      lista.push(...(data || []));
+      for (const n of data || []) lista.push(n.pendente_pc ? { caminho: n.caminho, hash: n.hash, pendente: true } : { caminho: n.caminho, hash: n.hash });
       if (!data || data.length < 1000) break;
     }
     const { data: tam } = await admin.rpc("jarvis_cerebro_tamanho");
@@ -64,20 +66,42 @@ Deno.serve(async (req) => {
         return out({ ok: false, error: "bad_note", caminho: typeof c === "string" ? c.slice(0, 200) : null }, 400);
       }
       const partes = c.split("/");
-      linhas.push({ caminho: c, titulo: partes[partes.length - 1].slice(0, -3), pasta: partes.slice(0, -1).join("/"), conteudo, hash, atualizado: new Date().toISOString() });
+      linhas.push({ caminho: c, titulo: partes[partes.length - 1].slice(0, -3), pasta: partes.slice(0, -1).join("/"), conteudo, hash });
     }
-    const { error } = await admin.from("jarvis_cerebro").upsert(linhas, { onConflict: "caminho" });
+    const { data: r, error } = await admin.rpc("jarvis_cerebro_gravar_pc", { notas: linhas });
     if (error) { console.error("jarvis-cerebro-sync: gravar", error.code); return out({ ok: false, error: "db_error" }, 500); }
     const { data: tam } = await admin.rpc("jarvis_cerebro_tamanho");
-    return out({ ok: true, gravadas: linhas.length, banco_bytes: tam ?? null });
+    return out({ ok: true, gravadas: r?.gravadas ?? 0, puladas: r?.puladas ?? [], banco_bytes: tam ?? null });
   }
 
   if (body.action === "apagar") {
     const caminhos = Array.isArray(body.caminhos) ? body.caminhos.filter(caminhoOk) : [];
     if (!caminhos.length || caminhos.length > 1000) return out({ ok: false, error: "bad_request" }, 400);
-    const { error } = await admin.from("jarvis_cerebro").delete().in("caminho", caminhos);
+    const { data, error } = await admin.from("jarvis_cerebro").delete().in("caminho", caminhos).eq("pendente_pc", false).select("caminho");
     if (error) return out({ ok: false, error: "db_error" }, 500);
-    return out({ ok: true, apagadas: caminhos.length });
+    return out({ ok: true, apagadas: (data || []).length });
+  }
+
+  if (body.action === "pendentes") {
+    const { data, error } = await admin.from("jarvis_cerebro")
+      .select("caminho,conteudo,versao,hash,base_conteudo,editado_app").eq("pendente_pc", true).order("caminho").limit(100);
+    if (error) return out({ ok: false, error: "unavailable" }, 503);
+    return out({ ok: true, notas: data || [] });
+  }
+
+  if (body.action === "confirmar") {
+    const itens = Array.isArray(body.itens) ? body.itens : [];
+    if (!itens.length || itens.length > 100) return out({ ok: false, error: "bad_request" }, 400);
+    for (const i of itens) {
+      if (!caminhoOk(i?.caminho) || !Number.isSafeInteger(i?.versao) ||
+        !(i.hash === null || i.hash === undefined || i.hash === "" || (typeof i.hash === "string" && /^[0-9a-f]{64}$/.test(i.hash)))) {
+        return out({ ok: false, error: "bad_request" }, 400);
+      }
+    }
+    const { data, error } = await admin.rpc("jarvis_cerebro_confirmar_pc",
+      { itens: itens.map((i) => ({ caminho: i.caminho, versao: i.versao, hash: i.hash ?? null })) });
+    if (error) return out({ ok: false, error: "db_error" }, 500);
+    return out({ ok: true, confirmadas: data ?? 0 });
   }
 
   return out({ ok: false, error: "unknown_action" }, 400);

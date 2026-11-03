@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v276-lugar-conclui-sozinho';
+const CACHE = 'agenda-lagares-v277-cerebro';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=14" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -65,7 +65,9 @@ self.addEventListener('fetch', event => {
       const isMarket = new URL(request.url).pathname.includes('/marketplace/');
       // mapa.html carrega o que precisa por conta própria (Leaflet, localizacao.js, local-tarefa.js, mapa.js)
       const isMapa = new URL(request.url).pathname.endsWith('/mapa.html');
-      const isAuxPage = isMapa || isFinance || isGame || isTraining || isInvest || isCarteira || isTreinoAna || isImportar || isEquip || isMarket;
+      // cerebro.html também carrega só o que precisa (cerebro.js)
+      const isCerebro = new URL(request.url).pathname.endsWith('/cerebro.html');
+      const isAuxPage = isMapa || isCerebro || isFinance || isGame || isTraining || isInvest || isCarteira || isTreinoAna || isImportar || isEquip || isMarket;
       // A agenda principal tem links para financeiro.html e gamificacao.html no menu,
       // então o teste por conteúdo acima a confundia com uma página auxiliar e o
       // Web Push nunca era carregado (só o aviso antigo, que funciona com o app aberto).
