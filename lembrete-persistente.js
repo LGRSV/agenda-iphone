@@ -59,4 +59,6 @@
   }, true);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) ciclo(); });
   setInterval(ciclo, 60000);
+  // auto-concluir.js chama na hora, ao concluir uma tarefa sozinho
+  window.AgendaLembretePersistente = { ciclo };
 })();
