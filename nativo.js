@@ -237,11 +237,8 @@
       <p>O app renova sozinho o perfil de 7 dias (como o SideStore), sem reinstalar. Precisa do LocalDevVPN ligado.</p>
       <div class="notice" id="rvStatus">Carregando…</div>
       <div id="rvLogin">
-        <label class="field-label" for="rvApple">Apple ID (o mesmo usado no AltStore)</label>
-        <input type="email" id="rvApple" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
-        <label class="field-label" for="rvSenha">Senha do Apple ID</label>
-        <input type="password" id="rvSenha" autocomplete="current-password">
-        <button class="secondary wide" id="rvEntrar" type="button">Entrar</button>
+        <button class="secondary wide" id="rvEntrar" type="button">Entrar com o Apple ID</button>
+        <p class="field-label">Abre uma janela do próprio iPhone: o Apple ID e a senha não passam pela página.</p>
       </div>
       <button class="secondary wide" id="rvSair" type="button" hidden>Sair do Apple ID</button>
       <label class="field-label" for="rvArquivo">Arquivo de pareamento (gerado no PC pelo iloader)</label>
@@ -272,16 +269,15 @@
       lerEstado(false);
     });
     $('rvEntrar').addEventListener('click', async () => {
-      const appleId = $('rvApple').value.trim(), senha = $('rvSenha').value;
-      if (!appleId || !senha) { aviso('Digite Apple ID e senha.'); return; }
       if (rvOcupado) return;
       rvOcupado = true; desenharEstado('Entrando na Apple… (pode pedir o código de 2 fatores)');
       try {
-        const r = await RN.entrar({ appleId, senha });
-        $('rvSenha').value = '';
+        const r = await RN.entrarNativo();
         aviso(`Conectado: ${r.nome || r.appleId}.`);
       } catch (e) {
-        aviso(`Não entrou: ${(e && e.message) || 'erro'}`, 7000);
+        const m = (e && e.message) || 'erro';
+        if (/not implemented|UNIMPLEMENTED/i.test(m)) aviso('Atualize o app Agenda no AltStore (versão nova) para entrar com o Apple ID.', 7000);
+        else if (!/Cancelado/.test(m)) aviso(`Não entrou: ${m}`, 7000);
       } finally {
         rvOcupado = false; lerEstado(false);
       }
