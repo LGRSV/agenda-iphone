@@ -23,9 +23,10 @@
     if (wk || C) {
       const info = `cap:${C ? (typeof C.getPlatform === 'function' ? C.getPlatform() : 'sim') : 'nao'} ` +
         `nativo:${C && typeof C.isNativePlatform === 'function' ? C.isNativePlatform() : '-'} ponte:${wk} ` +
+        `renovacao:${C && typeof C.isPluginAvailable === 'function' ? C.isPluginAvailable('AgendaRenovacao') : '-'} ` +
         `plugins:${C && C.PluginHeaders ? C.PluginHeaders.map(h => h.name).join('/') : '-'}`;
       const mostrar = () => { const d = document.createElement('div'); d.textContent = info;
-        d.style.cssText = 'position:fixed;left:8px;right:8px;top:6px;z-index:99999;font:11px monospace;color:#ff0;background:#000c;padding:4px;border-radius:6px;pointer-events:none';
+        d.style.cssText = 'position:fixed;left:8px;right:8px;top:6px;z-index:99999;font:11px monospace;color:#ff0;background:#000c;padding:4px;border-radius:6px;pointer-events:none;white-space:normal;word-break:break-all';
         document.body.appendChild(d); setTimeout(() => d.remove(), 25000); };
       if (document.body) mostrar(); else document.addEventListener('DOMContentLoaded', mostrar);
     }
@@ -363,12 +364,28 @@ AgendaRenovacao: ${typeof C.isPluginAvailable === 'function' ? C.isPluginAvailab
     });
     menu.insertBefore(b, menu.firstChild);
   }
-  if (!RN) window.addEventListener('load', montarDiagnostico);
+  // Roda já se a página terminou de carregar (o 'load' pode ter passado antes deste script),
+  // e recoloca o item quando o menu abre (outro script pode redesenhar o menu).
+  const quandoPronto = fn => { const seguro = () => { try { fn(); } catch (e) { log('erro', e && e.message); } };
+    if (document.readyState === 'complete') seguro(); else window.addEventListener('load', seguro); };
+  let itemRenovacao = null;
+  const garantirItem = () => {
+    const menu = document.getElementById('quickMenu');
+    if (!menu) return;
+    const id = RN ? 'renovacaoBtn' : 'renovacaoDiag';
+    let b = itemRenovacao || document.getElementById(id);
+    if (!b) { RN ? montarUi() : montarDiagnostico(); itemRenovacao = document.getElementById(id); return; }
+    itemRenovacao = b;
+    if (menu.firstElementChild !== b) menu.insertBefore(b, menu.firstChild); // mesmo elemento: sem duplicar
+  };
+  quandoPronto(garantirItem);
+  document.addEventListener('click', e => { if (e.target && e.target.closest && e.target.closest('#moreMenuBtn')) setTimeout(() => { try { garantirItem(); } catch (_) {} }, 0); }, true);
+  { let n = 0; const t = setInterval(() => { try { garantirItem(); } catch (_) {} if (++n >= 15) clearInterval(t); }, 2000); }
   if (RN) {
-    window.addEventListener('load', () => { montarUi(); setTimeout(autoRenovar, 4000); });
+    quandoPronto(() => setTimeout(autoRenovar, 4000));
     document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(autoRenovar, 1500); });
   }
-  window.addEventListener('load', () => setTimeout(ciclo, 2500));
+  quandoPronto(() => setTimeout(ciclo, 2500));
   setInterval(ciclo, 60000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) ciclo(); });
   window.addEventListener('storage', e => { if (e.key === TK) sincronizarLembretes(); });
