@@ -224,7 +224,13 @@
     const b = document.createElement('button');
     b.id = 'renovacaoBtn'; b.type = 'button'; b.title = 'Renovação do app (perfil de 7 dias)';
     b.innerHTML = '<span class="menu-option-icon"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v4h-4"/><path d="M12 8v4l3 2"/></svg></span><span id="renovacaoLabel">Renovação do app</span>';
-    menu.appendChild(b);
+    // No topo do menu (no iPhone o menu passa da altura da tela e o último item ficava escondido).
+    menu.insertBefore(b, menu.firstChild);
+    if (!document.getElementById('quickMenuRolavel')) {
+      const css = document.createElement('style'); css.id = 'quickMenuRolavel';
+      css.textContent = '#quickMenu{max-height:calc(100dvh - 140px);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}';
+      document.head.appendChild(css);
+    }
 
     const st = document.createElement('style');
     st.textContent = '#renovacaoDialog input[type=password],#renovacaoDialog input[type=email]{width:100%;min-height:46px;padding:11px 12px;border:1px solid var(--line);border-radius:13px;outline:0;background:var(--soft);color:var(--text);font-size:16px}#renovacaoDialog input[type=file]{width:100%;font-size:14px;color:var(--muted)}#renovacaoDialog .rv-linha{display:flex;justify-content:space-between;gap:10px;padding:3px 0}#renovacaoDialog .rv-linha b{color:var(--text);text-align:right}#renovacaoDialog .rv-linha b.rv-ok{color:#4ade80}#renovacaoDialog .rv-linha b.rv-no{color:#f87171}';
