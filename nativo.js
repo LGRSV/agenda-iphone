@@ -332,6 +332,25 @@
 
   // ---------- ciclo ----------
   function ciclo() { conferirGps(); sincronizarLembretes(); }
+  // Diagnóstico: app nativo sem o plugin de renovação -> item no topo do menu dizendo o que o app enxerga.
+  function montarDiagnostico() {
+    const menu = document.getElementById('quickMenu');
+    if (!menu || document.getElementById('renovacaoDiag')) return;
+    const b = document.createElement('button');
+    b.id = 'renovacaoDiag'; b.type = 'button';
+    b.innerHTML = '<span class="menu-option-icon"><svg viewBox="0 0 24 24"><path d="M12 8v5"/><path d="M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg></span><span>Renovação do app (diagnóstico)</span>';
+    b.addEventListener('click', async () => {
+      let nomes = [];
+      try { nomes = (C.PluginHeaders || []).map(h => h.name); } catch (_) {}
+      let versao = '?';
+      try { const info = await C.registerPlugin('App').getInfo(); versao = `${info.version} (${info.build})`; } catch (_) {}
+      window.alert(`App ${versao}
+Plugins nativos: ${nomes.join(', ') || 'nenhum'}
+AgendaRenovacao: ${typeof C.isPluginAvailable === 'function' ? C.isPluginAvailable('AgendaRenovacao') : 'sem isPluginAvailable'}`);
+    });
+    menu.insertBefore(b, menu.firstChild);
+  }
+  if (!RN) window.addEventListener('load', montarDiagnostico);
   if (RN) {
     window.addEventListener('load', () => { montarUi(); setTimeout(autoRenovar, 4000); });
     document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(autoRenovar, 1500); });
