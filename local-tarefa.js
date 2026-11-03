@@ -4,7 +4,11 @@
      campo "Local": usar onde estou, lugares salvos do Jarvis, buscar endereço
      (Nominatim/OpenStreetMap, só ao apertar Buscar e no máximo 1 busca/s) ou
      tocar no mapa (Leaflet carregado só quando precisa).
-   - O local fica na NOTA da tarefa: agenda_notas_v1[id].local = {nome, lat, lng}
+   - O local fica na NOTA da tarefa: agenda_notas_v1[id].local = {nome, lat, lng, lugarId?, autoConcluir?}
+     (lugarId = lugar salvo do Jarvis escolhido; autoConcluir = "Concluir sozinho
+     quando eu chegar lá", executado pelo auto-concluir.js). Em tarefa repetida
+     (rec-<regra>-<data>) o local vale para esta e as próximas ocorrências e entra
+     na nota da regra, para as ocorrências que ainda serão geradas.
      (mesclado com os campos que já existem — lembreteDe, movimento, cond…), com
      syncRev novo para vencer a cópia antiga no merge do supabase-shared-storage.
      Remover grava local:null (apagar a chave não propagaria: o merge de notas
@@ -16,6 +20,8 @@
 
   const TK = 'agenda_lagares_v3';
   const NK = 'agenda_notas_v1';
+  const RK = 'agenda_lagares_rules_v1';
+  const RAIO_AUTO = 120;                     // raio do lugar criado sozinho ao ligar a conclusão automática
   const LK = 'agenda_lugares_v1';
   const POS_KEY = 'agenda_mapa_pos_v1';      // última posição vista neste aparelho (não sincroniza)
   const POS_VALIDA_MS = 30 * 60 * 1000;
@@ -41,7 +47,14 @@
     return `${km.toLocaleString('pt-BR', { maximumFractionDigits: km < 100 ? 1 : 0 })} km`;
   }
   const localValido = l => !!(l && typeof l === 'object' && Number.isFinite(Number(l.lat)) && Number.isFinite(Number(l.lng)) && Math.abs(l.lat) <= 90 && Math.abs(l.lng) <= 180);
-  const limparLocal = l => ({ nome: String(l.nome || '').trim().slice(0, 80) || 'Local', lat: Math.round(Number(l.lat) * 1e6) / 1e6, lng: Math.round(Number(l.lng) * 1e6) / 1e6 });
+  const limparLocal = l => {
+    const o = { nome: String(l.nome || '').trim().slice(0, 80) || 'Local', lat: Math.round(Number(l.lat) * 1e6) / 1e6, lng: Math.round(Number(l.lng) * 1e6) / 1e6 };
+    if (l.lugarId) o.lugarId = String(l.lugarId).slice(0, 80);
+    if (l.autoConcluir === true) o.autoConcluir = true;
+    return o;
+  };
+  const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const pad = n => String(n).padStart(2, '0');
   const rotaGoogle = l => `https://www.google.com/maps/dir/?api=1&destination=${l.lat},${l.lng}`;
   const rotaApple = l => `https://maps.apple.com/?daddr=${l.lat},${l.lng}`;
 
@@ -51,18 +64,36 @@
     const n = (notas || lerNotas())[String(id)];
     return n && localValido(n.local) ? limparLocal(n.local) : null;
   }
+  // devolve os ids gravados (em tarefa repetida: esta + as próximas pendentes da mesma regra)
   function gravarLocal(id, local) {
-    const notas = lerNotas(), k = String(id);
-    const prev = notas[k] && typeof notas[k] === 'object' ? notas[k] : {};
-    if (!local && !prev.local) return;
-    notas[k] = { ...prev, local: local ? limparLocal(local) : null, syncRev: Date.now() };
-    localStorage.setItem(NK, JSON.stringify(notas));
+    const notas = lerNotas(), k = String(id), rev = Date.now();
+    const novo = local ? limparLocal(local) : null;
+    const ids = [k];
+    const m = /^rec-(.+)-(\d{4}-\d{2}-\d{2})$/.exec(k);
+    if (m) {
+      lerTarefas().forEach(t => { const tid = String(t && t.id); if (t && tid !== k && !t.done && tid.startsWith('rec-' + m[1] + '-') && String(t.date || '') >= m[2]) ids.push(tid); });
+      try {
+        const regras = json(localStorage.getItem(RK), []);
+        const r = Array.isArray(regras) ? regras.find(x => x && String(x.id) === m[1]) : null;
+        if (r && JSON.stringify((r.note && r.note.local) || null) !== JSON.stringify(novo)) { r.note = { ...(r.note || {}), local: novo }; localStorage.setItem(RK, JSON.stringify(regras)); }
+      } catch (_) {}
+    }
+    let mudou = false;
+    ids.forEach(i => {
+      const prev = notas[i] && typeof notas[i] === 'object' ? notas[i] : {};
+      if (!novo && !prev.local) return;
+      if (i !== k && JSON.stringify(prev.local || null) === JSON.stringify(novo)) return;
+      notas[i] = { ...prev, local: novo, syncRev: rev }; mudou = true;
+    });
+    if (mudou) localStorage.setItem(NK, JSON.stringify(notas));
+    try { if (window.AgendaAutoConcluir) window.AgendaAutoConcluir.agendar(500); } catch (_) {}
+    return ids;
   }
   function tarefasComLocal() {
     const notas = lerNotas();
     return lerTarefas()
       .filter(t => t && t.id != null && !t.done && !t.hidden)
-      .map(t => ({ id: String(t.id), text: t.text || '', date: t.date || '', time: t.time || '', local: lerLocal(t.id, notas) }))
+      .map(t => ({ id: String(t.id), text: t.text || '', date: t.date || '', time: t.time || '', local: lerLocal(t.id, notas), autoConcluida: !!(notas[String(t.id)] && notas[String(t.id)].autoConcluida) }))
       .filter(t => t.local);
   }
   function lugares() {
@@ -96,6 +127,24 @@
     });
   }
   const lugarEm = p => lugares().find(l => haversine(p.lat, p.lng, l.lat, l.lng) <= (l.raio || 100)) || null;
+  // lugar salvo que corresponde ao local de uma tarefa (mesma regra do auto-concluir.js)
+  function lugarDoLocal(local, lista) {
+    if (!local) return null;
+    lista = lista || lugares();
+    if (local.lugarId) { const l = lista.find(x => String(x.id) === String(local.lugarId)); if (l) return l; }
+    let melhor = null, dm = Infinity;
+    for (const l of lista) { const d = haversine(local.lat, local.lng, l.lat, l.lng); if (d <= (l.raio || 100) && d < dm) { melhor = l; dm = d; } }
+    return melhor;
+  }
+  // tarefas pendentes, de hoje até daqui a N dias, para vincular a um lugar (mapa)
+  function tarefasPendentes(dias) {
+    const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const hoje = new Date(), lim = new Date(); lim.setDate(lim.getDate() + (dias || 14));
+    const d0 = iso(hoje), d1 = iso(lim), notas = lerNotas();
+    return lerTarefas().filter(t => t && t.id != null && !t.done && !t.hidden && t.tag !== 'financeiro' && t.date >= d0 && t.date <= d1)
+      .sort((a, b) => (a.date + (a.time || '99')).localeCompare(b.date + (b.time || '99')))
+      .map(t => ({ id: String(t.id), text: t.text || '', date: t.date, time: t.time || '', local: lerLocal(t.id, notas) }));
+  }
 
   // Nominatim (OpenStreetMap): política de uso = no máximo 1 requisição por
   // segundo, nada de autocompletar. Só busca ao apertar Buscar; o navegador
@@ -153,7 +202,7 @@
 
   window.AgendaLocalTarefa = {
     haversine, fmtDist, rotaGoogle, rotaApple, lerLocal, gravarLocal, tarefasComLocal, lugares,
-    ultimaPos, guardarPos, posicaoAgora, buscarEndereco, carregarLeaflet, camadaOSM, lugarEm, CENTRO_PADRAO
+    ultimaPos, guardarPos, posicaoAgora, buscarEndereco, carregarLeaflet, camadaOSM, lugarEm, lugarDoLocal, tarefasPendentes, CENTRO_PADRAO, RAIO_AUTO
   };
 
   // ------------------------------------------------- UI da agenda (só lá)
@@ -172,7 +221,14 @@
     .tl-field .tl-b{min-height:40px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--text);font-size:13px;font-weight:750}
     .tl-field .tl-b:active{transform:scale(.97)}
     .tl-field .tl-b:disabled{opacity:.55}
-    .tl-field .tl-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .tl-field .tl-auto{display:flex;align-items:flex-start;gap:10px;margin:0 0 8px;padding:9px 11px;border:1px solid var(--line);border-radius:13px;background:var(--soft);font-size:13px;font-weight:700;line-height:1.3;cursor:pointer}
+    .tl-field .tl-auto[hidden]{display:none}
+    .tl-field .tl-auto input{width:20px;height:20px;min-height:0;margin:1px 0 0;padding:0;flex:0 0 auto;accent-color:var(--accent)}
+    .tl-field .tl-auto small{display:block;margin-top:3px;color:var(--muted);font-size:11.5px;font-weight:600}
+    .tl-field .tl-auto small:empty{display:none}
+    .tl-field .tl-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
+    .tl-field .tl-chips-rot{color:var(--muted);font-size:11px;font-weight:750;margin-right:2px}
+    .tl-field .tl-chip.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
     .tl-field .tl-chips:empty{display:none}
     .tl-field .tl-chip{padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);font-size:12px;font-weight:750}
     .tl-field .tl-busca{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}
@@ -208,6 +264,7 @@
   function campoHTML(rotulo) {
     return `<label class="${rotulo}">Local</label>
       <div class="tl-sel" hidden><span aria-hidden="true">📍</span><input class="tl-nome" type="text" maxlength="80" placeholder="Nome do local" aria-label="Nome do local" autocomplete="off"><span class="tl-dist"></span><button class="tl-x" type="button" aria-label="Tirar o local">×</button></div>
+      <label class="tl-auto" hidden><input class="tl-autochk" type="checkbox"><span>Concluir sozinho quando eu chegar lá<small class="tl-autoinfo"></small></span></label>
       <div class="tl-btns"><button class="tl-b" type="button" data-tl="aqui">Usar onde estou</button><button class="tl-b" type="button" data-tl="mapa">Escolher no mapa</button></div>
       <div class="tl-chips"></div>
       <div class="tl-busca"><input class="tl-q" type="search" placeholder="Buscar endereço ou lugar" enterkeyhint="search" autocomplete="off" aria-label="Buscar endereço"><button class="tl-b" type="button" data-tl="buscar">Buscar</button></div>
@@ -219,7 +276,10 @@
     campo._local = local ? limparLocal(local) : null;
     const sel = campo.querySelector('.tl-sel');
     sel.hidden = !campo._local;
+    campo.querySelector('.tl-auto').hidden = !campo._local;
+    campo.querySelector('.tl-autochk').checked = !!(campo._local && campo._local.autoConcluir);
     campo.querySelector('.tl-res').innerHTML = '';
+    infoAuto(campo); chips(campo);
     if (!campo._local) return;
     campo.querySelector('.tl-nome').value = campo._local.nome;
     const p = ultimaPos();
@@ -228,15 +288,54 @@
   function valorDe(campo) {
     if (!campo || !campo._local) return null;
     const nome = campo.querySelector('.tl-nome').value.trim();
-    return limparLocal({ ...campo._local, nome: nome || campo._local.nome });
+    return limparLocal({ ...campo._local, nome: nome || campo._local.nome, autoConcluir: campo.querySelector('.tl-autochk').checked });
+  }
+  const hhmm = ms => { const d = new Date(ms); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+  function infoAuto(campo) {
+    const el = campo.querySelector('.tl-autoinfo'), l = campo._local;
+    if (!el) return;
+    const n = campo._tid ? lerNotas()[String(campo._tid)] : null, a = n && n.autoConcluida;
+    if (!l) { el.textContent = ''; return; }
+    if (a && a.em) { const d = new Date(a.em); el.textContent = `Concluída sozinha em ${pad(d.getDate())}/${pad(d.getMonth() + 1)} às ${hhmm(a.em)} (chegou em ${a.lugar || 'local'}).`; return; }
+    if (!campo.querySelector('.tl-autochk').checked) { el.textContent = 'Pelo GPS, no dia da tarefa, a partir de 2 h antes do horário.'; return; }
+    const lg = lugarDoLocal(l), AL = window.AgendaLocal;
+    el.textContent = (lg ? `Ao chegar em “${lg.nome}” (raio ${lg.raio || 100} m)` : `Vou salvar este local nos seus lugares (raio ${RAIO_AUTO} m)`) +
+      ', no dia da tarefa, desde 2 h antes do horário.' + (AL && AL.ativo && !AL.ativo() ? ' ⚠ A localização está desligada.' : '');
+  }
+  // o local precisa ser um LUGAR salvo: é o motor do localizacao.js que reconhece a chegada
+  async function garantirLugar(campo) {
+    const AL = window.AgendaLocal, l = campo._local;
+    if (!l) return;
+    let lg = lugarDoLocal(l);
+    if (!lg && AL && AL.salvarLugar) {
+      const base = valorDe(campo).nome; let nome = base, i = 2;
+      while (lugares().some(x => norm(x.nome) === norm(nome))) nome = `${base} ${i++}`;
+      const r = await AL.salvarLugar(nome, { lat: l.lat, lng: l.lng, raio: RAIO_AUTO });
+      if (r && r.ok) { lg = r.lugar; msg(campo, `Salvei “${lg.nome}” nos seus lugares (raio ${lg.raio} m) para reconhecer a chegada. Dá para ajustar no Mapa.`); }
+      else if (r) msg(campo, r.msg);
+    }
+    if (lg && campo._local) campo._local.lugarId = String(lg.id);
+    if (AL && AL.ativo && !AL.ativo() && AL.ativar) {
+      try { const r = await AL.ativar(); if (r && !r.ok) msg(campo, r.msg); } catch (_) {}
+    }
+    infoAuto(campo); chips(campo);
   }
   function msg(campo, txt) { campo.querySelector('.tl-msg').textContent = txt || ''; }
   function chips(campo) {
-    campo.querySelector('.tl-chips').innerHTML = lugares().slice(0, 8)
-      .map(l => `<button class="tl-chip" type="button" data-lugar="${esc(l.id)}">${esc(l.nome)}</button>`).join('');
+    const atual = campo._local ? lugarDoLocal(campo._local) : null;
+    const ls = lugares().slice(0, 16);
+    campo.querySelector('.tl-chips').innerHTML = ls.length ? '<span class="tl-chips-rot">Lugares salvos:</span>' + ls
+      .map(l => `<button class="tl-chip${atual && atual.id === l.id ? ' on' : ''}" type="button" data-lugar="${esc(l.id)}">${esc(l.nome)}</button>`).join('') : '';
   }
-  // escolha do usuário: no painel de detalhes grava na hora (não há botão salvar)
-  function escolher(campo, local) { definir(campo, local); if (campo._aoMudar) campo._aoMudar(valorDe(campo)); }
+  // escolha do usuário: no painel de detalhes grava na hora (não há botão salvar).
+  // Trocar de local mantém a "conclusão automática" como estava.
+  function escolher(campo, local) {
+    const auto = !!(campo._local && campo.querySelector('.tl-autochk').checked);
+    definir(campo, local ? { ...local, autoConcluir: auto || local.autoConcluir === true } : null);
+    if (campo._local && campo._local.autoConcluir) {
+      garantirLugar(campo).then(() => { if (campo._aoMudar) campo._aoMudar(valorDe(campo)); });
+    } else if (campo._aoMudar) campo._aoMudar(valorDe(campo));
+  }
   function resetar(campo) { definir(campo, null); msg(campo, ''); campo.querySelector('.tl-q').value = ''; chips(campo); }
 
   function montarCampo(form, antesDe, classeRotulo, aoMudar) {
@@ -249,13 +348,19 @@
     campo._local = null;
     campo._aoMudar = aoMudar || null;
     if (aoMudar) campo.querySelector('.tl-nome').addEventListener('change', () => { if (campo._local) aoMudar(valorDe(campo)); });
+    campo.querySelector('.tl-autochk').addEventListener('change', async e => {
+      if (!campo._local) return;
+      campo._local.autoConcluir = e.target.checked;
+      if (e.target.checked) await garantirLugar(campo); else infoAuto(campo);
+      if (campo._aoMudar) campo._aoMudar(valorDe(campo));
+    });
     chips(campo);
     campo.addEventListener('click', async e => {
       const b = e.target.closest('button'); if (!b) return;
       if (b.classList.contains('tl-x')) { escolher(campo, null); msg(campo, ''); return; }
       if (b.dataset.lugar) {
         const l = lugares().find(x => String(x.id) === b.dataset.lugar);
-        if (l) { escolher(campo, { nome: l.nome, lat: l.lat, lng: l.lng }); msg(campo, ''); }
+        if (l) { escolher(campo, { nome: l.nome, lat: l.lat, lng: l.lng, lugarId: l.id }); msg(campo, ''); }
         return;
       }
       if (b.classList.contains('tl-op')) { const r = campo._res && campo._res[Number(b.dataset.i)]; if (r) { escolher(campo, r); msg(campo, r.endereco); } return; }
@@ -265,7 +370,7 @@
         try {
           const p = await posicaoAgora();
           const l = lugarEm(p);
-          escolher(campo, { nome: l ? l.nome : 'Onde eu estava', lat: p.lat, lng: p.lng });
+          escolher(campo, { nome: l ? l.nome : 'Onde eu estava', lat: p.lat, lng: p.lng, lugarId: l ? l.id : undefined });
           msg(campo, `Precisão de ±${Math.round(p.acc || 0)} m. Pode trocar o nome acima.`);
         } catch (err) { msg(campo, err.message); }
         b.disabled = false;
@@ -306,7 +411,7 @@
       mapaDlg.querySelector('.tlm-cancel').addEventListener('click', () => mapaDlg.close());
       mapaDlg.querySelector('.tlm-ok').addEventListener('click', () => {
         const c = marcaL && marcaL.getLatLng();
-        if (c) { const l = lugarEm({ lat: c.lat, lng: c.lng }); mapaRes = { nome: (mapaAtual && mapaAtual.nome) || (l ? l.nome : 'Ponto no mapa'), lat: c.lat, lng: c.lng }; }
+        if (c) { const l = lugarEm({ lat: c.lat, lng: c.lng }); mapaRes = { nome: (mapaAtual && mapaAtual.nome) || (l ? l.nome : 'Ponto no mapa'), lat: c.lat, lng: c.lng, lugarId: l ? l.id : undefined }; }
         mapaDlg.close();
       });
     }
@@ -353,6 +458,7 @@
         const novoSep = document.createElement('div'); novoSep.className = 'notas-sep';
         if (sep) { sep.after(campo); campo.after(novoSep); } else panel.prepend(campo);
       }, 'notas-label', local => { gravarLocal(id, local); atualizarCards(); });
+      c._tid = id;
       definir(c, lerLocal(id));
     });
   }
@@ -377,7 +483,7 @@
     setTimeout(() => {
       instalarCampos();
       const c = document.querySelector('#agendaEditForm .tl-field');
-      if (c) { resetar(c); definir(c, lerLocal(editandoId)); }
+      if (c) { c._tid = editandoId; resetar(c); definir(c, lerLocal(editandoId)); }
     }, 0);
   }, true);
   document.addEventListener('submit', e => {
@@ -391,7 +497,8 @@
       // o handler da agenda cria a tarefa logo depois deste (mesmo evento)
       setTimeout(() => {
         const novas = lerTarefas().filter(t => !antes.has(String(t.id)));
-        novas.forEach(t => gravarLocal(t.id, local));
+        const feitos = new Set(); // repetida: a 1ª ocorrência já grava as próximas e a regra
+        novas.forEach(t => { if (!feitos.has(String(t.id))) gravarLocal(t.id, local).forEach(i => feitos.add(i)); });
         if (novas.length) atualizarCards();
       }, 0);
     } else if (f.id === 'agendaEditForm' && editandoId) {
@@ -409,7 +516,8 @@
       const loc = id ? lerLocal(id, notas) : null;
       let b = card.querySelector('.tl-badge');
       if (!loc) { if (b) b.remove(); return; }
-      const txt = `📍 ${loc.nome}${p ? ` · ${fmtDist(haversine(p.lat, p.lng, loc.lat, loc.lng))}` : ''}`;
+      const feita = notas[String(id)] && notas[String(id)].autoConcluida;
+      const txt = `📍 ${loc.nome}${p && !feita ? ` · ${fmtDist(haversine(p.lat, p.lng, loc.lat, loc.lng))}` : ''}${feita ? ' · ✓ ao chegar' : loc.autoConcluir ? ' · ⚡ auto' : ''}`;
       if (!b) {
         const rodape = card.querySelector('.task-footer'); if (!rodape) return;
         b = document.createElement('a'); b.className = 'tl-badge';
@@ -432,7 +540,11 @@
     new MutationObserver(() => { cancelAnimationFrame(frame); frame = requestAnimationFrame(() => { instalarCampos(); atualizarCards(); }); })
       .observe(document.body, { childList: true, subtree: true });
     let ultimo = 0;
-    window.addEventListener('agenda:local-change', () => { if (Date.now() - ultimo > 5000) { ultimo = Date.now(); atualizarCards(); } });
+    window.addEventListener('agenda:local-change', e => {
+      const tipo = e && e.detail && e.detail.tipo;
+      if (tipo === 'lugares' || tipo === 'sync') document.querySelectorAll('.tl-field').forEach(c => { chips(c); infoAuto(c); });
+      if (Date.now() - ultimo > 5000) { ultimo = Date.now(); atualizarCards(); }
+    });
     window.addEventListener('agenda:remote-sync', () => setTimeout(atualizarCards, 50));
     setInterval(() => { if (!document.hidden) atualizarCards(); }, 60000);
   }

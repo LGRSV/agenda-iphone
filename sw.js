@@ -27,9 +27,10 @@ const AUTH_GATE_SCRIPT = '<script src="./auth-gate.js?v=1" defer><\/script>';
 const SEQ_SCRIPT = '<script src="./sequencial.js?v=4" defer><\/script>';
 const PARCEIRO_SCRIPT = '<script src="./parceiro.js?v=2" defer><\/script>';
 const MESADA_SCRIPT = '<script src="./mesada-sync.js?v=1" defer><\/script>';
-const LEMBRETE_SCRIPT = '<script src="./lembrete-persistente.js?v=1" defer><\/script>';
-const LOCAL_SCRIPT = '<script src="./localizacao.js?v=1" defer><\/script>';
-const LOCAL_TAREFA_SCRIPT = '<script src="./local-tarefa.js?v=1" defer><\/script>';
+const LEMBRETE_SCRIPT = '<script src="./lembrete-persistente.js?v=2" defer><\/script>';
+const LOCAL_SCRIPT = '<script src="./localizacao.js?v=2" defer><\/script>';
+const LOCAL_TAREFA_SCRIPT = '<script src="./local-tarefa.js?v=2" defer><\/script>';
+const AUTO_CONCLUIR_SCRIPT = '<script src="./auto-concluir.js?v=1" defer><\/script>';
 
 const STATIC_ASSET_RE = /\.(?:js|css|png|jpg|jpeg|svg|webp|woff2?)$/;
 
@@ -102,6 +103,7 @@ self.addEventListener('fetch', event => {
       if (!isAuxPage && !html.includes('lembrete-persistente.js')) html = html.replace('</body>', `${LEMBRETE_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('localizacao.js')) html = html.replace('</body>', `${LOCAL_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('local-tarefa.js')) html = html.replace('</body>', `${LOCAL_TAREFA_SCRIPT}</body>`);
+      if (!isAuxPage && !html.includes('auto-concluir.js')) html = html.replace('</body>', `${AUTO_CONCLUIR_SCRIPT}</body>`);
       const headers = new Headers(response.headers);
       headers.delete('content-length');
       headers.delete('content-encoding');

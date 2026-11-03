@@ -39,23 +39,58 @@
     .vazio{padding:18px 16px;color:var(--muted);font-size:13px;line-height:1.5}
     .eu-pin{width:18px;height:18px;border-radius:50%;background:var(--me);border:3px solid #fff;box-shadow:0 0 0 2px rgba(30,136,255,.35),0 1px 6px rgba(0,0,0,.4)}
     .leaflet-popup-content{margin:10px 12px;font:13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .leaflet-popup-content a.pl{display:inline-block;margin:6px 6px 0 0;padding:5px 9px;border-radius:8px;background:#eef1f5;color:#123;text-decoration:none;font-weight:700}
+    .leaflet-popup-content .pl{display:inline-block;margin:6px 6px 0 0;padding:5px 9px;border:0;border-radius:8px;background:#eef1f5;color:#123;text-decoration:none;font:700 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:pointer}
+    .leaflet-popup-content .pl.verde{background:#3ecf8e;color:#05301d}
+    .sheet{position:fixed;inset:0;z-index:2000;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.35)}
+    .sheet[hidden]{display:none}
+    .sheet-card{width:min(100%,560px);max-height:78dvh;overflow-y:auto;padding:16px 16px calc(14px + env(safe-area-inset-bottom));border-radius:20px 20px 0 0;background:var(--surface);border:1px solid var(--line);box-shadow:0 -10px 30px rgba(0,0,0,.4)}
+    .sheet-card h3{margin:0 0 4px;font-size:18px}.sheet-card .sub2{margin:0 0 10px;color:var(--muted);font-size:12px;line-height:1.4}
+    .sheet-card label{display:block;margin-top:10px;color:var(--muted);font-size:12px;font-weight:700}
+    .sheet-card input[type=text]{display:block;width:100%;margin-top:6px;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--text);font-size:16px;outline:0}
+    .sheet-card input[type=text]:focus{border-color:var(--accent)}
+    .sheet-card input[type=range]{display:block;width:100%;margin-top:8px;accent-color:var(--lugar)}
+    .sheet-card label b{color:var(--text)}
+    .sheet-acoes{display:flex;gap:8px;margin-top:16px}
+    .sheet-acoes button{min-height:44px;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--soft);color:var(--text);font-weight:750}
+    .sheet-acoes .ok{background:var(--lugar);border-color:var(--lugar);color:#05301d}
+    .sheet-acoes .perigo{color:var(--red)}
+    .sheet-acoes [hidden]{display:none}
+    .tlist button{display:block;width:100%;margin-top:7px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--text);text-align:left;font-size:14px;font-weight:700;line-height:1.3}
+    .tlist button span{display:block;color:var(--muted);font-size:12px;font-weight:600;margin-top:2px}
+    .tlist button.on{border-color:var(--lugar)}
+    .tlist .vazio{padding:8px 0}
+    .toast{position:fixed;z-index:2100;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));width:max-content;max-width:calc(100% - 32px);padding:11px 14px;border:1px solid var(--line);border-radius:14px;background:#2a2e36;color:var(--text);font-size:13px;font-weight:700;line-height:1.35;opacity:0;pointer-events:none;transform:translate(-50%,12px);transition:opacity .2s,transform .2s}
+    .toast.show{opacity:1;transform:translate(-50%,0)}
   </style>
 </head>
 <body>
   <header class="head"><a class="back" href="./" aria-label="Voltar à agenda">‹</a><div style="min-width:0"><h1>Mapa</h1><p class="sub" id="status"><span class="dot"></span>procurando você…</p></div></header>
   <div class="mapwrap">
     <div id="map" aria-label="Mapa"></div>
-    <div class="medida" id="medida"><b id="medidaTxt"></b><a id="medidaIr" target="_blank" rel="noopener">Ir</a><button id="medidaX" type="button" aria-label="Fechar">×</button></div>
+    <div class="medida" id="medida"><b id="medidaTxt"></b><button id="medidaSalvar" type="button">Salvar lugar</button><a id="medidaIr" target="_blank" rel="noopener">Ir</a><button id="medidaX" type="button" aria-label="Fechar">×</button></div>
     <div class="fab">
       <button id="btnSeguir" class="on" type="button" title="Centralizar em mim e seguir" aria-label="Centralizar em mim">◎</button>
       <button id="btnTudo" type="button" title="Ver todos os locais" aria-label="Ver todos os locais">⤢</button>
     </div>
   </div>
   <section class="lista" id="lista"><div class="vazio">Carregando…</div></section>
+  <div class="sheet" id="sheetLugar" hidden><div class="sheet-card" role="dialog" aria-labelledby="lgTit">
+    <h3 id="lgTit">Salvar como lugar</h3>
+    <p class="sub2">Com a localização ligada, a chegada conta quando você fica cerca de 1 min parado dentro do círculo.</p>
+    <label>Nome<input id="lgNome" type="text" maxlength="60" placeholder="Ex.: Energisa" autocomplete="off" enterkeyhint="done"></label>
+    <label>Raio: <b id="lgRaioTxt">120 m</b><input id="lgRaio" type="range" min="60" max="300" step="10" value="120"></label>
+    <div class="sheet-acoes"><button id="lgRemover" class="perigo" type="button" hidden>Remover</button><span style="flex:1"></span><button id="lgCancelar" type="button">Cancelar</button><button id="lgSalvar" class="ok" type="button">Salvar</button></div>
+  </div></div>
+  <div class="sheet" id="sheetTarefas" hidden><div class="sheet-card" role="dialog" aria-labelledby="vtTit">
+    <h3 id="vtTit">Vincular tarefa</h3>
+    <p class="sub2" id="vtSub"></p>
+    <div class="tlist" id="vtLista"></div>
+    <div class="sheet-acoes"><span style="flex:1"></span><button id="vtFechar" type="button">Fechar</button></div>
+  </div></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="./vendor/leaflet/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="></script>
-  <script src="./localizacao.js?v=1"></script>
-  <script src="./local-tarefa.js?v=1"></script>
-  <script src="./mapa.js?v=1"></script>
+  <script src="./localizacao.js?v=2"></script>
+  <script src="./local-tarefa.js?v=2"></script>
+  <script src="./mapa.js?v=2"></script>
 </body>
 </html>

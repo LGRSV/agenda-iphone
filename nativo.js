@@ -393,6 +393,16 @@ AgendaRenovacao: ${typeof C.isPluginAvailable === 'function' ? C.isPluginAvailab
   setInterval(ciclo, 60000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) ciclo(); });
   window.addEventListener('storage', e => { if (e.key === TK) sincronizarLembretes(); });
-  window.AgendaNativo = { ciclo, ligarGps, desligarGps, sincronizarLembretes, proximosLembretes,
+  // aviso imediato (sem `schedule` o plugin mostra na hora; não fica pendente, então
+  // o sincronizarLembretes não o cancela). Usado pela conclusão automática por presença.
+  async function avisoImediato(titulo, corpo) {
+    try {
+      if (permissaoNotif === null) { const p = await LN.checkPermissions(); permissaoNotif = p.display; }
+      if (permissaoNotif !== 'granted') return false;
+      await LN.schedule({ notifications: [{ id: idNum(`auto-${Date.now()}-${corpo}`), title: titulo, body: corpo }] });
+      return true;
+    } catch (e) { log('aviso falhou', e && e.message); return false; }
+  }
+  window.AgendaNativo = { ciclo, ligarGps, desligarGps, sincronizarLembretes, proximosLembretes, avisoImediato,
     renovacao: RN ? { estado: lerEstado, renovar: () => renovarAgora(true) } : null };
 })();
