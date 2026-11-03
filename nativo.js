@@ -38,8 +38,26 @@
   } catch (_) {}
   if (!C || typeof C.isNativePlatform !== 'function' || !C.isNativePlatform()) return;
 
-  const BG = C.registerPlugin('BackgroundGeolocation');
-  const LN = C.registerPlugin('LocalNotifications');
+  // A página vem da internet (server.url), sem o @capacitor/core: a ponte nativa não traz registerPlugin.
+  // Este é um registerPlugin mínimo em cima de nativePromise/nativeCallback, usando os PluginHeaders.
+  const registrar = nome => {
+    if (typeof C.registerPlugin === 'function') return C.registerPlugin(nome);
+    if (C.Plugins && C.Plugins[nome]) return C.Plugins[nome];
+    const cab = (C.PluginHeaders || []).find(h => h.name === nome);
+    const tipo = m => { const x = cab && (cab.methods || []).find(mm => mm.name === m); return x ? x.rtype : 'promise'; };
+    return new Proxy({}, { get(_, metodo) {
+      if (typeof metodo !== 'string' || metodo === 'then') return undefined;
+      if (metodo === 'addListener') return (evento, cb) => {
+        const id = C.nativeCallback(nome, 'addListener', { eventName: evento }, cb);
+        const h = { remove: () => C.nativePromise(nome, 'removeListener', { callbackId: id, eventName: evento }) };
+        return Object.assign(Promise.resolve(h), h);
+      };
+      if (tipo(metodo) === 'callback') return (opcoes, cb) => Promise.resolve(C.nativeCallback(nome, metodo, opcoes || {}, cb));
+      return (opcoes) => C.nativePromise(nome, metodo, opcoes || {});
+    } });
+  };
+  const BG = registrar('BackgroundGeolocation');
+  const LN = registrar('LocalNotifications');
   const TK = 'agenda_lagares_v3';
   const NK = 'agenda_notas_v1';
   const SIG_KEY = 'agenda_nativo_lembretes_sig';
@@ -158,7 +176,7 @@
   // ---------- 4) renovação do perfil de 7 dias ----------
   window.__nativoPasso = 'antes-RN';
   const RN = (typeof C.isPluginAvailable === 'function' && C.isPluginAvailable('AgendaRenovacao'))
-    ? C.registerPlugin('AgendaRenovacao') : null;
+    ? registrar('AgendaRenovacao') : null;
   const RV_AUTO = 'agenda_renovacao_auto_ts';
   const RV_IP = 'agenda_renovacao_ip';
   let rvOcupado = false, rvEstado = null, rvUi = null;
@@ -364,7 +382,7 @@
       let nomes = [];
       try { nomes = (C.PluginHeaders || []).map(h => h.name); } catch (_) {}
       let versao = '?';
-      try { const info = await C.registerPlugin('App').getInfo(); versao = `${info.version} (${info.build})`; } catch (_) {}
+      try { const info = await registrar('App').getInfo(); versao = `${info.version} (${info.build})`; } catch (_) {}
       window.alert(`App ${versao}
 Plugins nativos: ${nomes.join(', ') || 'nenhum'}
 AgendaRenovacao: ${typeof C.isPluginAvailable === 'function' ? C.isPluginAvailable('AgendaRenovacao') : 'sem isPluginAvailable'}`);
