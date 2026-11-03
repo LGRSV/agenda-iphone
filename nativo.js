@@ -25,7 +25,12 @@
         `nativo:${C && typeof C.isNativePlatform === 'function' ? C.isNativePlatform() : '-'} ponte:${wk} ` +
         `renovacao:${C && typeof C.isPluginAvailable === 'function' ? C.isPluginAvailable('AgendaRenovacao') : '-'} ` +
         `plugins:${C && C.PluginHeaders ? C.PluginHeaders.map(h => h.name).join('/') : '-'}`;
+      window.__nativoInfo = info;
+      window.addEventListener('error', ev => { window.__nativoErro = `${ev.message} @${(ev.filename || '').split('/').pop()}:${ev.lineno}`; });
+      window.addEventListener('unhandledrejection', ev => { window.__nativoErro = 'promessa: ' + ((ev.reason && ev.reason.message) || ev.reason); });
       const mostrar = () => { const d = document.createElement('div'); d.textContent = info;
+        const atualizar = () => { d.textContent = `${info} | passo:${window.__nativoPasso || '-'} | erro:${window.__nativoErro || '-'} | item:${!!document.getElementById('renovacaoBtn')} menu:${!!document.getElementById('quickMenu')} rs:${document.readyState}`; };
+        const iv = setInterval(atualizar, 1000); setTimeout(() => clearInterval(iv), 25000);
         d.style.cssText = 'position:fixed;left:8px;right:8px;top:6px;z-index:99999;font:11px monospace;color:#ff0;background:#000c;padding:4px;border-radius:6px;pointer-events:none;white-space:normal;word-break:break-all';
         document.body.appendChild(d); setTimeout(() => d.remove(), 25000); };
       if (document.body) mostrar(); else document.addEventListener('DOMContentLoaded', mostrar);
@@ -151,6 +156,7 @@
   }
 
   // ---------- 4) renovação do perfil de 7 dias ----------
+  window.__nativoPasso = 'antes-RN';
   const RN = (typeof C.isPluginAvailable === 'function' && C.isPluginAvailable('AgendaRenovacao'))
     ? C.registerPlugin('AgendaRenovacao') : null;
   const RV_AUTO = 'agenda_renovacao_auto_ts';
@@ -232,6 +238,7 @@
   }
 
   function montarUi() {
+    window.__nativoPasso = 'montarUi';
     if (!RN || document.getElementById('renovacaoBtn')) return;
     const menu = document.getElementById('quickMenu');
     if (!menu) return;
@@ -368,8 +375,10 @@ AgendaRenovacao: ${typeof C.isPluginAvailable === 'function' ? C.isPluginAvailab
   // e recoloca o item quando o menu abre (outro script pode redesenhar o menu).
   const quandoPronto = fn => { const seguro = () => { try { fn(); } catch (e) { log('erro', e && e.message); } };
     if (document.readyState === 'complete') seguro(); else window.addEventListener('load', seguro); };
+  window.__nativoPasso = 'fim-definicoes';
   let itemRenovacao = null;
   const garantirItem = () => {
+    window.__nativoPasso = 'garantirItem';
     const menu = document.getElementById('quickMenu');
     if (!menu) return;
     const id = RN ? 'renovacaoBtn' : 'renovacaoDiag';
