@@ -17,6 +17,19 @@
 (() => {
   'use strict';
   const C = window.Capacitor;
+  // Diagnóstico temporário (02/11/2026): mostra por 25 s, no app, o que a página enxerga da parte nativa.
+  try {
+    const wk = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.bridge);
+    if (wk || C) {
+      const info = `cap:${C ? (typeof C.getPlatform === 'function' ? C.getPlatform() : 'sim') : 'nao'} ` +
+        `nativo:${C && typeof C.isNativePlatform === 'function' ? C.isNativePlatform() : '-'} ponte:${wk} ` +
+        `plugins:${C && C.PluginHeaders ? C.PluginHeaders.map(h => h.name).join('/') : '-'}`;
+      const mostrar = () => { const d = document.createElement('div'); d.textContent = info;
+        d.style.cssText = 'position:fixed;left:8px;right:8px;top:6px;z-index:99999;font:11px monospace;color:#ff0;background:#000c;padding:4px;border-radius:6px;pointer-events:none';
+        document.body.appendChild(d); setTimeout(() => d.remove(), 25000); };
+      if (document.body) mostrar(); else document.addEventListener('DOMContentLoaded', mostrar);
+    }
+  } catch (_) {}
   if (!C || typeof C.isNativePlatform !== 'function' || !C.isNativePlatform()) return;
 
   const BG = C.registerPlugin('BackgroundGeolocation');
