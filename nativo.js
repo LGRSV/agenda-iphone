@@ -403,6 +403,26 @@ AgendaRenovacao: ${typeof C.isPluginAvailable === 'function' ? C.isPluginAvailab
       return true;
     } catch (e) { log('aviso falhou', e && e.message); return false; }
   }
-  window.AgendaNativo = { ciclo, ligarGps, desligarGps, sincronizarLembretes, proximosLembretes, avisoImediato,
+  // Ícone por usuário: a conta "acms" usa o ícone AC, embutido no app a partir da versão com trocarIcone.
+  // Só troca quando o ícone atual é outro, porque o iOS mostra um aviso a cada troca.
+  const ICONE_POR_USUARIO = { acms: 'AC' };
+  async function ajustarIcone() {
+    if (!RN) return;
+    const cab = (C.PluginHeaders || []).find(h => h.name === 'AgendaRenovacao');
+    if (!cab || !(cab.methods || []).some(m => m.name === 'trocarIcone')) return; // app antigo, sem a função
+    let usuario = '';
+    try { usuario = String((JSON.parse(localStorage.getItem('agenda_app_profile_v1') || '{}') || {}).username || '').trim().toLowerCase(); } catch (_) {}
+    if (!usuario) return; // ainda sem login: não mexe no ícone
+    const alvo = ICONE_POR_USUARIO[usuario] || '';
+    try {
+      const atual = await RN.iconeAtual();
+      if (!atual || !atual.suporta || (atual.icone || '') === alvo) return;
+      await RN.trocarIcone({ nome: alvo });
+      log('ícone', alvo || 'padrão');
+    } catch (e) { log('ícone falhou', e && e.message); }
+  }
+  quandoPronto(() => setTimeout(ajustarIcone, 3000));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(ajustarIcone, 2000); });
+  window.AgendaNativo = { ciclo, ligarGps, desligarGps, sincronizarLembretes, proximosLembretes, avisoImediato, ajustarIcone,
     renovacao: RN ? { estado: lerEstado, renovar: () => renovarAgora(true) } : null };
 })();
