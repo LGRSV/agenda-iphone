@@ -43,6 +43,17 @@
   };
   const BG = registrar('BackgroundGeolocation');
   const LN = registrar('LocalNotifications');
+  // Toque no lembrete abre a tarefa. O plugin guarda o evento até haver ouvinte, então funciona com o app fechado.
+  const abrirTarefa = id => { let n = 0; const t = setInterval(() => {
+    if (window.AgendaAPI && typeof window.AgendaAPI.openTask === 'function') { clearInterval(t); try { window.AgendaAPI.openTask(id); } catch (_) {} }
+    else if (++n > 50) clearInterval(t);
+  }, 200); };
+  try {
+    LN.addListener('localNotificationActionPerformed', ev => {
+      const extra = (ev && ev.notification && ev.notification.extra) || {};
+      if (extra.taskId) abrirTarefa(String(extra.taskId));
+    });
+  } catch (_) {}
   const TK = 'agenda_lagares_v3';
   const NK = 'agenda_notas_v1';
   const SIG_KEY = 'agenda_nativo_lembretes_sig';

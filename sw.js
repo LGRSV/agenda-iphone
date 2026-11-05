@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v281-atualizar-app';
+const CACHE = 'agenda-lagares-v282-notificacao-abre-tarefa';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=14" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -157,7 +157,10 @@ self.addEventListener('notificationclick', event => {
   // — ex.: https://lgrsv.github.io/agenda-iphone/ — e não contra a origin nua
   // (https://lgrsv.github.io/), que jogava o clique para a raiz do domínio → 404.
   const scope = self.registration.scope || self.location.href;
-  const target = new URL(event.notification.data?.url || './', scope).href;
+  const alvo = new URL(event.notification.data?.url || './', scope);
+  const taskId = event.notification.data?.taskId;
+  if (taskId && !alvo.searchParams.has('task')) alvo.searchParams.set('task', String(taskId));
+  const target = alvo.href;
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     const current = windows.find(client => client.url.startsWith(scope)) || windows.find(client => client.url.startsWith(self.location.origin));
