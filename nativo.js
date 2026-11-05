@@ -13,7 +13,11 @@
       próprio perfil de 7 dias da conta Apple grátis. Precisa do Apple ID (fica só no Keychain do
       iPhone), do arquivo de pareamento gerado no PC (iloader) e do app LocalDevVPN ligado.
       Ao abrir o app faltando ≤ 3 dias e com a VPN ativa, renova automaticamente. Menu ⋯ > Renovação do app.
-      Campo opcional "IP do iPhone na VPN" (vazio = 10.7.0.1 do LocalDevVPN), para testar com Tailscale. */
+      Campo opcional "IP do iPhone na VPN" (vazio = 10.7.0.1 do LocalDevVPN), para testar com Tailscale.
+   5) Atualização do app (mesmo plugin, app com o método "atualizar"): com a VPN ligada, confere sozinho a
+      versão da fonte (altstore.json) e avisa; só instala com toque em "Atualizar o app". O app baixa a .ipa,
+      reassina com o Apple ID no próprio iPhone e instala pelo LocalDevVPN, como o SideStore.
+      "Ligar VPN" abre localdevvpn://enable?scheme=... (o LocalDevVPN liga o túnel e volta para a Agenda). */
 (() => {
   'use strict';
   const C = window.Capacitor;
@@ -159,17 +163,38 @@
     ? registrar('AgendaRenovacao') : null;
   const RV_AUTO = 'agenda_renovacao_auto_ts';
   const RV_IP = 'agenda_renovacao_ip';
+  const AT_AVISO = 'agenda_atualizacao_avisada';
   let rvOcupado = false, rvEstado = null, rvUi = null;
+  // App antigo não tem os métodos novos: a interface só mostra o que o app nativo sabe fazer.
+  const temMetodo = m => { const cab = (C.PluginHeaders || []).find(h => h.name === 'AgendaRenovacao'); return !!(cab && (cab.methods || []).some(x => x.name === m)); };
+  const PODE_ATUALIZAR = !!RN && temMetodo('atualizar') && temMetodo('versaoDisponivel');
+  let rvVersao = null, atProgresso = null, atChecado = 0;
   const rvOpcoes = extra => {
     const ip = (localStorage.getItem(RV_IP) || '').trim();
     return Object.assign(ip ? { ip } : {}, extra || {});
   };
 
-  function aviso(msg, ms) {
+  // acao (opcional): o aviso vira tocável enquanto estiver na tela (o .toast normal não recebe toque).
+  function aviso(msg, ms, acao) {
     const t = document.getElementById('toast');
     if (!t) { log(msg); return; }
+    const limpar = () => { t.classList.remove('show'); t.style.pointerEvents = ''; t.onclick = null; };
     t.textContent = msg; t.classList.add('show');
-    clearTimeout(aviso._t); aviso._t = setTimeout(() => t.classList.remove('show'), ms || 4500);
+    t.style.pointerEvents = acao ? 'auto' : '';
+    t.onclick = acao ? () => { const meu = t.textContent === msg; limpar(); if (meu) acao(); } : null;
+    clearTimeout(aviso._t); aviso._t = setTimeout(limpar, ms || 4500);
+  }
+
+  // LocalDevVPN: localdevvpn://enable liga o túnel; com ?scheme= ele volta para o app 1 s depois.
+  async function ligarVpn() {
+    if (RN && temMetodo('ligarVpn')) {
+      try {
+        const r = await RN.ligarVpn();
+        if (r && r.aberto === false) aviso('Não consegui abrir o LocalDevVPN. Ele está instalado?', 6000);
+        return;
+      } catch (e) { log('ligarVpn falhou', e && e.message); }
+    }
+    location.href = 'localdevvpn://enable'; // app antigo (sem esquema de volta): liga o túnel e fica no LocalDevVPN
   }
   const fmtData = iso => { try { return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (_) { return iso; } };
   const fmtDias = d => `${Math.max(0, d).toFixed(1).replace('.', ',')}`;
@@ -182,10 +207,16 @@
       localStorage.setItem(RV_VALIDADE, e.validade);
       if (antes !== e.validade) localStorage.removeItem(SIG_KEY); // reagenda o lembrete de renovação
     }
-    const lab = document.getElementById('renovacaoLabel');
-    if (lab) lab.textContent = e && typeof e.diasRestantes === 'number'
-      ? `Renovação do app · ${fmtDias(e.diasRestantes)} d` : 'Renovação do app';
+    rotuloMenu();
     if (rvUi && rvUi.open) desenharEstado();
+  }
+
+  function rotuloMenu() {
+    const lab = document.getElementById('renovacaoLabel');
+    if (!lab) return;
+    const e = rvEstado;
+    lab.textContent = (e && typeof e.diasRestantes === 'number' ? `Renovação do app · ${fmtDias(e.diasRestantes)} d` : 'Renovação do app')
+      + (rvVersao && rvVersao.haNova ? ' · versão nova' : '');
   }
 
   async function lerEstado(aparelho) {
@@ -227,12 +258,69 @@
   async function autoRenovar() {
     if (!RN || rvOcupado || document.hidden) return;
     const e = await lerEstado(false);
+    autoChecarVersao(e);
     if (!e || !e.logado || !e.temPareamento || !(typeof e.diasRestantes === 'number' && e.diasRestantes <= 3)) return;
-    if (!e.vpnAtiva) { aviso(`O app vence em ${fmtDias(e.diasRestantes)} dias. Ligue o LocalDevVPN e abra a Agenda para renovar.`, 6000); return; }
+    if (!e.vpnAtiva) { aviso(`O app vence em ${fmtDias(e.diasRestantes)} dias. Toque aqui para ligar o LocalDevVPN e renovar.`, 8000, ligarVpn); return; }
     const ultima = Number(localStorage.getItem(RV_AUTO)) || 0;
     if (Date.now() - ultima < 2 * 3600000) return; // no máximo 1 tentativa automática a cada 2 h
     localStorage.setItem(RV_AUTO, String(Date.now()));
     await renovarAgora(false);
+  }
+
+  // ---------- 5) atualização do app ----------
+  async function lerVersao() {
+    if (!PODE_ATUALIZAR) return null;
+    let v;
+    try { v = await RN.versaoDisponivel(); } catch (e) { v = { erro: (e && e.message) || 'falhou' }; }
+    rvVersao = v || null;
+    if (v && v.atualizadoAgora) aviso(`App atualizado para a versão ${v.atualizadoAgora}.`, 6000);
+    else if (v && v.atualizacaoNaoConcluida) aviso(`A atualização para a versão ${v.atualizacaoNaoConcluida} não terminou. Tente de novo em Renovação do app.`, 8000, abrirRenovacao);
+    rotuloMenu();
+    if (rvUi && rvUi.open) desenharEstado();
+    return rvVersao;
+  }
+
+  // Checagem automática ao abrir, só com a VPN ligada (é quando dá para instalar); instalar só com toque.
+  async function autoChecarVersao(e) {
+    if (!PODE_ATUALIZAR || !e || !e.vpnAtiva || rvOcupado) return;
+    if (Date.now() - atChecado < 30 * 60000) return;
+    atChecado = Date.now();
+    const v = await lerVersao();
+    if (!v || v.erro || !v.haNova || localStorage.getItem(AT_AVISO) === v.disponivel) return; // 1 aviso por versão
+    localStorage.setItem(AT_AVISO, v.disponivel);
+    aviso(`Versão nova do app (${v.disponivel}). Toque aqui para atualizar.`, 9000, abrirRenovacao);
+  }
+
+  async function atualizarApp() {
+    if (!PODE_ATUALIZAR || rvOcupado) return;
+    const v = rvVersao || {};
+    if (!confirm(`Atualizar o app para a versão ${v.disponivel || 'nova'}?\n\nO app baixa a versão nova, assina com o seu Apple ID e instala pelo LocalDevVPN. No fim ele vai para a tela inicial e se reinstala: abra a Agenda de novo. Seus dados continuam.`)) return;
+    let revogar = false;
+    for (let vez = 0; vez < 2; vez++) {
+      let pedido = null;
+      rvOcupado = true; atProgresso = { texto: 'Começando…', progresso: 0 }; desenharEstado();
+      try {
+        const r = await RN.atualizar(rvOpcoes(revogar ? { revogar: true } : {}));
+        aviso(`App atualizado para a versão ${r && r.para}.`, 7000);
+      } catch (e) {
+        const m = (e && (e.message || e.errorMessage)) || 'falhou';
+        if (e && e.code === 'PRECISA_REVOGAR' && !revogar) pedido = { m, lista: (e.data && e.data.certificados) || e.certificados || [] };
+        else aviso(`Atualização do app: ${m}`, 8000);
+      } finally {
+        rvOcupado = false; atProgresso = null;
+        lerEstado(false); lerVersao();
+      }
+      if (!pedido) return;
+      const quais = pedido.lista.length ? `\n\nCertificados da conta (revoga só o necessário, nesta ordem): ${pedido.lista.join(', ')}.` : '';
+      if (!confirm(`${pedido.m}${quais}\n\nRevogar e continuar?`)) return;
+      revogar = true;
+    }
+  }
+
+  function abrirRenovacao() {
+    if (!rvUi) return;
+    if (!rvUi.open) rvUi.showModal();
+    desenharEstado(); lerEstado(true); lerVersao();
   }
 
   function montarUi() {
@@ -258,8 +346,10 @@
     rvUi.id = 'renovacaoDialog';
     rvUi.innerHTML = `<div class="modal">
       <h3>Renovação do app</h3>
-      <p>O app renova sozinho o perfil de 7 dias (como o SideStore), sem reinstalar. Precisa do LocalDevVPN ligado.</p>
+      <p>O app renova sozinho o perfil de 7 dias e se atualiza (como o SideStore), sem AltStore. Precisa do LocalDevVPN ligado.</p>
       <div class="notice" id="rvStatus">Carregando…</div>
+      <button class="secondary wide" id="rvVpn" type="button" hidden>Ligar VPN (LocalDevVPN)</button>
+      <button class="primary wide" id="rvAtualizar" type="button" hidden>Atualizar o app</button>
       <div id="rvLogin">
         <button class="secondary wide" id="rvEntrar" type="button">Entrar com o Apple ID</button>
         <p class="field-label">Abre uma janela do próprio iPhone: o Apple ID e a senha não passam pela página.</p>
@@ -284,9 +374,11 @@
       lerEstado(false);
     });
 
-    b.addEventListener('click', () => { rvUi.showModal(); desenharEstado(); lerEstado(true); });
+    b.addEventListener('click', abrirRenovacao);
     $('rvFechar').addEventListener('click', () => rvUi.close());
     $('rvRenovar').addEventListener('click', () => renovarAgora(true));
+    $('rvVpn').addEventListener('click', ligarVpn);
+    $('rvAtualizar').addEventListener('click', atualizarApp);
     $('rvSair').addEventListener('click', async () => {
       if (!confirm('Sair do Apple ID neste app? (o pareamento continua salvo)')) return;
       try { await RN.sair(); } catch (_) {}
@@ -323,6 +415,7 @@
     });
 
     RN.addListener('codigo2fa', pedirCodigo);
+    if (PODE_ATUALIZAR) RN.addListener('atualizacao', p => { if (rvOcupado) atProgresso = p; if (rvUi && rvUi.open) desenharEstado(); });
   }
 
   function desenharEstado(ocupadoMsg) {
@@ -332,7 +425,8 @@
     const sim = (v, ok, no) => `<b class="${v ? 'rv-ok' : 'rv-no'}">${esc(v ? ok : no)}</b>`;
     const dias = typeof e.diasRestantes === 'number' ? `${fmtDias(e.diasRestantes)} dias` : '—';
     let html = '';
-    if (ocupadoMsg) html += `<strong>${esc(ocupadoMsg)}</strong>`;
+    const msg = atProgresso ? `Atualizando (${Number(atProgresso.progresso) || 0}%): ${atProgresso.texto || ''}` : ocupadoMsg;
+    if (msg) html += `<strong>${esc(msg)}</strong>`;
     html += `<div class="rv-linha"><span>Validade</span><b>${e.validade ? esc(fmtData(e.validade)) + ' · ' + dias : '—'}</b></div>`;
     if (e.validadeNoAparelho) html += `<div class="rv-linha"><span>Perfil no iPhone</span><b>${esc(fmtData(e.validadeNoAparelho))}</b></div>`;
     html += `<div class="rv-linha"><span>Apple ID</span>${sim(e.logado, e.appleId || 'conectado', 'não conectado')}</div>`;
@@ -341,11 +435,24 @@
     if (e.ultimaRenovacao) html += `<div class="rv-linha"><span>Última renovação</span><b>${esc(fmtData(e.ultimaRenovacao))}</b></div>`;
     if (e.ultimoErro) html += `<div style="margin-top:6px">Último erro: ${esc(e.ultimoErro)}</div>`;
     if (e.erroAparelho) html += `<div style="margin-top:6px">Leitura do iPhone: ${esc(e.erroAparelho)}</div>`;
+    const v = rvVersao;
+    if (PODE_ATUALIZAR && v) {
+      html += `<div class="rv-linha"><span>Versão do app</span><b>${esc(v.atual || '—')}</b></div>`;
+      if (v.haNova) html += `<div class="rv-linha"><span>Versão nova</span><b class="rv-ok">${esc(v.disponivel)}</b></div>`;
+      if (v.erro) html += `<div style="margin-top:6px">Fonte de atualizações: ${esc(v.erro)}</div>`;
+      if (v.ultimoErro) html += `<div style="margin-top:6px">Última atualização: ${esc(v.ultimoErro)}</div>`;
+    } else if (!PODE_ATUALIZAR) {
+      html += '<div style="margin-top:6px">Esta versão do app ainda não se atualiza sozinha: instale uma vez a versão nova pelo AltStore; as seguintes vêm por aqui.</div>';
+    }
     $('rvStatus').innerHTML = html;
     $('rvLogin').hidden = !!e.logado;
     $('rvSair').hidden = !e.logado;
     $('rvRenovar').disabled = rvOcupado || !e.logado || !e.temPareamento;
     $('rvEntrar').disabled = rvOcupado;
+    $('rvVpn').hidden = !rvEstado || !!e.vpnAtiva;
+    $('rvAtualizar').hidden = !(PODE_ATUALIZAR && v && v.haNova);
+    $('rvAtualizar').disabled = rvOcupado || !e.logado || !e.temPareamento || !e.vpnAtiva;
+    $('rvAtualizar').textContent = v && v.disponivel ? `Atualizar o app (${v.disponivel})` : 'Atualizar o app';
   }
 
   // ---------- ciclo ----------
@@ -424,5 +531,6 @@ AgendaRenovacao: ${typeof C.isPluginAvailable === 'function' ? C.isPluginAvailab
   quandoPronto(() => setTimeout(ajustarIcone, 3000));
   document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(ajustarIcone, 2000); });
   window.AgendaNativo = { ciclo, ligarGps, desligarGps, sincronizarLembretes, proximosLembretes, avisoImediato, ajustarIcone,
-    renovacao: RN ? { estado: lerEstado, renovar: () => renovarAgora(true) } : null };
+    renovacao: RN ? { estado: lerEstado, renovar: () => renovarAgora(true) } : null,
+    atualizacao: PODE_ATUALIZAR ? { versao: lerVersao, atualizar: atualizarApp } : null, ligarVpn };
 })();
