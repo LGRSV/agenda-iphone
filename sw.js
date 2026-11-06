@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v282-notificacao-abre-tarefa';
+const CACHE = 'agenda-lagares-v283-lembrete-chegada';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=14" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -31,6 +31,7 @@ const LEMBRETE_SCRIPT = '<script src="./lembrete-persistente.js?v=2" defer><\/sc
 const LOCAL_SCRIPT = '<script src="./localizacao.js?v=2" defer><\/script>';
 const LOCAL_TAREFA_SCRIPT = '<script src="./local-tarefa.js?v=2" defer><\/script>';
 const AUTO_CONCLUIR_SCRIPT = '<script src="./auto-concluir.js?v=1" defer><\/script>';
+const LEMBRETE_CHEGADA_SCRIPT = '<script src="./lembrete-chegada.js?v=1" defer><\/script>';
 
 const STATIC_ASSET_RE = /\.(?:js|css|png|jpg|jpeg|svg|webp|woff2?)$/;
 
@@ -104,6 +105,7 @@ self.addEventListener('fetch', event => {
       if (!isAuxPage && !html.includes('localizacao.js')) html = html.replace('</body>', `${LOCAL_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('local-tarefa.js')) html = html.replace('</body>', `${LOCAL_TAREFA_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('auto-concluir.js')) html = html.replace('</body>', `${AUTO_CONCLUIR_SCRIPT}</body>`);
+      if (!isAuxPage && !html.includes('lembrete-chegada.js')) html = html.replace('</body>', `${LEMBRETE_CHEGADA_SCRIPT}</body>`);
       const headers = new Headers(response.headers);
       headers.delete('content-length');
       headers.delete('content-encoding');
