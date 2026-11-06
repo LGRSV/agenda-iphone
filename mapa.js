@@ -10,7 +10,7 @@
   if (!U || !L) { listaEl.innerHTML = '<div class="vazio">Não consegui carregar o mapa. Verifique a internet e abra de novo.</div>'; return; }
 
   const map = L.map('map', { zoomControl: false });
-  U.camadaOSM(L).addTo(map);
+  if (U.camadas) U.camadas(L, map, 'bottomleft'); else U.camadaOSM(L).addTo(map);
   L.control.zoom({ position: 'bottomright' }).addTo(map);
 
   let eu = null;            // {lat,lng,acc,ts}

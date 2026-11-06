@@ -199,10 +199,29 @@
   function camadaOSM(L) {
     return L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>' });
   }
+  // Mapas base sem chave de API. "Ruas e estabelecimentos" é o OSM padrão: é o que mais
+  // mostra lojas, restaurantes, farmácias e postos (ícone + nome), mas só a partir do
+  // zoom 17 e só o que está cadastrado no OpenStreetMap. Satélite: Esri World Imagery.
+  // Escuro: CARTO dark. A escolha fica salva neste aparelho.
+  const CAMADA_KEY = 'agenda_mapa_camada_v1';
+  function camadas(L, map, posicao) {
+    const osm = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>';
+    const base = {
+      'Ruas e estabelecimentos': camadaOSM(L),
+      'Satélite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, maxNativeZoom: 18, attribution: 'Imagens &copy; Esri, Maxar, Earthstar Geographics' }),
+      'Escuro': L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20, subdomains: 'abcd', attribution: osm + ' &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>' })
+    };
+    let nome = 'Ruas e estabelecimentos';
+    try { const s = localStorage.getItem(CAMADA_KEY); if (s && base[s]) nome = s; } catch (_) {}
+    base[nome].addTo(map);
+    L.control.layers(base, null, { position: posicao || 'topleft', collapsed: true }).addTo(map);
+    map.on('baselayerchange', e => { try { localStorage.setItem(CAMADA_KEY, e.name); } catch (_) {} });
+    return base;
+  }
 
   window.AgendaLocalTarefa = {
     haversine, fmtDist, rotaGoogle, rotaApple, lerLocal, gravarLocal, tarefasComLocal, lugares,
-    ultimaPos, guardarPos, posicaoAgora, buscarEndereco, carregarLeaflet, camadaOSM, lugarEm, lugarDoLocal, tarefasPendentes, CENTRO_PADRAO, RAIO_AUTO
+    ultimaPos, guardarPos, posicaoAgora, buscarEndereco, carregarLeaflet, camadaOSM, camadas, lugarEm, lugarDoLocal, tarefasPendentes, CENTRO_PADRAO, RAIO_AUTO
   };
 
   // ------------------------------------------------- UI da agenda (só lá)
