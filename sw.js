@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v284-rotas-do-dia';
+const CACHE = 'agenda-lagares-v285-lembrete-atraso';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=14" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -32,7 +32,7 @@ const LOCAL_SCRIPT = '<script src="./localizacao.js?v=2" defer><\/script>';
 const LOCAL_TAREFA_SCRIPT = '<script src="./local-tarefa.js?v=2" defer><\/script>';
 const AUTO_CONCLUIR_SCRIPT = '<script src="./auto-concluir.js?v=1" defer><\/script>';
 const ROTAS_SCRIPT = '<script src="./rotas.js?v=1" defer><\/script>';
-const LEMBRETE_CHEGADA_SCRIPT = '<script src="./lembrete-chegada.js?v=1" defer><\/script>';
+const LEMBRETE_CHEGADA_SCRIPT = '<script src="./lembrete-chegada.js?v=2" defer><\/script>';
 
 const STATIC_ASSET_RE = /\.(?:js|css|png|jpg|jpeg|svg|webp|woff2?)$/;
 
