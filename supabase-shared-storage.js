@@ -23,7 +23,10 @@
     // Lugares e visitas do Jarvis (localizacao.js). São objetos {v, itens:[]}
     // de propósito: um array vazio cairia no guard de "payload vazio" abaixo.
     lugares: ['agenda_lugares_v1', {}],
-    visitas: ['agenda_visitas_v1', {}]
+    visitas: ['agenda_visitas_v1', {}],
+    // Resumo das rotas do dia (rotas.js): só números e linha simplificada, nunca
+    // pontos brutos. Objeto {v, dias:{}} pelo mesmo motivo de lugares/visitas.
+    rotas: ['agenda_rotas_v1', {}]
   };
   // A tabela antiga aceita apenas as chaves históricas. Dados financeiros
   // adicionais ficam aninhados em "settings" para sincronizar sem exigir uma
@@ -33,7 +36,8 @@
     accounts: 'accounts',
     refaturamentos: 'refaturamentos',
     lugares: 'lugares',
-    visitas: 'visitas'
+    visitas: 'visitas',
+    rotas: 'rotas'
   };
   const LOCAL_TO_DOC = new Map(Object.entries(DOCUMENTS).map(([doc, [key]]) => [key, doc]));
   const originalSetItem = Storage.prototype.setItem;
@@ -265,6 +269,16 @@
           const current = await serverPayload(sb, 'settings');
           const base = current && typeof current === 'object' && !Array.isArray(current) ? current : {};
           dbKey = 'settings';
+          // rotas: mescla por dia e por aparelho com o que já está no servidor, para
+          // um aparelho com cópia velha não apagar o dia gravado por outro. Sem o
+          // rotas.js nesta página, não envia (fica pendente até a agenda abrir).
+          if (key === 'rotas') {
+            const mesclar = window.AgendaRotas && window.AgendaRotas.mesclar;
+            if (typeof mesclar !== 'function') continue;
+            const merged = mesclar(payload, base.rotas);
+            if (JSON.stringify(merged) !== JSON.stringify(payload)) { write(key, merged); notifySync(key); }
+            payload = merged;
+          }
           dbPayload = NESTED_IN_SETTINGS[key]
             ? { ...base, [NESTED_IN_SETTINGS[key]]: payload }
             : { ...base, ...(payload && typeof payload === 'object' ? payload : {}) };
