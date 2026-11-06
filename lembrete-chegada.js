@@ -4,7 +4,9 @@
    As regras ficam no próprio lugar, em agenda_lugares_v1.itens[i].lembretes, e por isso
    sincronizam junto com os lugares:
      { id, texto, dias?: [0..6] (0 = domingo), ate?: 'AAAA-MM-DD', umaVez?: true,
-       intervaloMin?: 180 (mínimo entre dois avisos da mesma regra), ativo?: false (desliga) }
+       intervaloMin?: 180 (mínimo entre dois avisos da mesma regra), ativo?: false (desliga),
+       atrasoMaxMin?: 20 (até quantos minutos depois da chegada ainda avisa: o iOS pode só
+       confirmar a chegada quando o app volta a rodar) }
 
    Quem decide que o usuário chegou é o motor do localizacao.js (evento 'chegada': dentro do
    raio por pelo menos 60 s e sem estar em movimento). Este módulo só reage a esse evento.
@@ -16,7 +18,7 @@
   const ESTADO_KEY = 'agenda_lembretes_estado_v1';
   const LK = 'agenda_lugares_v1';
   const INTERVALO_PADRAO_MIN = 180;
-  const CHEGADA_RECENTE_MS = 20 * 60 * 1000; // evento de chegada velho (reaberto depois) não avisa de novo
+  const ATRASO_PADRAO_MIN = 20; // chegada confirmada tarde demais não avisa (padrão; cada regra pode pedir mais)
 
   const json = (v, fb) => { try { const x = JSON.parse(v); return x == null ? fb : x; } catch (_) { return fb; } };
   const hojeIso = d => { const x = d || new Date(); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
@@ -36,12 +38,14 @@
   }
 
   // regras do lugar que valem agora (agora = Date; estado = o que já foi avisado)
-  function regrasQueValem(lugar, estado, agora) {
+  function regrasQueValem(lugar, estado, agora, chegada) {
     const out = [];
     for (const r of Array.isArray(lugar.lembretes) ? lugar.lembretes : []) {
       if (!r || !r.id || !String(r.texto || '').trim() || r.ativo === false) continue;
       if (Array.isArray(r.dias) && r.dias.length && !r.dias.includes(agora.getDay())) continue;
       if (r.ate && hojeIso(agora) > String(r.ate)) continue;
+      const atraso = (Number.isFinite(Number(r.atrasoMaxMin)) ? Number(r.atrasoMaxMin) : ATRASO_PADRAO_MIN) * 60000;
+      if (chegada && agora.getTime() - chegada > atraso) continue;
       const e = estado[`${lugar.id}:${r.id}`] || {};
       if (r.umaVez && e.feito) continue;
       const intervalo = (Number.isFinite(Number(r.intervaloMin)) ? Number(r.intervaloMin) : INTERVALO_PADRAO_MIN) * 60000;
@@ -69,11 +73,11 @@
 
   async function tratarChegada(visita, agora) {
     agora = agora || new Date();
-    if (!visita || (visita.chegada && agora.getTime() - visita.chegada > CHEGADA_RECENTE_MS)) return 0;
+    if (!visita) return 0;
     const lugar = lugares().find(l => l.id === visita.lugarId) || lugares().find(l => norm(l.nome) === norm(visita.nome));
     if (!lugar) return 0;
     const estado = lerEstado();
-    const regras = regrasQueValem(lugar, estado, agora);
+    const regras = regrasQueValem(lugar, estado, agora, Number(visita.chegada) || 0);
     let avisados = 0;
     for (const r of regras) {
       const k = `${lugar.id}:${r.id}`;
