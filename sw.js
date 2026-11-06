@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v283-lembrete-chegada';
+const CACHE = 'agenda-lagares-v284-rotas-do-dia';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=14" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -31,6 +31,7 @@ const LEMBRETE_SCRIPT = '<script src="./lembrete-persistente.js?v=2" defer><\/sc
 const LOCAL_SCRIPT = '<script src="./localizacao.js?v=2" defer><\/script>';
 const LOCAL_TAREFA_SCRIPT = '<script src="./local-tarefa.js?v=2" defer><\/script>';
 const AUTO_CONCLUIR_SCRIPT = '<script src="./auto-concluir.js?v=1" defer><\/script>';
+const ROTAS_SCRIPT = '<script src="./rotas.js?v=1" defer><\/script>';
 const LEMBRETE_CHEGADA_SCRIPT = '<script src="./lembrete-chegada.js?v=1" defer><\/script>';
 
 const STATIC_ASSET_RE = /\.(?:js|css|png|jpg|jpeg|svg|webp|woff2?)$/;
@@ -68,7 +69,9 @@ self.addEventListener('fetch', event => {
       const isMapa = new URL(request.url).pathname.endsWith('/mapa.html');
       // cerebro.html também carrega só o que precisa (cerebro.js)
       const isCerebro = new URL(request.url).pathname.endsWith('/cerebro.html');
-      const isAuxPage = isMapa || isCerebro || isFinance || isGame || isTraining || isInvest || isCarteira || isTreinoAna || isImportar || isEquip || isMarket;
+      // rotas.html também (Leaflet, localizacao.js, local-tarefa.js, rotas.js, rotas-tela.js)
+      const isRotas = new URL(request.url).pathname.endsWith('/rotas.html');
+      const isAuxPage = isMapa || isCerebro || isRotas || isFinance || isGame || isTraining || isInvest || isCarteira || isTreinoAna || isImportar || isEquip || isMarket;
       // A agenda principal tem links para financeiro.html e gamificacao.html no menu,
       // então o teste por conteúdo acima a confundia com uma página auxiliar e o
       // Web Push nunca era carregado (só o aviso antigo, que funciona com o app aberto).
@@ -105,6 +108,7 @@ self.addEventListener('fetch', event => {
       if (!isAuxPage && !html.includes('localizacao.js')) html = html.replace('</body>', `${LOCAL_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('local-tarefa.js')) html = html.replace('</body>', `${LOCAL_TAREFA_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('auto-concluir.js')) html = html.replace('</body>', `${AUTO_CONCLUIR_SCRIPT}</body>`);
+      if (!isAuxPage && !html.includes('rotas.js')) html = html.replace('</body>', `${ROTAS_SCRIPT}</body>`);
       if (!isAuxPage && !html.includes('lembrete-chegada.js')) html = html.replace('</body>', `${LEMBRETE_CHEGADA_SCRIPT}</body>`);
       const headers = new Headers(response.headers);
       headers.delete('content-length');
