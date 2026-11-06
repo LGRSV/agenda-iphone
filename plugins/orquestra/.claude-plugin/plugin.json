@@ -1,0 +1,10 @@
+{
+  "name": "orquestra",
+  "displayName": "Orquestra",
+  "version": "1.0.0",
+  "description": "Agente-cerebro que divide o trabalho entre subagentes com briefings especificos, confere cada entrega com evidencia, devolve para refazer ate passar e integra com revisor independente.",
+  "author": { "name": "lgrsv" },
+  "repository": "https://github.com/lgrsv/agenda-iphone",
+  "license": "MIT",
+  "keywords": ["orquestra", "multi-agente", "subagentes", "orquestracao", "qualidade"]
+}
