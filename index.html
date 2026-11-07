@@ -1068,8 +1068,7 @@
     // Bloco de localizacao vindo de localizacao.js (window.AgendaLocal). Se o
     // modulo nao carregou, o Jarvis fica sabendo que o recurso esta indisponivel.
     function localContext(){
-      try{const L=window.AgendaLocal,R=window.AgendaRotas;return(L&&L.resumoJarvis?L.resumoJarvis():'LOCALIZACAO: modulo indisponivel nesta versao.')+(R&&R.resumoJarvis?'
-'+R.resumoJarvis():'');}
+      try{const L=window.AgendaLocal,R=window.AgendaRotas;return(L&&L.resumoJarvis?L.resumoJarvis():'LOCALIZACAO: modulo indisponivel nesta versao.')+(R&&R.resumoJarvis?'\n'+R.resumoJarvis():'');}
       catch(_){return'LOCALIZACAO: (indisponivel)';}
     }
     function investContext(){
