@@ -26,7 +26,9 @@
     visitas: ['agenda_visitas_v1', {}],
     // Resumo das rotas do dia (rotas.js): só números e linha simplificada, nunca
     // pontos brutos. Objeto {v, dias:{}} pelo mesmo motivo de lugares/visitas.
-    rotas: ['agenda_rotas_v1', {}]
+    rotas: ['agenda_rotas_v1', {}],
+    // Resumo da Saúde (acessos.js, vindo do Atalhos): só passos e minutos de sono por dia.
+    saude: ['agenda_saude_v1', {}]
   };
   // A tabela antiga aceita apenas as chaves históricas. Dados financeiros
   // adicionais ficam aninhados em "settings" para sincronizar sem exigir uma
@@ -37,7 +39,8 @@
     refaturamentos: 'refaturamentos',
     lugares: 'lugares',
     visitas: 'visitas',
-    rotas: 'rotas'
+    rotas: 'rotas',
+    saude: 'saude'
   };
   const LOCAL_TO_DOC = new Map(Object.entries(DOCUMENTS).map(([doc, [key]]) => [key, doc]));
   const originalSetItem = Storage.prototype.setItem;
