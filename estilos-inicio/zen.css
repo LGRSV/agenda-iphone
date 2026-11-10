@@ -123,7 +123,4 @@ html[data-home="zen"] .calendar-more{padding-left:1px;font-size:9px;line-height:
 html[data-home="zen"] .calendar-legend{padding:12px 0 0;border-top:0}
 
 /* ---------- Flutuantes ---------- */
-html[data-home="zen"] .fab{justify-content:center;width:56px;height:56px;min-height:56px;padding:0;gap:0;border:1px solid var(--text);border-radius:50%;background:var(--bg);color:var(--text);box-shadow:none;font-size:0}
-html[data-home="zen"] .fab .plus{font-size:28px;font-weight:300}
-html[data-home="zen"] #cardioFab{border-color:var(--line);background:var(--bg);box-shadow:none}
 html[data-home="zen"] #app-ver{opacity:.45}

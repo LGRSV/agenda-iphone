@@ -838,14 +838,15 @@
     if (document.getElementById('cardioFab')) return;
     const st = document.createElement('style');
     st.textContent = `
-      #cardioFab{position:relative;z-index:5;width:48px;height:48px;display:grid;place-items:center;border:1px solid var(--line);border-radius:15px;background:var(--surface);color:var(--accent);box-shadow:0 10px 24px rgba(0,0,0,.25);transition:transform .14s ease}
-      #cardioFab:active{transform:scale(.94)}
+      body>#cardioFab{position:relative;z-index:5;width:48px;height:48px;display:grid;place-items:center;border:1px solid var(--line);border-radius:15px;background:var(--surface);color:var(--accent);box-shadow:0 10px 24px rgba(0,0,0,.25);transition:transform .14s ease}
+      body>#cardioFab:active{transform:scale(.94)}
       #${CARDIO_DIALOG_ID} .two-fields{margin-top:0}`;
     document.head.appendChild(st);
     const b = document.createElement('button');
     b.id = 'cardioFab'; b.type = 'button'; b.title = 'Registrar cardio'; b.setAttribute('aria-label', 'Registrar cardio');
     b.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 8.6a5.5 5.5 0 0 0-9.3-3.9L12 5l.5-.3a5.5 5.5 0 0 0-9.3 3.9c0 5 8.8 10.5 8.8 10.5S20.8 13.6 20.8 8.6z"/><path d="M3.5 12h4l1.5-2.5 2 4 1.5-2.5h4"/></svg>';
-    (document.getElementById('agendaActions')||document.body).appendChild(b);
+    // na Agenda vira item do menu do Jarvis (menu-jarvis.js põe o rótulo e a ordem); em outra página, fim do body como antes
+    (document.getElementById('jarvisMenu') || document.body).appendChild(b);
     const dlg = document.createElement('dialog');
     dlg.id = CARDIO_DIALOG_ID;
     dlg.innerHTML = `<form class="modal" id="cardioForm" method="dialog">

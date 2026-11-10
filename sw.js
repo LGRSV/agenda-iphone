@@ -1,6 +1,6 @@
-const CACHE = 'agenda-lagares-v290-localizacao-economica';
+const CACHE = 'agenda-lagares-v291-menu-jarvis';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
-const TREINO_SCRIPT = '<script src="./treino.js?v=14" defer><\/script>';
+const TREINO_SCRIPT = '<script src="./treino.js?v=15" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
 const GAME_SCRIPT = '<script src="./gamificacao.js?v=5" defer><\/script>';
 const FINANCEIRO_SCRIPT = '<script src="./financeiro.js?v=2" defer><\/script>';

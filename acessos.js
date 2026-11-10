@@ -282,8 +282,6 @@
   // ---- estilos
   const css = doc.createElement('style');
   css.textContent = `
-#vozFab{position:relative;z-index:5;order:-1;width:48px;height:48px;display:grid;place-items:center;border:1px solid var(--line);border-radius:15px;background:var(--surface);color:var(--accent);box-shadow:0 10px 24px rgba(0,0,0,.25);transition:transform .14s ease}
-#vozFab:active{transform:scale(.94)}
 #vozDialog textarea{width:100%;min-height:84px;padding:11px 12px;border:1px solid var(--line);border-radius:13px;background:var(--soft);color:var(--text);font:inherit;font-size:16px;resize:vertical}
 #vozDialog .voz-ouvir{display:flex;align-items:center;gap:10px;margin:8px 0}
 #vozDialog .voz-ouvir button{flex:0 0 auto}
@@ -352,12 +350,12 @@
   let vozUi = null, vozCamposMexidos = false, vozOuvindo = false;
   function montarVoz() {
     if ($('vozFab')) return;
-    const dock = $('agendaActions');
+    const dock = $('jarvisMenu'); // item "Falar" do menu do Jarvis (menu-jarvis.js põe o rótulo e a ordem)
     if (!dock) return;
     const b = doc.createElement('button');
     b.id = 'vozFab'; b.type = 'button'; b.title = 'Falar uma tarefa'; b.setAttribute('aria-label', 'Falar uma tarefa');
     b.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3.5"/></svg>';
-    dock.insertBefore(b, dock.firstChild);
+    dock.appendChild(b);
     vozUi = doc.createElement('dialog');
     vozUi.id = 'vozDialog';
     vozUi.innerHTML = `<div class="modal">
@@ -449,7 +447,7 @@
   function perguntarJarvis(texto) {
     const painel = $('jarvis-panel'), btn = $('jarvis-btn'), input = $('jarvis-input'), enviar = $('jarvis-send');
     if (!input || !enviar) { toast('O Jarvis não está nesta página.'); return; }
-    if (painel && !painel.classList.contains('open') && btn) btn.click();
+    if (painel && !painel.classList.contains('open')) { if (window.JarvisPainel) window.JarvisPainel.abrir(); else if (btn) btn.click(); }
     setTimeout(() => { input.value = texto; input.dispatchEvent(new Event('input')); enviar.click(); }, 350);
   }
 

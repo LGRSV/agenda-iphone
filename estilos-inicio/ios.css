@@ -62,11 +62,6 @@ html[data-home="ios"] .nav-btn{border:0;background:transparent;color:var(--accen
    Em --surface eles se destacam da célula; o dia selecionado mantém o fundo de acento do app. */
 html[data-home="ios"]:not([data-theme="light"]) .calendar-day.current:not(.selected){background:var(--surface)}
 
-/* FAB redondo, como o compor do Notas (o rótulo segue no DOM) */
-html[data-home="ios"] .fab{width:56px;height:56px;min-height:56px;gap:0;padding:0;justify-content:center;border-radius:50%;font-size:0}
-html[data-home="ios"] .fab .plus{font-size:30px}
-html[data-home="ios"] #cardioFab{border-color:var(--line);border-radius:50%;box-shadow:none}
-
 /* Tab bar fixa e flutuantes acima dela: só no mesmo escopo do header-cleanup (até 760 px).
    A barra mede 1 (borda) + 6 + 49 + 2 = 58 px acima da área segura; os botões terminam 2 px
    acima da faixa do indicador. */
@@ -84,14 +79,13 @@ html[data-home="ios"] #cardioFab{border-color:var(--line);border-radius:50%;box-
   html[data-home="ios"] .view-tab[data-view="list"]{--ios-tab-glifo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 6h11M9.5 12h11M9.5 18h11'/%3E%3Cg fill='black' stroke='none'%3E%3Ccircle cx='4.8' cy='6' r='1.5'/%3E%3Ccircle cx='4.8' cy='12' r='1.5'/%3E%3Ccircle cx='4.8' cy='18' r='1.5'/%3E%3C/g%3E%3C/svg%3E")}
   html[data-home="ios"] .view-tab[data-view="sequencia"]{--ios-tab-glifo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='13' r='8.5'/%3E%3Cpath d='M12 9v4l3 2M9 2h6'/%3E%3C/svg%3E")}
 
-  /* Flutuantes acima da barra. + Nova tarefa e Jarvis 16 px acima dela, na mesma linha;
+  /* Flutuantes acima da barra: o botão do Jarvis (e o menu dele) 16 px acima dela;
      o #app-ver (Atualizar + versão) fica à direita do Jarvis, centrado na altura dele, e deixa o
      meio da tela livre; o painel do Jarvis abre 8 px acima do botão. */
-  html[data-home="ios"] .app{padding-bottom:calc(253px + env(safe-area-inset-bottom))}
-  html[data-home="ios"] .agenda-actions{bottom:calc(74px + env(safe-area-inset-bottom))}
-  html[data-home="ios"] .agenda-actions #jarvis-btn{bottom:calc(74px + env(safe-area-inset-bottom))}
+  html[data-home="ios"]{--jm-base:calc(74px + env(safe-area-inset-bottom))}
+  html[data-home="ios"] .app{padding-bottom:calc(154px + env(safe-area-inset-bottom))}
   html[data-home="ios"] #app-ver{right:auto;left:calc(max(18px,env(safe-area-inset-left)) + 66px);bottom:calc(80px + env(safe-area-inset-bottom))}
   html[data-home="ios"] #jarvis-panel{bottom:calc(138px + env(safe-area-inset-bottom));max-height:min(72dvh,calc(100dvh - 138px - env(safe-area-inset-bottom,0px) - env(safe-area-inset-top,0px)))}
-  /* O aviso (toast) continua 11 px acima da pilha + / cardio, como no padrão */
-  html[data-home="ios"] .toast{bottom:calc(198px + env(safe-area-inset-bottom))}
+  /* O aviso (toast) 14 px acima do botão do Jarvis, como no padrão */
+  html[data-home="ios"] .toast,html[data-home="ios"] #toast[popover]{bottom:calc(146px + env(safe-area-inset-bottom))}
 }

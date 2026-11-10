@@ -79,11 +79,6 @@ html[data-home="essencial"] .month-grid-wrap{padding:8px 0}
 html[data-home="essencial"] .nav-btn{border:0;background:transparent;color:var(--accent)}
 html[data-home="essencial"] .calendar-legend{padding:0 0 10px}
 
-/* ---------- FAB só com o sinal ---------- */
-html[data-home="essencial"] .fab{width:56px;min-height:56px;gap:0;padding:0;justify-content:center;border-radius:50%;font-size:0}
-html[data-home="essencial"] .fab .plus{font-size:30px}
-/* só a sombra sai: o contorno fica, senão no claro vira um quadrado branco sobre #f4f6fa */
-html[data-home="essencial"] #cardioFab{border:1px solid var(--line);background:var(--surface);box-shadow:none}
 html[data-home="essencial"] #app-ver{opacity:.55}
 /* no claro, a 0,55 o Atualizar quase some */
 html[data-home="essencial"][data-theme="light"] #app-ver{opacity:1}
