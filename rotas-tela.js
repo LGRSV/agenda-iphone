@@ -242,14 +242,22 @@
   function desenharStatus() {
     const s = R.status(), st = $('#status');
     const Lc = window.AgendaLocal;
-    st.innerHTML = s.ativo ? '<span class="dot on"></span>gravando · ' + (s.nativo ? 'app nativo' : 'só com o app aberto')
+    const eco = Lc && typeof Lc.eco === 'function' ? Lc.eco() : null;
+    st.innerHTML = s.ativo ? (eco ? `<span class="dot on"></span>localização: econômica em ${esc(eco.lugar)}` : '<span class="dot on"></span>gravando · ' + (s.nativo ? 'app nativo' : 'só com o app aberto'))
       : '<span class="dot err"></span>localização desligada';
     let txt = '';
     if (!s.ativo) txt = '<b>A localização está desligada</b>, então nada está sendo gravado.' + (Lc && Lc.ativar ? '<br><button id="ligarLoc" type="button">Ligar localização</button>' : '');
     else if (s.nativo) txt = '<b>Gravando pelo app nativo.</b> Para a rota ficar completa com a tela apagada, a Agenda precisa da localização em <b>"Sempre"</b> (Ajustes &gt; Agenda &gt; Localização).';
     else txt = '<b>No navegador o iPhone pausa a Agenda em segundo plano</b>: a rota só é gravada com o app aberto. Para registrar o dia todo, use o app nativo com a localização em "Sempre".';
     txt += '<br>O que não foi gravado (app fechado, sem GPS, localização desligada) aparece como <b>"sem registro"</b>: a rota nunca liga dois pontos distantes com uma linha inventada. Os pontos detalhados ficam só neste aparelho; na nuvem vai só o resumo do dia.';
+    if (Lc && typeof Lc.economiaLigada === 'function') {
+      txt += `<label class="eco"><input type="checkbox" id="ecoChk"${Lc.economiaLigada() ? ' checked' : ''}> <b>Economizar bateria quando parado em lugar salvo</b></label>` +
+        '<small class="eco-tx">Depois de 5 min parado num lugar salvo, o GPS de alta precisão pausa e volta sozinho quando você se move. A saída pode ser confirmada até uns 2 min depois (a pé); o horário gravado é estimado. Das 23h às 5h checa ainda menos.' +
+        (eco ? ` Agora: econômica em ${esc(eco.lugar)}.` : '') + '</small>';
+    }
     $('#aviso').innerHTML = txt;
+    const ck = $('#ecoChk');
+    if (ck) ck.addEventListener('change', () => { Lc.definirEconomia(ck.checked); desenharStatus(); });
     const bt = $('#ligarLoc');
     if (bt) bt.addEventListener('click', async () => { bt.disabled = true; try { await Lc.ativar(); } catch (_) {} desenharStatus(); });
   }

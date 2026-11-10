@@ -72,16 +72,24 @@
   } catch (_) {}
 
   // ---------- 1) GPS em segundo plano ----------
-  let watcherId = null;
-  async function ligarGps() {
-    if (watcherId) return;
+  // Modo econômico (localizacao.js): parado num lugar salvo, o watcher volta com distanceFilter
+  // grande (≈ raio + 50 m) — o plugin (@capacitor-community/background-geolocation 1.x) só
+  // aceita backgroundMessage/backgroundTitle/requestPermissions/stale/distanceFilter; a precisão
+  // pedida ao iOS é sempre "Best". O ganho vem de o JS não acordar a cada 25 m de ruído.
+  const FILTRO_NORMAL = 25;
+  let watcherId = null, filtroAtual = FILTRO_NORMAL;
+  async function ligarGps(filtro) {
+    filtro = filtro || FILTRO_NORMAL;
+    if (watcherId && filtro === filtroAtual) return;
+    if (watcherId) await desligarGps();
+    filtroAtual = filtro;
     try {
       watcherId = await BG.addWatcher({
         backgroundTitle: 'Agenda',
         backgroundMessage: 'Registrando chegadas e saídas dos seus lugares.',
         requestPermissions: true,
         stale: false,
-        distanceFilter: 25
+        distanceFilter: filtro
       }, (loc, err) => {
         if (err) {
           log('gps erro', err.code || err.message);
@@ -94,7 +102,7 @@
           timestamp: Number(loc.time) || Date.now()
         });
       });
-      log('gps ligado');
+      log('gps ligado', filtro + ' m');
     } catch (e) { watcherId = null; log('gps falhou', e && e.message); }
   }
   async function desligarGps() {
@@ -103,11 +111,19 @@
     try { await BG.removeWatcher({ id }); } catch (_) {}
     log('gps desligado');
   }
+  // reconfigurações em fila: duas trocas seguidas não podem criar dois watchers
+  let filaGps = Promise.resolve();
   function conferirGps() {
-    const L = window.AgendaLocal;
-    if (!L || typeof L.ativo !== 'function') return;
-    if (L.ativo()) ligarGps(); else desligarGps();
+    filaGps = filaGps.then(() => {
+      const L = window.AgendaLocal;
+      if (!L || typeof L.ativo !== 'function') return;
+      if (!L.ativo()) return desligarGps();
+      const e = typeof L.eco === 'function' ? L.eco() : null;
+      return ligarGps(e && e.distancia ? e.distancia : FILTRO_NORMAL);
+    }).catch(() => {});
+    return filaGps;
   }
+  window.addEventListener('agenda:local-change', e => { const t = e && e.detail && e.detail.tipo; if (t === 'eco' || t === 'status') conferirGps(); });
 
   // ---------- 2) lembretes locais ----------
   const ler = (k, padrao) => { try { const v = JSON.parse(localStorage.getItem(k) || ''); return v ?? padrao; } catch (_) { return padrao; } };

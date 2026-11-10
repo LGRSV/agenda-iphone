@@ -71,6 +71,8 @@
     #sugCompras .bt button,#sugCompras .bt a{min-height:36px;padding:6px 10px;border-radius:9px;border:1px solid var(--line);background:var(--soft);color:var(--text);text-decoration:none;font:700 12px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:inline-flex;align-items:center}
     #sugCompras .bt .ok{background:#3ecf8e;border-color:#3ecf8e;color:#05301d}
     #sugCompras[hidden],#sugTit[hidden]{display:none}
+    .aviso label.eco{display:flex;gap:9px;align-items:center;min-height:44px;margin-top:10px;cursor:pointer}.aviso label.eco input{width:22px;height:22px;flex:0 0 auto;accent-color:#3ecf8e}
+    .aviso .eco-tx{display:block;color:var(--muted);font-size:12px;line-height:1.4}
     .toast{position:fixed;z-index:2100;left:16px;right:16px;margin:0 auto;bottom:calc(24px + env(safe-area-inset-bottom));width:fit-content;max-width:calc(100% - 32px);padding:11px 14px;border:1px solid var(--line);border-radius:14px;background:#2a2e36;color:var(--text);font-size:13px;font-weight:700;line-height:1.35;opacity:0;pointer-events:none;transform:translateY(12px);transition:opacity .2s,transform .2s}
     .toast.show{opacity:1;transform:translateY(0)}
     @media (min-width:900px){
@@ -114,11 +116,11 @@
   </div></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="./vendor/leaflet/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="></script>
-  <script src="./localizacao.js?v=3"></script>
+  <script src="./localizacao.js?v=4"></script>
   <script src="./local-tarefa.js?v=3"></script>
-  <script src="./rotas.js?v=2"></script>
+  <script src="./rotas.js?v=3"></script>
   <script src="./estabelecimentos.js?v=1"></script>
   <script src="./sugestoes-compras.js?v=1"></script>
-  <script src="./rotas-tela.js?v=2"></script>
+  <script src="./rotas-tela.js?v=3"></script>
 </body>
 </html>

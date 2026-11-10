@@ -32,6 +32,19 @@
      intervalo [fechou o app, reabriu] como incerteza. Se continua no mesmo
      lugar, a visita ganha `gaps` ("sem monitorar 23:00–08:00").
 
+   MODO ECONÔMICO (bateria): visita confirmada num lugar salvo e ≥ 5 min parado dentro
+   do raio com fixes bons → o GPS de alta precisão para. No PWA: só uma leitura de baixa
+   precisão a cada 10 min (30 min das 23h às 5h) com o app aberto. No app nativo: o
+   watcher em segundo plano volta com distanceFilter ≈ raio + 50 m (o plugin só oferece
+   distanceFilter; a precisão pedida ao iOS continua "Best"): o iPhone só acorda o JS
+   depois de andar isso. A primeira leitura fora do anel (ou em movimento) volta na hora
+   para alta precisão e a SAÍDA segue a regra de sempre; o "último momento lá dentro"
+   é estimado pela distância andada desde a última leitura do modo econômico (a pé
+   1,4 m/s, ou a velocidade do GPS). Atraso da saída no pior caso: o tempo para andar
+   ~raio + 50 m (a pé ≈ 2 min; de carro, segundos) + a confirmação normal (≥ 45 s);
+   no PWA aberto, até 10 min (30 à noite). O horário gravado da saída usa a estimativa,
+   não o atraso. Liga/desliga: agenda_local_eco_v1 ('0' = desligado), neste aparelho.
+
    Dados (sincronizam via supabase-shared-storage.js, aninhados em "settings"):
    - agenda_lugares_v1  = { v:1, itens:[{id,nome,lat,lng,raio,acc,criadoEm,atualizadoEm}], removidos:[{id,nome,em}] }
    - agenda_visitas_v1  = { v:1, itens:[{id,dev,lugarId,nome,chegada,saida,estChegada,chegadaMin,estSaida,saidaMax,afirmada,gaps,ultimoDentro,atualizadoEm}] }
@@ -67,6 +80,10 @@
   const FIX_FRESCO_MS = 60 * 1000, FIX_RECENTE_MS = 15 * MIN;
   const PERSIST_SOFT_MS = 5 * MIN;     // gravar ultimoDentro/keep-alive no máximo a cada 5 min (cada gravação vira push no Supabase)
   const WATCH_OPTS = { enableHighAccuracy: true, timeout: 25000, maximumAge: 10000 };
+  const ECO_KEY = 'agenda_local_eco_v1';           // '0' = econômico desligado neste aparelho
+  const ECO_ENTRAR_MS = 5 * MIN, ECO_ACC = 50;      // 5 min parado dentro do raio, fixes ≤ 50 m
+  const ECO_CHECAR_MS = 10 * MIN, ECO_NOITE_MS = 30 * MIN, ECO_VEL_PE = 1.4;
+  const ECO_OPTS = { enableHighAccuracy: false, timeout: 20000, maximumAge: 60000 };
   const ONCE_OPTS = { enableHighAccuracy: true, timeout: 20000, maximumAge: 15000 };
 
   // ---- utilidades ----
@@ -120,6 +137,7 @@
   let foraSeq = null;     // {firstTs, count, forte, farCount, farFirstTs}
   let trocaSeq = null;    // {id, firstTs, count}
   let watchId = null, keepAlive = 0, ultimoErro = '', ultimoStateSave = 0;
+  let quietoDesde = 0, ecoTimer = 0; // início da sequência parada dentro do raio; checagem esparsa do modo econômico
   let gapParaEntrada = null; // gap já usado na saída, guardado para a chegada seguinte herdar o mesmo intervalo
   let errosSeguidos = [];   // timestamps de POSITION_UNAVAILABLE (code 2) recentes
   let fixesGrosseiros = 0;  // fixes seguidos com precisão > 1 km ("Localização Precisa" desligada)
@@ -214,6 +232,7 @@
   }
   function fecharVisita(v, ts, opts) {
     if (!v || v.saida != null) return;
+    if (state.eco && state.eco.visitaId === v.id) sairEco(null);
     opts = opts || {};
     v.saida = Math.max(v.chegada, ts);
     v.estSaida = !!opts.estimada;
@@ -236,7 +255,8 @@
   // então detectar o gap só em fixes bons perderia quase todos os gaps.
   function marcarCallback(tsFix) {
     const agora = Date.now(), ate = tsFix || agora;
-    const desde = Math.max(state.ultimoCallbackTs || 0, state.hiddenDesde || 0);
+    // no modo econômico o silêncio é esperado: só é lacuna se o PWA ficou escondido (sem monitorar)
+    const desde = state.eco ? (bgNativo() ? 0 : (state.hiddenDesde || 0)) : Math.max(state.ultimoCallbackTs || 0, state.hiddenDesde || 0);
     if (desde && agora - desde > GAP_MS) {
       state.gapPendente = state.gapPendente ? { de: Math.min(state.gapPendente.de, desde), ate } : { de: desde, ate };
       dentroSeq = null; foraSeq = null; trocaSeq = null;
@@ -275,14 +295,26 @@
     }
     state.ultimoFix = fix; state.ultimoBom = fix.ts;
 
+    if (state.eco && (!aberta || aberta.id !== state.eco.visitaId)) sairEco(null);
     if (aberta && L) {
       const dL = distLugar(L, fix);
       recentrar(L, fix, dL, aberta);
       const dentroRaio = dL <= L.raio;
       const dentroAnel = dL <= anelSaida(L, fix) || (L.pendenteAte && agora < L.pendenteAte);
+      if (state.eco) {
+        if (dentroAnel && !movendo) { // continua lá; só leitura boa dentro do raio vira a nova referência
+          if (dentroRaio && fix.acc <= ECO_ACC) { state.eco.ultimoTs = fix.ts; state.eco.la = fix.lat; state.eco.ln = fix.lng; }
+        }
+        else sairEco(fix); // andou: alta precisão já, e a saída segue a regra normal com este fix
+      }
       if (dentroRaio) marcarDentro(aberta, fix.ts);
       if (dentroAnel) {
         foraSeq = null;
+        // parado dentro do raio há 5 min com fixes bons: modo econômico
+        if (!state.eco && dentroRaio && !movendo && fix.acc <= ECO_ACC) {
+          if (!quietoDesde) quietoDesde = fix.ts;
+          if (fix.ts - quietoDesde >= ECO_ENTRAR_MS && ecoLigado() && !(aberta.afirmada && fix.ts - (aberta.afirmadaEm || aberta.chegada) < AFFIRM_GRACE_MS)) entrarEco(L, aberta, fix);
+        } else if (!state.eco) quietoDesde = 0;
         // voltou de um gap e continua aqui: registra o buraco na visita
         if (state.gapPendente && fix.ts - state.gapPendente.ate >= GAP_CONFIRM_MS) {
           const g = consumirGap(); aberta.gaps = (aberta.gaps || []).concat([{ de: g.de, ate: g.ate }]).slice(-MAX_GAPS); aberta.atualizadoEm = Date.now(); salvarVisitas();
@@ -300,7 +332,7 @@
         } else trocaSeq = null;
         salvarState(); emitir('fix', { fix }); return;
       }
-      trocaSeq = null;
+      trocaSeq = null; quietoDesde = 0;
       if (movendo && dL <= anelSaida(L, fix) + 100) { salvarState(); emitir('fix', { fix }); return; } // passando pela borda em movimento: ambíguo
       if (fix.acc > ACC_EXIT_MAX) { salvarState(); emitir('fix', { fix }); return; } // impreciso demais para provar saída
       if (aberta.afirmada && fix.ts - (aberta.afirmadaEm || aberta.chegada) < AFFIRM_GRACE_MS) { salvarState(); emitir('fix', { fix }); return; }
@@ -325,8 +357,53 @@
       }
       salvarState(); emitir('fix', { fix }); return;
     }
+    quietoDesde = 0;
     avaliarEntrada(fix, movendo, parado, null);
     salvarState(); emitir('fix', { fix });
+  }
+
+  // ---- modo econômico ----
+  const ecoLigado = () => { try { return localStorage.getItem(ECO_KEY) !== '0'; } catch (_) { return true; } };
+  // app nativo: o watcher do BackgroundGeolocation monitora com a tela apagada
+  const bgNativo = () => { try { return document.documentElement.classList.contains('app-nativo'); } catch (_) { return false; } };
+  const ecoDistancia = raio => Math.max(150, (Number(raio) || RAIO_PADRAO) + 50);
+  function ecoIntervalo() { const h = new Date().getHours(); return h >= 23 || h < 5 ? ECO_NOITE_MS : ECO_CHECAR_MS; }
+  function agendarEco() {
+    clearTimeout(ecoTimer);
+    if (!state.eco || !state.ativo) return;
+    ecoTimer = setTimeout(() => {
+      if (!state.eco || !state.ativo) return;
+      if (!document.hidden && 'geolocation' in navigator) {
+        try { navigator.geolocation.getCurrentPosition(processarFix, onErro, ECO_OPTS); } catch (_) {}
+      }
+      agendarEco();
+    }, ecoIntervalo());
+  }
+  function entrarEco(L, v, fix) {
+    quietoDesde = 0;
+    state.eco = { lugarId: L.id, nome: L.nome, raio: L.raio, visitaId: v.id, desde: fix.ts, ultimoTs: fix.ts, la: fix.lat, ln: fix.lng };
+    pararWatch();
+    agendarEco();
+    salvarState(true);
+    emitir('eco', { eco: true, lugar: L.nome, distancia: ecoDistancia(L.raio) });
+  }
+  // fix = a leitura que acordou (fora do anel ou em movimento); null = encerrar sem estimar
+  function sairEco(fix) {
+    const e = state.eco; if (!e) return;
+    state.eco = null; quietoDesde = 0; clearTimeout(ecoTimer); ecoTimer = 0;
+    let ate = null;
+    const v = visitas.find(x => x.id === e.visitaId);
+    if (fix && v && v.saida == null) {
+      // sem leitura no meio: ele estava parado até sair; volta no tempo o trecho andado
+      const d = haversine(e.la, e.ln, fix.lat, fix.lng);
+      const vel = fix.speed != null && fix.speed > 0.5 ? fix.speed : ECO_VEL_PE;
+      ate = Math.round(Math.max(e.ultimoTs, Math.min(fix.ts, fix.ts - (d / vel) * 1000)));
+      marcarDentro(v, ate);
+    }
+    state.ultimoCallbackTs = Date.now(); // o silêncio do econômico não é lacuna
+    if (state.ativo) armarWatch();
+    salvarState(true);
+    emitir('eco', { eco: false, lugar: e.nome, ate });
   }
   function avaliarEntrada(fix, movendo, parado, gapJaConsumido) {
     const cand = movendo ? null : candidato(fix, null);
@@ -384,7 +461,7 @@
     }
     if (code === 3) { salvarState(); return; } // TIMEOUT do watch: só "nenhum fix novo em 25 s", o watch continua vivo
     ultimoErro = code === 2 ? 'sem sinal de GPS' : String((e && e.message) || 'erro de localização');
-    if (code === 2 && state.ativo) {
+    if (code === 2 && state.ativo && !state.eco) {
       // No iOS, depois de um kCLErrorDomain 0 o watcher às vezes para de entregar:
       // 3 falhas em 2 min → re-arma o watch (sem toast, sem desligar).
       const t = Date.now(); errosSeguidos = errosSeguidos.filter(x => t - x < 2 * MIN).concat([t]);
@@ -444,7 +521,8 @@
     });
   }
   function desativar() {
-    pararWatch(); state.ativo = false; dentroSeq = null; foraSeq = null; trocaSeq = null; salvarState(true); emitir('status');
+    if (state.eco) { state.eco = null; clearTimeout(ecoTimer); emitir('eco', { eco: false }); }
+    pararWatch(); state.ativo = false; dentroSeq = null; foraSeq = null; trocaSeq = null; quietoDesde = 0; salvarState(true); emitir('status');
     return { ok: true, msg: 'Localização desligada.' };
   }
 
@@ -609,7 +687,7 @@
     if (state.precisaoBaixa) return 'LIGADO, mas a "Localizacao Precisa" do iPhone esta desligada (erro de quilometros): o usuario precisa ligar em Ajustes › Privacidade e Seguranca › Servicos de Localizacao › Safari (ou Agenda) › Localizacao Precisa';
     const f = state.ultimoFix;
     if (!f) return 'LIGADO, aguardando o primeiro sinal de GPS' + (ultimoErro ? ` (${ultimoErro})` : '');
-    return `LIGADO, ultimo fix ${hhmm(f.ts)} (±${Math.round(f.acc)} m)`;
+    return `LIGADO${state.eco ? ` em modo economico (parado em ${state.eco.nome}: GPS de alta precisao pausado ate sair)` : ''}, ultimo fix ${hhmm(f.ts)} (±${Math.round(f.acc)} m)`;
   }
   function agoraTexto() {
     const o = onde();
@@ -653,7 +731,7 @@
     if (!state.ativo) { const o = onde(); return (o ? `${o.lugar} · rastreio desligado` : 'Localização desligada') + ' — toque para ligar'; }
     if (state.precisaoBaixa) return 'Ligue a "Localização Precisa" nos Ajustes';
     const o = onde();
-    if (o) return `${o.lugar} · há ${duracao(Date.now() - o.desde)}${o.estimado ? ' (≈)' : ''}`;
+    if (o) return `${o.lugar} · há ${duracao(Date.now() - o.desde)}${o.estimado ? ' (≈)' : ''}${state.eco ? ' · econômica' : ''}`;
     if (!state.ultimoFix) return ultimoErro ? `Sem GPS (${ultimoErro})` : 'Procurando sinal de GPS…';
     return lugares.length ? 'Fora dos lugares conhecidos' : 'Diga ao Jarvis: "estou em Casa"';
   }
@@ -769,6 +847,10 @@
   function aoEsconder() { state.hiddenDesde = Date.now(); salvarState(true); }
   function aoVoltar() {
     if (!state.ativo) return;
+    if (state.eco) { // econômico: uma leitura barata já; se mostrar que andou, sai do modo sozinho
+      try { navigator.geolocation.getCurrentPosition(processarFix, onErro, ECO_OPTS); } catch (_) {}
+      agendarEco(); return;
+    }
     fixAvulso(); // fix imediato ao voltar para o app…
     rearmar();   // …e watch novo, porque o iOS costuma matar o antigo
   }
@@ -792,7 +874,11 @@
       if (!('geolocation' in navigator)) { state.ativo = false; state.permissao = 'indisponivel'; salvarState(true); }
       // Só religa sozinho se um fix REAL já confirmou a permissão: sem isso, cada
       // recarga (clique em notificação, atualizar, login) mostraria o prompt do iOS.
-      else if (state.permissao === 'ok') { armarWatch(); fixAvulso(); }
+      else if (state.permissao === 'ok') {
+        const v = state.eco && visitas.find(x => x.id === state.eco.visitaId && x.saida == null);
+        if (v && ecoLigado()) { agendarEco(); try { navigator.geolocation.getCurrentPosition(processarFix, onErro, ECO_OPTS); } catch (_) {} }
+        else { state.eco = null; armarWatch(); fixAvulso(); }
+      }
       else { state.ativo = false; salvarState(true); }
     }
     emitir('boot');
@@ -809,6 +895,10 @@
     totaisHoje: () => totaisDoDia(hojeIso()),
     onde, ultimoFix: () => (state.ultimoFix ? { ...state.ultimoFix } : null),
     resumoJarvis, resumoCurto, duracao,
+    // modo econômico: {lugar, desde, distancia} enquanto ativo; preferência deste aparelho
+    eco: () => (state.eco ? { lugar: state.eco.nome, desde: state.eco.desde, distancia: ecoDistancia(state.eco.raio) } : null),
+    economiaLigada: ecoLigado,
+    definirEconomia: on => { try { localStorage.setItem(ECO_KEY, on ? '1' : '0'); } catch (_) {} if (!on && state.eco) sairEco(null); emitir('status'); },
     _processarFix: processarFix, _onErro: onErro, _state: () => state // expostos para testes
   };
 })();
