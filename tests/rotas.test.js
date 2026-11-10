@@ -254,4 +254,31 @@ assert(an.paradas[an.paradas.length - 1].aberta && !an.eventos.some(e => e.tipo 
 assert(/lá há 1h55/.test(an.eventos[an.eventos.length - 1].texto));
 ok('parada em andamento: "chegou em Trabalho (lá há 1h55)", sem saída inventada');
 
+// 12) trabalho colado num parque. Dentro do prédio o GPS escorrega:
+//     (a) pico de 2 leituras a ~230 m (no parque), precisão 65 m, 30 s, e volta;
+//     (b) 4 min a ~110 m do centro (ainda dentro do raio de 120 m).
+//     Antes: "saiu de Trabalho", trecho até o parque e "chegou em Trabalho" de novo.
+const PARQUE = mv(TRAB, 230, 40);
+g = gerar();
+g.andar(CASA, TRAB, at(6, 52), at(7, 10), 5000);
+g.parado(TRAB, at(7, 10), at(9, 59), 2 * MIN, 15, 10);
+g.fixes.push({ ...PARQUE, acc: 65, ts: at(10, 0), speed: 0 }, { ...mv(PARQUE, 15, 10), acc: 60, ts: at(10, 0) + 30000, speed: 0 });
+g.parado(TRAB, at(10, 1), at(10, 59), 2 * MIN, 15, 10);
+g.parado(mv(TRAB, 0, -110), at(11, 0), at(11, 4), MIN, 40, 0);
+g.parado(TRAB, at(11, 6), at(11, 37), 2 * MIN, 15, 10);
+g.andar(TRAB, CASA, at(11, 37), at(11, 55), 5000);
+g.parado(CASA, at(11, 55), at(12, 58), 5 * MIN, 12, 0);
+({ pts } = rodar(g.fixes));
+const picos = pts.filter(p => N.dist(p.la, p.ln, PARQUE.lat, PARQUE.lng) < 60).length;
+assert(picos >= 1, 'o filtro de leitura deixa o pico passar (só a análise o tira)');
+an = analisar(pts);
+assert.deepStrictEqual(an.paradas.map(p => p.nome), ['Trabalho', 'Casa'], 'paradas: ' + an.paradas.map(p => p.nome + ' ' + N.hhmm(p.ini)));
+assert.strictEqual(an.trechos.length, 2, 'trechos: ' + an.trechos.map(t => N.hhmm(t.ini) + ' ' + t.km.toFixed(2)));
+assert(!an.trechos.some(t => t.coords.some(c => N.dist(c[0], c[1], PARQUE.lat, PARQUE.lng) < 100)), 'linha não passa pelo parque');
+assert.strictEqual(N.hhmm(an.paradas[0].fim), '11:37');
+// leitura que fica de verdade num lugar (≥ 3 min) não é pico
+const fica = N.limparPicos([{ t: 0, f: 0, la: 0, ln: 0 }, { t: MIN, f: 5 * MIN, la: 0.002, ln: 0 }, { t: 6 * MIN, f: 6 * MIN, la: 0, ln: 0 }]);
+assert.strictEqual(fica.length, 3);
+ok('pico no parque vizinho e GPS na borda do prédio não viram saída/trecho/parada; Trabalho 07:10–11:37 inteiro');
+
 console.log(`\nrotas: ${passo} grupos de teste passaram`);

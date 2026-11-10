@@ -23,4 +23,20 @@ function reconcileContas(){const con=loadCon(),notes=j(NK,{}),tasks=j(TK,[]),r2=
   <script src="./finance-pluxee.js?v=1"></script>
   <script src="./finance-mobile-guard.js?v=1"></script><script src="./mesada-sync.js?v=1"></script>
   <script src="./finance-sharing.js?v=6"></script>
+  <style>
+    /* o "+" flutuante não cobre a última linha: reserva a altura dele no fim da página */
+    .app{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+    /* enquanto o botão "Novo lançamento" está na tela, o "+" (mesma ação) fica escondido e não tapa os filtros */
+    .fab{transition:opacity .18s ease,transform .18s ease}
+    .fab.fab-oculto{opacity:0;transform:scale(.85);pointer-events:none}
+  </style>
+  <script>
+    (function () {
+      var fab = document.getElementById('fab'), add = document.getElementById('add');
+      if (!fab || !add || !('IntersectionObserver' in window)) return;
+      new IntersectionObserver(function (es) {
+        es.forEach(function (e) { fab.classList.toggle('fab-oculto', e.isIntersecting); });
+      }).observe(add);
+    })();
+  </script>
 </body></html>

@@ -9,7 +9,7 @@
   const vv = window.visualViewport;
   if (!vv) return;
   const st = document.createElement('style');
-  st.textContent = '.fab,.agenda-actions,.agenda-actions #jarvis-btn,#app-ver,.toast{margin-bottom:calc(var(--ios-fixo-ajuste,0px) * -1)!important}';
+  st.textContent = '.fab:not(.agenda-actions .fab),.agenda-actions,.agenda-actions #jarvis-btn,#app-ver,.toast{margin-bottom:calc(var(--ios-fixo-ajuste,0px) * -1)!important}';
   document.head.appendChild(st);
   const sonda = document.createElement('div');
   sonda.style.cssText = 'position:fixed;left:0;bottom:0;width:1px;height:1px;visibility:hidden;pointer-events:none';

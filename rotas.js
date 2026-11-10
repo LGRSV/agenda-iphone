@@ -50,7 +50,7 @@
     GAP_MS: 10 * MIN, GAP_DIST: 500, MESMO_PONTO: 300,
     STAY_R: 100, STAY_MIN: 6 * MIN, JUNTAR_MS: 10 * MIN, JUNTAR_KM: 0.4, TRECHO_MIN_KM: 0.08,
     RETENCAO: 90, PL_DIAS: 14, MAX_DIA: 4000, MAX_TOTAL: 120000, MAX_PTS: 20000, MAX_ITENS: 40,
-    NUVEM_MS: 5 * MIN, ABERTA_MS: 20 * MIN
+    NUVEM_MS: 5 * MIN, ABERTA_MS: 20 * MIN, PICO_MIN: 80, PICO_MS: 3 * MIN
   };
   const diaLocal = ts => new Date(ts + TZ).toISOString().slice(0, 10);
   const inicioDia = iso => Date.parse(iso + 'T00:00:00Z') - TZ;
@@ -171,10 +171,32 @@
     return 'novo';
   }
 
+  // Pico de GPS: 1 a 3 leituras que "saem" ≥ 80 m e voltam ao mesmo ponto (≤ 35% da
+  // ida, mín. 40 m) em ≤ 3 min, sem parar lá. Comum dentro de prédio (Wi-Fi/celular):
+  // a leitura cai no quarteirão vizinho por alguns segundos. Não é deslocamento real.
+  function limparPicos(pts) {
+    const out = pts.slice();
+    for (let k = 1; k < out.length - 1; k++) {
+      const a = out[k - 1];
+      for (let m = k; m < Math.min(out.length - 1, k + 3); m++) {
+        const b = out[m + 1];
+        if (b.q || out[m].q || b.t - a.f > P.PICO_MS) break;
+        let ida = 0;
+        for (let x = k; x <= m; x++) ida = Math.max(ida, dpt(a, out[x]));
+        const parouLa = out.slice(k, m + 1).reduce((s, p) => s + (p.f - p.t), 0) >= P.STAY_MIN / 2;
+        if (ida >= P.PICO_MIN && !parouLa && dpt(a, b) <= Math.max(40, 0.35 * ida)) {
+          a.f = Math.max(a.f, out[m].f);
+          out.splice(k, m - k + 1); k -= 1; break;
+        }
+      }
+    }
+    return out;
+  }
+
   // Lê os pontos de um dia e devolve paradas, trechos, lacunas e a linha do tempo.
   function analisarDia(pts, opts) {
     opts = opts || {};
-    pts = (pts || []).filter(p => p && Number.isFinite(p.t) && Number.isFinite(p.la) && Number.isFinite(p.ln)).map(p => ({ ...p, f: Math.max(p.t, Number(p.f) || p.t) }));
+    pts = limparPicos((pts || []).filter(p => p && Number.isFinite(p.t) && Number.isFinite(p.la) && Number.isFinite(p.ln)).map(p => ({ ...p, f: Math.max(p.t, Number(p.f) || p.t) })));
     const n = pts.length, lugares = opts.lugares || [];
     let stays = [];
     for (let i = 0; i < n;) {
@@ -184,7 +206,11 @@
       // os pontos de quem está chegando; depois corta as pontas longe do centro final.
       const w = k => 1 + (pts[k].f - pts[k].t) / 20000;
       let j = i, sla = pts[i].la * w(i), sln = pts[i].ln * w(i), sw = w(i);
-      while (j + 1 < n && !pts[j + 1].q && dist(sla / sw, sln / sw, pts[j + 1].la, pts[j + 1].ln) <= P.STAY_R) { j++; sla += pts[j].la * w(j); sln += pts[j].ln * w(j); sw += w(j); }
+      // dentro do raio do mesmo lugar salvo também é a mesma estadia (prédio grande, GPS
+      // escorregando para a borda): senão vira "saiu/chegou" e um trecho no vizinho
+      const Lc = lugarEm(pts[i].la, pts[i].ln, lugares);
+      const mesma = q => dist(sla / sw, sln / sw, q.la, q.ln) <= P.STAY_R || (!!Lc && lugarEm(q.la, q.ln, lugares) === Lc);
+      while (j + 1 < n && !pts[j + 1].q && mesma(pts[j + 1])) { j++; sla += pts[j].la * w(j); sln += pts[j].ln * w(j); sw += w(j); }
       // ponta que só passou (< 20 s no ponto) a mais de 50 m do centro é do trecho, não da parada
       const ponta = k => { const d = dist(sla / sw, sln / sw, pts[k].la, pts[k].ln); return d > P.STAY_R || (d > 50 && pts[k].f - pts[k].t < 20000); };
       let a = i, b = j;
@@ -405,7 +431,7 @@
   }
 
   const N = { P, MIN, DIA, canon, diaLocal, inicioDia, hhmm, somaDias, dist, duracao, fmtKm, codificar, decodificar, simplificar, lugarEm,
-    registrar, analisarDia, montar, resumir, deResumo, mesclar, podar, melhorResumo, semana, publico };
+    registrar, limparPicos, analisarDia, montar, resumir, deResumo, mesclar, podar, melhorResumo, semana, publico };
   if (typeof module === 'object' && module && module.exports) { module.exports = N; return; }
 
   // ------------------------------------------------------------ navegador

@@ -195,6 +195,8 @@
       if (opts.afirmada) { v.afirmada = true; v.afirmadaEm = ts; }
     } else {
       v = { id: novoId(), dev: d, lugarId: lugar.id, nome: lugar.nome, chegada: ts, saida: null, estChegada: !!opts.estimada, estSaida: false, atualizadoEm: Date.now() };
+      // conta logada que registrou: o auto-concluir aceita visitas de outro aparelho da MESMA conta
+      try { const u = window.SupabaseAgenda && window.SupabaseAgenda.getUser && window.SupabaseAgenda.getUser(); if (u && u.id) v.uid = String(u.id); } catch (_) {}
       if (opts.estimada && opts.chegadaMin != null) v.chegadaMin = Math.min(opts.chegadaMin, ts);
       if (opts.afirmada) { v.afirmada = true; v.afirmadaEm = ts; }
       visitas.push(v);
