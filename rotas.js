@@ -635,9 +635,23 @@
     if (!on && !est.desligadoDesde) { est.desligadoDesde = agoraMs(); salvarEst(); }
     else if (on && est.desligadoDesde) { addSemMon(est.desligadoDesde, agoraMs()); est.desligadoDesde = 0; salvarEst(); }
   }
+  // Saída do modo econômico (localizacao.js): sem leituras no meio, mas o motor sabe que ele
+  // ficou parado até ~`ate`. A estadia vai até lá (atravessando a meia-noite, se preciso),
+  // e o trecho seguinte começa na saída, não no último ponto de horas atrás.
+  function aoEco(d) {
+    if (d.eco || !Number.isFinite(d.ate) || !hoje.carregado) return;
+    let p = hoje.pts[hoje.pts.length - 1];
+    if (!p || d.ate <= p.f) return;
+    const dia = diaLocal(d.ate);
+    if (hoje.dia && dia < hoje.dia) return;
+    if (dia !== hoje.dia) { virarDia(dia, { lat: p.la, lng: p.ln, acc: p.a, ts: d.ate }); p = hoje.pts[hoje.pts.length - 1]; if (!p) return; }
+    p.f = Math.max(p.f, d.ate);
+    agendarGravar();
+  }
   W.addEventListener('agenda:local-change', e => {
     const d = e && e.detail; if (!d) return;
     if (d.tipo === 'fix' && d.fix) aoFix(d.fix);
+    else if (d.tipo === 'eco') aoEco(d);
     else conferirMotor();
   });
   W.addEventListener('agenda:remote-sync', e => {
@@ -740,7 +754,7 @@
     diasComDados: () => Object.keys(wrap.dias).sort(),
     mesclar: (a, b) => mesclar(a, b, agoraMs()),
     nucleo: N,
-    _aoFix: aoFix, _estado: () => ({ est, hoje, wrap }) // para testes
+    _aoFix: aoFix, _aoEco: aoEco, _estado: () => ({ est, hoje, wrap }) // para testes
   };
 
   async function boot() {
