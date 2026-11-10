@@ -116,12 +116,12 @@ let passo = 0; const ok = m => console.log(`${++passo} ok: ${m}`);
   assert(!concluidas.slice(3).includes('a'), 'reaberta não pode voltar a ser concluída');
   ok('tarefa reaberta pelo usuário é respeitada');
 
-  // 6) continua lá: às 14:00 abre a janela da tarefa das 16:00 (presença, sem nova chegada)
-  now = new RealDate('2026-11-03T13:59:00').getTime(); fix(mv(ENERGISA, 5, 5), 10, 1000, 0);
-  A.avaliar(); assert(!concluidas.includes('e'), 'antes de 14:00 não');
+  // 6) continua lá desde 08:30: a tarefa das 16:00 só conclui no horário dela (não chegou na janela)
   now = new RealDate('2026-11-03T14:01:00').getTime(); fix(mv(ENERGISA, 5, 5), 10, 1000, 0);
-  A.avaliar(); assert(concluidas.includes('e'), 'às 14:01, ainda lá dentro, conclui a das 16:00');
-  ok('presença contínua: conclui quando a janela (2 h antes) abre');
+  A.avaliar(); assert(!concluidas.includes('e'), 'às 14:01 não: já estava lá desde a manhã');
+  now = new RealDate('2026-11-03T16:00:30').getTime(); fix(mv(ENERGISA, 5, 5), 10, 1000, 0);
+  A.avaliar(); assert(concluidas.includes('e'), 'às 16:00, ainda lá dentro, conclui a das 16:00');
+  ok('presença contínua: quem já estava lá antes da janela conclui no horário da tarefa');
 
   // 7) janela e casamento de local (funções puras)
   const j = A.janela({ date: '2026-11-03', time: '01:00' }, now);
@@ -129,5 +129,27 @@ let passo = 0; const ok = m => console.log(`${++passo} ok: ${m}`);
   assert.strictEqual(A.janela({ date: '2026-11-04', time: '' }, now), null);
   assert.strictEqual(A.lugarDaTarefa({ lat: -10.30, lng: -48.40 }, L.lugares()), null);
   ok('janela limitada ao dia e local distante não casa com lugar');
+
+  // 8) turnos manhã 07:30 e tarde 13:30 ligados ao lugar, visitas 07:28–11:37 e 13:22–18:27
+  const T = h => new RealDate('2026-11-09T' + h + ':00').getTime();
+  const lug = [{ id: 'en', nome: 'Trabalho', lat: ENERGISA.lat, lng: ENERGISA.lng, raio: 120 }];
+  const tar = [
+    { id: 'rec-m-2026-11-09', text: 'Trabalho manhã', date: '2026-11-09', time: '07:30', done: false },
+    { id: 'rec-t-2026-11-09', text: 'Trabalho tarde', date: '2026-11-09', time: '13:30', done: false },
+  ];
+  const lk = { nome: 'Trabalho', lat: ENERGISA.lat, lng: ENERGISA.lng, lugarId: 'en', autoConcluir: true };
+  const nt = { 'rec-m-2026-11-09': { local: lk }, 'rec-t-2026-11-09': { local: lk } };
+  const vm = { id: 'v1', dev: 'B', uid: 'u1', lugarId: 'en', chegada: T('07:28'), saida: null };
+  const ids = (vis, agora, dev, uid) => A.candidatas(tar, nt, lug, vis, dev, agora, uid).map(c => c.tarefa.id).sort();
+  assert.deepStrictEqual(ids([vm], T('07:29'), 'B', 'u1'), ['rec-m-2026-11-09'], 'chegou 07:28: conclui a das 07:30');
+  assert.deepStrictEqual(ids([vm], T('11:31'), 'B', 'u1'), ['rec-m-2026-11-09'], 'às 11:31 ainda no turno da manhã: a da tarde NÃO');
+  const vmF = { ...vm, saida: T('11:37') }, vt = { id: 'v2', dev: 'B', uid: 'u1', lugarId: 'en', chegada: T('13:22'), saida: null };
+  assert.deepStrictEqual(ids([vmF, vt], T('13:23'), 'B', 'u1'), ['rec-m-2026-11-09', 'rec-t-2026-11-09'], 'voltou 13:22: conclui a da tarde');
+  assert.deepStrictEqual(ids([vmF], T('15:00'), 'B', 'u1'), ['rec-m-2026-11-09'], 'sem voltar à tarde, a da tarde fica');
+  assert.deepStrictEqual(ids([vm], T('07:29'), 'A', 'u1'), ['rec-m-2026-11-09'], 'outro aparelho da MESMA conta conta');
+  assert.deepStrictEqual(ids([{ ...vm, uid: undefined }], T('07:29'), 'A', 'u1'), [], 'outro aparelho sem uid não conta');
+  assert.deepStrictEqual(ids([{ ...vm, uid: 'u2' }], T('07:29'), 'A', 'u1'), [], 'outra conta não conta');
+  assert.deepStrictEqual(A.candidatas(tar, { 'rec-m-2026-11-09': { local: null } }, lug, [vm], 'B', T('07:29'), 'u1'), [], 'sem local ligado: nada');
+  ok('turnos: manhã conclui com a chegada 07:28; tarde só com a volta 13:22; vale visita de outro aparelho da mesma conta; sem local ligado nada acontece');
   console.log('\nTODOS OS TESTES PASSARAM');
 })().catch(e => { console.error(e); process.exit(1); });

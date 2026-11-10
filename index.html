@@ -102,6 +102,23 @@
     .home-option[aria-checked="true"] .home-option-check{border-color:var(--accent);background:var(--accent)}
     .home-option[aria-checked="true"] .home-option-check svg{opacity:1}
   </style>
+  <style id="ajustes-layout-v288">
+    /* área vazia do dock (entre microfone, coração e "Nova tarefa") não engole toques */
+    .agenda-actions{pointer-events:none}.agenda-actions>*{pointer-events:auto}
+    /* fim da lista acima do dock (62 + 168 + folga) */
+    .app{padding-bottom:calc(250px + env(safe-area-inset-bottom))}
+    /* aviso com a largura do texto (com left:50% ficava limitado a meia tela) */
+    .toast{left:16px;right:16px;margin:0 auto;width:fit-content;max-width:calc(100% - 32px);border-radius:18px;transform:translateY(18px)}
+    .toast.show{transform:translateY(0)}
+    /* camada-aviso.js põe o aviso na camada de cima (popover), acima de janela aberta */
+    #toast[popover]{position:fixed;inset:auto 16px calc(184px + env(safe-area-inset-bottom)) 16px;margin:0 auto;width:fit-content;height:fit-content;overflow:visible}
+    /* Jarvis com o teclado aberto: atalhos e barra de localização saem, sobra espaço para a conversa */
+    #jarvis-panel:has(#jarvis-input:focus) #jarvis-chips,#jarvis-panel:has(#jarvis-input:focus) #jarvis-locbar{display:none!important}
+    /* monograma da conta (monograma.js), ao lado do número da versão */
+    span.topbar-ver{display:inline-block}
+    .monograma{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:17px;height:17px;margin-left:7px;border-radius:5px;background:#000;color:#fff;box-shadow:0 0 0 1px var(--line);font:700 8.5px/1 Cambria,Georgia,"Times New Roman",serif;letter-spacing:.02em;vertical-align:middle;margin-top:-3px;margin-bottom:-3px;user-select:none;-webkit-user-select:none}
+    .monograma::after{content:"";width:7px;height:1px;border-radius:1px;background:#fff}
+  </style>
 </head>
 <body>
   <div id="agendaAuthVeil" role="status" aria-label="Carregando acesso"><div class="veil-box"><div class="veil-spin" aria-hidden="true"></div><p>Preparando seu acesso à Agenda…</p><button type="button" onclick="try{window.AgendaSupabaseLogin&&window.AgendaSupabaseLogin.open()}catch(_){}">Entrar</button></div></div>
@@ -1892,13 +1909,15 @@ ${SO_CLAUDE?'MODO ATUAL: so texto e sem internet. NAO use web_search: se pedirem
   <script src="./parceiro.js?v=2" defer></script>
   <script src="./mesada-sync.js?v=1" defer></script>
   <script src="./lembrete-persistente.js?v=2" defer></script>
-  <script src="./nativo.js?v=12" defer></script>
+  <script src="./nativo.js?v=13" defer></script>
   <script src="./acessos.js?v=1" defer></script>
-  <script src="./fixos-ios.js?v=1" defer></script>
-  <script src="./localizacao.js?v=2" defer></script>
+  <script src="./fixos-ios.js?v=2" defer></script>
+  <script src="./camada-aviso.js?v=1" defer></script>
+  <script src="./monograma.js?v=1" defer></script>
+  <script src="./localizacao.js?v=3" defer></script>
   <script src="./local-tarefa.js?v=2" defer></script>
-  <script src="./auto-concluir.js?v=1" defer></script>
-  <script src="./rotas.js?v=1" defer></script>
+  <script src="./auto-concluir.js?v=2" defer></script>
+  <script src="./rotas.js?v=2" defer></script>
   <script src="./lembrete-chegada.js?v=2" defer></script>
   <script src="./vozes-neurais.js?v=2" defer></script>
 </body>

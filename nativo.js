@@ -345,7 +345,7 @@
     menu.insertBefore(b, menu.firstChild);
     if (!document.getElementById('quickMenuRolavel')) {
       const css = document.createElement('style'); css.id = 'quickMenuRolavel';
-      css.textContent = '#quickMenu{max-height:calc(100dvh - 140px);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}';
+      css.textContent = '#quickMenu{max-height:calc(100dvh - 140px - env(safe-area-inset-bottom,0px));overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}';
       document.head.appendChild(css);
     }
 

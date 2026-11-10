@@ -9,9 +9,14 @@
 
    Regra: tarefa pendente, com autoConcluir, de HOJE, cujo local corresponde a um
    lugar salvo (mesmo lugarId, ou centro do local a ≤ raio do lugar), e há visita
-   a esse lugar que toca a janela [2 h antes do horário … fim do dia] (sem horário:
-   o dia todo). Tarefa repetida: cada ocorrência é uma tarefa com a sua data, então
-   só a de hoje entra.
+   a esse lugar que CHEGOU na janela [2 h antes do horário … fim do dia] (sem
+   horário: o dia todo) ou que já estava lá e continua no horário da tarefa.
+   (Antes bastava a visita "tocar" a janela: quem saía do turno da manhã às 11:37
+   tinha a tarefa da tarde, 13:30, concluída às 11:30 sem ter voltado.)
+   Visitas: deste aparelho, ou de outro aparelho da MESMA conta (campo uid, gravado
+   pelo localizacao.js); visita sem uid de outro aparelho não conta (pode ser de
+   outra pessoa na agenda compartilhada).
+   Tarefa repetida: cada ocorrência é uma tarefa com a sua data, então só a de hoje entra.
 
    Conclui por AgendaAPI.completeAuto (mesmo caminho do check: syncRev, aviso ao
    parceiro em tarefa compartilhada, render), chama o lembrete-persistente na hora
@@ -43,10 +48,10 @@
     if (!t || t.date !== isoDia(hoje)) return null;
     const d0 = new Date(hoje); d0.setHours(0, 0, 0, 0);
     const d1 = new Date(d0); d1.setDate(d1.getDate() + 1);
-    let ini = d0.getTime();
+    let ini = d0.getTime(), hora = d0.getTime();
     const m = /^(\d{2}):(\d{2})$/.exec(String(t.time || ''));
-    if (m) { const h = new Date(d0); h.setHours(Number(m[1]), Number(m[2]), 0, 0); ini = Math.max(ini, h.getTime() - ANTES_MS); }
-    return { ini, fim: d1.getTime() };
+    if (m) { const h = new Date(d0); h.setHours(Number(m[1]), Number(m[2]), 0, 0); hora = h.getTime(); ini = Math.max(ini, hora - ANTES_MS); }
+    return { ini, hora, fim: d1.getTime() };
   }
   // lugar salvo que corresponde ao local da tarefa
   function lugarDaTarefa(local, lugares) {
@@ -59,15 +64,18 @@
     }
     return melhor;
   }
-  // visita (deste aparelho) ao lugar que toca a janela; prefere a que está aberta
-  function presenca(lugar, jan, agora, visitas, dev) {
+  // visita ao lugar que chegou na janela, ou que já estava lá no horário da tarefa;
+  // prefere a que está aberta. Aparelho: este, ou outro da mesma conta (uid).
+  function presenca(lugar, jan, agora, visitas, dev, uid) {
+    const hora = jan.hora == null ? jan.ini : jan.hora;
     const ok = (visitas || []).filter(v => v && !v.descartada && v.lugarId === lugar.id &&
-      (!dev || !v.dev || v.dev === dev) &&
-      v.chegada <= Math.min(jan.fim, agora) && (v.saida == null ? agora : v.saida) >= jan.ini);
+      (!dev || !v.dev || v.dev === dev || (!!uid && v.uid === uid)) &&
+      v.chegada <= Math.min(jan.fim, agora) &&
+      (v.chegada >= jan.ini || (agora >= hora && (v.saida == null ? agora : v.saida) >= hora)));
     return ok.find(v => v.saida == null) || ok.sort((a, b) => b.chegada - a.chegada)[0] || null;
   }
   // função pura (testável): tarefas a concluir agora
-  function candidatas(tarefas, notas, lugares, visitas, dev, agora) {
+  function candidatas(tarefas, notas, lugares, visitas, dev, agora, uid) {
     const out = [];
     for (const t of tarefas || []) {
       if (!t || t.id == null || t.done || t.hidden) continue;
@@ -77,7 +85,7 @@
       if (n.autoConcluida && n.autoConcluida.data === t.date) continue; // já concluiu uma vez; se reabriu, respeita
       const jan = janela(t, agora); if (!jan || agora < jan.ini) continue;
       const lugar = lugarDaTarefa(local, lugares); if (!lugar) continue;
-      const v = presenca(lugar, jan, agora, visitas, dev); if (!v) continue;
+      const v = presenca(lugar, jan, agora, visitas, dev, uid); if (!v) continue;
       out.push({ tarefa: t, lugar, visita: v });
     }
     return out;
@@ -101,7 +109,9 @@
       if (!Array.isArray(tarefas) || !notas || typeof notas !== 'object') return [];
       const dev = typeof loc.dispositivo === 'function' ? loc.dispositivo() : '';
       const agora = Date.now();
-      const lista = candidatas(tarefas, notas, loc.lugares(), loc.visitas(2), dev, agora);
+      let uid = '';
+      try { const u = window.SupabaseAgenda && window.SupabaseAgenda.getUser && window.SupabaseAgenda.getUser(); uid = u && u.id ? String(u.id) : ''; } catch (_) {}
+      const lista = candidatas(tarefas, notas, loc.lugares(), loc.visitas(2), dev, agora, uid);
       const feitas = [];
       for (const c of lista) {
         const id = String(c.tarefa.id);
