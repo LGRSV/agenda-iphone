@@ -41,6 +41,7 @@
         const cor = it.nome ? '#3ecf8e' : '#ffad42';
         const m = L.circleMarker([it.la, it.ln], { radius: 9, color: '#fff', weight: 2, fillColor: cor, fillOpacity: 1 }).addTo(grupo);
         m.bindTooltip(esc(it.nome || 'Parada sem nome'), { direction: 'top', offset: [0, -8] });
+        m.bindPopup(() => popupParada(it));
         m.on('click', () => selecionar(it.k, true));
         camadasItem.set(it.k, m); bounds.push([it.la, it.ln]);
       }
@@ -69,6 +70,70 @@
     if (doMapa) { const b = linhaEl.querySelector(`.ev[data-k="${sel}"]`); if (b) b.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
     if (it && it.tipo === 'parada' && !it.nome && !it.endereco && Number.isFinite(it.la)) buscarEndereco(it);
   }
+
+  // ---------------------------------------------------------------- parada: abrir no app do iPhone / salvar como lugar
+  const E = window.AgendaEstabelecimentos, S = window.AgendaSugestoesCompras;
+  const json = (v, fb) => { try { const x = JSON.parse(v); return x == null ? fb : x; } catch (_) { return fb; } };
+  const linkG = (la, ln) => E ? E.linkGoogle(la, ln) : `https://www.google.com/maps/search/?api=1&query=${la},${ln}`;
+  const linkA = (la, ln, nome) => E ? E.linkApple(la, ln, nome) : `https://maps.apple.com/?ll=${la},${ln}`;
+  function popupParada(it) {
+    const la = Number(it.la).toFixed(6), ln = Number(it.ln).toFixed(6);
+    return `<b>${esc(it.nome || 'Parada sem nome')}</b><br><span style="color:#556">${esc(N.hhmm(it.ini))}–${esc(N.hhmm(it.fim))}${it.endereco ? ' · ' + esc(it.endereco) : ''}</span><br>` +
+      `<a class="pl" href="${linkG(la, ln)}" target="_blank" rel="noopener">Google Maps</a><a class="pl" href="${linkA(la, ln, it.nome)}" target="_blank" rel="noopener">Apple Mapas</a>` +
+      (it.nome ? '' : `<br><button class="pl verde" type="button" data-salvar-parada="${it.k}">Salvar como lugar</button>`);
+  }
+  const toastEl = document.getElementById('toast');
+  function avisar(txt) {
+    if (!toastEl) return;
+    toastEl.textContent = txt; toastEl.classList.add('show');
+    clearTimeout(avisar._t); avisar._t = setTimeout(() => toastEl.classList.remove('show'), 4500);
+  }
+  // salva um ponto da rota como lugar: o nome é sempre confirmado/editado pelo usuário
+  async function salvarPonto(la, ln, sugestao) {
+    const A = window.AgendaLocal;
+    if (!A || !A.salvarLugar) { avisar('Abra a agenda uma vez e tente de novo.'); return; }
+    let nome = sugestao || '';
+    if (!nome && E) { try { const r = await E.nomeNoPonto(la, ln); if (r && r.estabelecimento && r.dist != null && r.dist <= 80) nome = r.nome; } catch (_) {} }
+    nome = window.prompt('Nome do lugar (pode editar):', nome);
+    if (!nome || !nome.trim()) return;
+    const r = await A.salvarLugar(nome.trim(), { lat: la, lng: ln, raio: 120 });
+    avisar(r && r.msg ? r.msg : 'Não deu para salvar.');
+    if (r && r.ok) { ultimoDesenho = ''; render(false); }
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('[data-salvar-parada]'); if (!b || !an) return;
+    const it = an.itens.find(x => x.k === Number(b.dataset.salvarParada)); if (!it) return;
+    map.closePopup();
+    salvarPonto(Number(it.la), Number(it.ln), '');
+  });
+
+  // ---------------------------------------------------------------- sugestões a partir das compras do dia
+  const IGN = 'agenda_sug_compras_ignoradas_v1';
+  const ignoradas = () => new Set(json(localStorage.getItem(IGN), []));
+  let sugs = [];
+  const brl = v => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function desenharSugestoes() {
+    const el = $('#sugCompras'), tit = $('#sugTit');
+    if (!el || !S || !an) return;
+    try {
+      const compras = S.comprasDoDia(json(localStorage.getItem('agenda_lagares_v3'), []), json(localStorage.getItem('agenda_notas_v1'), {}), dia);
+      sugs = S.sugerir(an.paradas, compras, dia, ignoradas());
+    } catch (_) { sugs = []; }
+    tit.hidden = el.hidden = !sugs.length;
+    el.innerHTML = sugs.map((x, k) => `<div class="sug"><div class="tx"><b>${esc(N.hhmm(x.parada.ini))}–${esc(N.hhmm(x.parada.fim))} · parada sem nome</b>` +
+      `<span>Compra em ${esc(x.nome)}${x.compra.valor ? ' · R$ ' + esc(brl(x.compra.valor)) : ''}${x.exato ? ' às ' + esc(N.hhmm(x.compra.hora)) : ' · sem hora no lançamento (aproximado)'}</span></div>` +
+      `<div class="bt"><button type="button" class="ok" data-sug="${k}">Salvar como “${esc(x.nome)}”</button><a href="${linkG(x.parada.la.toFixed(6), x.parada.ln.toFixed(6))}" target="_blank" rel="noopener">Ver no Google</a><button type="button" data-sug-ign="${k}">Ignorar</button></div></div>`).join('');
+  }
+  $('#sugCompras').addEventListener('click', e => {
+    const s = e.target.closest('[data-sug]'), ig = e.target.closest('[data-sug-ign]');
+    if (s) { const x = sugs[Number(s.dataset.sug)]; if (x) salvarPonto(x.parada.la, x.parada.ln, x.nome); }
+    else if (ig) {
+      const x = sugs[Number(ig.dataset.sugIgn)]; if (!x) return;
+      const set = ignoradas(); set.add(x.chave);
+      try { localStorage.setItem(IGN, JSON.stringify([...set].slice(-300))); } catch (_) {}
+      desenharSugestoes();
+    }
+  });
 
   // Nominatim (OpenStreetMap): só quando o usuário toca numa parada sem nome,
   // no máximo 1 consulta por segundo, resultado guardado no aparelho.
@@ -104,6 +169,7 @@
       desenharMapa(refit);
       desenharLinha();
       desenharResumo();
+      desenharSugestoes();
       if (sel >= 0 && an.itens.some(x => x.k === sel)) { const k = sel; sel = -1; selecionar(k, true); } else sel = -1;
     });
     desenharSemana();
