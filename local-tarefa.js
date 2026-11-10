@@ -204,18 +204,71 @@
   // zoom 17 e só o que está cadastrado no OpenStreetMap. Satélite: Esri World Imagery.
   // Escuro: CARTO dark. A escolha fica salva neste aparelho.
   const CAMADA_KEY = 'agenda_mapa_camada_v1';
+  // "Ruas nítidas": mapa vetorial (MapLibre GL + estilo gratuito OpenFreeMap, sem chave).
+  // Nítido na tela 3x, nome e sentido das ruas e ícones de estabelecimentos em qualquer zoom.
+  // Pesa ~300 kB (gzip) e usa WebGL: só é baixado quando o usuário escolhe esta camada; sem
+  // WebGL ou se falhar, volta para o mapa raster. Os marcadores e rotas continuam do Leaflet
+  // (plugin maplibre-gl-leaflet). Os dados são os mesmos do OpenStreetMap.
+  const VETOR = 'Ruas nítidas (vetorial)';
+  const MAPLIBRE = {
+    css: 'https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css', cssSri: 'sha384-uTttxo/aOKbdE5RlD/SPzSDoDmNvGlUYPjONi2MN/b7c9HPSvW07OIuyP7uL6jxK',
+    js: 'https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js', jsSri: 'sha384-5+cfbwT0iiub6VsQAdn6yz16nr6sDiQoHx6tm4O8OVYXHYOxcffFmCJBL0dgdvGp',
+    plugin: 'https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js', pluginSri: 'sha384-LIxE/QjpJKC2A91yD40ZisdYtFbgAjl58jqpo9/MUZNgwhqsTfzwrTlqv6nDdzzB',
+    estilo: 'https://tiles.openfreemap.org/styles/liberty'
+  };
+  const temWebGL = () => { try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl'))); } catch (_) { return false; } };
+  const scriptCdn = (src, sri) => new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.integrity = sri; s.crossOrigin = 'anonymous'; s.async = true;
+    s.onload = res; s.onerror = () => rej(new Error('Sem internet para o mapa nítido.'));
+    document.head.appendChild(s);
+  });
+  let vetorP = null;
+  function carregarVetorial() {
+    if (window.L && window.L.maplibreGL) return Promise.resolve();
+    if (vetorP) return vetorP;
+    if (!document.querySelector('link[data-maplibre]')) {
+      const l = document.createElement('link');
+      l.rel = 'stylesheet'; l.href = MAPLIBRE.css; l.integrity = MAPLIBRE.cssSri; l.crossOrigin = 'anonymous'; l.dataset.maplibre = '1';
+      document.head.appendChild(l);
+    }
+    vetorP = scriptCdn(MAPLIBRE.js, MAPLIBRE.jsSri).then(() => scriptCdn(MAPLIBRE.plugin, MAPLIBRE.pluginSri)).catch(e => { vetorP = null; throw e; });
+    return vetorP;
+  }
   function camadas(L, map, posicao) {
     const osm = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>';
+    const vetor = L.layerGroup();
     const base = {
       'Ruas e estabelecimentos': camadaOSM(L),
+      [VETOR]: vetor,
       'Satélite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, maxNativeZoom: 18, attribution: 'Imagens &copy; Esri, Maxar, Earthstar Geographics' }),
       'Escuro': L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20, subdomains: 'abcd', attribution: osm + ' &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>' })
     };
     let nome = 'Ruas e estabelecimentos';
     try { const s = localStorage.getItem(CAMADA_KEY); if (s && base[s]) nome = s; } catch (_) {}
+    const voltarRaster = msg => {
+      map.removeLayer(vetor); base['Ruas e estabelecimentos'].addTo(map);
+      try { localStorage.setItem(CAMADA_KEY, 'Ruas e estabelecimentos'); } catch (_) {}
+      const t = document.getElementById('toast');
+      if (t && msg) { t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4500); }
+    };
+    function ligarVetor() {
+      if (!temWebGL()) { voltarRaster('Este aparelho não desenha o mapa nítido (sem WebGL). Voltei para o mapa normal.'); return; }
+      carregarVetorial().then(() => {
+        if (!map.hasLayer(vetor) || vetor.getLayers().length) return;
+        const gl = L.maplibreGL({ style: MAPLIBRE.estilo });
+        vetor.addLayer(gl);
+        try { gl.getMaplibreMap().on('error', e => { if (e && e.error && /style|Failed to fetch/i.test(String(e.error.message || ''))) voltarRaster('O mapa nítido não carregou agora. Voltei para o mapa normal.'); }); } catch (_) {}
+      }).catch(e => voltarRaster(e.message));
+    }
     base[nome].addTo(map);
+    if (nome === VETOR) ligarVetor();
     L.control.layers(base, null, { position: posicao || 'topleft', collapsed: true }).addTo(map);
-    map.on('baselayerchange', e => { try { localStorage.setItem(CAMADA_KEY, e.name); } catch (_) {} });
+    map.on('baselayerchange', e => {
+      try { localStorage.setItem(CAMADA_KEY, e.name); } catch (_) {}
+      if (e.name === VETOR) ligarVetor();
+      else vetor.clearLayers(); // libera o WebGL (memória/bateria) ao sair da camada nítida
+    });
     return base;
   }
 

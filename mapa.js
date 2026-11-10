@@ -4,6 +4,7 @@
   'use strict';
   const U = window.AgendaLocalTarefa;
   const L = window.L;
+  const E = window.AgendaEstabelecimentos; // nome do estabelecimento no ponto (OSM), sob demanda
   const $ = s => document.querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const listaEl = $('#lista'), statusEl = $('#status');
@@ -24,7 +25,9 @@
     html: `<div style="width:30px;height:30px;border-radius:50%;background:${cor};border:2px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.4);display:grid;place-items:center;font-size:15px">${emoji}</div>` });
   const dataBr = d => /^\d{4}-\d{2}-\d{2}$/.test(d) ? d.slice(8, 10) + '/' + d.slice(5, 7) : '';
   const distDe = i => eu ? U.haversine(eu.lat, eu.lng, i.lat, i.lng) : NaN;
-  const links = i => `<a class="pl" href="${U.rotaGoogle(i)}" target="_blank" rel="noopener">Google Maps</a><a class="pl" href="${U.rotaApple(i)}" target="_blank" rel="noopener">Apple Mapas</a>`;
+  // abre o app do iPhone no ponto (lá os estabelecimentos estão mais atualizados que no OSM)
+  const linksPonto = (lat, lng, nome) => `<a class="pl" href="${E ? E.linkGoogle(lat, lng) : U.rotaGoogle({ lat, lng })}" target="_blank" rel="noopener">Google Maps</a><a class="pl" href="${E ? E.linkApple(lat, lng, nome) : U.rotaApple({ lat, lng })}" target="_blank" rel="noopener">Apple Mapas</a>`;
+  const links = i => linksPonto(i.lat, i.lng, i.nome);
   const acoesItem = i => i.tipo === 'lugar'
     ? `<br><button class="pl verde" type="button" data-acao="vincular" data-id="${esc(i.lid)}">Vincular tarefa</button><button class="pl" type="button" data-acao="editar" data-id="${esc(i.lid)}">Editar</button>`
     : (U.lugarDoLocal({ lat: i.lat, lng: i.lng }) ? '' : `<br><button class="pl verde" type="button" data-acao="salvar-ponto" data-lat="${i.lat}" data-lng="${i.lng}" data-nome="${esc(i.nome)}">Salvar como lugar</button>`);
@@ -148,11 +151,30 @@
   map.on('click', e => {
     const p = { lat: e.latlng.lat, lng: e.latlng.lng };
     if (!medida) medida = { marker: L.circleMarker(e.latlng, { radius: 7, color: '#fff', weight: 2, fillColor: '#ff5a7a', fillOpacity: 1 }).addTo(map), line: L.polyline([], { color: '#ff5a7a', weight: 3, dashArray: '6 6' }).addTo(map) };
-    medida.marker.setLatLng(e.latlng); medida.lat = p.lat; medida.lng = p.lng;
-    $('#medidaIr').href = U.rotaGoogle(p);
+    medida.marker.setLatLng(e.latlng); medida.lat = p.lat; medida.lng = p.lng; medida.sug = null;
+    $('#medidaG').href = E ? E.linkGoogle(p.lat, p.lng) : U.rotaGoogle(p);
+    $('#medidaA').href = E ? E.linkApple(p.lat, p.lng, '') : U.rotaApple(p);
+    $('#medidaNome').textContent = '';
     medidaEl.classList.add('on');
     atualizarMedida();
+    sugerirNoPonto(p.lat, p.lng);
   });
+  // toque num ponto: pergunta ao OpenStreetMap qual estabelecimento está ali (fila de 1/s, cache local)
+  let seqSug = 0;
+  async function sugerirNoPonto(lat, lng) {
+    if (!E) return;
+    const meu = ++seqSug, el = $('#medidaNome');
+    el.textContent = 'procurando o nome no mapa…';
+    try {
+      const r = await E.nomeNoPonto(lat, lng);
+      if (meu !== seqSug || !medida) return;
+      if (r && r.estabelecimento && r.dist != null && r.dist <= 60) {
+        medida.sug = r;
+        el.textContent = `🏪 ${r.nome}${r.tipo ? ' · ' + r.tipo : ''}`;
+        $('#medidaA').href = E.linkApple(lat, lng, r.nome);
+      } else el.textContent = r && r.endereco ? r.endereco : 'sem estabelecimento cadastrado aqui no OSM';
+    } catch (err) { if (meu === seqSug) el.textContent = err.message || 'não consegui consultar o mapa'; }
+  }
   function atualizarMedida() {
     if (!medida) return;
     medida.line.setLatLngs(eu ? [[eu.lat, eu.lng], [medida.lat, medida.lng]] : []);
@@ -160,7 +182,11 @@
   }
   function fecharMedida() { if (medida) { medida.marker.remove(); medida.line.remove(); medida = null; } medidaEl.classList.remove('on'); }
   $('#medidaX').addEventListener('click', fecharMedida);
-  $('#medidaSalvar').addEventListener('click', () => { if (medida) abrirSalvar(medida.lat, medida.lng, ''); });
+  $('#medidaSalvar').addEventListener('click', () => {
+    if (!medida) return;
+    const s = medida.sug; // estabelecimento achado: salva no ponto dele, com o nome sugerido (editável)
+    if (s) abrirSalvar(s.lat, s.lng, s.nome); else abrirSalvar(medida.lat, medida.lng, '');
+  });
 
   // ---------------------------------------------------------------- salvar / editar lugar
   const AL = () => window.AgendaLocal;
@@ -179,13 +205,22 @@
     lgNome.value = nome || '';
     lgRaio.value = String(U.RAIO_AUTO || 120);
     $('#lgRemover').hidden = true;
+    $('#lgSug').textContent = '';
     abrirSheet(lat, lng);
     if (dentro) avisar(`Este ponto já fica dentro de “${dentro.nome}”.`);
+    if (!nome && E) {
+      const ed = edicao;
+      E.nomeNoPonto(lat, lng).then(r => {
+        if (edicao !== ed || !r || !r.estabelecimento || r.dist == null || r.dist > 60) return;
+        $('#lgSug').textContent = `Sugestão do mapa: ${r.nome}${r.tipo ? ' (' + r.tipo + ')' : ''}. Pode editar.`;
+        if (!lgNome.value.trim()) lgNome.value = r.nome;
+      }).catch(() => {});
+    }
   }
   function abrirEditar(id) {
     const l = U.lugares().find(x => String(x.id) === String(id)); if (!l) return;
     edicao = { lat: l.lat, lng: l.lng, id: l.id };
-    $('#lgTit').textContent = 'Editar lugar';
+    $('#lgTit').textContent = 'Editar lugar'; $('#lgSug').textContent = '';
     lgNome.value = l.nome; lgRaio.value = String(l.raio || 100);
     $('#lgRemover').hidden = false;
     abrirSheet(l.lat, l.lng);
@@ -236,6 +271,36 @@
     const r = a.removerLugar(l.id);
     fecharSheet(); carregarItens();
     avisar(r.msg);
+  });
+
+  // ---------------------------------------------------------------- estabelecimentos perto de mim
+  const sheetPerto = $('#sheetPerto'), ptLista = $('#ptLista');
+  let pertoLista = [];
+  async function abrirPerto() {
+    const pos = eu || U.ultimaPos();
+    sheetPerto.hidden = false;
+    if (!E) { ptLista.innerHTML = '<div class="vazio">Não consegui carregar a busca de estabelecimentos.</div>'; return; }
+    if (!pos) { ptLista.innerHTML = '<div class="vazio">Esperando a sua posição… Ligue a localização e tente de novo.</div>'; armar(); return; }
+    $('#ptSub').textContent = `Num raio de ~150 m de você (precisão ±${Math.round(pos.acc || 0)} m). Fonte: OpenStreetMap; o que faltar, abra no Google ou no Apple Mapas.`;
+    ptLista.innerHTML = '<div class="vazio">Procurando…</div>';
+    try {
+      pertoLista = (await E.perto(pos.lat, pos.lng, 150)).slice(0, 25);
+      ptLista.innerHTML = pertoLista.length ? pertoLista.map((x, k) => {
+        const ja = U.lugarEm({ lat: x.lat, lng: x.lng });
+        return `<div class="pt"><div class="info"><b>${esc(x.nome)}</b><span>${esc([x.tipo, U.fmtDist(x.dist), ja ? 'dentro de “' + ja.nome + '”' : ''].filter(Boolean).join(' · '))}</span></div>` +
+          `<a href="${E.linkGoogle(x.lat, x.lng)}" target="_blank" rel="noopener">Google</a><a href="${E.linkApple(x.lat, x.lng, x.nome)}" target="_blank" rel="noopener">Apple</a>` +
+          `<button type="button" class="ok" data-pt="${k}">Salvar</button></div>`;
+      }).join('') : `<div class="vazio">O OpenStreetMap não tem estabelecimentos com nome a até 150 m daqui. Veja no app do iPhone (${linksPonto(pos.lat, pos.lng, '')}) ou toque no mapa e em Salvar lugar.</div>`;
+    } catch (err) { ptLista.innerHTML = `<div class="vazio">${esc(err.message || 'Falhou a busca.')}</div>`; }
+  }
+  $('#btnPerto').addEventListener('click', abrirPerto);
+  $('#ptFechar').addEventListener('click', () => { sheetPerto.hidden = true; });
+  sheetPerto.addEventListener('click', e => {
+    if (e.target === sheetPerto) { sheetPerto.hidden = true; return; }
+    const b = e.target.closest('[data-pt]'); if (!b) return;
+    const x = pertoLista[Number(b.dataset.pt)]; if (!x) return;
+    sheetPerto.hidden = true;
+    abrirSalvar(x.lat, x.lng, x.nome);
   });
 
   // ---------------------------------------------------------------- vincular tarefa a um lugar

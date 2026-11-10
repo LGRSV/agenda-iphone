@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v288-autoconcluir-rotas-layout';
+const CACHE = 'agenda-lagares-v289-mapa-estabelecimentos';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=14" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -29,7 +29,7 @@ const PARCEIRO_SCRIPT = '<script src="./parceiro.js?v=2" defer><\/script>';
 const MESADA_SCRIPT = '<script src="./mesada-sync.js?v=1" defer><\/script>';
 const LEMBRETE_SCRIPT = '<script src="./lembrete-persistente.js?v=2" defer><\/script>';
 const LOCAL_SCRIPT = '<script src="./localizacao.js?v=3" defer><\/script>';
-const LOCAL_TAREFA_SCRIPT = '<script src="./local-tarefa.js?v=2" defer><\/script>';
+const LOCAL_TAREFA_SCRIPT = '<script src="./local-tarefa.js?v=3" defer><\/script>';
 const AUTO_CONCLUIR_SCRIPT = '<script src="./auto-concluir.js?v=2" defer><\/script>';
 const ROTAS_SCRIPT = '<script src="./rotas.js?v=2" defer><\/script>';
 const LEMBRETE_CHEGADA_SCRIPT = '<script src="./lembrete-chegada.js?v=2" defer><\/script>';
