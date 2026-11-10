@@ -61,11 +61,7 @@ html[data-home="hoje"] .view-shell{border:0;border-radius:16px;box-shadow:none}
 html[data-home="hoje"] .view-shell>.toolbar,
 html[data-home="hoje"] .view-shell>.list-header{margin:0;border-width:0 0 1px;border-radius:0}
 
-/* Flutuantes: + Nova tarefa vira círculo de 56 (o texto continua no DOM e dá o nome acessível); o selo da versão recua */
-html[data-home="hoje"] .fab{width:56px;min-height:56px;padding:0;gap:0;justify-content:center;border-radius:50%;font-size:0}
-html[data-home="hoje"] .fab .plus{font-size:30px}
-/* cardio (48) e + (56) empilhados pelo centro, não pela borda direita */
-html[data-home="hoje"] .agenda-actions{align-items:center}
+/* Flutuantes: o selo da versão recua (os botões ficam no menu do Jarvis) */
 html[data-home="hoje"] #app-ver{opacity:.6}
 
 /* Tema claro: --soft quase some sobre --bg, então a aba ativa sobe para --soft2 */

@@ -12,10 +12,10 @@
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
   <title>Agenda Lagares</title>
   <script>try{var h=localStorage.getItem('agenda_tela_inicio');if(['essencial','hoje','ios','zen'].indexOf(h)>-1)document.documentElement.dataset.home=h}catch(_){}</script>
-  <link rel="stylesheet" href="./estilos-inicio/essencial.css?v=1">
-  <link rel="stylesheet" href="./estilos-inicio/hoje.css?v=1">
-  <link rel="stylesheet" href="./estilos-inicio/ios.css?v=1">
-  <link rel="stylesheet" href="./estilos-inicio/zen.css?v=1">
+  <link rel="stylesheet" href="./estilos-inicio/essencial.css?v=2">
+  <link rel="stylesheet" href="./estilos-inicio/hoje.css?v=2">
+  <link rel="stylesheet" href="./estilos-inicio/ios.css?v=2">
+  <link rel="stylesheet" href="./estilos-inicio/zen.css?v=2">
   <style>
     :root{color-scheme:dark;--bg:#050506;--surface:#0c0c0f;--soft:#15151a;--soft2:#202027;--text:#f8f8fa;--muted:#afb0b8;--faint:#7b7d87;--line:#2e2e36;--accent:#75cbff;--accent2:#3baee8;--accentInk:#061b26;--danger:#ff9c9c;--shadow:0 14px 34px rgba(0,0,0,.5)}
     html[data-theme="light"]{color-scheme:light;--bg:#f4f6fa;--surface:#fff;--soft:#f5f7fb;--soft2:#e8edf4;--text:#18212d;--muted:#657080;--faint:#8993a1;--line:#dfe5ed;--accent:#147fb7;--accent2:#0d72aa;--accentInk:#fff;--danger:#ba3e3e;--shadow:0 12px 28px rgba(27,40,58,.08)}
@@ -72,7 +72,6 @@
     .quick-menu.is-open{visibility:visible;opacity:1;pointer-events:auto;transform:translateY(0) scale(1);transition-delay:0s}.quick-menu a,.quick-menu button{display:flex;align-items:center;gap:10px;width:100%;min-height:45px;padding:0 11px;border:0;border-radius:11px;background:transparent;color:var(--text);font:inherit;font-size:14px;font-weight:750;letter-spacing:-.01em;text-align:left;text-decoration:none}
     .quick-menu a:focus-visible,.quick-menu button:focus-visible{background:var(--soft);outline:0}@media(hover:hover) and (pointer:fine){.quick-menu a:hover,.quick-menu button:hover{background:var(--soft);outline:0}}.quick-menu .menu-note{display:block;padding:7px 11px 4px;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.menu-option-icon{display:grid;place-items:center;flex:0 0 24px;width:24px;height:24px;color:var(--accent)}.menu-option-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
     .month-swipe-surface{touch-action:pan-y;overscroll-behavior-x:contain}.month-toolbar{display:grid;grid-template-columns:44px minmax(0,1fr) 44px}.month-full-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.month-toolbar-spacer{width:44px;height:44px}.month-motion-next .month-grid-wrap,.month-motion-next .calendar-legend{animation:monthInNext .28s cubic-bezier(.23,1,.32,1) both}.month-motion-prev .month-grid-wrap,.month-motion-prev .calendar-legend{animation:monthInPrev .28s cubic-bezier(.23,1,.32,1) both}@keyframes monthInNext{from{opacity:.35;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}@keyframes monthInPrev{from{opacity:.35;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}@media(prefers-reduced-motion:reduce){.month-motion-next .month-grid-wrap,.month-motion-next .calendar-legend,.month-motion-prev .month-grid-wrap,.month-motion-prev .calendar-legend{animation:none}}
-    .app{padding-bottom:calc(196px + env(safe-area-inset-bottom))}.agenda-actions{position:fixed;z-index:45;right:max(14px,env(safe-area-inset-right));bottom:calc(62px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:flex-end;gap:9px;margin:0}.fab{position:relative;right:auto;bottom:auto;min-height:54px}.agenda-actions #cardioFab{position:relative;inset:auto;order:-1;flex:0 0 auto;width:48px;height:48px;margin:0}.agenda-actions #jarvis-btn{position:fixed!important;z-index:45;left:max(18px,env(safe-area-inset-left));right:auto;bottom:calc(12px + env(safe-area-inset-bottom));width:56px;height:56px;margin:0}@media(min-width:600px){.agenda-actions{right:calc((100vw - min(100vw,760px))/2 + 22px)}.agenda-actions #jarvis-btn{left:calc((100vw - min(100vw,760px))/2 + 22px)}}
     .task-swipe{position:relative;overflow:hidden;border-top:1px solid var(--line);touch-action:pan-y}.task-swipe:first-child{border-top:0}.task-swipe .task-card{position:relative;z-index:1;border-top:0;background:var(--surface);transition:transform .22s cubic-bezier(.23,1,.32,1)}.task-swipe.is-swiped .task-card{transform:translateX(-152px)}.task-delete-rail{position:absolute;z-index:0;top:0;right:0;bottom:0;width:152px;display:flex;background:transparent}.task-edit-btn{width:76px;height:100%;display:grid;place-items:center;border:0;background:#f0b429;color:#fff}.task-edit-btn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.task-trash{width:76px;height:100%;display:grid;place-items:center;border:0;background:#d92f3f;color:#fff}.task-trash svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.task-reschedule{display:grid;place-items:center;width:44px;height:44px;margin:-6px -5px -7px;padding:0;border:0;border-radius:9px;background:transparent;color:var(--faint)}.task-reschedule:active{background:var(--soft2);color:var(--accent);transform:scale(.96)}.task-reschedule svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
     #viewContent>.view-roll-next{animation:viewRollNext .28s cubic-bezier(.23,1,.32,1) both}#viewContent>.view-roll-prev{animation:viewRollPrev .28s cubic-bezier(.23,1,.32,1) both}.calendar-day-opening{position:relative;z-index:4;pointer-events:none;animation:calendarDayOpening .16s cubic-bezier(.23,1,.32,1) both}#viewContent>.view-calendar-zoom-in{transform-origin:var(--calendar-zoom-x,50%) var(--calendar-zoom-y,30%);animation:viewCalendarZoomIn .28s cubic-bezier(.23,1,.32,1) both}.list-heading{min-width:0}.list-heading h2{margin:0}.list-previous{position:relative;display:inline-flex;align-items:center;min-height:28px;margin-top:5px;padding:0;border:0;background:transparent;color:var(--accent);font-size:11px;font-weight:800}.list-previous::before{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}.list-previous:active{transform:scale(.96)}.list-more{display:flex;align-items:center;min-height:44px;margin:16px auto 10px;padding:0 20px;border:1px solid currentColor;border-radius:99px;font-size:13px}@keyframes viewRollNext{from{opacity:.3;transform:translate3d(20px,0,0)}to{opacity:1;transform:translate3d(0,0,0)}}@keyframes viewRollPrev{from{opacity:.3;transform:translate3d(-20px,0,0)}to{opacity:1;transform:translate3d(0,0,0)}}@keyframes calendarDayOpening{to{opacity:0;transform:scale(2.8)}}@keyframes viewCalendarZoomIn{from{opacity:.18;transform:scale(.94)}to{opacity:1;transform:scale(1)}}@media(prefers-reduced-motion:reduce){#viewContent>.view-roll-next,#viewContent>.view-roll-prev,#viewContent>.view-calendar-zoom-in,.calendar-day-opening{animation:none}}
     #rescheduleDialog{width:min(calc(100% - 32px),400px);max-width:calc(100% - 32px);overflow:visible;border-radius:22px}#rescheduleDialog[open]{animation:quickSquareIn .24s cubic-bezier(.23,1,.32,1) both}#rescheduleDialog.is-closing{animation:quickSquareOut .18s cubic-bezier(.23,1,.32,1) both}#rescheduleDialog::backdrop{background:rgba(0,0,0,.42);backdrop-filter:blur(2px)}.reschedule-modal{padding:20px}.reschedule-head{display:flex;align-items:center;gap:12px}.reschedule-head>div{flex:1;min-width:0}.reschedule-icon{width:43px;height:43px;display:grid;place-items:center;flex:0 0 auto;border:1px solid var(--line);border-radius:14px;background:var(--soft);color:var(--accent)}.reschedule-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.reschedule-head h3{margin:0;font-size:21px;letter-spacing:-.04em}.reschedule-task-name{margin:3px 0 0!important;max-width:100%;overflow:hidden;color:var(--muted)!important;white-space:nowrap;text-overflow:ellipsis}.reschedule-presets{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:14px}.reschedule-preset{min-height:44px;border:1px solid var(--line);border-radius:11px;background:var(--soft);color:var(--text);font-size:12px;font-weight:800}.reschedule-preset:active{border-color:var(--accent);color:var(--accent)}@keyframes quickSquareIn{from{opacity:0;transform:scale(.72);border-radius:8px}to{opacity:1;transform:scale(1);border-radius:22px}}@keyframes quickSquareOut{to{opacity:0;transform:scale(.78);border-radius:8px}}@media(prefers-reduced-motion:reduce){#rescheduleDialog[open],#rescheduleDialog.is-closing{animation:none}}
@@ -103,15 +102,14 @@
     .home-option[aria-checked="true"] .home-option-check svg{opacity:1}
   </style>
   <style id="ajustes-layout-v288">
-    /* área vazia do dock (entre microfone, coração e "Nova tarefa") não engole toques */
-    .agenda-actions{pointer-events:none}.agenda-actions>*{pointer-events:auto}
-    /* fim da lista acima do dock (62 + 168 + folga) */
-    .app{padding-bottom:calc(250px + env(safe-area-inset-bottom))}
+    /* fim da lista acima do botão do Jarvis (12 + 56 + folga); o resto da largura fica livre */
+    .app{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
     /* aviso com a largura do texto (com left:50% ficava limitado a meia tela) */
     .toast{left:16px;right:16px;margin:0 auto;width:fit-content;max-width:calc(100% - 32px);border-radius:18px;transform:translateY(18px)}
     .toast.show{transform:translateY(0)}
     /* camada-aviso.js põe o aviso na camada de cima (popover), acima de janela aberta */
-    #toast[popover]{position:fixed;inset:auto 16px calc(184px + env(safe-area-inset-bottom)) 16px;margin:0 auto;width:fit-content;height:fit-content;overflow:visible}
+    .toast{bottom:calc(84px + env(safe-area-inset-bottom))}
+    #toast[popover]{position:fixed;inset:auto 16px calc(84px + env(safe-area-inset-bottom)) 16px;margin:0 auto;width:fit-content;height:fit-content;overflow:visible}
     /* Jarvis com o teclado aberto: atalhos e barra de localização saem, sobra espaço para a conversa */
     #jarvis-panel:has(#jarvis-input:focus) #jarvis-chips,#jarvis-panel:has(#jarvis-input:focus) #jarvis-locbar{display:none!important}
     /* monograma da conta (monograma.js), ao lado do número da versão */
@@ -143,7 +141,9 @@
     <section id="viewContent" aria-live="polite"></section>
   </main>
 
-  <div class="agenda-actions" id="agendaActions"><button class="fab" id="openDialog" type="button"><span class="plus">+</span> Nova tarefa</button></div>
+  <!-- Menu do Jarvis (menu-jarvis.js): um botão só, embaixo à esquerda; o microfone (acessos.js) e o cardio (treino.js) entram aqui -->
+  <div class="jm-veu" id="jarvisVeu" aria-hidden="true"></div>
+  <div class="jm" id="jarvisMenu" role="menu" aria-label="Ações do Jarvis" aria-orientation="vertical" aria-hidden="true"><button class="jm-item" id="jarvisConversar" type="button" role="menuitem" tabindex="-1"><span class="jm-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 7.5 0 0 1-11 6.6L4 19.5l1.4-4.3A7.5 7.5 0 1 1 20 11.5z"/></svg></span><span class="jm-rot">Conversar</span></button><button class="jm-item jm-principal" id="openDialog" type="button" role="menuitem" tabindex="-1"><span class="jm-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="jm-rot">Nova tarefa</span></button></div>
 
   <dialog id="taskDialog"><form class="modal" id="taskForm"><h3>Nova tarefa</h3><label class="field-label" for="taskText">O que precisa ser feito?</label><input id="taskText" type="text" maxlength="240" autocomplete="off" placeholder="Ex.: Enviar relatório" required><div class="two-fields"><div><label class="field-label" for="taskDate">Data</label><input id="taskDate" type="date" required></div><div><label class="field-label" for="taskTime">Horário</label><input id="taskTime" type="time"></div></div><label class="field-label" for="taskTag">Tag</label><select id="taskTag"><option value="trabalho">Trabalho</option><option value="pessoal" selected>Pessoal</option><option value="casa">Casa</option><option value="faculdade">Faculdade</option><option value="saude">Academia</option><option value="financeiro">Financeiro</option><option value="outros">Outros</option></select><label class="field-label" for="taskReminder">Lembrete</label><select id="taskReminder"><option value="-1">Sem alerta</option><option value="0">No horário</option><option value="5">5 minutos antes</option><option value="10">10 minutos antes</option><option value="15" selected>15 minutos antes</option><option value="30">30 minutos antes</option><option value="60">1 hora antes</option></select><label class="field-label" for="taskRepeat">Repetir</label><select id="taskRepeat"><option value="none" selected>Não repetir</option><option value="daily">Todos os dias</option><option value="weekdays">Dias úteis (seg–sex)</option><option value="weekly">Toda semana</option><option value="monthly">Todo mês (mesmo dia)</option></select><label class="field-check" for="taskLembrete"><input id="taskLembrete" type="checkbox">📌 Só um lembrete (marco no calendário, sem tarefa)</label><div class="actions"><button class="secondary" id="closeTaskDialog" type="button">Cancelar</button><button class="primary" type="submit">Adicionar</button></div></form></dialog>
 
@@ -848,9 +848,35 @@
 
   <!-- ========== JARVIS v3 ========== -->
   <style>
-    #jarvis-btn{position:relative;z-index:5;width:56px;height:56px;border:0;border-radius:18px;background:linear-gradient(135deg,#1a1a2e,#16213e);box-shadow:0 0 0 2px rgba(117,203,255,.35),0 10px 28px rgba(0,0,0,.4);cursor:pointer;display:grid;place-items:center;transition:transform .15s cubic-bezier(.23,1,.32,1)}
-    #jarvis-btn:active{transform:scale(.96)}
+    :root{--jm-base:calc(12px + env(safe-area-inset-bottom));--jm-left:max(18px,env(safe-area-inset-left))}
+    @media(min-width:600px){:root{--jm-left:calc((100vw - min(100vw,760px))/2 + 22px)}}
+    #jarvis-btn{position:fixed;z-index:48;left:var(--jm-left);bottom:var(--jm-base);width:56px;height:56px;margin:0;padding:0;border:0;border-radius:18px;background:linear-gradient(135deg,#1a1a2e,#16213e);box-shadow:0 0 0 2px rgba(117,203,255,.35),0 10px 28px rgba(0,0,0,.4);cursor:pointer;display:grid;place-items:center;touch-action:manipulation;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;transition:transform .15s cubic-bezier(.23,1,.32,1)}
+    #jarvis-btn:active{transform:scale(.94)}
     #jarvis-btn svg{width:28px;height:28px}
+    /* ícone: a mira gira e some, o "x" entra girando (só transform/opacity) */
+    #jarvis-btn>svg{grid-area:1/1;transition:transform .26s cubic-bezier(.2,.9,.3,1.12),opacity .16s linear}
+    #jarvis-btn .jm-x{width:24px;height:24px;opacity:0;transform:rotate(-90deg) scale(.5)}
+    #jarvis-btn.jm-on .jm-mira{opacity:0;transform:rotate(90deg) scale(.5)}
+    #jarvis-btn.jm-on .jm-x{opacity:1;transform:none}
+    /* menu suspenso: sobe a partir do botão, em cascata de baixo para cima */
+    .jm-veu{position:fixed;inset:0;z-index:46;background:rgba(0,0,0,.34);opacity:0;visibility:hidden;transition:opacity .2s linear,visibility 0s linear .2s;touch-action:none}
+    html[data-theme="light"] .jm-veu{background:rgba(20,28,40,.2)}
+    .jm-veu.jm-on{opacity:1;visibility:visible;transition:opacity .2s linear,visibility 0s}
+    .jm{position:fixed;z-index:47;left:var(--jm-left);bottom:calc(var(--jm-base) + 68px);display:flex;flex-direction:column;align-items:flex-start;gap:10px;margin:0;pointer-events:none}
+    .jm-item{--i:0;--r:0;position:relative;display:flex;align-items:center;gap:11px;min-height:52px;margin:0;padding:4px 18px 4px 4px;border:1px solid var(--line);border-radius:26px;background:var(--surface);color:var(--text);box-shadow:0 10px 26px rgba(0,0,0,.28);font:inherit;font-size:15px;font-weight:750;letter-spacing:-.01em;white-space:nowrap;cursor:pointer;touch-action:manipulation;pointer-events:none;visibility:hidden;opacity:0;transform:translate3d(0,14px,0) scale(.86);transform-origin:28px 100%;
+      transition:transform .17s cubic-bezier(.4,0,.6,1) calc(var(--r) * 18ms),opacity .14s linear calc(var(--r) * 18ms),visibility 0s linear calc(var(--r) * 18ms + .17s)}
+    .jm.jm-on .jm-item{pointer-events:auto;visibility:visible;opacity:1;transform:none;transition:transform .26s cubic-bezier(.2,.9,.3,1.12) calc(var(--i) * 35ms),opacity .16s linear calc(var(--i) * 35ms),visibility 0s}
+    .jm.jm-anim .jm-item{will-change:transform,opacity}
+    .jm-ico{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border-radius:50%;background:var(--soft);color:var(--accent);transition:transform .13s cubic-bezier(.23,1,.32,1)}
+    .jm-ico svg{width:22px;height:22px;display:block}
+    .jm-item:active .jm-ico{transform:scale(.88)}
+    .jm-principal .jm-ico{background:var(--accent);color:var(--accentInk)}
+    .jm-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    @media(prefers-reduced-motion:reduce){
+      #jarvis-btn>svg,#jarvis-btn.jm-on>svg{transform:none!important;transition:opacity .15s linear}
+      .jm-item,.jm.jm-on .jm-item{transform:none;transition:opacity .15s linear,visibility 0s linear .15s}
+      .jm.jm-on .jm-item{transition:opacity .15s linear,visibility 0s}
+    }
     #jarvis-btn.pulse{animation:jpulse 2.4s ease-in-out 3}@media(prefers-reduced-motion:reduce){#jarvis-btn.pulse{animation:none}}
     @keyframes jpulse{0%,100%{box-shadow:0 0 0 2px rgba(117,203,255,.35),0 10px 28px rgba(0,0,0,.4)}50%{box-shadow:0 0 0 5px rgba(117,203,255,.15),0 10px 28px rgba(0,0,0,.4)}}
     #jarvis-panel{position:fixed;z-index:101;left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));bottom:calc(90px + env(safe-area-inset-bottom));max-height:min(72dvh,calc(100dvh - 90px - env(safe-area-inset-bottom,0px) - env(safe-area-inset-top,0px)));display:flex;flex-direction:column;border:1px solid rgba(117,203,255,.25);border-radius:24px;background:rgba(22,25,32,.97);backdrop-filter:blur(18px);box-shadow:0 30px 80px rgba(0,0,0,.55);overflow:hidden;transform:translateY(18px) scale(.97);opacity:0;pointer-events:none;transition:transform .22s cubic-bezier(.34,1.56,.64,1),opacity .18s cubic-bezier(.23,1,.32,1)}
@@ -915,8 +941,9 @@
   </style>
 
   <div id="app-ver"><button id="app-update" type="button" title="Atualizar o app" aria-label="Atualizar o app"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></button></div>
-  <button id="jarvis-btn" class="pulse" type="button" aria-label="Abrir Jarvis">
-    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <button id="jarvis-btn" class="pulse" type="button" aria-label="Jarvis: abrir menu" aria-haspopup="menu" aria-expanded="false" aria-controls="jarvisMenu">
+    <svg class="jm-x" viewBox="0 0 24 24" fill="none" stroke="#75cbff" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    <svg class="jm-mira" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <circle cx="16" cy="16" r="15" stroke="#75cbff" stroke-width="1.5" opacity=".4"/>
       <circle cx="16" cy="16" r="9" fill="none" stroke="#75cbff" stroke-width="1.5"/>
       <circle cx="16" cy="16" r="4" fill="#75cbff"/>
@@ -979,7 +1006,6 @@
           msgs=q('jarvis-msgs'),input=q('jarvis-input'),send=q('jarvis-send'),
           mic=q('jarvis-mic'),voiceToggle=q('jarvis-voice-toggle'),statusEl=q('jarvis-status');
     statusEl.textContent=STATUS_OK;
-    const actionDock=q('agendaActions');if(actionDock&&btn.parentNode!==actionDock)actionDock.appendChild(btn);
     let history=[],isOpen=false,busy=false;
     let voiceOn=localStorage.getItem(VOICE_KEY)!=='0';
 
@@ -1034,7 +1060,8 @@
         }
       }
     }
-    btn.addEventListener('click',togglePanel);
+    // O toque no botão abre o menu (menu-jarvis.js); o painel abre pelo item "Conversar" ou pelo toque longo.
+    window.JarvisPainel={abrir(){if(!isOpen)togglePanel();},fechar(){if(isOpen)togglePanel();},aberto:()=>isOpen};
     closeBtn.addEventListener('click',togglePanel);
 
     function nowInfo(){
@@ -1890,8 +1917,9 @@ ${SO_CLAUDE?'MODO ATUAL: so texto e sem internet. NAO use web_search: se pedirem
   </script>
   <!-- ========== /JARVIS v3 ========== -->
 
+  <script src="./menu-jarvis.js?v=1" defer></script>
   <script src="./viewmode.js?v=2" defer></script>
-  <script src="./treino.js?v=14" defer></script>
+  <script src="./treino.js?v=15" defer></script>
   <script src="./painel.js?v=2" defer></script>
   <script src="./gamificacao.js?v=5" defer></script>
   <script src="./notas.js?v=11" defer></script>
@@ -1910,8 +1938,8 @@ ${SO_CLAUDE?'MODO ATUAL: so texto e sem internet. NAO use web_search: se pedirem
   <script src="./mesada-sync.js?v=1" defer></script>
   <script src="./lembrete-persistente.js?v=2" defer></script>
   <script src="./nativo.js?v=14" defer></script>
-  <script src="./acessos.js?v=1" defer></script>
-  <script src="./fixos-ios.js?v=2" defer></script>
+  <script src="./acessos.js?v=2" defer></script>
+  <script src="./fixos-ios.js?v=3" defer></script>
   <script src="./camada-aviso.js?v=1" defer></script>
   <script src="./monograma.js?v=1" defer></script>
   <script src="./localizacao.js?v=4" defer></script>
