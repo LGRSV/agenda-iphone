@@ -385,7 +385,7 @@
       <label class="field-label" for="rvArquivo">Arquivo de pareamento (gerado no PC pelo iloader)</label>
       <input type="file" id="rvArquivo">
       <label class="field-label" for="rvIp">IP do iPhone na VPN (opcional)</label>
-      <input type="text" id="rvIp" inputmode="decimal" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="vazio = LocalDevVPN (10.7.0.1)">
+      <input type="text" id="rvIp" inputmode="decimal" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="10.7.0.1 (LocalDevVPN)">
       <div class="actions">
         <button class="secondary" id="rvFechar" type="button">Fechar</button>
         <button class="primary" id="rvRenovar" type="button">Renovar agora</button>
@@ -393,11 +393,12 @@
     </div>`;
     document.body.appendChild(rvUi);
     const $ = id => rvUi.querySelector('#' + id);
-    $('rvIp').value = localStorage.getItem(RV_IP) || '';
+    $('rvIp').value = localStorage.getItem(RV_IP) || '10.7.0.1';
     $('rvIp').addEventListener('change', () => {
       const v = $('rvIp').value.trim();
       if (v && !/^\d{1,3}(\.\d{1,3}){3}$/.test(v)) { aviso('IP inválido (use algo como 100.101.102.103).'); return; }
-      if (v) localStorage.setItem(RV_IP, v); else localStorage.removeItem(RV_IP);
+      if (!v) $('rvIp').value = '10.7.0.1';
+      if (v && v !== '10.7.0.1') localStorage.setItem(RV_IP, v); else localStorage.removeItem(RV_IP);
       lerEstado(false);
     });
 
