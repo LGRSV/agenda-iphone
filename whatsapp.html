@@ -3,65 +3,95 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#050506">
+  <meta name="theme-color" content="#111b21">
   <meta name="app-page" content="whatsapp.html">
   <title>WhatsApp</title>
   <style>
-    :root{color-scheme:dark;--bg:#111216;--surface:#1c1e23;--soft:#24272e;--line:#343943;--text:#f7f8fb;--muted:#9da5b3;--green:#25d366;--green2:#1e6f4a;--blue:#69c8ff;--red:#ff7f91}
-    *{box-sizing:border-box}html,body{height:100%}html{-webkit-text-size-adjust:100%;background:var(--bg)}
-    body{margin:0;background:var(--bg);color:var(--text);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
+    /* visual do WhatsApp Web (tema escuro) */
+    :root{color-scheme:dark;--bg:#0b141a;--side:#111b21;--panel:#202c33;--hover:#202c33;--sel:#2a3942;--line:#222d34;--text:#e9edef;--muted:#8696a0;
+      --accent:#00a884;--mine:#005c4b;--theirs:#202c33;--chip:#202c33;--chipOn:#0a332c;--chipOnTx:#00a884;--link:#53bdeb}
+    *{box-sizing:border-box}html,body{height:100%}html{-webkit-text-size-adjust:100%;background:var(--side)}
+    body{margin:0;background:var(--side);color:var(--text);font:14.5px "Segoe UI",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;overflow:hidden}
     button,input,textarea{font:inherit;color:inherit}
     .wrap{height:100%;display:grid;grid-template-columns:1fr;padding-top:env(safe-area-inset-top)}
-    @media(min-width:820px){.wrap{grid-template-columns:340px 1fr}}
+    @media(min-width:820px){.wrap{grid-template-columns:minmax(330px,30%) 1fr}}
     .pane{display:flex;flex-direction:column;min-height:0;height:100%}
-    .list-pane{border-right:1px solid var(--line)}
-    .head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--surface)}
-    .back{width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--line);border-radius:12px;background:var(--soft);text-decoration:none;color:var(--text);font-size:26px;flex:0 0 auto;cursor:pointer}
-    .head h1{margin:0;font-size:20px;letter-spacing:-.02em}.head .sub{margin:2px 0 0;color:var(--muted);font-size:12px}
-    .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#666;margin-right:5px;vertical-align:middle}.dot.on{background:var(--green)}
-    .search{margin:10px 12px;padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);width:calc(100% - 24px)}
+    .list-pane{background:var(--side);border-right:1px solid var(--line)}
+    .head{display:flex;align-items:center;gap:12px;padding:10px 16px;min-height:59px;background:var(--panel)}
+    .back{width:38px;height:38px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;text-decoration:none;color:var(--muted);font-size:28px;flex:0 0 auto;cursor:pointer}
+    .back:hover{background:var(--sel)}
+    .head h1{margin:0;font-size:17px;font-weight:500}.head .sub{margin:1px 0 0;color:var(--muted);font-size:12.5px}
+    .tit{font-size:22px!important;font-weight:700!important}
+    .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#667781;margin-right:5px;vertical-align:middle}.dot.on{background:var(--accent)}
+    .busca{padding:8px 12px 6px;background:var(--side)}
+    .busca label{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:8px;padding:0 12px;height:36px;color:var(--muted)}
+    .busca input{flex:1;border:0;outline:0;background:transparent;color:var(--text);height:100%}
+    .chips{display:flex;gap:8px;padding:4px 12px 8px;overflow-x:auto}
+    .chips button{border:0;border-radius:16px;background:var(--chip);color:var(--muted);padding:5px 12px;cursor:pointer;white-space:nowrap;font-size:13.5px}
+    .chips button.on{background:var(--chipOn);color:var(--chipOnTx)}
     .chats{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
-    .chat{display:flex;gap:11px;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(52,57,67,.5);cursor:pointer}
-    .chat:hover,.chat.on{background:var(--soft)}
-    .av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#2a3a33;color:#bfe8cf;font-weight:800;flex:0 0 auto}
-    .av.g{background:#2b3346;color:#c3d4ff}
-    .ci{min-width:0;flex:1}.ci .l1{display:flex;justify-content:space-between;gap:8px}.ci b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .ci time{color:var(--muted);font-size:11px;flex:0 0 auto}.ci .pv{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-    .msgs{flex:1;overflow-y:auto;padding:12px 10px;background:#0c0d10;-webkit-overflow-scrolling:touch}
-    .day{text-align:center;margin:10px 0}.day span{background:var(--soft);color:var(--muted);font-size:11px;padding:4px 10px;border-radius:8px}
-    .m{max-width:82%;margin:3px 0;padding:7px 10px 5px;border-radius:12px;background:var(--surface);line-height:1.35;word-wrap:break-word;white-space:pre-wrap;position:relative}
-    .m.eu{margin-left:auto;background:var(--green2)}
-    .m .who{display:block;font-size:12px;font-weight:700;color:var(--blue);margin-bottom:2px}
-    .m .t{display:block;text-align:right;font-size:10px;color:rgba(255,255,255,.55);margin-top:2px}
-    .m img{display:block;max-width:100%;max-height:340px;border-radius:9px;margin-bottom:4px;cursor:zoom-in}
-    .m audio{width:240px;max-width:100%;margin-bottom:2px}
+    .chat{display:flex;gap:13px;align-items:center;padding:0 0 0 13px;cursor:pointer;height:72px}
+    .chat:hover{background:var(--hover)}.chat.on{background:var(--sel)}
+    .av{width:49px;height:49px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:600;font-size:19px;flex:0 0 auto;background:#6b7c85}
+    .ci{min-width:0;flex:1;height:100%;display:flex;flex-direction:column;justify-content:center;border-bottom:1px solid var(--line);padding-right:15px}
+    .ci .l1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.ci b{font-weight:400;font-size:16.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ci time{color:var(--muted);font-size:12px;flex:0 0 auto}
+    .ci .pv{color:var(--muted);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+    .ci .pv .ck{color:var(--link)}
+    .rodape{color:var(--muted);font-size:12.5px;text-align:center;padding:14px 12px 20px}
+    .chat-pane{background:var(--bg)}
+    .chat-pane .head{border-left:1px solid var(--line)}
+    .msgs{flex:1;overflow-y:auto;padding:12px 7% 8px;-webkit-overflow-scrolling:touch;
+      background-color:var(--bg);background-image:radial-gradient(rgba(255,255,255,.035) 1px,transparent 1px);background-size:22px 22px}
+    @media(max-width:819px){.msgs{padding:10px 10px 6px}}
+    .day{text-align:center;margin:12px 0 8px}.day span{background:#182229;color:var(--muted);font-size:12.5px;padding:5px 12px;border-radius:7px;box-shadow:0 1px .5px rgba(11,20,26,.13)}
+    .m{max-width:65%;width:fit-content;margin:2px 0;padding:6px 7px 8px 9px;border-radius:7.5px;background:var(--theirs);line-height:1.38;word-wrap:break-word;white-space:pre-wrap;position:relative;box-shadow:0 1px .5px rgba(11,20,26,.13)}
+    @media(max-width:819px){.m{max-width:85%}}
+    .m.eu{margin-left:auto;background:var(--mine)}
+    .m.cauda{margin-top:8px}
+    .m.cauda:not(.eu){border-top-left-radius:0}.m.cauda.eu{border-top-right-radius:0}
+    .m.cauda:not(.eu)::before{content:"";position:absolute;left:-8px;top:0;border:8px solid transparent;border-top-color:var(--theirs);border-right-color:var(--theirs);border-width:0 8px 8px 0}
+    .m.cauda.eu::before{content:"";position:absolute;right:-8px;top:0;border-style:solid;border-color:var(--mine) transparent transparent var(--mine);border-width:0 0 8px 8px}
+    .m .who{display:block;font-size:12.8px;font-weight:600;margin-bottom:2px}
+    .m .t{float:right;margin:8px 0 -5px 10px;font-size:11px;color:rgba(233,237,239,.6);white-space:nowrap;position:relative;top:4px}
+    .m .t .ck{color:var(--link)}
+    .m img{display:block;max-width:100%;max-height:330px;border-radius:6px;margin:-2px -3px 4px -5px;cursor:zoom-in}
+    .m audio{width:250px;max-width:100%;margin-bottom:2px}
     .m .tag{color:var(--muted);font-style:italic}
-    .composer{display:flex;gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface)}
-    .composer textarea{flex:1;resize:none;max-height:120px;min-height:42px;padding:10px 12px;border:1px solid var(--line);border-radius:20px;background:var(--soft);outline:none}
-    .composer button{width:44px;height:44px;border:0;border-radius:50%;background:var(--green);color:#063;font-size:20px;font-weight:900;cursor:pointer}
+    .mais{display:block;margin:6px auto 10px;border:0;border-radius:16px;background:#182229;color:var(--muted);padding:6px 14px;cursor:pointer;font-size:13px}
+    .composer{display:flex;gap:8px;align-items:flex-end;padding:8px 14px calc(8px + env(safe-area-inset-bottom));background:var(--panel)}
+    .composer textarea{flex:1;resize:none;max-height:120px;min-height:42px;padding:11px 14px;border:0;border-radius:8px;background:#2a3942;outline:none;color:var(--text)}
+    .composer button{width:42px;height:42px;border:0;border-radius:50%;background:transparent;color:var(--muted);font-size:22px;cursor:pointer;display:grid;place-items:center}
+    .composer button.pronto{color:var(--accent)}
     .composer button:disabled{opacity:.4}
     .vazio{margin:auto;color:var(--muted);text-align:center;padding:30px}
+    .intro{margin:auto;text-align:center;color:var(--muted);max-width:460px;padding:30px}
+    .intro .logo{width:84px;height:84px;margin:0 auto 18px;border-radius:50%;display:grid;place-items:center;background:#1f2c33;font-size:40px}
+    .intro h2{color:var(--text);font-weight:300;font-size:30px;margin:0 0 12px}
+    .intro p{margin:6px 0;line-height:1.5;font-size:14px}
     @media(max-width:819px){.wrap.aberto .list-pane{display:none}.wrap:not(.aberto) .chat-pane{display:none}}
     @media(min-width:820px){.chat-pane .back.voltar{display:none}}
-    .zoom{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;place-items:center;z-index:9}.zoom.on{display:grid}.zoom img{max-width:96vw;max-height:92vh}
+    .chat-pane:not(.ativo) .head,.chat-pane:not(.ativo) .composer{display:none}
+    .zoom{position:fixed;inset:0;background:rgba(11,20,26,.95);display:none;place-items:center;z-index:9}.zoom.on{display:grid}.zoom img{max-width:96vw;max-height:92vh}
   </style>
 </head>
 <body>
   <script>(function(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!k||!/^sb-.*-auth-token$/.test(k))continue;var r=JSON.parse(localStorage.getItem(k)||'null'),s=r&&(r.currentSession||r.session||r);if(s&&(s.refresh_token||s.access_token))return;}}catch(_){}location.replace('./?locked=1');})();</script>
   <div class="wrap" id="wrap">
     <section class="pane list-pane">
-      <header class="head"><a class="back" href="./" aria-label="Voltar à agenda">‹</a><div><h1>WhatsApp</h1><p class="sub" id="status"><span class="dot"></span>conectando…</p></div></header>
-      <input class="search" id="busca" type="search" placeholder="Buscar conversa" autocomplete="off">
+      <header class="head"><a class="back" href="./" aria-label="Voltar à agenda">‹</a><div><h1 class="tit">WhatsApp</h1><p class="sub" id="status"><span class="dot"></span>conectando…</p></div></header>
+      <div class="busca"><label><span aria-hidden="true">🔍</span><input id="busca" type="search" placeholder="Pesquisar ou começar uma nova conversa" autocomplete="off"></label></div>
+      <div class="chips" id="chips"><button class="on" data-f="tudo">Tudo</button><button data-f="contatos">Contatos</button><button data-f="grupos">Grupos</button><button data-f="hoje">Hoje</button><button data-f="semana">7 dias</button></div>
       <div class="chats" id="chats"><div class="vazio">Carregando conversas…</div></div>
     </section>
-    <section class="pane chat-pane">
-      <header class="head"><button class="back voltar" id="voltar" aria-label="Voltar às conversas">‹</button><div class="av" id="cav"></div><div style="min-width:0"><h1 id="cnome" style="font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Escolha uma conversa</h1><p class="sub" id="csub"></p></div></header>
-      <div class="msgs" id="msgs"><div class="vazio">As mensagens aparecem aqui.</div></div>
-      <form class="composer" id="form"><textarea id="txt" rows="1" placeholder="Mensagem" disabled></textarea><button id="enviar" disabled aria-label="Enviar">➤</button></form>
+    <section class="pane chat-pane" id="cpane">
+      <header class="head"><button class="back voltar" id="voltar" aria-label="Voltar às conversas">‹</button><div class="av" id="cav"></div><div style="min-width:0"><h1 id="cnome" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Escolha uma conversa</h1><p class="sub" id="csub"></p></div></header>
+      <div class="msgs" id="msgs"><div class="intro"><div class="logo">💬</div><h2>WhatsApp no app</h2><p>As conversas do último mês, espelhadas pelo PC em tempo real.</p><p>Fotos e áudios ficam disponíveis por 7 dias; depois disso, só o texto.</p></div></div>
+      <form class="composer" id="form"><textarea id="txt" rows="1" placeholder="Digite uma mensagem" disabled></textarea><button id="enviar" disabled aria-label="Enviar">➤</button></form>
     </section>
   </div>
   <div class="zoom" id="zoom"><img alt=""></div>
   <script src="./supabase-project-config.js?v=1"></script>
-  <script type="module" src="./whatsapp.js?v=2"></script>
+  <script type="module" src="./whatsapp.js?v=3"></script>
 </body>
 </html>

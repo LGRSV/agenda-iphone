@@ -16,7 +16,11 @@ const quando = ts => { const d = new Date(ts); return d.toDateString() === new D
 const inicial = n => (String(n || '?').trim()[0] || '?').toUpperCase();
 const ROTULO = { image: '📷 Foto', audio: '🎤 Áudio', video: '🎬 Vídeo (abra no celular)', document: '📄 Documento' };
 
-let sb, uid, chats = [], atual = null, msgs = [], saidas = new Map(), urls = new Map();
+let sb, uid, chats = [], atual = null, msgs = [], saidas = new Map(), urls = new Map(), filtro = 'tudo', temMais = false;
+const LOTE = 80;
+const CORES = ['#00a884', '#53bdeb', '#ff7aa2', '#ffbc38', '#a5b337', '#e26ab6', '#7f66ff', '#06cf9c', '#ff8c5a', '#5ba2f2'];
+const corDe = s => { let h = 0; for (const ch of String(s || '')) h = (h * 31 + ch.codePointAt(0)) >>> 0; return CORES[h % CORES.length]; };
+const avatar = (el2, c) => { el2.textContent = inicial(c.nome); el2.style.background = corDe(c.jid); };
 
 async function iniciar() {
   const conf = cfg.url ? cfg : (window.getSupabaseAgendaConfig ? window.getSupabaseAgendaConfig() : {});
@@ -55,14 +59,19 @@ async function carregarChats() {
 
 function pintarChats() {
   const q = el('busca').value.trim().toLowerCase();
-  const lista = chats.filter(c => !q || (c.nome || c.jid).toLowerCase().includes(q))
+  const agora = Date.now(), hoje = new Date().toDateString();
+  const passa = c => filtro === 'tudo' || (filtro === 'grupos' && c.grupo) || (filtro === 'contatos' && !c.grupo)
+    || (filtro === 'hoje' && c.ultima_ts && new Date(c.ultima_ts).toDateString() === hoje)
+    || (filtro === 'semana' && c.ultima_ts && agora - new Date(c.ultima_ts) < 7 * 864e5);
+  const lista = chats.filter(c => passa(c) && (!q || (c.nome || c.jid).toLowerCase().includes(q) || c.jid.includes(q)))
     .sort((a, b) => String(b.ultima_ts).localeCompare(String(a.ultima_ts)));
   el('chats').innerHTML = lista.length ? lista.map(c => `
     <div class="chat${atual === c.jid ? ' on' : ''}" data-jid="${esc(c.jid)}">
-      <div class="av${c.grupo ? ' g' : ''}">${esc(inicial(c.nome))}</div>
+      <div class="av" style="background:${corDe(c.jid)}">${c.grupo ? '👥' : esc(inicial(c.nome))}</div>
       <div class="ci"><div class="l1"><b>${esc(c.nome || c.jid.split('@')[0])}</b><time>${c.ultima_ts ? quando(c.ultima_ts) : ''}</time></div>
       <div class="pv">${esc(c.ultima_previa || '')}</div></div>
-    </div>`).join('') : '<div class="vazio">Nenhuma conversa nos últimos 7 dias.</div>';
+    </div>`).join('') + `<div class="rodape">${lista.length} conversa(s) · últimos 30 dias</div>`
+    : `<div class="vazio">${q ? 'Nenhuma conversa encontrada para “' + esc(q) + '” nos últimos 30 dias.' : 'Nenhuma conversa nos últimos 30 dias.'}</div>`;
 }
 
 async function abrir(jid, mexerHash = true) {
@@ -70,18 +79,20 @@ async function abrir(jid, mexerHash = true) {
   const c = chats.find(x => x.jid === jid) || { jid, nome: jid.split('@')[0] };
   el('wrap').classList.add('aberto');
   el('cnome').textContent = c.nome || jid.split('@')[0];
-  el('cav').textContent = inicial(c.nome); el('cav').className = 'av' + (c.grupo ? ' g' : '');
+  avatar(el('cav'), c); if (c.grupo) el('cav').textContent = '👥';
+  el('cpane').classList.add('ativo');
   el('csub').textContent = c.grupo ? 'Grupo' : jid.split('@')[0];
   el('txt').disabled = false; el('enviar').disabled = false;
   if (mexerHash) history.pushState(null, '', '#chat=' + encodeURIComponent(jid));
   pintarChats();
   el('msgs').innerHTML = '<div class="vazio">Carregando…</div>';
   const [{ data: m }, { data: s }] = await Promise.all([
-    sb.from('whatsapp_mensagens').select('*').eq('chat_jid', jid).order('ts', { ascending: false }).limit(80),
+    sb.from('whatsapp_mensagens').select('*').eq('chat_jid', jid).order('ts', { ascending: false }).limit(LOTE),
     sb.from('whatsapp_saida').select('*').eq('chat_jid', jid).neq('status', 'enviado').order('criado', { ascending: true }),
   ]);
   if (atual !== jid) return;
   msgs = (m || []).reverse();
+  temMais = (m || []).length === LOTE;
   saidas = new Map((s || []).map(x => [x.id, x]));
   await assinar(msgs);
   pintarMsgs(true);
@@ -100,18 +111,36 @@ function corpo(x) {
   if (x.midia_tipo === 'image') midia = u ? `<img src="${esc(u)}" loading="lazy" alt="Foto">` : `<span class="tag">📷 Foto (carregando no PC…)</span>`;
   else if (x.midia_tipo === 'audio') midia = u ? `<audio controls preload="none" src="${esc(u)}"></audio>` : `<span class="tag">🎤 Áudio${x.midia_seg ? ' ' + x.midia_seg + 's' : ''} (carregando no PC…)</span>`;
   else if (x.midia_tipo) midia = `<span class="tag">${esc(ROTULO[x.midia_tipo] || x.midia_tipo)}</span>`;
+  if (!u && (x.midia_tipo === 'image' || x.midia_tipo === 'audio') && Date.now() - new Date(x.ts) > 7 * 864e5)
+    midia = `<span class="tag">${x.midia_tipo === 'image' ? '📷 Foto' : '🎤 Áudio'} (mais de 7 dias: abra no celular)</span>`;
   const txt = x.texto ? esc(x.texto) : '';
   return midia + (midia && txt ? '<br>' : '') + txt;
+}
+
+async function anteriores() {   // mais 80 mensagens antes da primeira carregada
+  if (!atual || !msgs.length) return;
+  const jid = atual, box = el('msgs'), alt = box.scrollHeight;
+  const { data } = await sb.from('whatsapp_mensagens').select('*').eq('chat_jid', jid).lt('ts', msgs[0].ts).order('ts', { ascending: false }).limit(LOTE);
+  if (atual !== jid) return;
+  const velhas = (data || []).reverse();
+  temMais = velhas.length === LOTE;
+  msgs = velhas.concat(msgs);
+  await assinar(velhas);
+  pintarMsgs(false);
+  box.scrollTop = box.scrollHeight - alt;
 }
 
 function pintarMsgs(rolar) {
   const box = el('msgs'), perto = box.scrollHeight - box.scrollTop - box.clientHeight < 120;
   const c = chats.find(x => x.jid === atual) || {};
-  let ult = '', html = '';
+  let ult = '', html = temMais ? '<button class="mais" id="mais" type="button">Carregar mensagens anteriores</button>' : '', antes = null;
   for (const x of msgs) {
     const d = dia(x.ts);
-    if (d !== ult) { html += `<div class="day"><span>${esc(d)}</span></div>`; ult = d; }
-    html += `<div class="m${x.de_mim ? ' eu' : ''}">${c.grupo && !x.de_mim && x.remetente_nome ? `<span class="who">${esc(x.remetente_nome)}</span>` : ''}${corpo(x)}<span class="t">${hora(x.ts)}${x.de_mim ? ' ✓' : ''}</span></div>`;
+    if (d !== ult) { html += `<div class="day"><span>${esc(d)}</span></div>`; ult = d; antes = null; }
+    const quem = x.de_mim ? 'eu' : (x.remetente || 'ele');
+    const cauda = quem !== antes; antes = quem;
+    const nome = c.grupo && !x.de_mim && x.remetente_nome && cauda ? `<span class="who" style="color:${corDe(x.remetente)}">${esc(x.remetente_nome)}</span>` : '';
+    html += `<div class="m${x.de_mim ? ' eu' : ''}${cauda ? ' cauda' : ''}">${nome}${corpo(x)}<span class="t">${hora(x.ts)}${x.de_mim ? ' <span class="ck">✓✓</span>' : ''}</span></div>`;
   }
   for (const s of saidas.values()) {   // respostas ainda não confirmadas pelo PC
     if (s.chat_jid !== atual || s.status === 'enviado') continue;
@@ -165,12 +194,14 @@ function ouvir() {
 
 el('chats').addEventListener('click', e => { const c = e.target.closest('[data-jid]'); if (c) abrir(c.dataset.jid); });
 el('busca').addEventListener('input', pintarChats);
+el('chips').addEventListener('click', e => { const b = e.target.closest('button[data-f]'); if (!b) return; filtro = b.dataset.f; el('chips').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); pintarChats(); });
+el('msgs').addEventListener('click', e => { if (e.target.id === 'mais') anteriores(); });
 el('voltar').addEventListener('click', () => history.back());
-window.addEventListener('popstate', () => { if (!location.hash.includes('chat=')) { el('wrap').classList.remove('aberto'); atual = null; pintarChats(); } });
+window.addEventListener('popstate', () => { if (!location.hash.includes('chat=')) { el('wrap').classList.remove('aberto'); el('cpane').classList.remove('ativo'); atual = null; pintarChats(); } });
 el('msgs').addEventListener('click', e => { const img = e.target.closest('img'); if (img) { el('zoom').querySelector('img').src = img.src; el('zoom').classList.add('on'); } });
 el('zoom').addEventListener('click', () => el('zoom').classList.remove('on'));
 const txt = el('txt');
-txt.addEventListener('input', () => { txt.style.height = 'auto'; txt.style.height = Math.min(txt.scrollHeight, 120) + 'px'; });
+txt.addEventListener('input', () => { txt.style.height = 'auto'; txt.style.height = Math.min(txt.scrollHeight, 120) + 'px'; el('enviar').classList.toggle('pronto', !!txt.value.trim()); });
 txt.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && window.matchMedia('(min-width:820px)').matches) { e.preventDefault(); el('form').requestSubmit(); } });
 el('form').addEventListener('submit', async e => {
   e.preventDefault();
