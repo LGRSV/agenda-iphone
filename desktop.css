@@ -1,0 +1,254 @@
+/* =========================================================================
+   desktop.css — visual de computador da Agenda (janela larga, mouse).
+   Só carrega com (min-width:1100px) and (hover:hover) and (pointer:fine)
+   (ver o <link> no index.html): o iPhone nunca entra aqui, nem com o
+   viewport de 1180 do viewmode.js (lá não há hover/pointer fino).
+   Layout: lateral esquerda fixa (cabeçalho, progresso, abas, filtros) e a
+   área principal larga (#viewContent). O desktop.js põe a lateral num
+   <aside class="dk-side">; sem ele (antes de rodar), a grade abaixo já
+   empilha os itens na 1a coluna, então não há salto feio.
+   "html:root" só sobe a especificidade para vencer os estilos de início
+   (html[data-home=...] .app) e o interface-polish.css, que entra depois.
+   ========================================================================= */
+
+html:root{
+  --dk-side:clamp(270px,22vw,330px);
+  --dk-gap:clamp(22px,2.2vw,34px);
+  /* altura da célula do mês: 6 semanas cabendo na janela (260 = cabeçalho do mês, legenda e
+     margens); o desktop.js lê o min-height calculado para saber quantas tarefas cabem */
+  --dk-cell:max(78px,calc((100vh - 260px)/6));
+  --dk-top:22px;
+  /* Jarvis e menu dele alinhados à borda esquerda do container largo */
+  --jm-left:calc((100vw - min(100vw,1360px))/2 + 26px);
+  /* a lateral para acima do botão do Jarvis (56 px a 12 px do rodapé + 10 px de folga) */
+  --dk-side-max:calc(100vh - var(--dk-top) - 78px);
+}
+
+/* ---------- Estrutura: 2 colunas ---------- */
+html:root .app{
+  width:min(100%,1360px);
+  display:grid;
+  grid-template-columns:var(--dk-side) minmax(0,1fr);
+  grid-template-rows:repeat(8,auto) 1fr;
+  column-gap:var(--dk-gap);
+  row-gap:0;
+  align-items:start;
+  align-content:start;
+  padding:var(--dk-top) 26px 40px;
+}
+html:root .app>*{grid-column:1;min-width:0}
+html:root .app>#viewContent{grid-column:2;grid-row:1/-1;align-self:start}
+html:root .app>.dk-side{grid-row:1/-1}
+
+.dk-side{
+  position:sticky;
+  top:var(--dk-top);
+  z-index:20;
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  /* nunca passa do botão do Jarvis: em janela baixa, rola por dentro.
+     O recuo de 14 px dos lados (desfeito pela margem) deixa a sombra dos cartões fora do corte. */
+  max-height:var(--dk-side-max);
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  margin:0 -14px;
+  padding:0 14px 14px;
+}
+/* com o menu ⋯ aberto, ele pode descer além da lateral: sem corte enquanto estiver aberto,
+   e acima do botão do Jarvis (z-index 48) */
+.dk-side:has(.quick-menu.is-open){overflow:visible;z-index:60}
+.dk-side>*{min-width:0}
+
+/* Cabeçalho dentro da lateral: sem barra grudada nem margens negativas do polish */
+html:root .app .topbar{
+  position:relative;
+  top:auto;
+  margin:0 0 18px;
+  padding:4px 2px 0;
+  border:0;
+  background:none;
+  box-shadow:none;
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
+}
+html:root .app .subhead{font-size:15px}
+/* "ORGANIZAÇÃO PESSOAL" numa linha só, mesmo com a lateral estreita (270 px) */
+html:root .app .eyebrow{white-space:nowrap;font-size:10.5px;letter-spacing:.1em}
+html:root .app .head-actions{gap:6px}
+html:root .app .head-actions>.icon-btn{width:40px;height:40px;border-radius:13px}
+/* lateral estreita (janela de 1100 a 1339, lateral < 295 px): botões menores para caber ao lado do título */
+@media (max-width:1339px){
+  html:root .app .eyebrow{font-size:10px;letter-spacing:.06em}
+  html:root .app .topbar{gap:8px}
+  html:root .app .head-actions{gap:4px}
+  html:root .app .head-actions>.icon-btn{width:36px;height:36px;border-radius:12px}
+}
+
+/* Progresso do dia */
+html:root .app .summary{margin:0 0 14px;padding:18px 18px 16px}
+html:root .app .summary-number{font-size:32px}
+
+/* Filtros: quebram linha em vez de rolar de lado */
+html:root .app .filters{flex-wrap:wrap;overflow:visible;gap:7px;padding:2px 0 0}
+html:root .app .chip{min-height:36px;padding:0 13px;font-size:13px}
+
+/* ---------- Abas como navegação vertical (só no visual padrão "Atual") ---------- */
+html:root:not([data-home]) .app .view-tabs{grid-template-columns:1fr;grid-auto-rows:44px;gap:4px;margin-bottom:14px}
+html:root:not([data-home]) .app .view-tabs::before{
+  left:4px;right:auto;top:4px;bottom:auto;
+  width:calc(100% - 8px);
+  height:calc((100% - 20px)/4);
+  transform:translateY(calc(var(--tab-i,1) * (100% + 4px)));
+}
+html:root:not([data-home]) .app .view-tab{
+  display:flex;align-items:center;gap:11px;
+  min-height:0;padding:0 14px;
+  text-align:left;font-size:14px;
+}
+html:root:not([data-home]) .app .view-tab::before{
+  content:"";flex:0 0 auto;width:18px;height:18px;
+  background:currentColor;opacity:.85;
+  -webkit-mask:var(--dk-glifo) center/18px 18px no-repeat;
+  mask:var(--dk-glifo) center/18px 18px no-repeat;
+}
+html:root:not([data-home]) .app .view-tab.active{color:var(--text)}
+html:root:not([data-home]) .app .view-tab.active::before{background:var(--accent);opacity:1}
+.view-tab[data-view="day"]{--dk-glifo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15.5' rx='2.5'/%3E%3Cpath d='M3.5 10h17M8 3v4M16 3v4'/%3E%3Ccircle cx='12' cy='15' r='1.6' fill='black'/%3E%3C/svg%3E")}
+.view-tab[data-view="month"]{--dk-glifo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15.5' rx='2.5'/%3E%3Cpath d='M3.5 10h17M8 3v4M16 3v4M9.2 10v10.5M14.8 10v10.5M3.5 15.2h17'/%3E%3C/svg%3E")}
+.view-tab[data-view="list"]{--dk-glifo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6.5h11M9 12h11M9 17.5h11'/%3E%3Ccircle cx='4.5' cy='6.5' r='1.2' fill='black'/%3E%3Ccircle cx='4.5' cy='12' r='1.2' fill='black'/%3E%3Ccircle cx='4.5' cy='17.5' r='1.2' fill='black'/%3E%3C/svg%3E")}
+.view-tab[data-view="sequencia"]{--dk-glifo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='13' r='7.5'/%3E%3Cpath d='M12 9v4l2.6 1.6M9.5 2.5h5'/%3E%3C/svg%3E")}
+
+/* ---------- Área principal ---------- */
+html:root #viewContent .view-shell{border-radius:22px}
+html:root #viewContent .view-shell>.toolbar{padding:12px 16px;border-radius:22px 22px 0 0}
+html:root #viewContent .toolbar-title{font-size:19px}
+html:root #viewContent .toolbar-title small{font-size:12px}
+
+/* Mês: células grandes, com as tarefas escritas (desktop.js) */
+html:root #viewContent .month-toolbar{grid-template-columns:44px minmax(0,1fr) auto}
+html:root #viewContent .month-toolbar .month-toolbar-spacer{display:none}
+.dk-month-nav{display:flex;align-items:center;gap:6px}
+.dk-month-nav .nav-btn{width:38px;height:38px;border-radius:11px}
+html:root #viewContent .month-grid-wrap{padding:12px 12px 10px}
+html:root #viewContent .week-labels{padding:0 2px 7px;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase}
+html:root #viewContent .week-labels,html:root #viewContent .month-grid{gap:6px}
+html:root #viewContent .calendar-day{
+  display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;
+  min-height:var(--dk-cell);
+  padding:7px 7px 6px;
+  border-radius:13px;
+}
+html:root #viewContent .calendar-day .day-number{width:26px;height:26px;font-size:13px;flex:0 0 auto}
+html:root #viewContent .calendar-overdue{top:9px;right:9px}
+html:root #viewContent .calendar-tag{font-size:10.5px;padding:3px 6px}
+html:root #viewContent .calendar-more{font-size:10.5px}
+html:root #viewContent .calendar-day.dk-filled .calendar-tags{display:none}
+.dk-cal-list{display:flex;flex-direction:column;gap:2px;margin-top:5px;min-width:0}
+.dk-ev{
+  display:flex;align-items:center;gap:5px;flex:0 0 auto;min-width:0;
+  padding:2px 6px 2px 6px;
+  border-left:3px solid var(--tag,#8a8f99);
+  border-radius:5px;
+  background:color-mix(in srgb,var(--tag,#8a8f99) 15%,transparent);
+  color:var(--text);
+  height:18px;font-size:11px;font-weight:650;line-height:14px;
+  white-space:nowrap;overflow:hidden;
+}
+.dk-ev b{flex:0 0 auto;color:var(--muted);font-size:10px;font-weight:800;font-variant-numeric:tabular-nums}
+.dk-ev span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.dk-ev.dk-done{opacity:.5}
+.dk-ev.dk-done span{text-decoration:line-through}
+.dk-ev.dk-late span{color:var(--danger)}
+.dk-more{padding-left:4px;color:var(--muted);font-size:10.5px;font-weight:800;line-height:14px}
+/* Janela estreita (1100–1279): sem a hora na célula, sobra espaço para o nome (a hora fica no balão do mouse) */
+@media (max-width:1279px){.dk-ev b{display:none}}
+html:root #viewContent .calendar-legend{padding:0 16px 14px}
+
+/* Dia e Lista: mais ar e texto maior */
+html:root #viewContent .day-content{padding:8px 18px 12px}
+html:root #viewContent .task-card{padding:14px 8px;grid-template-columns:40px minmax(0,1fr) 40px;gap:8px}
+html:root #viewContent .task-title{font-size:15.5px}
+html:root #viewContent .task-time{font-size:12px}
+html:root #viewContent .list-header{padding:16px 20px 12px}
+html:root #viewContent .list-header h2{font-size:20px}
+/* Lista: cada dia é um cartão, numa coluna só (a ordem dos dias segue de cima para baixo,
+   e o "Mostrar mais" acrescenta no fim sem trocar nada de lugar) */
+html:root #viewContent .list-body{padding:14px 16px 16px}
+html:root #viewContent .list-body .group{margin:0 0 14px;padding:2px 12px 6px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+html:root #viewContent .list-body .group+.group{margin-top:0;border-top:1px solid var(--line)}
+html:root #viewContent .group-title strong{font-size:15px}
+html:root #viewContent .seq-timeline{padding:16px 22px 18px 38px}
+html:root #viewContent .seq-timeline:before{left:24px}
+
+/* ---------- Mouse: estados de hover ---------- */
+html:root .view-tab:hover:not(.active){color:var(--text);background:color-mix(in srgb,var(--surface) 55%,transparent)}
+html:root .chip:hover:not(.active){border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+html:root .nav-btn:hover,html:root .today-btn:hover,html:root .icon-btn:hover{border-color:color-mix(in srgb,var(--accent) 50%,var(--line))}
+html:root #viewContent .calendar-day.current:hover{background:color-mix(in srgb,var(--accent) 7%,var(--soft))}
+html:root #viewContent .task-swipe:hover .task-card,html:root #viewContent .task-card:hover{background:color-mix(in srgb,var(--accent) 5%,var(--surface))}
+html:root .dk-ev:hover{background:color-mix(in srgb,var(--tag,#8a8f99) 26%,transparent)}
+
+/* Painel do Jarvis abre alinhado ao botão dele */
+html:root #jarvis-panel{left:var(--jm-left)}
+
+/* O alternador iPhone/Desktop do viewmode.js só faz sentido no celular */
+html:root #viewmode-btn{display:none}
+
+/* Menu ⋯ na lateral grudada: se não couber na altura da janela, rola por dentro */
+html:root .dk-side .quick-menu{max-height:calc(100vh - 100px);overflow-y:auto;overscroll-behavior:contain}
+/* Fechado, sai do fluxo de rolagem da lateral (invisível ele ainda contava e a lateral rolava para o vazio);
+   a entrada continua animada pelo @starting-style */
+html:root .dk-side .quick-menu:not(.is-open){display:none}
+@starting-style{html:root .dk-side .quick-menu.is-open{opacity:0;transform:translateY(-8px) scale(.97)}}
+
+/* Dias do mês vizinho mais apagados quando o interface-polish está ativo (ele anima a opacidade da célula e anulava o .outside) */
+html.ui-polished:root #viewContent .calendar-day.outside>*{opacity:.45}
+
+/* A lateral só gruda se o body não virar contêiner de rolagem: o interface-polish põe
+   overflow-x:hidden no body (e o viewmode.js põe clip no html), o que prendia o sticky. */
+html:root body{overflow-x:clip}
+
+/* ---------- Janela baixa (notebook 1366x768, janela de app ~700) ---------- */
+@media (max-height:800px){
+  html:root{
+    --dk-top:14px;
+    /* com menos margem em volta, sobram ~226 px fora da grade */
+    --dk-cell:max(78px,calc((100vh - 226px)/6));
+  }
+  html:root .app{padding-bottom:14px}
+  html:root #viewContent .calendar-legend{padding-bottom:8px}
+  html:root #viewContent .calendar-day{padding:6px 6px 4px}
+  html:root #viewContent .calendar-day .day-number{width:24px;height:24px}
+  .dk-cal-list{margin-top:3px}
+  html:root .app .topbar{margin-bottom:12px}
+  html:root .app .summary{margin-bottom:10px;padding:13px 16px 13px}
+  html:root .app .summary-number{font-size:28px}
+  /* a frase repete o número e a barra: sai da tela, mas fica para o leitor de tela */
+  html:root .app .summary-message{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+  html:root:not([data-home]) .app .view-tabs{grid-auto-rows:38px;margin-bottom:10px}
+  html:root:not([data-home]) .app .view-tabs::before{height:calc((100% - 20px)/4)}
+  html:root .app .seq-entry-btn{min-height:40px;margin-bottom:10px}
+  html:root .app .chip{min-height:32px}
+}
+@media (max-height:680px){
+  html:root:not([data-home]) .app .view-tabs{grid-auto-rows:34px}
+  html:root .app .topbar{margin-bottom:8px}
+}
+
+/* ---------- Telas de início no computador ---------- */
+/* "Hoje no centro": abas e o ícone do Modo sequencial na mesma linha, como no celular
+   (a grade do hoje.css era do .app; na lateral ela precisa ser refeita) */
+html:root[data-home="hoje"] .dk-side{display:grid;grid-template-columns:minmax(0,1fr) auto;row-gap:12px;align-content:start}
+html:root[data-home="hoje"] .dk-side>*{grid-column:1/-1}
+html:root[data-home="hoje"] .dk-side>#viewTabs{grid-column:1}
+html:root[data-home="hoje"] .dk-side>#seqEntryBtn{grid-column:2;margin-left:4px}
+html:root[data-home="hoje"] .dk-side #viewTabs{grid-template-columns:minmax(0,.8fr) minmax(0,.8fr) minmax(0,1fr) minmax(0,1.4fr)}
+html:root[data-home="hoje"] .dk-side .view-tab{letter-spacing:.02em}
+/* versão e monograma lado a lado, abaixo da data */
+html:root[data-home="hoje"] .topbar>div:first-child{flex-direction:row;flex-wrap:wrap;align-items:center}
+html:root[data-home="hoje"] .topbar .subhead{flex:1 0 100%}
+/* "Lista agrupada": os 4 filtros em 2x2, sem um sobrando sozinho na 2a linha */
+html:root[data-home="ios"] .app #filters{display:grid;grid-template-columns:1fr 1fr}
