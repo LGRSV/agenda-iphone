@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v294-whatsapp-30d';
+const CACHE = 'agenda-lagares-v295-ip-vpn';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=15" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';

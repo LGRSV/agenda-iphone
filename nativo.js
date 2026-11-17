@@ -394,8 +394,21 @@
     document.body.appendChild(rvUi);
     const $ = id => rvUi.querySelector('#' + id);
     $('rvIp').value = localStorage.getItem(RV_IP) || '10.7.0.1';
+    // 17/11: o teclado numérico do iPhone só tem vírgula. Vírgula/espaço viram ponto, e o ponto
+    // entra sozinho quando o bloco chega a 3 dígitos ou quando o próximo dígito passaria de 255.
+    $('rvIp').addEventListener('input', ev => {
+      const el = $('rvIp');
+      const apagando = ev && /^delete/.test(ev.inputType || '');
+      let v = el.value.replace(/[,\s;]/g, '.').replace(/[^\d.]/g, '').replace(/\.{2,}/g, '.').replace(/^\./, '');
+      let p = v.split('.').slice(0, 4).map(o => o.slice(0, 3));
+      v = p.join('.');
+      const ult = p[p.length - 1];
+      if (!apagando && p.length < 4 && ult && (ult.length === 3 || Number(ult) * 10 > 255)) v += '.';
+      if (v !== el.value) el.value = v;
+    });
     $('rvIp').addEventListener('change', () => {
-      const v = $('rvIp').value.trim();
+      const v = $('rvIp').value.trim().replace(/\.$/, '');
+      if (v !== $('rvIp').value) $('rvIp').value = v;
       if (v && !/^\d{1,3}(\.\d{1,3}){3}$/.test(v)) { aviso('IP inválido (use algo como 100.101.102.103).'); return; }
       if (!v) $('rvIp').value = '10.7.0.1';
       if (v && v !== '10.7.0.1') localStorage.setItem(RV_IP, v); else localStorage.removeItem(RV_IP);
