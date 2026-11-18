@@ -265,12 +265,49 @@
     });
   }
 
+  // 17/11: balão automático "Instalar a Agenda neste computador?" (só no computador, fora do app instalado e quando o
+  // navegador oferece a instalação). "Agora não" esconde por 7 dias; recusar o diálogo do navegador também.
+  const BALAO_KEY = 'agenda_instalar_balao_ate';
+  function balaoLiberado() { try { return Date.now() > Number(localStorage.getItem(BALAO_KEY) || 0); } catch (_) { return true; } }
+  function adiarBalao(dias) { try { localStorage.setItem(BALAO_KEY, String(Date.now() + dias * 864e5)); } catch (_) {} }
+  function fecharBalao() { const x = $('instalarBalao'); if (x) x.remove(); }
+  function mostrarBalao() {
+    if (!offer || !fino() || standalone() || !balaoLiberado() || $('instalarBalao') || !doc.body) return;
+    const box = doc.createElement('div');
+    box.id = 'instalarBalao';
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-label', 'Instalar a Agenda neste computador');
+    box.style.cssText = 'position:fixed;z-index:70;left:50%;bottom:24px;transform:translateX(-50%);width:min(460px,calc(100vw - 32px));' +
+      'display:flex;gap:12px;align-items:center;padding:14px 16px;border:1px solid var(--line);border-radius:18px;' +
+      'background:var(--surface);color:var(--text);box-shadow:0 18px 50px rgba(0,0,0,.45)';
+    box.innerHTML = '<span class="menu-option-icon" style="flex:0 0 28px;width:28px;height:28px">' + ICON + '</span>' +
+      '<div style="flex:1;min-width:0"><strong style="display:block;font-size:14px">Instalar a Agenda neste computador?</strong>' +
+      '<span style="display:block;margin-top:2px;color:var(--muted);font-size:12px;line-height:1.35">Abre em janela própria, com atalho na barra de tarefas, e já entra logada.</span></div>' +
+      '<div style="display:flex;gap:6px;flex:0 0 auto">' +
+      '<button class="secondary" type="button" data-depois style="min-height:36px;padding:6px 10px;font-size:12px">Agora não</button>' +
+      '<button class="primary" type="button" data-instalar style="min-height:36px;padding:6px 12px;font-size:12px">Instalar</button></div>';
+    box.querySelector('[data-depois]').addEventListener('click', () => { adiarBalao(7); fecharBalao(); });
+    box.querySelector('[data-instalar]').addEventListener('click', async () => {
+      fecharBalao();
+      const ev = offer;
+      if (!ev) { ajuda(); return; }
+      offer = null; // o prompt() só pode ser chamado uma vez por evento
+      try {
+        await ev.prompt();
+        const c = ev.userChoice ? await ev.userChoice : null;
+        if (c && c.outcome === 'accepted') removeInstall(); else adiarBalao(7);
+      } catch (_) {}
+    });
+    doc.body.appendChild(box);
+  }
+
   window.addEventListener('beforeinstallprompt', e => {
-    e.preventDefault(); // sem a mini-barra automática; a instalação fica no menu ⋯
+    e.preventDefault(); // sem a mini-barra do navegador: a oferta vira o balão abaixo e o item do menu ⋯
     offer = e;
     showInstall();
+    setTimeout(mostrarBalao, 2500);
   });
-  window.addEventListener('appinstalled', () => { offer = null; removeInstall(); });
+  window.addEventListener('appinstalled', () => { offer = null; removeInstall(); fecharBalao(); });
   showInstall();
   // o menu pode ser remontado por outros scripts: confere ao abrir
   doc.addEventListener('click', e => { if (e.target && e.target.closest && e.target.closest('#moreMenuBtn')) setTimeout(showInstall, 0); }, true);
