@@ -23,6 +23,9 @@
   const CARDIO_DUR_KEY = 'agenda_cardio_dur_v1'; // duração em minutos
   const CARDIO_PREFIX = 'cardiodia-';            // não colide com o 'cardio-<timestamp>' do avulso
   const NIGHT_MIGRATION_KEY = 'agenda_treino_noite_v1';
+  // 19/11/2026: treinos e cardio PAUSADOS a pedido do João (agenda mais leve). O plano ficou salvo no Google Drive
+  // ("Agenda - Treinos e Regar plantas (pausados em 19-11-2026)"). Para religar, voltar para false.
+  const TREINO_PAUSADO = true;
   const pageMode = document.body && document.body.dataset.treinoPage === '1';
   const isPrimaryAgenda = () => {
     try {
@@ -335,6 +338,13 @@
   const workoutText = w => `Treino ${w} · ${WORKOUTS[w].muscles}`;
 
   function ensureTasks() {
+    if (TREINO_PAUSADO && planId() === 'lagares') {
+      // pausado: tira da agenda os treinos e cardios futuros ainda não feitos e não gera novos
+      const t0p = today(), lista = readTasks();
+      const resto = lista.filter(t => !(t && !t.done && t.date >= t0p && (String(t.id).startsWith('treino-') || String(t.id).startsWith(CARDIO_PREFIX))));
+      if (resto.length !== lista.length) { writeTasks(resto); return true; }
+      return false;
+    }
     const meta = readJSON(META_KEY, {}) || {};
     const t0 = today();
     const target = addDays(t0, HORIZON);
