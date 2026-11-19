@@ -23,8 +23,9 @@
   const CARDIO_DUR_KEY = 'agenda_cardio_dur_v1'; // duração em minutos
   const CARDIO_PREFIX = 'cardiodia-';            // não colide com o 'cardio-<timestamp>' do avulso
   const NIGHT_MIGRATION_KEY = 'agenda_treino_noite_v1';
-  // 19/11/2026: treinos e cardio PAUSADOS a pedido do João (agenda mais leve). O plano ficou salvo no Google Drive
-  // ("Agenda - Treinos e Regar plantas (pausados em 19-11-2026)"). Para religar, voltar para false.
+  // 19/11/2026: treinos e cardio do João EXCLUÍDOS da agenda (pedido dele: agenda mais leve). O projeto ficou no Google
+  // Drive ("Agenda - Treinos e Regar plantas (pausados em 19-11-2026)", treino.js e treino.html de backup).
+  // O plano da Ana continua igual. Para trazer de volta, voltar TREINO_PAUSADO para false.
   const TREINO_PAUSADO = true;
   const pageMode = document.body && document.body.dataset.treinoPage === '1';
   const isPrimaryAgenda = () => {
@@ -68,7 +69,7 @@
   }
   function planId() {
     if (accountEmail() === ANA_EMAIL) return 'ana';
-    if (isPrimaryAgenda()) return 'lagares';
+    if (isPrimaryAgenda()) return TREINO_PAUSADO ? '' : 'lagares';
     return '';
   }
 
@@ -907,7 +908,19 @@
   }
 
   /* -------------------------------- init --------------------------------- */
+  function limparExcluidos() {
+    if (!TREINO_PAUSADO || accountEmail() === ANA_EMAIL || !isPrimaryAgenda()) return false;
+    const hoje = today(), lista = readTasks();
+    const fora = t => t && String(t.date || '') >= hoje && (String(t.id).startsWith('treino-') || String(t.id).startsWith(CARDIO_PREFIX)
+      || String(t.id).startsWith('rec-av-regar-plantas-'));
+    const resto = lista.filter(t => !fora(t));
+    if (resto.length === lista.length) return false;
+    writeTasks(resto);
+    return true;
+  }
+
   function init() {
+    if (limparExcluidos()) { window.location.reload(); return; }
     if (planId() === 'lagares') migrateNightTraining();
     if (planId() && ensureTasks()) { window.location.reload(); return; }
     ensureStyles();
