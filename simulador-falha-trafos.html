@@ -156,13 +156,13 @@ button.peq{padding:9px 12px;font-size:13px}
   <div class="tw"><table id="tab26"></table></div>
   <div class="formula">
     <h2>Como a taxa é calculada</h2>
-    <div class="fbox" role="img" aria-label="Taxa igual às falhas dos últimos 12 meses dividas pelos transformadores em operação, vezes 100">
+    <div class="fbox" role="img" aria-label="Taxa igual às falhas dos 11 meses anteriores mais as do mês atual, divididas pelo parque, vezes 100">
       <span class="fchip r">% de falha do mês</span>
       <span class="fop">=</span>
       <div class="ffrac">
-        <div class="fnum"><span class="fchip f">falhas de 2025 dos meses seguintes</span><span class="fop">+</span><span class="fchip f">falhas de 2026 até o mês</span></div>
+        <div class="fnum"><span class="fchip f">falhas dos 11 meses anteriores</span><span class="fop">+</span><span class="fchip f">falhas do mês atual</span></div>
         <div class="fline"></div>
-        <div class="fden"><span class="fchip f">transformadores em operação no mês</span></div>
+        <div class="fden"><span class="fchip f">parque do mês</span></div>
       </div>
       <span class="fop">× 100</span>
     </div>
@@ -204,13 +204,13 @@ button.peq{padding:9px 12px;font-size:13px}
   <div class="tw"><table id="tab"></table></div>
   <div class="formula">
     <h2>Como a taxa é calculada</h2>
-    <div class="fbox" role="img" aria-label="Taxa igual às falhas dos últimos 12 meses dividas pelos transformadores em operação, vezes 100">
+    <div class="fbox" role="img" aria-label="Taxa igual às falhas dos 11 meses anteriores mais as do mês atual, divididas pelo parque, vezes 100">
       <span class="fchip r">% de falha do mês</span>
       <span class="fop">=</span>
       <div class="ffrac">
-        <div class="fnum"><span class="fchip f">falhas de 2026 dos meses seguintes</span><span class="fop">+</span><span class="fchip e">falhas previstas de 2027 até o mês</span></div>
+        <div class="fnum"><span class="fchip f">falhas dos 11 meses anteriores</span><span class="fop">+</span><span class="fchip f">falhas do mês atual</span></div>
         <div class="fline"></div>
-        <div class="fden"><span class="fchip f">parque de dez/2026</span><span class="fop">+</span><span class="fchip e">novos instalados até o mês</span></div>
+        <div class="fden"><span class="fchip f">parque do mês</span></div>
       </div>
       <span class="fop">× 100</span>
     </div>
@@ -425,8 +425,8 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
     $('k26Parque').textContent = fmtN(a.parqueFim);
     $('k26Real25').textContent = fmtN(a.tot25);
     var acima = dif.filter(function(d){ return d > 0; }).length;
-    $('fx26').innerHTML = 'Em dezembro, com os números atuais: <b>' + fmtN(a.tot26) + ' ÷ ' + fmtN(a.parqueFim) + ' = ' + fmtP(a.taxaAno) + '</b>';
-    $('fx27').innerHTML = 'Em dezembro, com os números atuais: <b>' + fmtN(r.totFc) + ' ÷ ' + fmtN(r.parqueFim) + ' = ' + fmtP(r.taxaAno) + '</b>';
+    $('fx26').innerHTML = 'Em dezembro, com os números atuais: <b>(' + fmtN(a.tot26 - dados.real[11]) + ' + ' + fmtN(dados.real[11]) + ') ÷ ' + fmtN(a.parqueFim) + ' × 100 = ' + fmtP(a.taxaAno) + '</b>';
+    $('fx27').innerHTML = 'Em dezembro, com os números atuais: <b>(' + fmtN(r.totFc - r.fc[11]) + ' + ' + fmtN(r.fc[11]) + ') ÷ ' + fmtN(r.parqueFim) + ' × 100 = ' + fmtP(r.taxaAno) + '</b>';
     $('notaMeta').textContent = 'A meta é fixa. Diferença positiva significa % de falha acima da meta; negativa, abaixo da meta (melhor). A taxa calculada está acima da meta em ' + acima + ' dos 12 meses.';
     $('rFcAdj').hidden = !adjFc; $('rInstAdj').hidden = !adjInst;
     $('adjFcOut').textContent = (adjFc > 0 ? '+' : '') + adjFc + '%';
