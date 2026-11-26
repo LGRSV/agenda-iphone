@@ -63,7 +63,8 @@ body.destrav td input.fx:focus{outline:2px solid #ffb74d;border-color:transparen
 svg{display:block;width:100%;height:auto}
 .leg2{color:#a6acb8;font-size:11px;font-weight:700;margin:8px 4px 0}
 .leg2 i{display:inline-block;width:18px;height:0;border-top:3px solid #78d88b;vertical-align:middle;margin-right:5px}
-.leg2 i.t{border-top:2px dashed #ffb74d}
+.leg2 i.t{border-top:2px dashed #ffb74d;position:relative}
+.leg2 i.t::after{content:"";position:absolute;left:50%;top:-5.5px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:#ffb74d}
 .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
 button{font:inherit;font-size:14px;font-weight:800;color:#f7f8fb;background:#2a2d35;border:1px solid #3b404a;border-radius:12px;padding:11px 16px;cursor:pointer}
 button:active{background:#3b404a}
@@ -349,9 +350,18 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
       var z = series[si];
       s += '<polyline points="' + z.v.map(function(t, i){ return x(i).toFixed(1) + ',' + y(t).toFixed(1); }).join(' ') + '" fill="none" stroke="' + z.cor + '" stroke-width="' + (z.tracejado ? traco - 0.5 : traco) + '"' + (z.tracejado ? ' stroke-dasharray="6 5"' : '') + ' stroke-linejoin="round"/>';
     }
+    /* pontos sobre a linha tracejada (meta) */
+    series.forEach(function(z){
+      if (!z.tracejado) return;
+      z.v.forEach(function(t, i){
+        s += '<circle class="pt-meta" cx="' + x(i).toFixed(1) + '" cy="' + y(t).toFixed(1) + '" r="' + (raio * 0.9).toFixed(1) + '" fill="' + z.cor + '" stroke="#202228" stroke-width="1.5"/>';
+      });
+    });
     princ.forEach(function(t, i){
       var rotulo = !estreito || i === 0 || i === 11 || i === iMin || i === iMax;
-      var abaixo = (i === iMin || i === 0) && estreito;
+      /* rótulo abaixo do ponto só quando a meta não está embaixo dele */
+      var metaAbaixo = series.some(function(z){ return z.tracejado && z.v[i] < t; });
+      var abaixo = (i === iMin || i === 0) && estreito && !metaAbaixo;
       s += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(t).toFixed(1) + '" r="' + raio + '" fill="' + series[0].cor + '"/>' +
            (rotulo ? '<text x="' + x(i).toFixed(1) + '" y="' + (abaixo ? y(t) + fsv * 1.7 : y(t) - fsv * 0.85).toFixed(1) + '" text-anchor="middle" fill="#f7f8fb" stroke="#202228" stroke-width="3.5" stroke-linejoin="round" paint-order="stroke" font-size="' + fsv + '" font-weight="700">' + fmtP(t) + '</text>' : '') +
            '<text x="' + x(i).toFixed(1) + '" y="' + (H - fs * 0.8).toFixed(1) + '" text-anchor="middle" fill="#a6acb8" font-size="' + (estreito ? 9 : Math.max(11, fs * 0.92)) + '">' + MESES[i] + '</text>';
