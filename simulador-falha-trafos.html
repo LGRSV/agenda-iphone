@@ -74,16 +74,61 @@ button:active{background:#3b404a}
 .note summary{cursor:pointer;font-weight:800;color:#a6acb8}
 .note p{margin:8px 0 0}
 .note code{background:#2a2d35;border-radius:6px;padding:1px 5px;font-size:11px}
+
+.head{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;margin:6px 0 14px}
+.head h1{margin:0}
+.headr{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.headr .tabs{margin:0}
+button.peq{padding:9px 12px;font-size:13px}
+.layout{display:block}
+.col-vis{display:contents}
+/* celular e telas estreitas: o gráfico fica fixo no topo enquanto a planilha rola por baixo */
+.chartwrap{position:sticky;top:0;z-index:20;background:#17181c;padding:8px 0 6px;box-shadow:0 8px 10px -8px rgba(0,0,0,.7)}
+.col-plan h2:first-child{margin-top:18px}
+/* computador: planilha à esquerda, cartões + gráfico + cenários à direita, tudo na mesma tela */
+@media (min-width:1200px){
+  main{max-width:1640px}
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) clamp(380px,30vw,520px);gap:20px;align-items:start}
+  .col-plan{grid-column:1;grid-row:1;min-width:0}
+  .col-vis{display:block;grid-column:2;grid-row:1;min-width:0}
+  .col-plan h2:first-child{margin-top:0}
+  .chartwrap{position:static;padding:0;box-shadow:none;margin-top:10px;background:transparent}
+  .col-vis h2{margin:16px 0 8px}
+  .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .card{padding:9px 12px}.card b{font-size:19px;margin-top:2px}
+  .card:not(.main) .ex{display:none}
+  .card small{font-size:10.5px}
+  .col-vis h2{margin:12px 0 6px}
+  .chartwrap{margin-top:8px}
+  .ajuda{margin-bottom:12px}
+}
+/* mouse (não toque): planilha compacta para caber ao lado do gráfico */
+@media (min-width:1200px) and (pointer:fine){
+  table{min-width:0}
+  th,td{padding:7px 1px;font-size:12.5px}
+  th:first-child,td:first-child{min-width:128px;max-width:128px;padding-left:10px;padding-right:6px}
+  .rs{font-size:10px}
+  td input{width:53px;font-size:13px;padding:6px 3px}
+  td.tot{padding-right:8px}
+  tr.taxa td{font-size:13px}
+  tr.grp td{padding:0}
+}
 [hidden]{display:none!important}
-@media (max-width:520px){h1{font-size:18px}.card b{font-size:19px}th:first-child,td:first-child{min-width:118px;max-width:118px}.rs{font-size:10px}}
+@media (max-width:520px){.headr{width:100%;align-items:stretch}.headr .tabs{width:100%}.headr .tabs button{flex:1}button.peq{flex:1 1 0;font-size:12px;padding:10px 6px}h1{font-size:18px}.card b{font-size:19px}th:first-child,td:first-child{min-width:118px;max-width:118px}.rs{font-size:10px}}
 </style>
 </head>
 <body>
 <main>
-<h1>Taxa de falha de transformadores</h1>
-<div class="tabs" role="tablist">
-  <button type="button" role="tab" id="bt2026" aria-selected="false" data-aba="2026">2026</button>
-  <button type="button" role="tab" id="bt2027" aria-selected="true" data-aba="2027">2027</button>
+<div class="head">
+  <h1>Taxa de falha de transformadores</h1>
+  <div class="headr">
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="bt2026" aria-selected="false" data-aba="2026">2026</button>
+      <button type="button" role="tab" id="bt2027" aria-selected="true" data-aba="2027">2027</button>
+    </div>
+    <button id="trava" type="button" class="peq">Editar dados históricos</button>
+    <button id="reset" type="button" class="peq">Voltar aos valores da planilha</button>
+  </div>
 </div>
 
 <details class="ajuda" open>
@@ -97,65 +142,70 @@ button:active{background:#3b404a}
 
 <section id="aba2026" hidden>
 <p class="sub">Como foi a taxa de falha ao longo de 2026, mês a mês.</p>
-<div class="cards">
-  <div class="card main"><small>TAXA EM DEZ/2026</small><b id="k26Taxa">–</b><span class="ex" id="k26Ex"></span></div>
-  <div class="card"><small>FALHAS EM 2026</small><b id="k26Falhas">–</b><span class="ex">realizado + previsão (nov e dez)</span></div>
-  <div class="card"><small>TRANSFORMADORES EM DEZ/2026</small><b id="k26Parque">–</b><span class="ex">parque em operação</span></div>
-  <div class="card"><small>FALHAS EM 2025</small><b id="k26Real25">–</b><span class="ex">ano anterior (já aconteceu)</span></div>
+<div class="layout">
+ <div class="col-vis">
+  <div class="cards">
+    <div class="card main"><small>TAXA EM DEZ/2026</small><b id="k26Taxa">–</b><span class="ex" id="k26Ex"></span></div>
+    <div class="card"><small>FALHAS EM 2026</small><b id="k26Falhas">–</b><span class="ex">realizado + previsão (nov e dez)</span></div>
+    <div class="card"><small>TRANSFORMADORES EM DEZ/2026</small><b id="k26Parque">–</b><span class="ex">parque em operação</span></div>
+    <div class="card"><small>FALHAS EM 2025</small><b id="k26Real25">–</b><span class="ex">ano anterior (já aconteceu)</span></div>
+  </div>
+  <div class="chartwrap">
+    <div class="chart"><svg id="chart26" viewBox="0 0 720 300" role="img" aria-label="Taxa de falha móvel por mês em 2026"></svg></div>
+    <p class="leg2"><i></i>calculada pela fórmula &nbsp; <i class="t"></i>meta</p>
+  </div>
+ </div>
+ <div class="col-plan">
+  <h2>Os números por trás</h2>
+  <p class="leg"><span><i class="sw f"></i>Histórico (não muda)</span><span><i class="sw r"></i>Resultado calculado</span></p>
+  <div class="tw"><table id="tab26"></table></div>
+  <details class="note">
+    <summary>Ver a fórmula</summary>
+    <p><code>Taxa(mês) = (falhas de 2025 dos meses seguintes + falhas de 2026 até o mês) ÷ transformadores em operação no mês</code>. Em dezembro a janela é só 2026, então a taxa é <code>total de falhas do ano ÷ parque de dezembro</code>.</p>
+    <p id="notaMeta"></p>
+  </details>
+ </div>
 </div>
-<h2>Taxa de falha dos últimos 12 meses, mês a mês</h2>
-<div class="chart"><svg id="chart26" viewBox="0 0 720 300" role="img" aria-label="Taxa de falha móvel por mês em 2026"></svg></div>
-<p class="leg2"><i></i>calculada pela fórmula &nbsp; <i class="t"></i>meta</p>
-<h2>Os números por trás</h2>
-<p class="leg"><span><i class="sw f"></i>Histórico (não muda)</span><span><i class="sw r"></i>Resultado calculado</span></p>
-<div class="tw"><table id="tab26"></table></div>
-<details class="note">
-  <summary>Ver a fórmula</summary>
-  <p><code>Taxa(mês) = (falhas de 2025 dos meses seguintes + falhas de 2026 até o mês) ÷ transformadores em operação no mês</code>. Em dezembro a janela é só 2026, então a taxa é <code>total de falhas do ano ÷ parque de dezembro</code>.</p>
-  <p id="notaMeta"></p>
-</details>
 </section>
 
 <section id="aba2027">
-<p class="sub">Como deve ficar a taxa de falha em 2027, mês a mês. Mexa nos números azuis ou nas barras de ajuste para testar cenários.</p>
-<div class="cards">
-  <div class="card main"><small>TAXA EM DEZ/2027</small><b id="kTaxa">–</b><span class="ex" id="kEx"></span></div>
-  <div class="card"><small>FALHAS PREVISTAS EM 2027</small><b id="kFalhas">–</b><span class="ex">previsão (forecast)</span></div>
-  <div class="card"><small>TRANSFORMADORES EM DEZ/2027</small><b id="kParque">–</b><span class="ex">parque em operação</span></div>
-  <div class="card"><small>FALHAS EM 2026</small><b id="kReal">–</b><span class="ex">já aconteceram (nov e dez: previsão)</span></div>
-</div>
-
-<h2>Teste um cenário</h2>
-<div class="box ctrl">
-  <div>
-    <label for="adjFc">E se houver mais ou menos falhas em 2027 do que o previsto?</label>
-    <div class="line"><input type="range" id="adjFc" min="-50" max="50" step="1" value="0"><output id="adjFcOut">0%</output></div>
+<p class="sub">Como deve ficar a taxa de falha em 2027, mês a mês. Mexa nos números azuis ou nas barras de ajuste e veja o gráfico mudar.</p>
+<div class="layout">
+ <div class="col-vis">
+  <div class="cards">
+    <div class="card main"><small>TAXA EM DEZ/2027</small><b id="kTaxa">–</b><span class="ex" id="kEx"></span></div>
+    <div class="card"><small>FALHAS PREVISTAS EM 2027</small><b id="kFalhas">–</b><span class="ex">previsão (forecast)</span></div>
+    <div class="card"><small>TRANSFORMADORES EM DEZ/2027</small><b id="kParque">–</b><span class="ex">parque em operação</span></div>
+    <div class="card"><small>FALHAS EM 2026</small><b id="kReal">–</b><span class="ex">já aconteceram (nov e dez: previsão)</span></div>
   </div>
-  <div>
-    <label for="adjInst">E se forem instalados mais ou menos transformadores novos?</label>
-    <div class="line"><input type="range" id="adjInst" min="-50" max="50" step="1" value="0"><output id="adjInstOut">0%</output></div>
+  <div class="chartwrap">
+    <div class="chart"><svg id="chart" viewBox="0 0 720 300" role="img" aria-label="Taxa de falha móvel por mês em 2027"></svg></div>
   </div>
+  <h2>Teste um cenário</h2>
+  <div class="box ctrl">
+    <div>
+      <label for="adjFc">E se houver mais ou menos falhas em 2027 do que o previsto?</label>
+      <div class="line"><input type="range" id="adjFc" min="-50" max="50" step="1" value="0"><output id="adjFcOut">0%</output></div>
+    </div>
+    <div>
+      <label for="adjInst">E se forem instalados mais ou menos transformadores novos?</label>
+      <div class="line"><input type="range" id="adjInst" min="-50" max="50" step="1" value="0"><output id="adjInstOut">0%</output></div>
+    </div>
+  </div>
+ </div>
+ <div class="col-plan">
+  <h2>Os números por trás</h2>
+  <p class="leg"><span><i class="sw f"></i>Histórico (não muda)</span><span><i class="sw e"></i>Você pode alterar</span><span><i class="sw r"></i>Resultado calculado</span></p>
+  <div class="tw"><table id="tab"></table></div>
+  <details class="note">
+    <summary>Ver a fórmula</summary>
+    <p><code>Transformadores em operação(mês) = parque de dez/2026 + novos instalados até o mês</code>.</p>
+    <p><code>Taxa(mês) = (falhas de 2026 dos meses seguintes + falhas previstas de 2027 até o mês) ÷ transformadores em operação no mês</code>. Em dezembro, a taxa é <code>falhas previstas no ano ÷ parque de dez/2027</code>.</p>
+    <p>As barras de cenário multiplicam as falhas previstas e as instalações (arredondando para número inteiro); com 0% o resultado é o da planilha. O histórico de 2026 é o mesmo da aba 2026.</p>
+  </details>
+ </div>
 </div>
-
-<h2>Taxa de falha dos últimos 12 meses, mês a mês</h2>
-<div class="chart"><svg id="chart" viewBox="0 0 720 300" role="img" aria-label="Taxa de falha móvel por mês em 2027"></svg></div>
-
-<h2>Os números por trás</h2>
-<p class="leg"><span><i class="sw f"></i>Histórico (não muda)</span><span><i class="sw e"></i>Você pode alterar</span><span><i class="sw r"></i>Resultado calculado</span></p>
-<div class="tw"><table id="tab"></table></div>
-
-<details class="note">
-  <summary>Ver a fórmula</summary>
-  <p><code>Transformadores em operação(mês) = parque de dez/2026 + novos instalados até o mês</code>.</p>
-  <p><code>Taxa(mês) = (falhas de 2026 dos meses seguintes + falhas previstas de 2027 até o mês) ÷ transformadores em operação no mês</code>. Em dezembro, a taxa é <code>falhas previstas no ano ÷ parque de dez/2027</code>.</p>
-  <p>As barras de cenário multiplicam as falhas previstas e as instalações (arredondando para número inteiro); com 0% o resultado é o da planilha. O histórico de 2026 é o mesmo da aba 2026.</p>
-</details>
 </section>
-
-<div class="btns">
-  <button id="trava" type="button">Editar dados históricos</button>
-  <button id="reset" type="button">Voltar aos valores da planilha</button>
-</div>
 </main>
 
 <script id="logica">
@@ -273,7 +323,7 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
 
   /* series: [{v:[...], cor, tracejado}] ; a primeira é a principal */
   function desenhar(el, series){
-    var W = Math.max(300, Math.round(el.getBoundingClientRect().width || 720)), H = W < 520 ? 260 : 300;
+    var W = Math.max(300, Math.round(el.getBoundingClientRect().width || 720)), H = W < 520 ? 220 : 300;
     var L = 52, R = 14, T = 24, B = 32, estreito = W < 520, ins = estreito ? 12 : 22;
     el.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
     var todos = [].concat.apply([], series.map(function(z){ return z.v; }));
@@ -361,6 +411,8 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
   function ler(txt){ var t = String(txt).replace(/\./g, '').replace(',', '.').trim(); if (t === '') return null; var n = Number(t); return isFinite(n) && n >= 0 ? n : null; }
 
   carregar(); montar();
+  /* no computador a ajuda abre recolhida, para planilha e gráfico caberem juntos na tela */
+  if (window.matchMedia && matchMedia('(min-width:1200px)').matches) document.querySelector('.ajuda').open = false;
   function aoDigitar(e){
     var el = e.target; if (!el.dataset || !el.dataset.k || el.readOnly) return;
     var n = ler(el.value);
