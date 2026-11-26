@@ -313,6 +313,7 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
       $('ia' + i).textContent = fmtN(r.inst[i]);
       $('x26' + i).textContent = fmtP(a.taxa[i]);
       $('m26' + i).textContent = TAXA26_META[i].toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + '%';
+      if (i === 11) $('m26T').textContent = $('m26' + i).textContent; /* total da meta = meta de dezembro */
       $('d26' + i).textContent = fmtPP(dif[i]);
     }
     document.querySelectorAll('td[data-tot]').forEach(function(td){
