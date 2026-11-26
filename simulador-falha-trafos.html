@@ -32,11 +32,10 @@ h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 10px;text-tra
 .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #3b404a;border-radius:16px;background:#202228}
 table{border-collapse:collapse;width:100%;min-width:960px;font-variant-numeric:tabular-nums}
 th,td{padding:10px 2px;text-align:center;font-size:13px;white-space:nowrap}
-tbody tr:not(.grp){border-top:1px solid #2b2e35}
+tbody tr:not(.grp){border-top:1px solid #2b2e35;height:46px}
 thead th{color:#a6acb8;font-size:11px;font-weight:800;padding:12px 4px}
 th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:#202228;padding-left:12px;padding-right:8px;z-index:1;min-width:150px;max-width:150px;white-space:normal}
 .rt{font-weight:800;font-size:12px;color:#e6e8ee;line-height:1.25}
-.rs{font-weight:500;font-size:10.5px;color:#8b93a1;margin-top:2px;line-height:1.25}
 td.tot{font-weight:850;color:#f7f8fb;padding-right:12px;box-shadow:inset 1px 0 0 #3b404a}
 tr.grp td{padding:0;border-top:0;text-align:left;background:#191b20}
 tr.grp td:first-child{max-width:none}
@@ -103,14 +102,13 @@ button.peq{padding:9px 12px;font-size:13px}
   table{min-width:0}
   th,td{padding:7px 1px;font-size:12.5px}
   th:first-child,td:first-child{min-width:118px;max-width:118px;padding-left:10px;padding-right:5px}
-  .rs{font-size:10px}
   td input{width:49px;font-size:12.5px;padding:6px 2px}
   td.tot{padding-right:8px}
   tr.taxa td{font-size:13px}
   tr.grp td{padding:0}
 }
 [hidden]{display:none!important}
-@media (max-width:520px){.headr{width:100%;align-items:stretch}.headr .tabs{width:100%}.headr .tabs button{flex:1}button.peq{flex:1 1 0;font-size:12px;padding:10px 6px}h1{font-size:18px}.card b{font-size:19px}th:first-child,td:first-child{min-width:118px;max-width:118px}.rs{font-size:10px}}
+@media (max-width:520px){.headr{width:100%;align-items:stretch}.headr .tabs{width:100%}.headr .tabs button{flex:1}button.peq{flex:1 1 0;font-size:12px;padding:10px 6px}h1{font-size:18px}.card b{font-size:19px}th:first-child,td:first-child{min-width:118px;max-width:118px}}
 </style>
 </head>
 <body>
@@ -272,40 +270,40 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
     } catch (e) {}
   }
 
-  function rot(titulo, sub){ return '<td><div class="rt">' + titulo + '</div>' + (sub ? '<div class="rs">' + sub + '</div>' : '') + '</td>'; }
-  function linhaInput(titulo, sub, chave, tipo){
+  function rot(titulo){ return '<td><div class="rt">' + titulo + '</div></td>'; }
+  function linhaInput(titulo, chave, tipo){
     var tds = dados[chave].map(function(v, i){
       return '<td><input type="text" inputmode="numeric" class="' + tipo + '"' + (tipo === 'fx' ? ' readonly' : '') + ' data-k="' + chave + '" data-i="' + i + '" value="' + fmtN(v) + '" aria-label="' + titulo + ' ' + MESES[i] + '"></td>';
     }).join('');
-    return '<tr>' + rot(titulo, sub) + tds + '<td class="tot" data-tot="' + chave + '"></td></tr>';
+    return '<tr>' + rot(titulo) + tds + '<td class="tot" data-tot="' + chave + '"></td></tr>';
   }
-  function linhaCalc(titulo, sub, cls, id, rid){
-    return '<tr class="' + cls + '"' + (rid ? ' id="' + rid + '"' : '') + '>' + rot(titulo, sub) + MESES.map(function(_, i){ return '<td id="' + id + i + '"></td>'; }).join('') + '<td class="tot" id="' + id + 'T"></td></tr>';
+  function linhaCalc(titulo, cls, id, rid){
+    return '<tr class="' + cls + '"' + (rid ? ' id="' + rid + '"' : '') + '>' + rot(titulo) + MESES.map(function(_, i){ return '<td id="' + id + i + '"></td>'; }).join('') + '<td class="tot" id="' + id + 'T"></td></tr>';
   }
   function grupo(cls, titulo, sub){ return '<tr class="grp ' + cls + '"><td colspan="14"><span class="gt">' + titulo + '<small>' + sub + '</small></span></td></tr>'; }
   function cab(){ return '<thead><tr><th></th>' + MESES.map(function(m){ return '<th>' + m + '</th>'; }).join('') + '<th>TOTAL</th></tr></thead><tbody>'; }
   function montar(){
     $('tab').innerHTML = cab() +
       grupo('g-f', 'Histórico', 'já aconteceu, não muda') +
-      linhaInput('REAL 2026', 'falhas de 2026 (nov e dez: previsão)', 'real', 'fx') +
-      linhaInput('PARQUE 2026', 'transformadores em operação no mês', 'parque', 'fx') +
+      linhaInput('REAL 2026', 'real', 'fx') +
+      linhaInput('PARQUE 2026', 'parque', 'fx') +
       grupo('g-e', 'Você pode alterar', 'teste cenários') +
-      linhaInput('FORECAST 2027', 'falhas previstas em 2027', 'fc', 'ed') +
-      linhaCalc('FORECAST AJUSTADO', 'previsão com o cenário aplicado', 'calc', 'fa', 'rFcAdj') +
-      linhaInput('QTE TR INST', 'transformadores novos instalados no mês', 'inst', 'ed') +
-      linhaCalc('INSTALADOS AJUSTADO', 'instalações com o cenário aplicado', 'calc', 'ia', 'rInstAdj') +
+      linhaInput('FORECAST 2027', 'fc', 'ed') +
+      linhaCalc('FORECAST AJUSTADO', 'calc', 'fa', 'rFcAdj') +
+      linhaInput('QTE TR INST', 'inst', 'ed') +
+      linhaCalc('INSTALADOS AJUSTADO', 'calc', 'ia', 'rInstAdj') +
       grupo('g-r', 'Resultado', 'calculado, não digite aqui') +
-      linhaCalc('PARQUE 2027', 'transformadores em operação no fim do mês', 'calc', 'p') +
-      linhaCalc('TAXA 2027', 'falhas dos últimos 12 meses ÷ parque', 'taxa', 'x') + '</tbody>';
+      linhaCalc('PARQUE 2027', 'calc', 'p') +
+      linhaCalc('TAXA 2027', 'taxa', 'x') + '</tbody>';
     $('tab26').innerHTML = cab() +
       grupo('g-f', 'Histórico', 'já aconteceu, não muda') +
-      linhaInput('REAL 2025', 'falhas de 2025', 'real25', 'fx') +
-      linhaInput('REALIZADO / FORECAST 2026', 'falhas de 2026 (nov e dez: previsão)', 'real', 'fx') +
-      linhaInput('PARQUE 2026', 'transformadores em operação no mês', 'parque', 'fx') +
+      linhaInput('REAL 2025', 'real25', 'fx') +
+      linhaInput('REALIZADO / FORECAST 2026', 'real', 'fx') +
+      linhaInput('PARQUE 2026', 'parque', 'fx') +
       grupo('g-r', 'Resultado', 'calculado, não digite aqui') +
-      linhaCalc('TAXA 2026', 'calculada pela fórmula', 'taxa', 'x26') +
-      linhaCalc('META 2026', 'meta de % de falha do mês', 'inf', 'm26') +
-      linhaCalc('DIFERENÇA PARA A META', 'taxa menos meta (pontos %): positivo = acima da meta', 'dif', 'd26') + '</tbody>';
+      linhaCalc('TAXA 2026', 'taxa', 'x26') +
+      linhaCalc('META 2026', 'inf', 'm26') +
+      linhaCalc('DIFERENÇA PARA A META', 'dif', 'd26') + '</tbody>';
   }
 
   /* series: [{v:[...], cor, tracejado}] ; a primeira é a principal */
