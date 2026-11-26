@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v299-treinos-excluidos';
+const CACHE = 'agenda-lagares-v300-simulador-falha-trafos';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=15" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
@@ -71,7 +71,9 @@ self.addEventListener('fetch', event => {
       const isCerebro = new URL(request.url).pathname.endsWith('/cerebro.html');
       // rotas.html também (Leaflet, localizacao.js, local-tarefa.js, rotas.js, rotas-tela.js)
       const isRotas = new URL(request.url).pathname.endsWith('/rotas.html');
-      const isAuxPage = isMapa || isCerebro || isRotas || isFinance || isGame || isTraining || isInvest || isCarteira || isTreinoAna || isImportar || isEquip || isMarket;
+      // simulador-falha-trafos.html é uma página independente (sem login nem scripts da agenda)
+      const isSimuladorTrafos = new URL(request.url).pathname.endsWith('/simulador-falha-trafos.html');
+      const isAuxPage = isSimuladorTrafos || isMapa || isCerebro || isRotas || isFinance || isGame || isTraining || isInvest || isCarteira || isTreinoAna || isImportar || isEquip || isMarket;
       // A agenda principal tem links para financeiro.html e gamificacao.html no menu,
       // então o teste por conteúdo acima a confundia com uma página auxiliar e o
       // Web Push nunca era carregado (só o aviso antigo, que funciona com o app aberto).

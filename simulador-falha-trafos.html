@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17181c">
+<title>Simulador de taxa de falha de transformadores</title>
+<style>
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;background:#17181c}
+body{margin:0;background:#17181c;color:#f7f8fb;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:16px 16px 40px}
+main{max-width:1100px;margin:0 auto}
+h1{font-size:20px;margin:6px 0 4px}
+.sub{color:#a6acb8;font-size:13px;margin:0 0 16px;line-height:1.4}
+h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:22px 0 8px;text-transform:uppercase}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.card{border:1px solid #3b404a;border-radius:16px;background:#202228;padding:12px 14px}
+.card small{display:block;color:#a6acb8;font-size:11px;font-weight:700}
+.card b{display:block;font-size:22px;margin-top:4px;font-weight:850}
+.card.main{background:linear-gradient(135deg,#123a5c,#202228)}.card.main b{color:#6ec9ff}
+.box{border:1px solid #3b404a;border-radius:16px;background:#202228;padding:14px 16px}
+.ctrl{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.ctrl label{display:block;font-size:12px;font-weight:700;color:#a6acb8;margin-bottom:6px}
+.ctrl .line{display:flex;align-items:center;gap:10px}
+.ctrl input[type=range]{flex:1;accent-color:#6ec9ff;min-width:0}
+.ctrl output{min-width:58px;text-align:right;font-weight:850;font-variant-numeric:tabular-nums}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #3b404a;border-radius:16px;background:#202228}
+table{border-collapse:collapse;width:100%;min-width:900px;font-variant-numeric:tabular-nums}
+th,td{padding:6px 4px;text-align:right;font-size:13px;border-top:1px solid #2b2e35;white-space:nowrap}
+thead th{border-top:0;color:#a6acb8;font-size:11px;font-weight:800}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:#202228;padding-left:12px;font-weight:800;font-size:11px;color:#c9cdd6;z-index:1}
+td.tot{font-weight:850;color:#f7f8fb}
+tr.calc td{color:#6ec9ff;font-weight:750}
+tr.calc td:first-child{color:#6ec9ff}
+tr.taxa td{color:#78d88b;font-weight:850}
+tr.taxa td:first-child{color:#78d88b}
+td input{width:64px;font:inherit;font-size:16px;color:#f7f8fb;background:#17181c;border:1px solid #3b404a;border-radius:8px;padding:6px 6px;text-align:right}
+td input:focus{outline:2px solid #6ec9ff;border-color:transparent}
+.chart{border:1px solid #3b404a;border-radius:16px;background:#202228;padding:8px}
+svg{display:block;width:100%;height:auto}
+.btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+button{font:inherit;font-size:14px;font-weight:800;color:#f7f8fb;background:#2a2d35;border:1px solid #3b404a;border-radius:12px;padding:10px 16px;cursor:pointer}
+button:active{background:#3b404a}
+.note{color:#a6acb8;font-size:12px;line-height:1.5;margin-top:14px}
+.note code{background:#2a2d35;border-radius:6px;padding:1px 5px;font-size:11px}
+@media (max-width:520px){h1{font-size:18px}.card b{font-size:19px}}
+</style>
+</head>
+<body>
+<main>
+<h1>Taxa de falha de transformadores — 2027</h1>
+<p class="sub">Taxa móvel de 12 meses com o parque real: a cada mês de 2027, falhas dos últimos 12 meses ÷ parque instalado no fim do mês. Edite qualquer número dos campos da tabela, ou use os ajustes para testar cenários.</p>
+
+<div class="cards">
+  <div class="card main"><small>TAXA EM DEZ/2027</small><b id="kTaxa">–</b></div>
+  <div class="card"><small>FALHAS FORECAST 2027</small><b id="kFalhas">–</b></div>
+  <div class="card"><small>PARQUE EM DEZ/2027</small><b id="kParque">–</b></div>
+  <div class="card"><small>FALHAS REAIS 2026</small><b id="kReal">–</b></div>
+</div>
+
+<h2>Ajustes de cenário</h2>
+<div class="box ctrl">
+  <div>
+    <label for="adjFc">Forecast 2027 (falhas): <span id="adjFcTxt"></span></label>
+    <div class="line"><input type="range" id="adjFc" min="-50" max="50" step="1" value="0"><output id="adjFcOut">0%</output></div>
+  </div>
+  <div>
+    <label for="adjInst">Transformadores instalados em 2027 (QTE TR INST): <span id="adjInstTxt"></span></label>
+    <div class="line"><input type="range" id="adjInst" min="-50" max="50" step="1" value="0"><output id="adjInstOut">0%</output></div>
+  </div>
+</div>
+
+<h2>Taxa móvel por mês</h2>
+<div class="chart"><svg id="chart" viewBox="0 0 720 300" role="img" aria-label="Taxa de falha móvel por mês em 2027"></svg></div>
+
+<h2>Planilha</h2>
+<div class="tw"><table id="tab"></table></div>
+
+<div class="btns"><button id="reset" type="button">Voltar aos valores da planilha</button></div>
+<p class="note">
+Fórmulas (iguais às da planilha): <code>Parque 2027(jan) = Parque dez/2026 + instalados(jan)</code>, depois <code>Parque(mês) = Parque(mês anterior) + instalados(mês)</code>.
+<code>Taxa(mês) = (falhas reais de 2026 dos meses seguintes + forecast 2027 até o mês) ÷ Parque 2027(mês)</code>. O total do ano é <code>forecast total ÷ parque de dez/2027</code>.
+Os ajustes de cenário multiplicam o forecast e as instalações (arredondando para número inteiro); com 0% o resultado é o da planilha.
+Os valores acima são os da planilha SIMULADOR_PARA_HTML; falhas de meses ainda em curso devem ser conferidas com o fechamento oficial.
+</p>
+</main>
+
+<script id="logica">
+/* Lógica pura (testada em tests/simulador-falha-trafos.test.js). 12 posições, JAN..DEZ. */
+var MESES = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+var PADRAO = {
+  real:   [407,301,260,172,69,64,70,75,115,170,305,228],
+  fc:     [352,280,291,215,91,63,50,78,136,205,247,248],
+  parque: [91377,91549,91814,91976,92099,92267,92411,92550,92768,93074,93263,93452],
+  inst:   [167,166,171,159,157,206,305,267,216,170,167,143]
+};
+function soma(v, de, ate){ var s = 0; for (var i = de; i <= ate; i++) s += v[i]; return s; }
+function calcular(d, adjFc, adjInst){
+  var kf = 1 + (adjFc || 0) / 100, ki = 1 + (adjInst || 0) / 100;
+  var fc = d.fc.map(function(x){ return Math.round(x * kf); });
+  var inst = d.inst.map(function(x){ return Math.round(x * ki); });
+  var parque27 = [], taxa = [], acc = d.parque[11];
+  for (var m = 0; m < 12; m++){
+    acc += inst[m]; parque27.push(acc);
+    var falhas12 = (m < 11 ? soma(d.real, m + 1, 11) : 0) + soma(fc, 0, m);
+    taxa.push(falhas12 / acc);
+  }
+  var totFc = soma(fc, 0, 11);
+  return { fc: fc, inst: inst, parque27: parque27, taxa: taxa,
+           totReal: soma(d.real, 0, 11), totFc: totFc, totInst: soma(inst, 0, 11),
+           parqueFim: parque27[11], taxaAno: totFc / parque27[11] };
+}
+if (typeof module !== 'undefined') module.exports = { calcular: calcular, PADRAO: PADRAO, MESES: MESES };
+</script>
+
+<script id="tela">
+(function(){
+  var CHAVE = 'simulador-falha-trafos-v1';
+  var dados = clone(PADRAO), adjFc = 0, adjInst = 0;
+  var $ = function(id){ return document.getElementById(id); };
+  var fmtN = function(n){ return Math.round(n).toLocaleString('pt-BR'); };
+  var fmtP = function(x){ return (x * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%'; };
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+  function carregar(){
+    try {
+      var s = JSON.parse(localStorage.getItem(CHAVE) || 'null');
+      if (!s) return;
+      ['real','fc','parque','inst'].forEach(function(k){
+        if (Array.isArray(s.d && s.d[k]) && s.d[k].length === 12 && s.d[k].every(function(x){ return typeof x === 'number' && isFinite(x); })) dados[k] = s.d[k];
+      });
+      if (isFinite(s.adjFc)) adjFc = Math.max(-50, Math.min(50, +s.adjFc));
+      if (isFinite(s.adjInst)) adjInst = Math.max(-50, Math.min(50, +s.adjInst));
+    } catch (e) {}
+  }
+  function salvar(){ try { localStorage.setItem(CHAVE, JSON.stringify({ d: dados, adjFc: adjFc, adjInst: adjInst })); } catch (e) {} }
+
+  function linhaInput(rotulo, chave){
+    var tds = dados[chave].map(function(v, i){
+      return '<td><input type="text" inputmode="numeric" data-k="' + chave + '" data-i="' + i + '" value="' + v + '"></td>';
+    }).join('');
+    return '<tr><td>' + rotulo + '</td>' + tds + '<td class="tot" id="t_' + chave + '"></td></tr>';
+  }
+  function montar(){
+    var h = '<thead><tr><th>MÊS</th>' + MESES.map(function(m){ return '<th>' + m + '</th>'; }).join('') + '<th>TOTAL</th></tr></thead><tbody>';
+    h += linhaInput('REAL 2026', 'real');
+    h += linhaInput('FORECAST 2027', 'fc');
+    h += '<tr class="calc" id="rFcAdj"><td>FORECAST AJUSTADO</td>' + MESES.map(function(_, i){ return '<td id="fa' + i + '"></td>'; }).join('') + '<td class="tot" id="faT"></td></tr>';
+    h += linhaInput('PARQUE 2026', 'parque');
+    h += '<tr class="calc"><td>PARQUE 2027</td>' + MESES.map(function(_, i){ return '<td id="p' + i + '"></td>'; }).join('') + '<td class="tot" id="pT"></td></tr>';
+    h += '<tr class="taxa"><td>TAXA 2027</td>' + MESES.map(function(_, i){ return '<td id="x' + i + '"></td>'; }).join('') + '<td class="tot" id="xT"></td></tr>';
+    h += linhaInput('QTE TR INST', 'inst');
+    h += '<tr class="calc" id="rInstAdj"><td>INSTALADOS AJUSTADO</td>' + MESES.map(function(_, i){ return '<td id="ia' + i + '"></td>'; }).join('') + '<td class="tot" id="iaT"></td></tr>';
+    $('tab').innerHTML = h + '</tbody>';
+  }
+
+  function desenhar(r){
+    var el = $('chart'), W = Math.max(300, Math.round(el.getBoundingClientRect().width || 720)), H = W < 520 ? 260 : 300;
+    var L = 52, R = 14, T = 24, B = 32, estreito = W < 520, ins = estreito ? 12 : 22;
+    el.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    var min = Math.min.apply(null, r.taxa), max = Math.max.apply(null, r.taxa);
+    var pad = Math.max((max - min) * 0.35, 0.0005); min -= pad; max += pad;
+    var x = function(i){ return L + ins + (W - L - R - 2 * ins) * i / 11; };
+    var y = function(v){ return T + (H - T - B) * (1 - (v - min) / (max - min)); };
+    var iMin = r.taxa.indexOf(Math.min.apply(null, r.taxa)), iMax = r.taxa.indexOf(Math.max.apply(null, r.taxa));
+    var s = '';
+    for (var g = 0; g <= 4; g++){
+      var v = min + (max - min) * g / 4, yy = y(v);
+      s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '" stroke="#2b2e35"/>' +
+           '<text x="' + (L - 8) + '" y="' + (yy + 4) + '" text-anchor="end" fill="#a6acb8" font-size="11">' + fmtP(v) + '</text>';
+    }
+    var pts = r.taxa.map(function(v, i){ return x(i).toFixed(1) + ',' + y(v).toFixed(1); }).join(' ');
+    s += '<polyline points="' + pts + '" fill="none" stroke="#78d88b" stroke-width="2.5" stroke-linejoin="round"/>';
+    r.taxa.forEach(function(v, i){
+      var rotulo = !estreito || i === 0 || i === 11 || i === iMin || i === iMax;
+      s += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(v).toFixed(1) + '" r="3.5" fill="#78d88b"/>' +
+           (rotulo ? '<text x="' + x(i).toFixed(1) + '" y="' + (i === iMin && estreito ? y(v) + 19 : y(v) - 9).toFixed(1) + '" text-anchor="middle" fill="#f7f8fb" font-size="11" font-weight="700">' + fmtP(v) + '</text>' : '') +
+           '<text x="' + x(i).toFixed(1) + '" y="' + (H - 10) + '" text-anchor="middle" fill="#a6acb8" font-size="' + (estreito ? 9 : 11) + '">' + MESES[i] + '</text>';
+    });
+    el.innerHTML = s;
+  }
+
+  function atualizar(){
+    var r = calcular(dados, adjFc, adjInst);
+    for (var i = 0; i < 12; i++){
+      $('p' + i).textContent = fmtN(r.parque27[i]);
+      $('x' + i).textContent = fmtP(r.taxa[i]);
+      $('fa' + i).textContent = fmtN(r.fc[i]);
+      $('ia' + i).textContent = fmtN(r.inst[i]);
+    }
+    $('t_real').textContent = fmtN(r.totReal);
+    $('t_fc').textContent = fmtN(dados.fc.reduce(function(a, b){ return a + b; }, 0));
+    $('t_parque').textContent = fmtN(dados.parque[11]);
+    $('t_inst').textContent = fmtN(dados.inst.reduce(function(a, b){ return a + b; }, 0));
+    $('faT').textContent = fmtN(r.totFc);
+    $('iaT').textContent = fmtN(r.totInst);
+    $('pT').textContent = fmtN(r.parqueFim);
+    $('xT').textContent = fmtP(r.taxaAno);
+    $('kTaxa').textContent = fmtP(r.taxaAno);
+    $('kFalhas').textContent = fmtN(r.totFc);
+    $('kParque').textContent = fmtN(r.parqueFim);
+    $('kReal').textContent = fmtN(r.totReal);
+    $('rFcAdj').style.display = adjFc ? '' : 'none';
+    $('rInstAdj').style.display = adjInst ? '' : 'none';
+    $('adjFcOut').textContent = (adjFc > 0 ? '+' : '') + adjFc + '%';
+    $('adjInstOut').textContent = (adjInst > 0 ? '+' : '') + adjInst + '%';
+    desenhar(r);
+  }
+
+  function ler(txt){ var t = String(txt).replace(/\./g, '').replace(',', '.').trim(); if (t === '') return null; var n = Number(t); return isFinite(n) && n >= 0 ? n : null; }
+
+  montar(); carregar();
+  document.querySelectorAll('td input').forEach(function(el){
+    el.value = dados[el.dataset.k][+el.dataset.i];
+  });
+  $('adjFc').value = adjFc; $('adjInst').value = adjInst;
+  $('tab').addEventListener('input', function(e){
+    var el = e.target; if (!el.dataset || !el.dataset.k) return;
+    var n = ler(el.value);
+    el.style.borderColor = n === null ? '#ff7f91' : '';
+    if (n === null) return;
+    dados[el.dataset.k][+el.dataset.i] = n; salvar(); atualizar();
+  });
+  $('tab').addEventListener('focusout', function(e){
+    var el = e.target; if (el.dataset && el.dataset.k){ el.value = dados[el.dataset.k][+el.dataset.i]; el.style.borderColor = ''; }
+  });
+  $('adjFc').addEventListener('input', function(){ adjFc = +this.value; salvar(); atualizar(); });
+  $('adjInst').addEventListener('input', function(){ adjInst = +this.value; salvar(); atualizar(); });
+  $('reset').addEventListener('click', function(){
+    dados = clone(PADRAO); adjFc = adjInst = 0; salvar();
+    document.querySelectorAll('td input').forEach(function(el){ el.value = dados[el.dataset.k][+el.dataset.i]; el.style.borderColor = ''; });
+    $('adjFc').value = 0; $('adjInst').value = 0; atualizar();
+  });
+  atualizar();
+  var larg = 0; window.addEventListener('resize', function(){ var w = $('chart').getBoundingClientRect().width; if (Math.abs(w - larg) > 2){ larg = w; atualizar(); } });
+})();
+</script>
+</body>
+</html>
