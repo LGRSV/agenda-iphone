@@ -25,10 +25,6 @@ h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 10px;text-tra
 .ctrl .line{display:flex;align-items:center;gap:10px}
 .ctrl input[type=range]{flex:1;accent-color:#6ec9ff;min-width:0}
 .ctrl output{min-width:58px;text-align:right;font-weight:850;font-variant-numeric:tabular-nums}
-.ajuda{border:1px solid #3b404a;border-radius:16px;background:#1c2530;padding:12px 16px;margin:0 0 18px;font-size:13px;color:#c9cdd6}
-.ajuda summary{cursor:pointer;font-weight:800;color:#6ec9ff;font-size:14px}
-.ajuda ul{margin:10px 0 2px;padding-left:20px}.ajuda li{margin:6px 0}
-.ajuda b{color:#f7f8fb}
 .leg{display:flex;gap:14px;flex-wrap:wrap;color:#a6acb8;font-size:12px;font-weight:700;margin:0 2px 10px}
 .leg span{display:inline-flex;align-items:center;gap:6px}
 .sw{display:inline-block;width:14px;height:14px;border-radius:5px;border:1px solid}
@@ -101,7 +97,6 @@ button.peq{padding:9px 12px;font-size:13px}
   .card small{font-size:10.5px}
   .col-vis h2{margin:12px 0 6px}
   .chartwrap{margin-top:8px}
-  .ajuda{margin-bottom:12px}
 }
 /* mouse (não toque): planilha compacta para caber ao lado do gráfico */
 @media (min-width:1280px) and (pointer:fine){
@@ -131,15 +126,6 @@ button.peq{padding:9px 12px;font-size:13px}
     <button id="reset" type="button" class="peq">Voltar aos valores da planilha</button>
   </div>
 </div>
-
-<details class="ajuda" open>
-  <summary>Como ler esta tela</summary>
-  <ul>
-    <li><b>% de falha</b> (taxa de falha) é o total de falhas dos últimos 12 meses dividido pelo número de transformadores em operação, escrito em porcentagem. Exemplo: 2,4% de falha.</li>
-    <li>A taxa é <b>móvel</b>: em cada mês olhamos os últimos 12 meses (parte já aconteceu, parte é previsão). Por isso ela muda um pouco de mês para mês.</li>
-    <li>Na tabela, as cores dizem o que cada número é: <b>cinza</b> é histórico e não muda, <b>azul</b> é o que você pode alterar para simular, <b>verde</b> é o resultado calculado.</li>
-  </ul>
-</details>
 
 <section id="aba2026" hidden>
 <p class="sub">Como foi a taxa de falha ao longo de 2026, mês a mês.</p>
@@ -437,8 +423,6 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
   function ler(txt){ var t = String(txt).replace(/\./g, '').replace(',', '.').trim(); if (t === '') return null; var n = Number(t); return isFinite(n) && n >= 0 ? n : null; }
 
   carregar(); montar();
-  /* no computador a ajuda abre recolhida, para planilha e gráfico caberem juntos na tela */
-  if (window.matchMedia && matchMedia('(min-width:1280px)').matches) document.querySelector('.ajuda').open = false;
   function aoDigitar(e){
     var el = e.target; if (!el.dataset || !el.dataset.k || el.readOnly) return;
     var n = ler(el.value);
