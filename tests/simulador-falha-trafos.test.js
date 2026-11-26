@@ -9,7 +9,7 @@ const html = fs.readFileSync(__dirname + '/../simulador-falha-trafos.html', 'utf
 const codigo = html.match(/<script id="logica">([\s\S]*?)<\/script>/)[1];
 const ctx = { module: { exports: {} } };
 vm.runInNewContext(codigo, ctx);
-const { calcular, calcular2026, PADRAO, TAXA26_META } = ctx.module.exports;
+const { calcular, calcular2026, ajustarParque, PADRAO, TAXA26_META } = ctx.module.exports;
 let passo = 0; const ok = msg => console.log(`${++passo} ok: ${msg}`);
 const perto = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b}`);
 
@@ -74,3 +74,18 @@ const TAXA_V2 = [2.3135, 2.2872, 2.3158, 2.3572, 2.3765, 2.3703, 2.3418, 2.3384,
 TAXA_V2.forEach((t, i) => perto(v2.taxa[i] * 100, t, 5e-5, `taxa V2 mês ${i}`)); ok('2027 V2: taxa dos 12 meses confere com cálculo independente (dez = 2,3392%)');
 v2.taxa.forEach((t, i) => assert.ok(t < r27.taxa[i], `mês ${i}`)); ok('2027 V2: taxa menor que a da aba 2027 em todos os meses (parque maior)');
 assert.strictEqual(v2.totFc, r27.totFc); perto(v2.taxaAno, 2256 / 96445, 1e-12, 'dez V2'); ok('2027 V2: mesmo total de falhas previstas (2.256), taxa de dezembro 2.256 ÷ 96.445');
+
+// ---- digitar o parque de um mês (ajustarParque): só aquele mês do parque muda; os demais ficam como estão
+const base27 = calcular({ real: PADRAO.real, parque: PADRAO.parque, fc: PADRAO.fc, inst: PADRAO.inst }, 0, 0).parque27;
+for (let m = 0; m < 12; m++) {
+  const novo = base27[m] + 777 * (m % 2 ? -1 : 1);
+  const inst = ajustarParque(PADRAO.parque[11], Array.from(PADRAO.inst), m, novo);
+  const P = Array.from(calcular({ real: PADRAO.real, parque: PADRAO.parque, fc: PADRAO.fc, inst }, 0, 0).parque27);
+  P.forEach((v, i) => assert.strictEqual(v, i === m ? novo : base27[i], `mês ${m} posição ${i}`));
+}
+ok('parque digitado: em cada um dos 12 meses, só aquele mês do parque muda e todos os outros ficam como estavam');
+const e1 = Array.from(ajustarParque(PADRAO.parque[11], Array.from(PADRAO.inst), 0, 95000));
+assert.deepStrictEqual([e1[0], e1[1], e1[2]], [1548, -1215, 171]); ok('parque digitado: 95.000 em janeiro => instalados jan 1.548 e fev -1.215 (baixa); mar fica 171');
+const e2 = Array.from(ajustarParque(PADRAO.parque[11], Array.from(PADRAO.inst), 11, 96000));
+assert.strictEqual(e2[11], 397); assert.deepStrictEqual(e2.slice(0, 11), Array.from(PADRAO.inst).slice(0, 11)); ok('parque digitado: dezembro só muda a instalação de dezembro (96.000 => 397)');
+const orig = Array.from(PADRAO.inst); ajustarParque(PADRAO.parque[11], orig, 3, 1); assert.deepStrictEqual(orig, Array.from(PADRAO.inst)); ok('parque digitado: a função não altera a lista original');
