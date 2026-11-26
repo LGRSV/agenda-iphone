@@ -64,3 +64,13 @@ for (let m = 0; m < 12; m++) {
   perto((onze + atual) / PADRAO.parque[m], r26.taxa[m], 1e-12, `2026 mês ${m}`);
 }
 ok('2026: taxa = (falhas dos 11 meses anteriores + mês atual) ÷ parque, nos 12 meses');
+
+// ---- aba 2027 V2: parque informado pelo dono; mesma previsão de falhas
+const PARQUE27_V2 = [94318,94484,94655,94814,94971,95177,95482,95749,95965,96135,96302,96445]; // como veio na planilha
+const v2 = calcular({ real: PADRAO.real, parque: PADRAO.parque, fc: PADRAO.fc2, inst: PADRAO.inst2 }, 0, 0);
+assert.deepStrictEqual(Array.from(v2.parque27), PARQUE27_V2); ok('2027 V2: parque mês a mês igual ao informado (94.318 ... 96.445)');
+assert.deepStrictEqual(Array.from(PADRAO.inst2, (x, i) => x - PADRAO.inst[i]), [699, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]); ok('2027 V2: só janeiro muda nas instalações (866 em vez de 167, +699)');
+const TAXA_V2 = [2.3135, 2.2872, 2.3158, 2.3572, 2.3765, 2.3703, 2.3418, 2.3384, 2.355, 2.3873, 2.3302, 2.3392]; // calculado à parte em Python
+TAXA_V2.forEach((t, i) => perto(v2.taxa[i] * 100, t, 5e-5, `taxa V2 mês ${i}`)); ok('2027 V2: taxa dos 12 meses confere com cálculo independente (dez = 2,3392%)');
+v2.taxa.forEach((t, i) => assert.ok(t < r27.taxa[i], `mês ${i}`)); ok('2027 V2: taxa menor que a da aba 2027 em todos os meses (parque maior)');
+assert.strictEqual(v2.totFc, r27.totFc); perto(v2.taxaAno, 2256 / 96445, 1e-12, 'dez V2'); ok('2027 V2: mesmo total de falhas previstas (2.256), taxa de dezembro 2.256 ÷ 96.445');
