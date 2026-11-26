@@ -206,7 +206,7 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
   var $ = function(id){ return document.getElementById(id); };
   var fmtN = function(n){ return Math.round(n).toLocaleString('pt-BR'); };
   var fmtP = function(x, c){ c = c || 2; return (x * 100).toLocaleString('pt-BR', { minimumFractionDigits: c, maximumFractionDigits: c }) + '%'; };
-  var fmtPP = function(x){ x = Math.round(x * 1000) / 1000; if (x === 0) x = 0; return (x > 0 ? '+' : '') + x.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }); };
+  var fmtPP = function(x){ x = Math.round(x * 100) / 100; if (x === 0) x = 0; return (x > 0 ? '+' : '') + x.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
   var exemplo = function(){ return 'de falha nos últimos 12 meses'; };
   function clone(o){ return JSON.parse(JSON.stringify(o)); }
 
@@ -304,13 +304,14 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
 
   function atualizar(){
     var r = calcular(dados, adjFc, adjInst), a = calcular2026(dados);
-    var dif = a.taxa.map(function(t, i){ return t * 100 - TAXA26_META[i]; });
+    /* a diferença usa a taxa já arredondada em 2 casas, para a conta bater com o que está na tela */
+    var dif = a.taxa.map(function(t, i){ return Math.round((Math.round(t * 10000) / 100 - TAXA26_META[i]) * 100) / 100; });
     for (var i = 0; i < 12; i++){
       $('p' + i).textContent = fmtN(r.parque27[i]);
       $('x' + i).textContent = fmtP(r.taxa[i]);
       $('fa' + i).textContent = fmtN(r.fc[i]);
       $('ia' + i).textContent = fmtN(r.inst[i]);
-      $('x26' + i).textContent = fmtP(a.taxa[i], 3);
+      $('x26' + i).textContent = fmtP(a.taxa[i]);
       $('m26' + i).textContent = TAXA26_META[i].toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + '%';
       $('d26' + i).textContent = fmtPP(dif[i]);
     }
@@ -324,16 +325,16 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
     $('iaT').textContent = fmtN(r.totInst);
     $('pT').textContent = fmtN(r.parqueFim);
     $('xT').textContent = fmtP(r.taxaAno);
-    $('x26T').textContent = fmtP(a.taxaAno, 3);
+    $('x26T').textContent = fmtP(a.taxaAno);
     $('kTaxa').textContent = fmtP(r.taxaAno); $('kEx').textContent = exemplo(r.taxaAno);
     $('kFalhas').textContent = fmtN(r.totFc);
     $('kParque').textContent = fmtN(r.parqueFim);
     $('kReal').textContent = fmtN(r.totReal);
-    $('k26Taxa').textContent = fmtP(a.taxaAno, 3); $('k26Ex').textContent = exemplo(a.taxaAno);
+    $('k26Taxa').textContent = fmtP(a.taxaAno); $('k26Ex').textContent = exemplo(a.taxaAno);
     $('k26Falhas').textContent = fmtN(a.tot26);
     $('k26Parque').textContent = fmtN(a.parqueFim);
     $('k26Real25').textContent = fmtN(a.tot25);
-    var acima = dif.filter(function(d){ return Math.round(d * 1000) > 0; }).length;
+    var acima = dif.filter(function(d){ return d > 0; }).length;
     $('notaMeta').textContent = 'A meta é fixa. Diferença positiva significa % de falha acima da meta; negativa, abaixo da meta (melhor). A taxa calculada está acima da meta em ' + acima + ' dos 12 meses.';
     $('rFcAdj').hidden = !adjFc; $('rInstAdj').hidden = !adjInst;
     $('adjFcOut').textContent = (adjFc > 0 ? '+' : '') + adjFc + '%';
