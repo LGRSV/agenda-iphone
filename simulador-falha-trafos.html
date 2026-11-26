@@ -397,6 +397,16 @@ function calcular(d, adjFc, adjInst){
            totReal: soma(d.real, 0, 11), totFc: totFc, totInst: soma(inst, 0, 11),
            parqueFim: parque27[11], taxaAno: totFc / parque27[11] };
 }
+/* Digitar o PARQUE de um mês: o parque desse mês passa a valer o digitado e os demais meses ficam como estão.
+   Para fechar a conta, a instalação do mês e a do mês seguinte se ajustam (podem ficar negativas: baixa de transformadores). */
+function ajustarParque(parqueDez, inst, m, valor){
+  var P = [], acc = parqueDez, i;
+  for (i = 0; i < 12; i++){ acc += inst[i]; P.push(acc); }
+  var nova = inst.slice();
+  nova[m] = valor - (m ? P[m - 1] : parqueDez);
+  if (m < 11) nova[m + 1] = P[m + 1] - valor;
+  return nova;
+}
 function calcular2026(d){
   var taxa = [];
   for (var m = 0; m < 12; m++){
@@ -405,7 +415,7 @@ function calcular2026(d){
   return { taxa: taxa, tot25: soma(d.real25, 0, 11), tot26: soma(d.real, 0, 11),
            parqueFim: d.parque[11], taxaAno: taxa[11] };
 }
-if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcular2026: calcular2026, PADRAO: PADRAO, MESES: MESES, TAXA26_META: TAXA26_META };
+if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcular2026: calcular2026, ajustarParque: ajustarParque, PADRAO: PADRAO, MESES: MESES, TAXA26_META: TAXA26_META };
 </script>
 
 <script id="tela">
@@ -417,7 +427,7 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
   var CEN = [ { s: '', ab: '2027', nome: '2027', fc: 'fc', inst: 'inst' }, { s: '_v2', ab: '2027v2', nome: '2027 V2', fc: 'fc2', inst: 'inst2' } ];
   var ABAS = ['2026', '2027', '2027v2'];
   var TXT_SUB_V2 = 'Mesmo cenário da aba 2027, mas com o parque instalado da V2. Mexa nos números azuis ou nas barras de ajuste e veja o gráfico mudar.';
-  var AJ = ajZero();
+  var AJ = ajZero(), parqueCalc = { '': [], '_v2': [] };
   var dados = clone(PADRAO), aba = '2027';
   function ajZero(){ return { '': { f: 0, i: 0 }, '_v2': { f: 0, i: 0 } }; }
   var $ = function(id){ return document.getElementById(id); };
@@ -435,7 +445,7 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
     if (!st) return;
     Object.keys(st.ed || {}).forEach(function(c){
       var p = c.split(':'), k = p[0], i = +p[1], v = st.ed[c];
-      if (CAMPOS.indexOf(k) >= 0 && i >= 0 && i < 12 && typeof v === 'number' && isFinite(v) && v >= 0) dados[k][i] = v;
+      if (CAMPOS.indexOf(k) >= 0 && i >= 0 && i < 12 && typeof v === 'number' && isFinite(v) && (v >= 0 || k.indexOf('inst') === 0)) dados[k][i] = v;
     });
     if (isFinite(st.adjFc)) AJ[''].f = limite50(st.adjFc);
     if (isFinite(st.adjInst)) AJ[''].i = limite50(st.adjInst);
@@ -481,6 +491,12 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
   }
   function grupo(cls, titulo, sub){ return '<tr class="grp ' + cls + '"><td colspan="14"><span class="gt">' + titulo + (sub ? '<small>' + sub + '</small>' : '') + '</span></td></tr>'; }
   function cab(){ return '<thead><tr><th></th>' + MESES.map(function(m){ return '<th>' + m + '</th>'; }).join('') + '<th>TOTAL</th></tr></thead><tbody>'; }
+  function linhaParque(c){
+    var tds = MESES.map(function(m, i){
+      return '<td><input type="text" inputmode="numeric" class="ed" id="p' + c.s + i + '" data-k="parque27" data-s="' + c.s + '" data-i="' + i + '" aria-label="PARQUE ' + c.nome + ' ' + m + '"></td>';
+    }).join('');
+    return '<tr>' + rot('PARQUE ' + c.nome) + tds + '<td class="tot" id="p' + c.s + 'T"></td></tr>';
+  }
   function montarCen(c){
     var sf = c.s;
     $('tab' + sf).innerHTML = cab() +
@@ -492,8 +508,8 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
       linhaCalc('FORECAST AJUSTADO', 'calc', 'fa' + sf, 'rFcAdj' + sf) +
       linhaInput('QTE TR INST', c.inst, 'ed') +
       linhaCalc('INSTALADOS AJUSTADO', 'calc', 'ia' + sf, 'rInstAdj' + sf) +
+      linhaParque(c) +
       grupo('g-r', 'Resultado') +
-      linhaCalc('PARQUE ' + c.nome, 'calc', 'p' + sf) +
       linhaCalc('TAXA ' + c.nome, 'taxa', 'x' + sf) + '</tbody>';
   }
   function montar(){
@@ -635,11 +651,20 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
   function atualizarCen(c){
     var sf = c.s, aj = AJ[sf];
     var r = calcular({ real: dados.real, parque: dados.parque, fc: dados[c.fc], inst: dados[c.inst] }, aj.f, aj.i);
-    for (var i = 0; i < 12; i++){
-      $('p' + sf + i).textContent = fmtN(r.parque27[i]);
+    var i;
+    for (i = 0; i < 12; i++){
       $('x' + sf + i).textContent = fmtP(r.taxa[i]);
       $('fa' + sf + i).textContent = fmtN(r.fc[i]);
       $('ia' + sf + i).textContent = fmtN(r.inst[i]);
+    }
+    /* PARQUE: campos editáveis (só com a barra de instalações em 0%, senão o valor digitado não bateria com o exibido) */
+    parqueCalc[sf] = r.parque27;
+    var trava = document.body.classList.contains('leitura') || aj.i !== 0;
+    for (i = 0; i < 12; i++){
+      var ip = $('p' + sf + i);
+      if (ip !== document.activeElement) ip.value = fmtN(r.parque27[i]);
+      ip.readOnly = trava;
+      ip.title = aj.i !== 0 ? 'Para digitar o parque, volte a barra de instalações para 0%' : '';
     }
     $('fa' + sf + 'T').textContent = fmtN(r.totFc);
     $('ia' + sf + 'T').textContent = fmtN(r.totInst);
@@ -676,7 +701,7 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
       var k = td.dataset.tot; td.textContent = fmtN(k === 'parque' ? dados.parque[11] : soma(dados[k], 0, 11));
     });
     document.querySelectorAll('td input').forEach(function(el){
-      if (el !== document.activeElement) el.value = fmtN(dados[el.dataset.k][+el.dataset.i]);
+      if (dados[el.dataset.k] && el !== document.activeElement) el.value = fmtN(dados[el.dataset.k][+el.dataset.i]);
     });
     $('x26T').textContent = fmtP(a.taxaAno);
     $('k26Taxa').textContent = fmtP(a.taxaAno); $('k26Ex').textContent = exemplo(a.taxaAno);
@@ -722,10 +747,17 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
     var n = ler(el.value);
     el.classList.toggle('erro', n === null);
     if (n === null) return;
+    if (el.dataset.k === 'parque27'){
+      var cc = CEN.filter(function(x){ return x.s === el.dataset.s; })[0];
+      dados[cc.inst] = ajustarParque(dados.parque[11], dados[cc.inst], +el.dataset.i, n);
+      salvar(); atualizar(); return;
+    }
     dados[el.dataset.k][+el.dataset.i] = n; salvar(); atualizar();
   }
   function aoSair(e){
-    var el = e.target; if (el.dataset && el.dataset.k){ el.value = fmtN(dados[el.dataset.k][+el.dataset.i]); el.classList.remove('erro'); }
+    var el = e.target; if (!(el.dataset && el.dataset.k)) return;
+    el.value = el.dataset.k === 'parque27' ? fmtN(parqueCalc[el.dataset.s][+el.dataset.i]) : fmtN(dados[el.dataset.k][+el.dataset.i]);
+    el.classList.remove('erro');
   }
   ['tab', 'tab_v2', 'tab26'].forEach(function(id){ $(id).addEventListener('input', aoDigitar); $(id).addEventListener('focusout', aoSair); });
   CEN.forEach(function(c){
