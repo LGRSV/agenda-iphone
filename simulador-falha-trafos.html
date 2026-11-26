@@ -153,7 +153,7 @@ button.peq{padding:9px 12px;font-size:13px}
   </div>
   <div class="chartwrap">
     <div class="chart"><svg id="chart26" viewBox="0 0 720 300" role="img" aria-label="Taxa de falha móvel por mês em 2026"></svg></div>
-    <p class="leg2"><i></i>calculada pela fórmula &nbsp; <i class="t"></i>meta</p>
+    <p class="leg2"><i></i>calculada pela fórmula &nbsp; <i class="t"></i>meta &nbsp; <span style="opacity:.8">valores em %</span></p>
   </div>
  </div>
  <div class="col-plan">
@@ -357,13 +357,22 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
         s += '<circle class="pt-meta" cx="' + x(i).toFixed(1) + '" cy="' + y(t).toFixed(1) + '" r="' + (raio * 0.9).toFixed(1) + '" fill="' + z.cor + '" stroke="#202228" stroke-width="1.5"/>';
       });
     });
+    var metaS = series.filter(function(z){ return z.tracejado; })[0];
+    /* gráfico estreito com meta: todos os valores, sem o "%" (o eixo já mostra) e com fonte ajustada ao espaço */
+    var compacto = estreito && !!metaS;
+    var fsr = compacto ? Math.max(9, Math.min(fsv, espac / 2.5)) : fsv;
+    var rot = function(v){ return compacto ? fmtP(v).replace('%', '') : fmtP(v); };
+    var estiloRot = ' stroke="#202228" stroke-width="3.5" stroke-linejoin="round" paint-order="stroke" font-size="' + fsr + '" font-weight="700"';
     princ.forEach(function(t, i){
-      var rotulo = !estreito || i === 0 || i === 11 || i === iMin || i === iMax;
-      /* rótulo abaixo do ponto só quando a meta não está embaixo dele */
-      var metaAbaixo = series.some(function(z){ return z.tracejado && z.v[i] < t; });
-      var abaixo = (i === iMin || i === 0) && estreito && !metaAbaixo;
+      var rotulo = !estreito || compacto || i === 0 || i === 11 || i === iMin || i === iMax;
+      var m = metaS ? metaS.v[i] : null;
+      /* com meta: o valor da taxa fica do lado oposto ao da meta, para um não cobrir o outro */
+      var metaAcima = m !== null && m > t;
+      var abaixo = metaS ? metaAcima : ((i === iMin || i === 0) && estreito);
+      var yAbaixo = fsr * 1.7, yAcima = -fsr * 0.85;
       s += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(t).toFixed(1) + '" r="' + raio + '" fill="' + series[0].cor + '"/>' +
-           (rotulo ? '<text x="' + x(i).toFixed(1) + '" y="' + (abaixo ? y(t) + fsv * 1.7 : y(t) - fsv * 0.85).toFixed(1) + '" text-anchor="middle" fill="#f7f8fb" stroke="#202228" stroke-width="3.5" stroke-linejoin="round" paint-order="stroke" font-size="' + fsv + '" font-weight="700">' + fmtP(t) + '</text>' : '') +
+           (rotulo ? '<text x="' + x(i).toFixed(1) + '" y="' + (y(t) + (abaixo ? yAbaixo : yAcima)).toFixed(1) + '" text-anchor="middle" fill="#f7f8fb"' + estiloRot + '>' + rot(t) + '</text>' : '') +
+           (rotulo && metaS ? '<text class="rot-meta" x="' + x(i).toFixed(1) + '" y="' + (y(m) + (metaAcima ? yAcima : yAbaixo)).toFixed(1) + '" text-anchor="middle" fill="' + metaS.cor + '"' + estiloRot + '>' + rot(m) + '</text>' : '') +
            '<text x="' + x(i).toFixed(1) + '" y="' + (H - fs * 0.8).toFixed(1) + '" text-anchor="middle" fill="#a6acb8" font-size="' + (estreito ? 9 : Math.max(11, fs * 0.92)) + '">' + MESES[i] + '</text>';
     });
     el.innerHTML = s;
