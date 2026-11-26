@@ -167,7 +167,6 @@ button.peq{padding:9px 12px;font-size:13px}
       <span class="fop">× 100</span>
     </div>
     <p class="fex" id="fx26"></p>
-    <p class="note" id="notaMeta"></p>
   </div>
  </div>
 </div>
@@ -215,7 +214,6 @@ button.peq{padding:9px 12px;font-size:13px}
       <span class="fop">× 100</span>
     </div>
     <p class="fex" id="fx27"></p>
-    <p class="note">As barras de cenário multiplicam as falhas previstas e as instalações (arredondando para número inteiro); com 0% o resultado é o da planilha. O histórico de 2026 é o mesmo da aba 2026.</p>
   </div>
  </div>
 </div>
@@ -309,11 +307,11 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
   function linhaCalc(titulo, cls, id, rid){
     return '<tr class="' + cls + '"' + (rid ? ' id="' + rid + '"' : '') + '>' + rot(titulo) + MESES.map(function(_, i){ return '<td id="' + id + i + '"></td>'; }).join('') + '<td class="tot" id="' + id + 'T"></td></tr>';
   }
-  function grupo(cls, titulo, sub){ return '<tr class="grp ' + cls + '"><td colspan="14"><span class="gt">' + titulo + '<small>' + sub + '</small></span></td></tr>'; }
+  function grupo(cls, titulo, sub){ return '<tr class="grp ' + cls + '"><td colspan="14"><span class="gt">' + titulo + (sub ? '<small>' + sub + '</small>' : '') + '</span></td></tr>'; }
   function cab(){ return '<thead><tr><th></th>' + MESES.map(function(m){ return '<th>' + m + '</th>'; }).join('') + '<th>TOTAL</th></tr></thead><tbody>'; }
   function montar(){
     $('tab').innerHTML = cab() +
-      grupo('g-f', 'Histórico', 'já aconteceu, não muda') +
+      grupo('g-f', 'Histórico') +
       linhaInput('REAL 2026', 'real', 'fx') +
       linhaInput('PARQUE 2026', 'parque', 'fx') +
       grupo('g-e', 'Você pode alterar', 'teste cenários') +
@@ -321,15 +319,15 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
       linhaCalc('FORECAST AJUSTADO', 'calc', 'fa', 'rFcAdj') +
       linhaInput('QTE TR INST', 'inst', 'ed') +
       linhaCalc('INSTALADOS AJUSTADO', 'calc', 'ia', 'rInstAdj') +
-      grupo('g-r', 'Resultado', 'calculado, não digite aqui') +
+      grupo('g-r', 'Resultado') +
       linhaCalc('PARQUE 2027', 'calc', 'p') +
       linhaCalc('TAXA 2027', 'taxa', 'x') + '</tbody>';
     $('tab26').innerHTML = cab() +
-      grupo('g-f', 'Histórico', 'já aconteceu, não muda') +
+      grupo('g-f', 'Histórico') +
       linhaInput('REAL 2025', 'real25', 'fx') +
       linhaInput('REALIZADO / FORECAST 2026', 'real', 'fx') +
       linhaInput('PARQUE 2026', 'parque', 'fx') +
-      grupo('g-r', 'Resultado', 'calculado, não digite aqui') +
+      grupo('g-r', 'Resultado') +
       linhaCalc('TAXA 2026', 'taxa', 'x26') +
       linhaCalc('META 2026', 'inf', 'm26') +
       linhaCalc('DIFERENÇA PARA A META', 'dif', 'd26') + '</tbody>';
@@ -424,10 +422,8 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
     $('k26Falhas').textContent = fmtN(a.tot26);
     $('k26Parque').textContent = fmtN(a.parqueFim);
     $('k26Real25').textContent = fmtN(a.tot25);
-    var acima = dif.filter(function(d){ return d > 0; }).length;
     $('fx26').innerHTML = 'Em dezembro, com os números atuais: <b>(' + fmtN(a.tot26 - dados.real[11]) + ' + ' + fmtN(dados.real[11]) + ') ÷ ' + fmtN(a.parqueFim) + ' × 100 = ' + fmtP(a.taxaAno) + '</b>';
     $('fx27').innerHTML = 'Em dezembro, com os números atuais: <b>(' + fmtN(r.totFc - r.fc[11]) + ' + ' + fmtN(r.fc[11]) + ') ÷ ' + fmtN(r.parqueFim) + ' × 100 = ' + fmtP(r.taxaAno) + '</b>';
-    $('notaMeta').textContent = 'A meta é fixa. Diferença positiva significa % de falha acima da meta; negativa, abaixo da meta (melhor). A taxa calculada está acima da meta em ' + acima + ' dos 12 meses.';
     $('rFcAdj').hidden = !adjFc; $('rInstAdj').hidden = !adjInst;
     $('adjFcOut').textContent = (adjFc > 0 ? '+' : '') + adjFc + '%';
     $('adjInstOut').textContent = (adjInst > 0 ? '+' : '') + adjInst + '%';
