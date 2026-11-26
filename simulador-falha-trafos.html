@@ -105,14 +105,14 @@ button:active{background:#3b404a}
 </div>
 <h2>Taxa de falha dos últimos 12 meses, mês a mês</h2>
 <div class="chart"><svg id="chart26" viewBox="0 0 720 300" role="img" aria-label="Taxa de falha móvel por mês em 2026"></svg></div>
-<p class="leg2"><i></i>calculada pela fórmula &nbsp; <i class="t"></i>informada na planilha original</p>
+<p class="leg2"><i></i>calculada pela fórmula &nbsp; <i class="t"></i>meta</p>
 <h2>Os números por trás</h2>
 <p class="leg"><span><i class="sw f"></i>Histórico (não muda)</span><span><i class="sw r"></i>Resultado calculado</span></p>
 <div class="tw"><table id="tab26"></table></div>
 <details class="note">
   <summary>Ver a fórmula</summary>
   <p><code>Taxa(mês) = (falhas de 2025 dos meses seguintes + falhas de 2026 até o mês) ÷ transformadores em operação no mês</code>. Em dezembro a janela é só 2026, então a taxa é <code>total de falhas do ano ÷ parque de dezembro</code>.</p>
-  <p id="notaInf"></p>
+  <p id="notaMeta"></p>
 </details>
 </section>
 
@@ -168,8 +168,8 @@ var PADRAO = {
   parque: [91377,91549,91814,91976,92099,92267,92411,92550,92768,93074,93263,93452],
   inst:   [167,166,171,159,157,206,305,267,216,170,167,143]
 };
-/* TAXA 2026 como veio na planilha (em %), só para comparação */
-var TAXA26_INFORMADA = [2.530,2.590,2.580,2.520,2.480,2.490,2.510,2.520,2.510,2.496,2.460,2.394];
+/* Meta de taxa de falha de 2026, mês a mês (em %) */
+var TAXA26_META = [2.55,2.53,2.51,2.49,2.48,2.47,2.45,2.45,2.40,2.39,2.37,2.37];
 function soma(v, de, ate){ var s = 0; for (var i = de; i <= ate; i++) s += v[i]; return s; }
 function calcular(d, adjFc, adjInst){
   var kf = 1 + (adjFc || 0) / 100, ki = 1 + (adjInst || 0) / 100;
@@ -194,7 +194,7 @@ function calcular2026(d){
   return { taxa: taxa, tot25: soma(d.real25, 0, 11), tot26: soma(d.real, 0, 11),
            parqueFim: d.parque[11], taxaAno: taxa[11] };
 }
-if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcular2026: calcular2026, PADRAO: PADRAO, MESES: MESES, TAXA26_INFORMADA: TAXA26_INFORMADA };
+if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcular2026: calcular2026, PADRAO: PADRAO, MESES: MESES, TAXA26_META: TAXA26_META };
 </script>
 
 <script id="tela">
@@ -267,8 +267,8 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
       linhaInput('PARQUE 2026', 'transformadores em operação no mês', 'parque', 'fx') +
       grupo('g-r', 'Resultado', 'calculado, não digite aqui') +
       linhaCalc('TAXA 2026', 'calculada pela fórmula', 'taxa', 'x26') +
-      linhaCalc('TAXA INFORMADA', 'veio na planilha original', 'inf', 'xi26') +
-      linhaCalc('DIFERENÇA', 'calculada menos informada (pontos %)', 'dif', 'd26') + '</tbody>';
+      linhaCalc('META 2026', 'meta de % de falha do mês', 'inf', 'm26') +
+      linhaCalc('DIFERENÇA PARA A META', 'taxa menos meta (pontos %): positivo = acima da meta', 'dif', 'd26') + '</tbody>';
   }
 
   /* series: [{v:[...], cor, tracejado}] ; a primeira é a principal */
@@ -304,14 +304,14 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
 
   function atualizar(){
     var r = calcular(dados, adjFc, adjInst), a = calcular2026(dados);
-    var dif = a.taxa.map(function(t, i){ return t * 100 - TAXA26_INFORMADA[i]; });
+    var dif = a.taxa.map(function(t, i){ return t * 100 - TAXA26_META[i]; });
     for (var i = 0; i < 12; i++){
       $('p' + i).textContent = fmtN(r.parque27[i]);
       $('x' + i).textContent = fmtP(r.taxa[i]);
       $('fa' + i).textContent = fmtN(r.fc[i]);
       $('ia' + i).textContent = fmtN(r.inst[i]);
       $('x26' + i).textContent = fmtP(a.taxa[i], 3);
-      $('xi26' + i).textContent = TAXA26_INFORMADA[i].toLocaleString('pt-BR', { minimumFractionDigits: 3 }) + '%';
+      $('m26' + i).textContent = TAXA26_META[i].toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + '%';
       $('d26' + i).textContent = fmtPP(dif[i]);
     }
     document.querySelectorAll('td[data-tot]').forEach(function(td){
@@ -333,14 +333,14 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
     $('k26Falhas').textContent = fmtN(a.tot26);
     $('k26Parque').textContent = fmtN(a.parqueFim);
     $('k26Real25').textContent = fmtN(a.tot25);
-    var maxAbs = Math.max.apply(null, dif.slice(0, 9).map(Math.abs));
-    $('notaInf').textContent = 'A linha "TAXA INFORMADA" é a que veio na planilha original. De out a dez ela coincide com a calculada; de jan a set a diferença é de no máximo ' + maxAbs.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + ' ponto percentual (a informada fica um pouco abaixo).';
+    var acima = dif.filter(function(d){ return Math.round(d * 1000) > 0; }).length;
+    $('notaMeta').textContent = 'A meta é fixa. Diferença positiva significa % de falha acima da meta; negativa, abaixo da meta (melhor). A taxa calculada está acima da meta em ' + acima + ' dos 12 meses.';
     $('rFcAdj').hidden = !adjFc; $('rInstAdj').hidden = !adjInst;
     $('adjFcOut').textContent = (adjFc > 0 ? '+' : '') + adjFc + '%';
     $('adjInstOut').textContent = (adjInst > 0 ? '+' : '') + adjInst + '%';
     $('adjFc').value = adjFc; $('adjInst').value = adjInst;
     if (aba === '2027') desenhar($('chart'), [{ v: r.taxa, cor: '#78d88b' }]);
-    else desenhar($('chart26'), [{ v: a.taxa, cor: '#78d88b' }, { v: TAXA26_INFORMADA.map(function(t){ return t / 100; }), cor: '#ffb74d', tracejado: true }]);
+    else desenhar($('chart26'), [{ v: a.taxa, cor: '#78d88b' }, { v: TAXA26_META.map(function(t){ return t / 100; }), cor: '#ffb74d', tracejado: true }]);
   }
 
   function mostrarAba(nova){

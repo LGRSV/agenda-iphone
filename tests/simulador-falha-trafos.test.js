@@ -1,5 +1,5 @@
 /* Confere a lógica do simulador de taxa de falha com os valores calculados pelo Excel
-   SIMULADOR_PARA_HTML.xlsx (aba 2027) e com a linha TAXA 2026 informada (aba 2026).
+   SIMULADOR_PARA_HTML.xlsx (aba 2027) e com a meta de 2026 (aba 2026).
    Roda: node tests/simulador-falha-trafos.test.js */
 'use strict';
 const assert = require('assert');
@@ -9,7 +9,7 @@ const html = fs.readFileSync(__dirname + '/../simulador-falha-trafos.html', 'utf
 const codigo = html.match(/<script id="logica">([\s\S]*?)<\/script>/)[1];
 const ctx = { module: { exports: {} } };
 vm.runInNewContext(codigo, ctx);
-const { calcular, calcular2026, PADRAO, TAXA26_INFORMADA } = ctx.module.exports;
+const { calcular, calcular2026, PADRAO, TAXA26_META } = ctx.module.exports;
 let passo = 0; const ok = msg => console.log(`${++passo} ok: ${msg}`);
 const perto = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b}`);
 
@@ -43,5 +43,7 @@ assert.strictEqual(PADRAO.real25[8], 121); ok('set/2025 = 121');
 assert.strictEqual(c.tot25, 2228); assert.strictEqual(c.tot26, 2237); assert.strictEqual(c.parqueFim, 93452); ok('2026: totais 2.228 / 2.237 / parque 93.452');
 perto(c.taxa[0] * 100, 2.5367, 5e-5, 'jan'); perto(c.taxa[8] * 100, 2.5106, 5e-5, 'set'); perto(c.taxa[11] * 100, 2.3937, 5e-5, 'dez'); ok('2026: jan 2,5367%, set 2,5106% e dez 2,3937% (calculo independente em Python)');
 perto(c.taxaAno, 2237 / 93452, 1e-12, 'taxa ano 2026'); ok('2026: dez = total do ano ÷ parque de dezembro');
-[9, 10, 11].forEach(i => perto(c.taxa[i] * 100, TAXA26_INFORMADA[i], 5e-4, `out-dez ${i}`)); ok('2026: out, nov e dez coincidem com a linha informada (3 casas)');
-c.taxa.forEach((t, i) => { const d = t * 100 - TAXA26_INFORMADA[i]; assert.ok(d >= -5e-4 && d <= 0.012, `mês ${i}: dif ${d}`); }); ok('2026: jan a set ficam 0 a 0,012 p.p. acima da informada (max real 0,0097)');
+assert.deepStrictEqual(Array.from(TAXA26_META), [2.55,2.53,2.51,2.49,2.48,2.47,2.45,2.45,2.40,2.39,2.37,2.37]); ok('2026: meta = 2,55 2,53 2,51 2,49 2,48 2,47 2,45 2,45 2,40 2,39 2,37 2,37');
+const DIF = [-0.0133,0.0697,0.0735,0.0378,0.0097,0.0293,0.0605,0.0730,0.1106,0.1059,0.0897,0.0237]; // calculado à parte em Python
+c.taxa.forEach((t, i) => perto(t * 100 - TAXA26_META[i], DIF[i], 5e-5, `dif meta mês ${i}`)); ok('2026: diferença para a meta mês a mês confere com cálculo independente');
+assert.strictEqual(c.taxa.filter((t, i) => t * 100 > TAXA26_META[i]).length, 11); ok('2026: taxa acima da meta em 11 dos 12 meses (só jan está abaixo)');
