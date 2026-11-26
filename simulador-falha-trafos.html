@@ -89,7 +89,7 @@ button:active{background:#3b404a}
 <details class="ajuda" open>
   <summary>Como ler esta tela</summary>
   <ul>
-    <li><b>Taxa de falha</b> é quantos transformadores falham em 12 meses para cada 100 que estão em operação. Exemplo: 2,4% significa cerca de 2,4 falhas a cada 100 transformadores.</li>
+    <li><b>% de falha</b> (taxa de falha) é o total de falhas dos últimos 12 meses dividido pelo número de transformadores em operação, escrito em porcentagem. Exemplo: 2,4% de falha.</li>
     <li>A taxa é <b>móvel</b>: em cada mês olhamos os últimos 12 meses (parte já aconteceu, parte é previsão). Por isso ela muda um pouco de mês para mês.</li>
     <li>Na tabela, as cores dizem o que cada número é: <b>cinza</b> é histórico e não muda, <b>azul</b> é o que você pode alterar para simular, <b>verde</b> é o resultado calculado.</li>
   </ul>
@@ -207,7 +207,7 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
   var fmtN = function(n){ return Math.round(n).toLocaleString('pt-BR'); };
   var fmtP = function(x, c){ c = c || 2; return (x * 100).toLocaleString('pt-BR', { minimumFractionDigits: c, maximumFractionDigits: c }) + '%'; };
   var fmtPP = function(x){ x = Math.round(x * 1000) / 1000; if (x === 0) x = 0; return (x > 0 ? '+' : '') + x.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }); };
-  var exemplo = function(taxa){ return 'cerca de ' + (taxa * 100).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' falhas a cada 100 transformadores'; };
+  var exemplo = function(){ return 'de falha nos últimos 12 meses'; };
   function clone(o){ return JSON.parse(JSON.stringify(o)); }
 
   /* Só as células editadas ficam guardadas (campo:mês -> valor). Assim, quando os dados da planilha mudarem,
