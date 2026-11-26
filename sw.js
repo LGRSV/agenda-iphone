@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v308-simulador-grafico-maior';
+const CACHE = 'agenda-lagares-v309-simulador-centralizado';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=15" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
