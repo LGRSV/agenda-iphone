@@ -129,6 +129,7 @@ button.peq{padding:9px 12px;font-size:13px}
     <div class="tabs" role="tablist">
       <button type="button" role="tab" id="bt2026" aria-selected="false" data-aba="2026">2026</button>
       <button type="button" role="tab" id="bt2027" aria-selected="true" data-aba="2027">2027</button>
+      <button type="button" role="tab" id="bt2027v2" aria-selected="false" data-aba="2027v2">2027 V2</button>
     </div>
     <button id="trava" type="button" class="peq">Editar dados históricos</button>
     <button id="reset" type="button" class="peq">Voltar aos valores da planilha</button>
@@ -228,7 +229,10 @@ var PADRAO = {
   real:   [407,301,260,172,69,64,70,75,115,170,298,236],
   fc:     [352,280,291,215,91,63,50,78,136,205,247,248],
   parque: [91377,91549,91814,91976,92099,92267,92411,92550,92768,93074,93263,93452],
-  inst:   [167,166,171,159,157,206,305,267,216,170,167,143]
+  inst:   [167,166,171,159,157,206,305,267,216,170,167,143],
+  /* 2027 V2: mesma previsão de falhas; só o parque muda (jan com 866 instalados em vez de 167: +699 em todos os meses) */
+  fc2:    [352,280,291,215,91,63,50,78,136,205,247,248],
+  inst2:  [866,166,171,159,157,206,305,267,216,170,167,143]
 };
 /* Meta de taxa de falha de 2026, mês a mês (em %) */
 var TAXA26_META = [2.55,2.53,2.51,2.49,2.48,2.47,2.45,2.45,2.40,2.39,2.37,2.37];
@@ -263,8 +267,14 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
 (function(){
   var CHAVE = 'simulador-falha-trafos-v3';
   var CHAVE_ABA = 'simulador-falha-trafos-aba';
-  var CAMPOS = ['real25','real','fc','parque','inst'];
-  var dados = clone(PADRAO), adjFc = 0, adjInst = 0, aba = '2027';
+  var CAMPOS = ['real25','real','fc','parque','inst','fc2','inst2'];
+  /* cenários de 2027: o original e a V2 (cada um com suas previsões, instalações e barras de ajuste) */
+  var CEN = [ { s: '', ab: '2027', nome: '2027', fc: 'fc', inst: 'inst' }, { s: '_v2', ab: '2027v2', nome: '2027 V2', fc: 'fc2', inst: 'inst2' } ];
+  var ABAS = ['2026', '2027', '2027v2'];
+  var TXT_SUB_V2 = 'Mesmo cenário da aba 2027, mas com o parque instalado da V2. Mexa nos números azuis ou nas barras de ajuste e veja o gráfico mudar.';
+  var AJ = ajZero();
+  var dados = clone(PADRAO), aba = '2027';
+  function ajZero(){ return { '': { f: 0, i: 0 }, '_v2': { f: 0, i: 0 } }; }
   var $ = function(id){ return document.getElementById(id); };
   var fmtN = function(n){ return Math.round(n).toLocaleString('pt-BR'); };
   var fmtP = function(x, c){ c = c || 2; return (x * 100).toLocaleString('pt-BR', { minimumFractionDigits: c, maximumFractionDigits: c }) + '%'; };
@@ -274,27 +284,40 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
 
   /* Só as células editadas ficam guardadas (campo:mês -> valor). Assim, quando os dados da planilha mudarem,
      o que a pessoa não mexeu acompanha os novos valores. */
+  var limite50 = function(v){ return Math.max(-50, Math.min(50, +v)); };
+  function aplicarEstado(st){
+    dados = clone(PADRAO); AJ = ajZero();
+    if (!st) return;
+    Object.keys(st.ed || {}).forEach(function(c){
+      var p = c.split(':'), k = p[0], i = +p[1], v = st.ed[c];
+      if (CAMPOS.indexOf(k) >= 0 && i >= 0 && i < 12 && typeof v === 'number' && isFinite(v) && v >= 0) dados[k][i] = v;
+    });
+    if (isFinite(st.adjFc)) AJ[''].f = limite50(st.adjFc);
+    if (isFinite(st.adjInst)) AJ[''].i = limite50(st.adjInst);
+    if (isFinite(st.adjFc2)) AJ._v2.f = limite50(st.adjFc2);
+    if (isFinite(st.adjInst2)) AJ._v2.i = limite50(st.adjInst2);
+  }
+  function estadoAtual(){
+    var ed = {};
+    CAMPOS.forEach(function(k){ dados[k].forEach(function(v, i){ if (v !== PADRAO[k][i]) ed[k + ':' + i] = v; }); });
+    return { ed: ed, adjFc: AJ[''].f, adjInst: AJ[''].i, adjFc2: AJ._v2.f, adjInst2: AJ._v2.i };
+  }
   function carregar(){
-    try {
-      var s = JSON.parse(localStorage.getItem(CHAVE) || 'null');
-      if (s) {
-        Object.keys(s.ed || {}).forEach(function(c){
-          var p = c.split(':'), k = p[0], i = +p[1], v = s.ed[c];
-          if (CAMPOS.indexOf(k) >= 0 && i >= 0 && i < 12 && typeof v === 'number' && isFinite(v) && v >= 0) dados[k][i] = v;
-        });
-        if (isFinite(s.adjFc)) adjFc = Math.max(-50, Math.min(50, +s.adjFc));
-        if (isFinite(s.adjInst)) adjInst = Math.max(-50, Math.min(50, +s.adjInst));
-      }
-    } catch (e) {}
-    try { var a = localStorage.getItem(CHAVE_ABA); if (a === '2026' || a === '2027') aba = a; } catch (e) {}
-    if (location.hash === '#2026' || location.hash === '#2027') aba = location.hash.slice(1);
+    try { aplicarEstado(JSON.parse(localStorage.getItem(CHAVE) || 'null')); } catch (e) {}
+    try { var a = localStorage.getItem(CHAVE_ABA); if (ABAS.indexOf(a) >= 0) aba = a; } catch (e) {}
+    if (location.hash && ABAS.indexOf(location.hash.slice(1)) >= 0) aba = location.hash.slice(1);
   }
   function salvar(){
-    try {
-      var ed = {};
-      CAMPOS.forEach(function(k){ dados[k].forEach(function(v, i){ if (v !== PADRAO[k][i]) ed[k + ':' + i] = v; }); });
-      localStorage.setItem(CHAVE, JSON.stringify({ ed: ed, adjFc: adjFc, adjInst: adjInst }));
-    } catch (e) {}
+    try { localStorage.setItem(CHAVE, JSON.stringify(estadoAtual())); } catch (e) {}
+  }
+
+  /* a aba 2027 V2 é uma cópia da seção 2027, com os ids e os dados próprios */
+  function clonarCenario(){
+    var orig = $('aba2027'), cp = orig.cloneNode(true);
+    cp.id = 'aba2027v2'; cp.hidden = true;
+    cp.innerHTML = cp.innerHTML.replace(/ id="([^"]+)"/g, ' id="$1_v2"').replace(/ for="([^"]+)"/g, ' for="$1_v2"').replace(/2027/g, '2027 V2').replace('em 2027 V2 do que o previsto', 'em 2027 do que o previsto');
+    cp.querySelector('.sub').textContent = TXT_SUB_V2;
+    orig.parentNode.insertBefore(cp, orig.nextSibling);
   }
 
   function rot(titulo){ return '<td><div class="rt">' + titulo + '</div></td>'; }
@@ -309,19 +332,23 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
   }
   function grupo(cls, titulo, sub){ return '<tr class="grp ' + cls + '"><td colspan="14"><span class="gt">' + titulo + (sub ? '<small>' + sub + '</small>' : '') + '</span></td></tr>'; }
   function cab(){ return '<thead><tr><th></th>' + MESES.map(function(m){ return '<th>' + m + '</th>'; }).join('') + '<th>TOTAL</th></tr></thead><tbody>'; }
-  function montar(){
-    $('tab').innerHTML = cab() +
+  function montarCen(c){
+    var sf = c.s;
+    $('tab' + sf).innerHTML = cab() +
       grupo('g-f', 'Histórico') +
       linhaInput('REAL 2026', 'real', 'fx') +
       linhaInput('PARQUE 2026', 'parque', 'fx') +
       grupo('g-e', 'Você pode alterar', 'teste cenários') +
-      linhaInput('FORECAST 2027', 'fc', 'ed') +
-      linhaCalc('FORECAST AJUSTADO', 'calc', 'fa', 'rFcAdj') +
-      linhaInput('QTE TR INST', 'inst', 'ed') +
-      linhaCalc('INSTALADOS AJUSTADO', 'calc', 'ia', 'rInstAdj') +
+      linhaInput('FORECAST ' + c.nome, c.fc, 'ed') +
+      linhaCalc('FORECAST AJUSTADO', 'calc', 'fa' + sf, 'rFcAdj' + sf) +
+      linhaInput('QTE TR INST', c.inst, 'ed') +
+      linhaCalc('INSTALADOS AJUSTADO', 'calc', 'ia' + sf, 'rInstAdj' + sf) +
       grupo('g-r', 'Resultado') +
-      linhaCalc('PARQUE 2027', 'calc', 'p') +
-      linhaCalc('TAXA 2027', 'taxa', 'x') + '</tbody>';
+      linhaCalc('PARQUE ' + c.nome, 'calc', 'p' + sf) +
+      linhaCalc('TAXA ' + c.nome, 'taxa', 'x' + sf) + '</tbody>';
+  }
+  function montar(){
+    CEN.forEach(montarCen);
     $('tab26').innerHTML = cab() +
       grupo('g-f', 'Histórico') +
       linhaInput('REAL 2025', 'real25', 'fx') +
@@ -389,15 +416,35 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
     el.innerHTML = s;
   }
 
+  function atualizarCen(c){
+    var sf = c.s, aj = AJ[sf];
+    var r = calcular({ real: dados.real, parque: dados.parque, fc: dados[c.fc], inst: dados[c.inst] }, aj.f, aj.i);
+    for (var i = 0; i < 12; i++){
+      $('p' + sf + i).textContent = fmtN(r.parque27[i]);
+      $('x' + sf + i).textContent = fmtP(r.taxa[i]);
+      $('fa' + sf + i).textContent = fmtN(r.fc[i]);
+      $('ia' + sf + i).textContent = fmtN(r.inst[i]);
+    }
+    $('fa' + sf + 'T').textContent = fmtN(r.totFc);
+    $('ia' + sf + 'T').textContent = fmtN(r.totInst);
+    $('p' + sf + 'T').textContent = fmtN(r.parqueFim);
+    $('x' + sf + 'T').textContent = fmtP(r.taxaAno);
+    $('kTaxa' + sf).textContent = fmtP(r.taxaAno); $('kEx' + sf).textContent = exemplo(r.taxaAno);
+    $('kFalhas' + sf).textContent = fmtN(r.totFc);
+    $('kParque' + sf).textContent = fmtN(r.parqueFim);
+    $('kReal' + sf).textContent = fmtN(r.totReal);
+    $('fx27' + sf).innerHTML = 'Em dezembro, com os números atuais: <b>(' + fmtN(r.totFc - r.fc[11]) + ' + ' + fmtN(r.fc[11]) + ') ÷ ' + fmtN(r.parqueFim) + ' × 100 = ' + fmtP(r.taxaAno) + '</b>';
+    $('rFcAdj' + sf).hidden = !aj.f; $('rInstAdj' + sf).hidden = !aj.i;
+    $('adjFcOut' + sf).textContent = (aj.f > 0 ? '+' : '') + aj.f + '%';
+    $('adjInstOut' + sf).textContent = (aj.i > 0 ? '+' : '') + aj.i + '%';
+    $('adjFc' + sf).value = aj.f; $('adjInst' + sf).value = aj.i;
+    if (aba === c.ab) desenhar($('chart' + sf), [{ v: r.taxa, cor: '#78d88b' }]);
+  }
   function atualizar(){
-    var r = calcular(dados, adjFc, adjInst), a = calcular2026(dados);
+    var a = calcular2026(dados);
     /* a diferença usa a taxa já arredondada em 2 casas, para a conta bater com o que está na tela */
     var dif = a.taxa.map(function(t, i){ return Math.round((Math.round(t * 10000) / 100 - TAXA26_META[i]) * 100) / 100; });
     for (var i = 0; i < 12; i++){
-      $('p' + i).textContent = fmtN(r.parque27[i]);
-      $('x' + i).textContent = fmtP(r.taxa[i]);
-      $('fa' + i).textContent = fmtN(r.fc[i]);
-      $('ia' + i).textContent = fmtN(r.inst[i]);
       $('x26' + i).textContent = fmtP(a.taxa[i]);
       $('m26' + i).textContent = TAXA26_META[i].toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + '%';
       if (i === 11) $('m26T').textContent = $('m26' + i).textContent; /* total da meta = meta de dezembro */
@@ -409,33 +456,19 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
     document.querySelectorAll('td input').forEach(function(el){
       if (el !== document.activeElement) el.value = fmtN(dados[el.dataset.k][+el.dataset.i]);
     });
-    $('faT').textContent = fmtN(r.totFc);
-    $('iaT').textContent = fmtN(r.totInst);
-    $('pT').textContent = fmtN(r.parqueFim);
-    $('xT').textContent = fmtP(r.taxaAno);
     $('x26T').textContent = fmtP(a.taxaAno);
-    $('kTaxa').textContent = fmtP(r.taxaAno); $('kEx').textContent = exemplo(r.taxaAno);
-    $('kFalhas').textContent = fmtN(r.totFc);
-    $('kParque').textContent = fmtN(r.parqueFim);
-    $('kReal').textContent = fmtN(r.totReal);
     $('k26Taxa').textContent = fmtP(a.taxaAno); $('k26Ex').textContent = exemplo(a.taxaAno);
     $('k26Falhas').textContent = fmtN(a.tot26);
     $('k26Parque').textContent = fmtN(a.parqueFim);
     $('k26Real25').textContent = fmtN(a.tot25);
     $('fx26').innerHTML = 'Em dezembro, com os números atuais: <b>(' + fmtN(a.tot26 - dados.real[11]) + ' + ' + fmtN(dados.real[11]) + ') ÷ ' + fmtN(a.parqueFim) + ' × 100 = ' + fmtP(a.taxaAno) + '</b>';
-    $('fx27').innerHTML = 'Em dezembro, com os números atuais: <b>(' + fmtN(r.totFc - r.fc[11]) + ' + ' + fmtN(r.fc[11]) + ') ÷ ' + fmtN(r.parqueFim) + ' × 100 = ' + fmtP(r.taxaAno) + '</b>';
-    $('rFcAdj').hidden = !adjFc; $('rInstAdj').hidden = !adjInst;
-    $('adjFcOut').textContent = (adjFc > 0 ? '+' : '') + adjFc + '%';
-    $('adjInstOut').textContent = (adjInst > 0 ? '+' : '') + adjInst + '%';
-    $('adjFc').value = adjFc; $('adjInst').value = adjInst;
-    if (aba === '2027') desenhar($('chart'), [{ v: r.taxa, cor: '#78d88b' }]);
-    else desenhar($('chart26'), [{ v: a.taxa, cor: '#78d88b' }, { v: TAXA26_META.map(function(t){ return t / 100; }), cor: '#ffb74d', tracejado: true }]);
+    CEN.forEach(atualizarCen);
+    if (aba === '2026') desenhar($('chart26'), [{ v: a.taxa, cor: '#78d88b' }, { v: TAXA26_META.map(function(t){ return t / 100; }), cor: '#ffb74d', tracejado: true }]);
   }
 
   function mostrarAba(nova){
     aba = nova;
-    $('aba2026').hidden = aba !== '2026'; $('aba2027').hidden = aba !== '2027';
-    $('bt2026').setAttribute('aria-selected', aba === '2026'); $('bt2027').setAttribute('aria-selected', aba === '2027');
+    ABAS.forEach(function(x){ $('aba' + x).hidden = aba !== x; $('bt' + x).setAttribute('aria-selected', aba === x); });
     try { localStorage.setItem(CHAVE_ABA, aba); } catch (e) {}
     atualizar();
   }
@@ -447,7 +480,7 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
 
   function ler(txt){ var t = String(txt).replace(/\./g, '').replace(',', '.').trim(); if (t === '') return null; var n = Number(t); return isFinite(n) && n >= 0 ? n : null; }
 
-  carregar(); montar();
+  carregar(); clonarCenario(); montar();
   function aoDigitar(e){
     var el = e.target; if (!el.dataset || !el.dataset.k || el.readOnly) return;
     var n = ler(el.value);
@@ -458,19 +491,21 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
   function aoSair(e){
     var el = e.target; if (el.dataset && el.dataset.k){ el.value = fmtN(dados[el.dataset.k][+el.dataset.i]); el.style.borderColor = ''; }
   }
-  ['tab', 'tab26'].forEach(function(id){ $(id).addEventListener('input', aoDigitar); $(id).addEventListener('focusout', aoSair); });
-  $('adjFc').addEventListener('input', function(){ adjFc = +this.value; salvar(); atualizar(); });
-  $('adjInst').addEventListener('input', function(){ adjInst = +this.value; salvar(); atualizar(); });
+  ['tab', 'tab_v2', 'tab26'].forEach(function(id){ $(id).addEventListener('input', aoDigitar); $(id).addEventListener('focusout', aoSair); });
+  CEN.forEach(function(c){
+    $('adjFc' + c.s).addEventListener('input', function(){ AJ[c.s].f = +this.value; salvar(); atualizar(); });
+    $('adjInst' + c.s).addEventListener('input', function(){ AJ[c.s].i = +this.value; salvar(); atualizar(); });
+  });
   document.querySelectorAll('.tabs button').forEach(function(b){ b.addEventListener('click', function(){ mostrarAba(b.dataset.aba); }); });
   $('trava').addEventListener('click', function(){ destravar(!document.body.classList.contains('destrav')); });
   $('reset').addEventListener('click', function(){
-    dados = clone(PADRAO); adjFc = adjInst = 0; salvar(); destravar(false);
+    dados = clone(PADRAO); AJ = ajZero(); salvar(); destravar(false);
     document.querySelectorAll('td input').forEach(function(el){ el.style.borderColor = ''; });
     atualizar();
   });
-  window.addEventListener('hashchange', function(){ if (location.hash === '#2026' || location.hash === '#2027') mostrarAba(location.hash.slice(1)); });
+  window.addEventListener('hashchange', function(){ if (ABAS.indexOf(location.hash.slice(1)) >= 0) mostrarAba(location.hash.slice(1)); });
   mostrarAba(aba);
-  var larg = 0; window.addEventListener('resize', function(){ var w = $(aba === '2027' ? 'chart' : 'chart26').getBoundingClientRect().width; if (Math.abs(w - larg) > 2){ larg = w; atualizar(); } });
+  var larg = 0; window.addEventListener('resize', function(){ var w = $(aba === '2026' ? 'chart26' : aba === '2027' ? 'chart' : 'chart_v2').getBoundingClientRect().width; if (Math.abs(w - larg) > 2){ larg = w; atualizar(); } });
 })();
 </script>
 </body>
