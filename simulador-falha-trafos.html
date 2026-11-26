@@ -43,12 +43,47 @@ button{font:inherit;font-size:14px;font-weight:800;color:#f7f8fb;background:#2a2
 button:active{background:#3b404a}
 .note{color:#a6acb8;font-size:12px;line-height:1.5;margin-top:14px}
 .note code{background:#2a2d35;border-radius:6px;padding:1px 5px;font-size:11px}
+.tabs{display:flex;gap:6px;margin:10px 0 16px;padding:4px;border:1px solid #3b404a;border-radius:14px;background:#202228;width:max-content;max-width:100%}
+.tabs button{border:0;background:transparent;color:#a6acb8;padding:9px 22px;border-radius:10px;font-size:15px}
+.tabs button[aria-selected=true]{background:#123a5c;color:#6ec9ff}
+.leg{color:#a6acb8;font-size:11px;font-weight:700;margin:6px 4px 0}
+.leg i{display:inline-block;width:18px;height:0;border-top:3px solid #78d88b;vertical-align:middle;margin-right:5px}
+.leg i.t{border-top:2px dashed #ffb74d}
+tr.inf td{color:#ffb74d;font-weight:750}tr.inf td:first-child{color:#ffb74d}
+tr.dif td{color:#a6acb8;font-weight:700;font-size:12px}
+[hidden]{display:none!important}
 @media (max-width:520px){h1{font-size:18px}.card b{font-size:19px}}
 </style>
 </head>
 <body>
 <main>
-<h1>Taxa de falha de transformadores — 2027</h1>
+<h1>Taxa de falha de transformadores</h1>
+<div class="tabs" role="tablist">
+  <button type="button" role="tab" id="bt2026" aria-selected="false" data-aba="2026">2026</button>
+  <button type="button" role="tab" id="bt2027" aria-selected="true" data-aba="2027">2027</button>
+</div>
+
+<section id="aba2026" hidden>
+<p class="sub">Taxa móvel de 12 meses em 2026: a cada mês, falhas dos últimos 12 meses (meses seguintes de 2025 + realizado/forecast de 2026 até o mês) ÷ parque do mês.</p>
+<div class="cards">
+  <div class="card main"><small>TAXA EM DEZ/2026</small><b id="k26Taxa">–</b></div>
+  <div class="card"><small>FALHAS 2026 (REALIZADO / FORECAST)</small><b id="k26Falhas">–</b></div>
+  <div class="card"><small>PARQUE EM DEZ/2026</small><b id="k26Parque">–</b></div>
+  <div class="card"><small>FALHAS REAIS 2025</small><b id="k26Real25">–</b></div>
+</div>
+<h2>Taxa móvel por mês</h2>
+<div class="chart"><svg id="chart26" viewBox="0 0 720 300" role="img" aria-label="Taxa de falha móvel por mês em 2026"></svg></div>
+<p class="leg"><i></i>calculada pela fórmula &nbsp; <i class="t"></i>informada na planilha</p>
+<h2>Planilha</h2>
+<div class="tw"><table id="tab26"></table></div>
+<p class="note">
+Fórmula: <code>Taxa(mês) = (falhas de 2025 dos meses seguintes + realizado/forecast 2026 até o mês) ÷ Parque 2026(mês)</code>. Em dez/2026 a janela é só 2026, então a taxa é <code>total do ano ÷ parque de dezembro</code>.
+A linha "TAXA INFORMADA" é a que veio na planilha; de out a dez ela coincide com a calculada, e de jan a set fica de 0,001 a 0,011 ponto percentual abaixo.
+Nov e dez/2026 ainda são meses em curso (valores de forecast até o fechamento).
+</p>
+</section>
+
+<section id="aba2027">
 <p class="sub">Taxa móvel de 12 meses com o parque real: a cada mês de 2027, falhas dos últimos 12 meses ÷ parque instalado no fim do mês. Edite qualquer número dos campos da tabela, ou use os ajustes para testar cenários.</p>
 
 <div class="cards">
@@ -61,11 +96,11 @@ button:active{background:#3b404a}
 <h2>Ajustes de cenário</h2>
 <div class="box ctrl">
   <div>
-    <label for="adjFc">Forecast 2027 (falhas): <span id="adjFcTxt"></span></label>
+    <label for="adjFc">Forecast 2027 (falhas)</label>
     <div class="line"><input type="range" id="adjFc" min="-50" max="50" step="1" value="0"><output id="adjFcOut">0%</output></div>
   </div>
   <div>
-    <label for="adjInst">Transformadores instalados em 2027 (QTE TR INST): <span id="adjInstTxt"></span></label>
+    <label for="adjInst">Transformadores instalados em 2027 (QTE TR INST)</label>
     <div class="line"><input type="range" id="adjInst" min="-50" max="50" step="1" value="0"><output id="adjInstOut">0%</output></div>
   </div>
 </div>
@@ -76,24 +111,29 @@ button:active{background:#3b404a}
 <h2>Planilha</h2>
 <div class="tw"><table id="tab"></table></div>
 
-<div class="btns"><button id="reset" type="button">Voltar aos valores da planilha</button></div>
 <p class="note">
 Fórmulas (iguais às da planilha): <code>Parque 2027(jan) = Parque dez/2026 + instalados(jan)</code>, depois <code>Parque(mês) = Parque(mês anterior) + instalados(mês)</code>.
 <code>Taxa(mês) = (falhas reais de 2026 dos meses seguintes + forecast 2027 até o mês) ÷ Parque 2027(mês)</code>. O total do ano é <code>forecast total ÷ parque de dez/2027</code>.
 Os ajustes de cenário multiplicam o forecast e as instalações (arredondando para número inteiro); com 0% o resultado é o da planilha.
-Os valores acima são os da planilha SIMULADOR_PARA_HTML; falhas de meses ainda em curso devem ser conferidas com o fechamento oficial.
+O real de 2026 e o parque de 2026 são os mesmos da aba 2026: editar numa aba muda na outra.
 </p>
+</section>
+
+<div class="btns"><button id="reset" type="button">Voltar aos valores da planilha</button></div>
 </main>
 
 <script id="logica">
 /* Lógica pura (testada em tests/simulador-falha-trafos.test.js). 12 posições, JAN..DEZ. */
 var MESES = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
 var PADRAO = {
-  real:   [407,301,260,172,69,64,70,75,115,170,305,228],
+  real25: [317,239,268,219,101,51,56,60,122,176,327,293],
+  real:   [407,301,260,172,69,64,70,75,115,170,298,236],
   fc:     [352,280,291,215,91,63,50,78,136,205,247,248],
   parque: [91377,91549,91814,91976,92099,92267,92411,92550,92768,93074,93263,93452],
   inst:   [167,166,171,159,157,206,305,267,216,170,167,143]
 };
+/* TAXA 2026 como veio na planilha (em %), só para comparação */
+var TAXA26_INFORMADA = [2.530,2.590,2.580,2.520,2.480,2.490,2.510,2.520,2.510,2.496,2.460,2.394];
 function soma(v, de, ate){ var s = 0; for (var i = de; i <= ate; i++) s += v[i]; return s; }
 function calcular(d, adjFc, adjInst){
   var kf = 1 + (adjFc || 0) / 100, ki = 1 + (adjInst || 0) / 100;
@@ -110,28 +150,42 @@ function calcular(d, adjFc, adjInst){
            totReal: soma(d.real, 0, 11), totFc: totFc, totInst: soma(inst, 0, 11),
            parqueFim: parque27[11], taxaAno: totFc / parque27[11] };
 }
-if (typeof module !== 'undefined') module.exports = { calcular: calcular, PADRAO: PADRAO, MESES: MESES };
+function calcular2026(d){
+  var taxa = [];
+  for (var m = 0; m < 12; m++){
+    taxa.push(((m < 11 ? soma(d.real25, m + 1, 11) : 0) + soma(d.real, 0, m)) / d.parque[m]);
+  }
+  return { taxa: taxa, tot25: soma(d.real25, 0, 11), tot26: soma(d.real, 0, 11),
+           parqueFim: d.parque[11], taxaAno: taxa[11] };
+}
+if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcular2026: calcular2026, PADRAO: PADRAO, MESES: MESES, TAXA26_INFORMADA: TAXA26_INFORMADA };
 </script>
 
 <script id="tela">
 (function(){
-  var CHAVE = 'simulador-falha-trafos-v1';
-  var dados = clone(PADRAO), adjFc = 0, adjInst = 0;
+  var CHAVE = 'simulador-falha-trafos-v2';
+  var CHAVE_ABA = 'simulador-falha-trafos-aba';
+  var CAMPOS = ['real25','real','fc','parque','inst'];
+  var dados = clone(PADRAO), adjFc = 0, adjInst = 0, aba = '2027';
   var $ = function(id){ return document.getElementById(id); };
   var fmtN = function(n){ return Math.round(n).toLocaleString('pt-BR'); };
-  var fmtP = function(x){ return (x * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%'; };
+  var fmtP = function(x, c){ c = c || 2; return (x * 100).toLocaleString('pt-BR', { minimumFractionDigits: c, maximumFractionDigits: c }) + '%'; };
+  var fmtPP = function(x){ x = Math.round(x * 1000) / 1000; if (x === 0) x = 0; return (x > 0 ? '+' : '') + x.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }); };
   function clone(o){ return JSON.parse(JSON.stringify(o)); }
 
   function carregar(){
     try {
       var s = JSON.parse(localStorage.getItem(CHAVE) || 'null');
-      if (!s) return;
-      ['real','fc','parque','inst'].forEach(function(k){
-        if (Array.isArray(s.d && s.d[k]) && s.d[k].length === 12 && s.d[k].every(function(x){ return typeof x === 'number' && isFinite(x); })) dados[k] = s.d[k];
-      });
-      if (isFinite(s.adjFc)) adjFc = Math.max(-50, Math.min(50, +s.adjFc));
-      if (isFinite(s.adjInst)) adjInst = Math.max(-50, Math.min(50, +s.adjInst));
+      if (s) {
+        CAMPOS.forEach(function(k){
+          if (Array.isArray(s.d && s.d[k]) && s.d[k].length === 12 && s.d[k].every(function(x){ return typeof x === 'number' && isFinite(x); })) dados[k] = s.d[k];
+        });
+        if (isFinite(s.adjFc)) adjFc = Math.max(-50, Math.min(50, +s.adjFc));
+        if (isFinite(s.adjInst)) adjInst = Math.max(-50, Math.min(50, +s.adjInst));
+      }
     } catch (e) {}
+    try { var a = localStorage.getItem(CHAVE_ABA); if (a === '2026' || a === '2027') aba = a; } catch (e) {}
+    if (location.hash === '#2026' || location.hash === '#2027') aba = location.hash.slice(1);
   }
   function salvar(){ try { localStorage.setItem(CHAVE, JSON.stringify({ d: dados, adjFc: adjFc, adjInst: adjInst })); } catch (e) {} }
 
@@ -139,100 +193,125 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, PADRAO
     var tds = dados[chave].map(function(v, i){
       return '<td><input type="text" inputmode="numeric" data-k="' + chave + '" data-i="' + i + '" value="' + v + '"></td>';
     }).join('');
-    return '<tr><td>' + rotulo + '</td>' + tds + '<td class="tot" id="t_' + chave + '"></td></tr>';
+    return '<tr><td>' + rotulo + '</td>' + tds + '<td class="tot" data-tot="' + chave + '"></td></tr>';
   }
+  function linhaCalc(rotulo, cls, id, comTotal){
+    return '<tr class="' + cls + '"><td>' + rotulo + '</td>' + MESES.map(function(_, i){ return '<td id="' + id + i + '"></td>'; }).join('') +
+      '<td class="tot" id="' + id + 'T">' + (comTotal ? '' : '') + '</td></tr>';
+  }
+  function cab(){ return '<thead><tr><th>MÊS</th>' + MESES.map(function(m){ return '<th>' + m + '</th>'; }).join('') + '<th>TOTAL</th></tr></thead><tbody>'; }
   function montar(){
-    var h = '<thead><tr><th>MÊS</th>' + MESES.map(function(m){ return '<th>' + m + '</th>'; }).join('') + '<th>TOTAL</th></tr></thead><tbody>';
-    h += linhaInput('REAL 2026', 'real');
-    h += linhaInput('FORECAST 2027', 'fc');
-    h += '<tr class="calc" id="rFcAdj"><td>FORECAST AJUSTADO</td>' + MESES.map(function(_, i){ return '<td id="fa' + i + '"></td>'; }).join('') + '<td class="tot" id="faT"></td></tr>';
-    h += linhaInput('PARQUE 2026', 'parque');
-    h += '<tr class="calc"><td>PARQUE 2027</td>' + MESES.map(function(_, i){ return '<td id="p' + i + '"></td>'; }).join('') + '<td class="tot" id="pT"></td></tr>';
-    h += '<tr class="taxa"><td>TAXA 2027</td>' + MESES.map(function(_, i){ return '<td id="x' + i + '"></td>'; }).join('') + '<td class="tot" id="xT"></td></tr>';
-    h += linhaInput('QTE TR INST', 'inst');
-    h += '<tr class="calc" id="rInstAdj"><td>INSTALADOS AJUSTADO</td>' + MESES.map(function(_, i){ return '<td id="ia' + i + '"></td>'; }).join('') + '<td class="tot" id="iaT"></td></tr>';
-    $('tab').innerHTML = h + '</tbody>';
+    $('tab').innerHTML = cab() +
+      linhaInput('REAL 2026', 'real') + linhaInput('FORECAST 2027', 'fc') +
+      linhaCalc('FORECAST AJUSTADO', 'calc', 'fa') + linhaInput('PARQUE 2026', 'parque') +
+      linhaCalc('PARQUE 2027', 'calc', 'p') + linhaCalc('TAXA 2027', 'taxa', 'x') +
+      linhaInput('QTE TR INST', 'inst') + linhaCalc('INSTALADOS AJUSTADO', 'calc', 'ia') + '</tbody>';
+    $('tab26').innerHTML = cab() +
+      linhaInput('REAL 2025', 'real25') + linhaInput('REALIZADO / FORECAST', 'real') + linhaInput('PARQUE 2026', 'parque') +
+      linhaCalc('TAXA 2026', 'taxa', 'x26') + linhaCalc('TAXA INFORMADA', 'inf', 'xi26') + linhaCalc('DIFERENÇA (P.P.)', 'dif', 'd26') + '</tbody>';
   }
 
-  function desenhar(r){
-    var el = $('chart'), W = Math.max(300, Math.round(el.getBoundingClientRect().width || 720)), H = W < 520 ? 260 : 300;
+  /* series: [{v:[...], cor, tracejado, rotulos}] ; a primeira é a principal */
+  function desenhar(el, series){
+    var W = Math.max(300, Math.round(el.getBoundingClientRect().width || 720)), H = W < 520 ? 260 : 300;
     var L = 52, R = 14, T = 24, B = 32, estreito = W < 520, ins = estreito ? 12 : 22;
     el.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-    var min = Math.min.apply(null, r.taxa), max = Math.max.apply(null, r.taxa);
+    var todos = [].concat.apply([], series.map(function(z){ return z.v; }));
+    var min = Math.min.apply(null, todos), max = Math.max.apply(null, todos);
     var pad = Math.max((max - min) * 0.35, 0.0005); min -= pad; max += pad;
     var x = function(i){ return L + ins + (W - L - R - 2 * ins) * i / 11; };
     var y = function(v){ return T + (H - T - B) * (1 - (v - min) / (max - min)); };
-    var iMin = r.taxa.indexOf(Math.min.apply(null, r.taxa)), iMax = r.taxa.indexOf(Math.max.apply(null, r.taxa));
+    var princ = series[0].v;
+    var iMin = princ.indexOf(Math.min.apply(null, princ)), iMax = princ.indexOf(Math.max.apply(null, princ));
     var s = '';
     for (var g = 0; g <= 4; g++){
       var v = min + (max - min) * g / 4, yy = y(v);
       s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '" stroke="#2b2e35"/>' +
            '<text x="' + (L - 8) + '" y="' + (yy + 4) + '" text-anchor="end" fill="#a6acb8" font-size="11">' + fmtP(v) + '</text>';
     }
-    var pts = r.taxa.map(function(v, i){ return x(i).toFixed(1) + ',' + y(v).toFixed(1); }).join(' ');
-    s += '<polyline points="' + pts + '" fill="none" stroke="#78d88b" stroke-width="2.5" stroke-linejoin="round"/>';
-    r.taxa.forEach(function(v, i){
+    for (var si = series.length - 1; si >= 0; si--){
+      var z = series[si];
+      s += '<polyline points="' + z.v.map(function(t, i){ return x(i).toFixed(1) + ',' + y(t).toFixed(1); }).join(' ') + '" fill="none" stroke="' + z.cor + '" stroke-width="' + (z.tracejado ? 2 : 2.5) + '"' + (z.tracejado ? ' stroke-dasharray="5 4"' : '') + ' stroke-linejoin="round"/>';
+    }
+    princ.forEach(function(t, i){
       var rotulo = !estreito || i === 0 || i === 11 || i === iMin || i === iMax;
-      s += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(v).toFixed(1) + '" r="3.5" fill="#78d88b"/>' +
-           (rotulo ? '<text x="' + x(i).toFixed(1) + '" y="' + (i === iMin && estreito ? y(v) + 19 : y(v) - 9).toFixed(1) + '" text-anchor="middle" fill="#f7f8fb" font-size="11" font-weight="700">' + fmtP(v) + '</text>' : '') +
+      s += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(t).toFixed(1) + '" r="3.5" fill="' + series[0].cor + '"/>' +
+           (rotulo ? '<text x="' + x(i).toFixed(1) + '" y="' + ((i === iMin || i === 0) && estreito ? y(t) + 19 : y(t) - 9).toFixed(1) + '" text-anchor="middle" fill="#f7f8fb" font-size="11" font-weight="700">' + fmtP(t) + '</text>' : '') +
            '<text x="' + x(i).toFixed(1) + '" y="' + (H - 10) + '" text-anchor="middle" fill="#a6acb8" font-size="' + (estreito ? 9 : 11) + '">' + MESES[i] + '</text>';
     });
     el.innerHTML = s;
   }
 
   function atualizar(){
-    var r = calcular(dados, adjFc, adjInst);
+    var r = calcular(dados, adjFc, adjInst), a = calcular2026(dados);
     for (var i = 0; i < 12; i++){
       $('p' + i).textContent = fmtN(r.parque27[i]);
       $('x' + i).textContent = fmtP(r.taxa[i]);
       $('fa' + i).textContent = fmtN(r.fc[i]);
       $('ia' + i).textContent = fmtN(r.inst[i]);
+      $('x26' + i).textContent = fmtP(a.taxa[i], 3);
+      $('xi26' + i).textContent = (TAXA26_INFORMADA[i]).toLocaleString('pt-BR', { minimumFractionDigits: 3 }) + '%';
+      $('d26' + i).textContent = fmtPP(a.taxa[i] * 100 - TAXA26_INFORMADA[i]);
     }
-    $('t_real').textContent = fmtN(r.totReal);
-    $('t_fc').textContent = fmtN(dados.fc.reduce(function(a, b){ return a + b; }, 0));
-    $('t_parque').textContent = fmtN(dados.parque[11]);
-    $('t_inst').textContent = fmtN(dados.inst.reduce(function(a, b){ return a + b; }, 0));
+    document.querySelectorAll('td[data-tot]').forEach(function(td){
+      var k = td.dataset.tot; td.textContent = fmtN(k === 'parque' ? dados.parque[11] : soma(dados[k], 0, 11));
+    });
+    document.querySelectorAll('td input').forEach(function(el){
+      if (el !== document.activeElement) el.value = dados[el.dataset.k][+el.dataset.i];
+    });
     $('faT').textContent = fmtN(r.totFc);
     $('iaT').textContent = fmtN(r.totInst);
     $('pT').textContent = fmtN(r.parqueFim);
     $('xT').textContent = fmtP(r.taxaAno);
+    $('x26T').textContent = fmtP(a.taxaAno, 3);
     $('kTaxa').textContent = fmtP(r.taxaAno);
     $('kFalhas').textContent = fmtN(r.totFc);
     $('kParque').textContent = fmtN(r.parqueFim);
     $('kReal').textContent = fmtN(r.totReal);
-    $('rFcAdj').style.display = adjFc ? '' : 'none';
-    $('rInstAdj').style.display = adjInst ? '' : 'none';
+    $('k26Taxa').textContent = fmtP(a.taxaAno, 3);
+    $('k26Falhas').textContent = fmtN(a.tot26);
+    $('k26Parque').textContent = fmtN(a.parqueFim);
+    $('k26Real25').textContent = fmtN(a.tot25);
     $('adjFcOut').textContent = (adjFc > 0 ? '+' : '') + adjFc + '%';
     $('adjInstOut').textContent = (adjInst > 0 ? '+' : '') + adjInst + '%';
-    desenhar(r);
+    $('adjFc').value = adjFc; $('adjInst').value = adjInst;
+    if (aba === '2027') desenhar($('chart'), [{ v: r.taxa, cor: '#78d88b' }]);
+    else desenhar($('chart26'), [{ v: a.taxa, cor: '#78d88b' }, { v: TAXA26_INFORMADA.map(function(t){ return t / 100; }), cor: '#ffb74d', tracejado: true }]);
+  }
+
+  function mostrarAba(nova){
+    aba = nova;
+    $('aba2026').hidden = aba !== '2026'; $('aba2027').hidden = aba !== '2027';
+    $('bt2026').setAttribute('aria-selected', aba === '2026'); $('bt2027').setAttribute('aria-selected', aba === '2027');
+    try { localStorage.setItem(CHAVE_ABA, aba); } catch (e) {}
+    atualizar();
   }
 
   function ler(txt){ var t = String(txt).replace(/\./g, '').replace(',', '.').trim(); if (t === '') return null; var n = Number(t); return isFinite(n) && n >= 0 ? n : null; }
 
-  montar(); carregar();
-  document.querySelectorAll('td input').forEach(function(el){
-    el.value = dados[el.dataset.k][+el.dataset.i];
-  });
-  $('adjFc').value = adjFc; $('adjInst').value = adjInst;
-  $('tab').addEventListener('input', function(e){
+  carregar(); montar();
+  function aoDigitar(e){
     var el = e.target; if (!el.dataset || !el.dataset.k) return;
     var n = ler(el.value);
     el.style.borderColor = n === null ? '#ff7f91' : '';
     if (n === null) return;
     dados[el.dataset.k][+el.dataset.i] = n; salvar(); atualizar();
-  });
-  $('tab').addEventListener('focusout', function(e){
+  }
+  function aoSair(e){
     var el = e.target; if (el.dataset && el.dataset.k){ el.value = dados[el.dataset.k][+el.dataset.i]; el.style.borderColor = ''; }
-  });
+  }
+  ['tab', 'tab26'].forEach(function(id){ $(id).addEventListener('input', aoDigitar); $(id).addEventListener('focusout', aoSair); });
   $('adjFc').addEventListener('input', function(){ adjFc = +this.value; salvar(); atualizar(); });
   $('adjInst').addEventListener('input', function(){ adjInst = +this.value; salvar(); atualizar(); });
+  document.querySelectorAll('.tabs button').forEach(function(b){ b.addEventListener('click', function(){ mostrarAba(b.dataset.aba); }); });
   $('reset').addEventListener('click', function(){
     dados = clone(PADRAO); adjFc = adjInst = 0; salvar();
-    document.querySelectorAll('td input').forEach(function(el){ el.value = dados[el.dataset.k][+el.dataset.i]; el.style.borderColor = ''; });
-    $('adjFc').value = 0; $('adjInst').value = 0; atualizar();
+    document.querySelectorAll('td input').forEach(function(el){ el.style.borderColor = ''; });
+    atualizar();
   });
-  atualizar();
-  var larg = 0; window.addEventListener('resize', function(){ var w = $('chart').getBoundingClientRect().width; if (Math.abs(w - larg) > 2){ larg = w; atualizar(); } });
+  window.addEventListener('hashchange', function(){ if (location.hash === '#2026' || location.hash === '#2027') mostrarAba(location.hash.slice(1)); });
+  mostrarAba(aba);
+  var larg = 0; window.addEventListener('resize', function(){ var w = $(aba === '2027' ? 'chart' : 'chart26').getBoundingClientRect().width; if (Math.abs(w - larg) > 2){ larg = w; atualizar(); } });
 })();
 </script>
 </body>
