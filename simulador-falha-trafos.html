@@ -3,109 +3,218 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#17181c">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <title>Simulador de taxa de falha de transformadores</title>
 <style>
+/* Cores do sistema da Apple (iOS). Segue o modo claro/escuro do aparelho. */
+:root{
+  color-scheme:light dark;
+  --bg:#f2f2f7;--card:#fff;--card2:#f2f2f7;
+  --fill:rgba(120,120,128,.2);--fill2:rgba(120,120,128,.16);--fill3:rgba(118,118,128,.12);
+  --label:#000;--label2:rgba(60,60,67,.6);--label3:rgba(60,60,67,.3);
+  --sep:rgba(60,60,67,.13);--sep2:rgba(60,60,67,.29);
+  --blue:#007aff;--green:#34c759;--orange:#ff9500;--red:#ff3b30;
+  --blueT:#007aff;--greenT:#248a3d;--orangeT:#c93400;--redT:#d70015;
+  --blueBg:rgba(0,122,255,.1);--greenBg:#e7f8eb;--orangeBg:rgba(255,149,0,.14);--redBg:rgba(255,59,48,.1);
+  --seg:rgba(118,118,128,.12);--segOn:#fff;--segSh:0 3px 8px rgba(0,0,0,.12),0 3px 1px rgba(0,0,0,.04);
+  --material:rgba(242,242,247,.8);--alert:rgba(242,242,247,.94);
+  --cardSh:0 1px 2px rgba(0,0,0,.04);--thumbSh:0 .5px 4px rgba(0,0,0,.12),0 6px 13px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#000;--card:#1c1c1e;--card2:#2c2c2e;
+    --fill:rgba(120,120,128,.36);--fill2:rgba(120,120,128,.32);--fill3:rgba(118,118,128,.24);
+    --label:#fff;--label2:rgba(235,235,245,.6);--label3:rgba(235,235,245,.3);
+    --sep:rgba(84,84,88,.5);--sep2:rgba(84,84,88,.65);
+    --blue:#0a84ff;--green:#30d158;--orange:#ff9f0a;--red:#ff453a;
+    --blueT:#409cff;--greenT:#30d158;--orangeT:#ff9f0a;--redT:#ff6961;
+    --blueBg:rgba(10,132,255,.2);--greenBg:#1e3526;--orangeBg:rgba(255,159,10,.18);--redBg:rgba(255,69,58,.18);
+    --seg:rgba(118,118,128,.24);--segOn:#636366;
+    --material:rgba(0,0,0,.72);--alert:rgba(44,44,46,.94);
+    --cardSh:none;
+  }
+}
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;background:#17181c}
-body{margin:0;background:#17181c;color:#f7f8fb;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:16px 16px 40px;line-height:1.4}
+html{-webkit-text-size-adjust:100%;background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--label);font:15px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue","Segoe UI",Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;-webkit-tap-highlight-color:transparent;
+  padding:calc(env(safe-area-inset-top) + 10px) max(16px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 40px) max(16px,env(safe-area-inset-left))}
 main{max-width:1100px;margin:0 auto}
-h1{font-size:20px;margin:6px 0 4px}
-.sub{color:#a6acb8;font-size:13px;margin:0 0 16px}
-h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 10px;text-transform:uppercase}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
-.card{border:1px solid #3b404a;border-radius:16px;background:#202228;padding:13px 14px}
-.card small{display:block;color:#a6acb8;font-size:11px;font-weight:700}
-.card b{display:block;font-size:22px;margin-top:4px;font-weight:850}
-.card .ex{display:block;color:#a6acb8;font-size:11px;margin-top:3px}
-.card.main{background:linear-gradient(135deg,#123a5c,#202228)}.card.main b{color:#6ec9ff}
-.box{border:1px solid #3b404a;border-radius:16px;background:#202228;padding:14px 16px}
-.ctrl{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
-.ctrl label{display:block;font-size:12px;font-weight:700;color:#a6acb8;margin-bottom:6px}
-.ctrl .line{display:flex;align-items:center;gap:10px}
-.ctrl input[type=range]{flex:1;accent-color:#6ec9ff;min-width:0}
-.ctrl output{min-width:58px;text-align:right;font-weight:850;font-variant-numeric:tabular-nums}
-.leg{display:flex;gap:14px;flex-wrap:wrap;color:#a6acb8;font-size:12px;font-weight:700;margin:0 2px 10px}
-.leg span{display:inline-flex;align-items:center;gap:6px}
-.sw{display:inline-block;width:14px;height:14px;border-radius:5px;border:1px solid}
-.sw.f{background:#2a2d35;border-color:#4a505c}.sw.e{background:#10253a;border-color:#2f6fa3}.sw.r{background:#123524;border-color:#2f8f57}
-.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #3b404a;border-radius:16px;background:#202228}
-table{border-collapse:collapse;width:100%;min-width:960px;font-variant-numeric:tabular-nums}
-th,td{padding:10px 2px;text-align:center;font-size:13px;white-space:nowrap}
-tbody tr:not(.grp){border-top:1px solid #2b2e35;height:46px}
-thead th{color:#a6acb8;font-size:11px;font-weight:800;padding:12px 4px}
-th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:#202228;padding-left:12px;padding-right:8px;z-index:1;min-width:150px;max-width:150px;white-space:normal}
-.rt{font-weight:800;font-size:12px;color:#e6e8ee;line-height:1.25}
-td.tot{font-weight:850;color:#f7f8fb;padding-right:12px;box-shadow:inset 1px 0 0 #3b404a}
-tr.grp td{padding:0;border-top:0;text-align:left;background:#191b20}
-tr.grp td:first-child{max-width:none}
-.gt{display:inline-block;position:sticky;left:0;padding:9px 12px;font-size:10.5px;font-weight:850;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
-tr.grp.g-f .gt{color:#a6acb8}tr.grp.g-e .gt{color:#6ec9ff}tr.grp.g-r .gt{color:#78d88b}
-.gt small{font-weight:600;letter-spacing:0;text-transform:none;color:#8b93a1;margin-left:6px;font-size:11px}
-tr.calc td{color:#9bd3ff;font-weight:750}
-tr.calc td:first-child .rt{color:#9bd3ff}
-tr.taxa td{color:#78d88b;font-weight:850;font-size:14px;background:#17301f}
-tr.taxa td:first-child{background:#17301f}tr.taxa td:first-child .rt{color:#78d88b}
-tr.inf td{color:#ffb74d;font-weight:750}tr.inf td:first-child .rt{color:#ffb74d}
-tr.dif td{color:#a6acb8;font-weight:700;font-size:12px}
-td input{width:68px;font:inherit;font-size:16px;border-radius:8px;padding:7px 5px;text-align:center;font-variant-numeric:tabular-nums}
-td input.ed{color:#fff;background:#10253a;border:1px solid #2f6fa3}
-td input.ed:focus{outline:2px solid #6ec9ff;border-color:transparent}
-td input.fx{color:#c9cdd6;background:transparent;border:1px solid transparent;cursor:default}
-body.destrav td input.fx{color:#fff;background:#17181c;border-color:#3b404a;cursor:text}
-body.destrav td input.fx:focus{outline:2px solid #ffb74d;border-color:transparent}
-.chart{border:1px solid #3b404a;border-radius:16px;background:#202228;padding:8px}
-svg{display:block;width:100%;height:auto}
-.leg2{color:#a6acb8;font-size:11px;font-weight:700;margin:8px 4px 0}
-.leg2 i{display:inline-block;width:18px;height:0;border-top:3px solid #78d88b;vertical-align:middle;margin-right:5px}
-.leg2 i.t{border-top:2px dashed #ffb74d;position:relative}
-.leg2 i.t::after{content:"";position:absolute;left:50%;top:-5.5px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:#ffb74d}
-.btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
-button{font:inherit;font-size:14px;font-weight:800;color:#f7f8fb;background:#2a2d35;border:1px solid #3b404a;border-radius:12px;padding:11px 16px;cursor:pointer}
-button:active{background:#3b404a}
-.tabs{display:flex;gap:6px;margin:10px 0 16px;padding:4px;border:1px solid #3b404a;border-radius:14px;background:#202228;width:max-content;max-width:100%}
-.tabs button{border:0;background:transparent;color:#a6acb8;padding:9px 22px;border-radius:10px;font-size:15px}
-.tabs button[aria-selected=true]{background:#123a5c;color:#6ec9ff}
-.note{color:#a6acb8;font-size:12px;line-height:1.55;margin-top:16px}
-.note p{margin:8px 0 0}
-.col-plan .formula h2:first-child{margin-top:26px}
-.fbox{display:flex;flex-wrap:wrap;align-items:center;gap:12px 10px;border:1px solid #3b404a;border-radius:16px;background:#202228;padding:16px}
-.ffrac{display:flex;flex-direction:column;align-items:center;gap:9px;min-width:0;max-width:100%}
-.fnum,.fden{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:7px 7px}
-.fline{align-self:stretch;height:2px;border-radius:2px;background:#6b7280}
-.fchip{display:inline-block;padding:7px 9px;border-radius:10px;border:1px solid;font-size:12px;font-weight:750;line-height:1.25;text-align:center}
-.fchip.f{background:#2a2d35;border-color:#4a505c;color:#c9cdd6}
-.fchip.e{background:#10253a;border-color:#2f6fa3;color:#9bd3ff}
-.fchip.r{background:#123524;border-color:#2f8f57;color:#78d88b;font-size:13px}
-.fop{font-size:18px;font-weight:800;color:#a6acb8;white-space:nowrap}
-.fex{margin:10px 2px 0;font-size:12.5px;color:#a6acb8;font-variant-numeric:tabular-nums}
-.fex b{color:#f7f8fb}
+button{font:inherit;cursor:pointer;-webkit-appearance:none;appearance:none}
+.ic{width:16px;height:16px;flex:none;display:block}
+[hidden]{display:none!important}
 
-.head{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;margin:6px 0 14px}
-.head h1{margin:0}
+/* cabeçalho com título grande */
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px 20px;flex-wrap:wrap;margin:8px 0 4px}
+h1{font-size:34px;line-height:1.12;font-weight:700;letter-spacing:.01em;margin:0}
 .headr{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.headr .tabs{margin:0}
-button.peq{padding:9px 12px;font-size:13px}
+.sub{color:var(--label2);font-size:15px;margin:8px 0 18px;max-width:72ch}
+
+/* controle segmentado */
+.tabs{position:relative;display:grid;grid-template-columns:repeat(3,1fr);width:300px;max-width:100%;padding:2px;border-radius:9px;background:var(--seg)}
+.tabs .ind{position:absolute;top:2px;bottom:2px;left:2px;width:calc((100% - 4px) / 3);border-radius:7px;background:var(--segOn);box-shadow:var(--segSh);transition:transform .32s cubic-bezier(.25,.8,.25,1)}
+.tabs[data-i="1"] .ind{transform:translateX(100%)}
+.tabs[data-i="2"] .ind{transform:translateX(200%)}
+.tabs button{position:relative;z-index:1;border:0;background:transparent;color:var(--label);font-size:13px;font-weight:500;padding:6px 10px;min-height:32px;border-radius:7px;white-space:nowrap}
+.tabs button[aria-selected=true]{font-weight:600}
+.tabs button:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+
+/* botões */
+.bt{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:999px;background:var(--fill3);color:var(--blueT);font-size:15px;font-weight:600;line-height:1.2;text-align:center;padding:8px 15px;min-height:36px;transition:background-color .2s,color .2s,opacity .15s}
+.bt:active{opacity:.5}
+.bt:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+@media (hover:hover){.bt:hover{background:var(--fill2)}}
+.bt .ic-on{display:none}
+.bt.on{background:var(--orangeBg);color:var(--orangeT)}
+.bt.on .ic-on{display:block}.bt.on .ic-off{display:none}
+
+/* cartões de resumo */
+h2{font-size:20px;font-weight:700;letter-spacing:.01em;margin:30px 0 10px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.card{background:var(--card);border-radius:16px;padding:12px 14px 14px;box-shadow:var(--cardSh);min-width:0}
+.card small{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600;line-height:1.25}
+.card small .ic{width:14px;height:14px}
+.card.c-g small{color:var(--greenT)}.card.c-o small{color:var(--orangeT)}.card.c-b small{color:var(--blueT)}.card.c-n small{color:var(--label2)}
+.card b{display:block;margin-top:8px;font-family:ui-rounded,-apple-system,BlinkMacSystemFont,"SF Pro Rounded","SF Pro Display","Segoe UI",Roboto,sans-serif;font-size:28px;line-height:1.1;font-weight:700;font-variant-numeric:tabular-nums}
+.card.main b{color:var(--greenT)}
+.card .ex{display:block;color:var(--label2);font-size:12px;margin-top:4px;line-height:1.3}
+.pill{display:inline-block;margin-top:8px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.35;background:var(--fill3);color:var(--label2)}
+.pill.ruim{background:var(--redBg);color:var(--redT)}.pill.bom{background:var(--greenBg);color:var(--greenT)}
+.pill:empty{display:none}
+
+/* gráfico */
+.chart{background:var(--card);border-radius:16px;padding:10px 6px 6px;box-shadow:var(--cardSh)}
+.chart svg{display:block;width:100%;height:auto;touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.c-grid{stroke:var(--sep);stroke-width:1}
+.c-axis{fill:var(--label2)}
+.c-gs1{stop-color:var(--green);stop-opacity:.28}.c-gs2{stop-color:var(--green);stop-opacity:0}
+.c-line{fill:none;stroke:var(--green);stroke-linejoin:round;stroke-linecap:round}
+.c-mline{fill:none;stroke:var(--orange);stroke-dasharray:6 5}
+.c-pt{fill:var(--green);stroke:var(--card);stroke-width:2}
+.c-mpt{fill:var(--orange);stroke:var(--card);stroke-width:1.5}
+.c-val,.c-mlbl{font-weight:600;stroke:var(--card);stroke-width:3.5px;stroke-linejoin:round;paint-order:stroke}
+.c-val{fill:var(--label)}.c-mlbl{fill:var(--orangeT)}
+.c-lbl{transition:opacity .15s}
+.scrubbing .c-lbl{opacity:.12}
+.c-rule{stroke:var(--label3);stroke-width:1.5}
+.c-tip rect{fill:var(--card2)}
+.c-tip text{font-weight:600}.c-tm{fill:var(--label2)}.c-tv{fill:var(--greenT)}.c-tmeta{fill:var(--orangeT)}
+.c-aviso{fill:var(--label2)}
+.leg2{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;color:var(--label2);font-size:12px;font-weight:500;margin:6px 10px 4px}
+.leg2 span{display:inline-flex;align-items:center}
+.leg2 i{display:inline-block;width:18px;height:0;border-top:3px solid var(--green);border-radius:2px;margin-right:6px}
+.leg2 i.t{border-top:2px dashed var(--orange);position:relative}
+.leg2 i.t::after{content:"";position:absolute;left:50%;top:-5px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:var(--orange)}
+
+/* barras de ajuste (estilo slider do iOS) */
+.box{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--cardSh)}
+.ctrl{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px 28px}
+.ctrl label{display:block;font-size:15px;font-weight:500;line-height:1.3;margin-bottom:8px}
+.ctrl .line{display:flex;align-items:flex-start;gap:10px}
+.slw{flex:1;min-width:0}
+.sl{--pa:.5;--pb:.5;-webkit-appearance:none;appearance:none;display:block;width:100%;height:28px;margin:0;background:transparent;cursor:pointer}
+.sl:focus{outline:none}
+.sl::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--fill) calc(14px + (100% - 28px) * var(--pa)),var(--blue) 0,var(--blue) calc(14px + (100% - 28px) * var(--pb)),var(--fill) 0)}
+.sl::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:28px;height:28px;margin-top:-12px;border:0;border-radius:50%;background:#fff;box-shadow:var(--thumbSh)}
+.sl::-moz-range-track{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--fill) calc(14px + (100% - 28px) * var(--pa)),var(--blue) 0,var(--blue) calc(14px + (100% - 28px) * var(--pb)),var(--fill) 0)}
+.sl::-moz-range-thumb{width:28px;height:28px;border:0;border-radius:50%;background:#fff;box-shadow:var(--thumbSh)}
+.sl:focus-visible::-webkit-slider-thumb{box-shadow:var(--thumbSh),0 0 0 3px var(--blue)}
+.escala{display:flex;justify-content:space-between;font-size:11px;color:var(--label3);margin-top:2px;font-variant-numeric:tabular-nums}
+.ctrl output{min-width:52px;line-height:28px;text-align:right;font-weight:700;font-size:17px;font-variant-numeric:tabular-nums}
+.zera{flex:none;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:0;border-radius:50%;background:var(--fill3);color:var(--blueT);visibility:hidden}
+.zera.vis{visibility:visible}
+.zera:active{opacity:.5}
+.zera .ic{width:15px;height:15px}
+
+/* planilha */
+.leg{display:flex;gap:6px 16px;flex-wrap:wrap;color:var(--label2);font-size:13px;margin:0 2px 10px}
+.leg span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:12px;height:12px;border-radius:4px}
+.sw.f{background:var(--fill)}
+.sw.e{background:var(--blueBg);box-shadow:inset 0 0 0 1.5px var(--blue)}
+.sw.r{background:var(--greenBg);box-shadow:inset 0 0 0 1.5px var(--green)}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:16px;background:var(--card);box-shadow:var(--cardSh)}
+table{border-collapse:collapse;width:100%;min-width:960px;font-variant-numeric:tabular-nums}
+th,td{padding:9px 2px;text-align:center;font-size:14px;white-space:nowrap}
+tbody tr:not(.grp){border-top:1px solid var(--sep);height:46px}
+thead th{color:var(--label2);font-size:12px;font-weight:600;letter-spacing:.02em;padding:12px 4px 8px}
+thead th:last-child{padding-right:14px}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;z-index:1;background:var(--card);padding-left:14px;padding-right:8px;min-width:150px;max-width:150px;white-space:normal;box-shadow:inset -1px 0 0 var(--sep)}
+.rt{font-weight:600;font-size:12.5px;line-height:1.25;letter-spacing:.01em}
+td.tot{font-weight:700;padding-right:14px;box-shadow:inset 1px 0 0 var(--sep)}
+tr.grp td{padding:0;text-align:left;background:var(--card)}
+tr.grp td:first-child{max-width:none;box-shadow:none}
+.gt{display:inline-block;position:sticky;left:0;padding:16px 14px 6px;font-size:13px;font-weight:600;white-space:nowrap}
+tr.grp.g-f .gt{color:var(--label2)}tr.grp.g-e .gt{color:var(--blueT)}tr.grp.g-r .gt{color:var(--greenT)}
+.gt small{font-weight:400;color:var(--label2);margin-left:6px;font-size:12px}
+tr.calc td,tr.calc .rt{color:var(--blueT);font-weight:600}
+tr.taxa td,tr.taxa td:first-child{background:var(--greenBg)}
+tr.taxa td,tr.taxa .rt{color:var(--greenT);font-weight:700}
+tr.taxa td{font-size:15px}
+tr.inf td,tr.inf .rt{color:var(--orangeT);font-weight:600}
+tr.dif td{color:var(--label2);font-weight:600;font-size:13px}
+tr.dif td.pos{color:var(--redT)}tr.dif td.neg{color:var(--greenT)}
+td input{width:66px;font:inherit;font-size:16px;font-variant-numeric:tabular-nums;text-align:center;border:0;border-radius:8px;padding:7px 4px;-webkit-appearance:none;appearance:none;transition:box-shadow .15s,background-color .2s}
+td input.ed{color:var(--blueT);background:var(--blueBg);font-weight:600}
+td input.ed:focus{outline:none;box-shadow:0 0 0 2px var(--blue)}
+td input.fx{color:var(--label);background:transparent;cursor:default}
+td input.fx:focus{outline:none}
+body.destrav td input.fx{background:var(--fill3);box-shadow:inset 0 0 0 1px var(--orange);cursor:text}
+body.destrav td input.fx:focus{box-shadow:0 0 0 2px var(--orange)}
+td input.erro,body.destrav td input.erro{box-shadow:0 0 0 2px var(--red)}
+
+/* fórmula */
+.fbox{display:flex;flex-wrap:wrap;align-items:center;gap:12px 10px;background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--cardSh)}
+.ffrac{display:flex;flex-direction:column;align-items:center;gap:9px;min-width:0;max-width:100%}
+.fnum,.fden{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:7px}
+.fline{align-self:stretch;height:2px;border-radius:2px;background:var(--label3)}
+.fchip{display:inline-block;padding:7px 10px;border-radius:8px;font-size:13px;font-weight:600;line-height:1.25;text-align:center}
+.fchip.f{background:var(--fill3);color:var(--label)}
+.fchip.r{background:var(--greenBg);color:var(--greenT);font-size:14px}
+.fop{font-size:19px;font-weight:600;color:var(--label2);white-space:nowrap}
+.fex{margin:10px 4px 0;font-size:13px;color:var(--label2);font-variant-numeric:tabular-nums}
+.fex b{color:var(--label);font-weight:600}
+
+/* alerta de confirmação (estilo iOS) */
+.alerta{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.35);animation:aparece .2s ease-out}
+.alerta .cx{width:270px;max-width:100%;border-radius:14px;background:var(--alert);-webkit-backdrop-filter:blur(30px);backdrop-filter:blur(30px);text-align:center;overflow:hidden;animation:cresce .25s cubic-bezier(.2,.9,.3,1.2)}
+.alerta h3{font-size:17px;font-weight:600;line-height:1.3;margin:19px 16px 4px}
+.alerta p{font-size:13px;line-height:1.4;margin:0 16px 18px}
+.alerta .bts{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--sep2)}
+.alerta .bts button{border:0;border-radius:0;background:transparent;color:var(--blue);font-size:17px;min-height:44px;padding:10px 8px}
+.alerta .bts button+button{border-left:1px solid var(--sep2)}
+.alerta .bts button:focus{outline:none}
+.alerta .bts button:active,.alerta .bts button:focus-visible{background:var(--fill3)}
+.alerta .bts .destr{color:var(--red);font-weight:600}
+@keyframes aparece{from{opacity:0}}
+@keyframes cresce{from{transform:scale(1.15);opacity:0}}
+
+/* layout */
 .layout{display:block}
 .col-vis{display:contents}
 /* celular e telas estreitas: o gráfico fica fixo no topo enquanto a planilha rola por baixo */
-.chartwrap{position:sticky;top:0;z-index:20;background:#17181c;padding:8px 0 6px;box-shadow:0 8px 10px -8px rgba(0,0,0,.7)}
-.col-plan h2:first-child{margin-top:18px}
+.chartwrap{position:sticky;top:0;z-index:20;margin:0 calc(-1 * max(16px,env(safe-area-inset-right))) 0 calc(-1 * max(16px,env(safe-area-inset-left)));
+  padding:calc(env(safe-area-inset-top) + 8px) max(16px,env(safe-area-inset-right)) 8px max(16px,env(safe-area-inset-left));
+  background:var(--material);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px)}
+.cards + .chartwrap{margin-top:2px}
+.col-plan h2:first-child{margin-top:22px}
+.col-plan .formula h2:first-child{margin-top:30px}
 /* computador: planilha à esquerda, cartões + gráfico + cenários à direita, tudo na mesma tela */
 @media (min-width:1280px){
   main{max-width:1760px}
-  .layout{display:grid;grid-template-columns:minmax(790px,1fr) minmax(380px,1.15fr);gap:20px;align-items:start}
+  h1{font-size:30px}
+  .layout{display:grid;grid-template-columns:minmax(790px,1fr) minmax(380px,1.15fr);gap:24px;align-items:start}
   .col-plan{grid-column:1;grid-row:1;min-width:0}
   .col-vis{display:block;grid-column:2;grid-row:1;min-width:0}
   .col-plan h2:first-child{margin-top:0}
-  .chartwrap{position:static;padding:0;box-shadow:none;margin-top:10px;background:transparent}
-  .col-vis h2{margin:16px 0 8px}
+  .chartwrap{position:static;margin:10px 0 0;padding:0;background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none}
   .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .card{padding:9px 12px}.card b{font-size:19px;margin-top:2px}
+  .card{padding:10px 14px 11px}.card b{font-size:23px;margin-top:4px}
+  .card small{font-size:12px}
   .card:not(.main) .ex{display:none}
-  .card small{font-size:10.5px}
-  .col-vis h2{margin:12px 0 6px}
-  .chartwrap{margin-top:8px}
+  .pill{margin-top:6px}
+  .col-vis h2{margin:16px 0 8px}
 }
 /* mouse (não toque): planilha compacta para caber ao lado do gráfico */
 @media (min-width:1280px) and (pointer:fine){
@@ -115,40 +224,60 @@ button.peq{padding:9px 12px;font-size:13px}
   td input{width:49px;font-size:12.5px;padding:6px 2px}
   td.tot{padding-right:8px}
   tr.taxa td{font-size:13px}
+  tr.dif td{font-size:12px}
   tr.grp td{padding:0}
+  .gt{padding:12px 10px 4px}
 }
-[hidden]{display:none!important}
-@media (max-width:520px){.headr{width:100%;align-items:stretch}.headr .tabs{width:100%}.headr .tabs button{flex:1}button.peq{flex:1 1 0;font-size:12px;padding:10px 6px}h1{font-size:18px}.card b{font-size:19px}th:first-child,td:first-child{min-width:118px;max-width:118px}}
+@media (max-width:520px){
+  h1{font-size:32px}
+  .headr{width:100%}
+  .tabs{width:100%}
+  .tabs button{font-size:14px;min-height:34px}
+  .bt{flex:1 1 0;font-size:13px;padding:8px 10px;min-height:44px}
+  .card b{font-size:25px}
+  th:first-child,td:first-child{min-width:118px;max-width:118px}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
 <main>
-<div class="head">
+<header class="head">
   <h1>Taxa de falha de transformadores</h1>
   <div class="headr">
-    <div class="tabs" role="tablist">
+    <div class="tabs" role="tablist" aria-label="Ano" data-i="1">
+      <span class="ind" aria-hidden="true"></span>
       <button type="button" role="tab" id="bt2026" aria-selected="false" data-aba="2026">2026</button>
       <button type="button" role="tab" id="bt2027" aria-selected="true" data-aba="2027">2027</button>
       <button type="button" role="tab" id="bt2027v2" aria-selected="false" data-aba="2027v2">2027 V2</button>
     </div>
-    <button id="trava" type="button" class="peq">Editar dados históricos</button>
-    <button id="reset" type="button" class="peq">Voltar aos valores da planilha</button>
+    <button id="trava" type="button" class="bt" aria-pressed="false">
+      <svg class="ic ic-off" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10.5" rx="2.6" fill="currentColor"/><path d="M8.2 10.5V7.8a3.8 3.8 0 0 1 7.6 0v2.7" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>
+      <svg class="ic ic-on" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10.5" rx="2.6" fill="currentColor"/><path d="M8.2 10.5V7.8a3.8 3.8 0 0 1 7.3-1.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      <span id="travaTxt">Editar dados históricos</span>
+    </button>
+    <button id="reset" type="button" class="bt">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.6 13a7.6 7.6 0 1 0 2.3-6.3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M5.4 3.6v4.6H10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Voltar aos valores da planilha</span>
+    </button>
   </div>
-</div>
+</header>
 
 <section id="aba2026" hidden>
 <p class="sub">Como foi a taxa de falha ao longo de 2026, mês a mês.</p>
 <div class="layout">
  <div class="col-vis">
   <div class="cards">
-    <div class="card main"><small>TAXA EM DEZ/2026</small><b id="k26Taxa">–</b><span class="ex" id="k26Ex"></span></div>
-    <div class="card"><small>FALHAS EM 2026</small><b id="k26Falhas">–</b><span class="ex">realizado + previsão (nov e dez)</span></div>
-    <div class="card"><small>TRANSFORMADORES EM DEZ/2026</small><b id="k26Parque">–</b><span class="ex">parque em operação</span></div>
-    <div class="card"><small>FALHAS EM 2025</small><b id="k26Real25">–</b><span class="ex">ano anterior (já aconteceu)</span></div>
+    <div class="card main c-g"><small><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 17l5-6 4 3.5 7.5-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Taxa em dez/2026</small><b id="k26Taxa">–</b><span class="ex" id="k26Ex"></span><span class="pill" id="k26Meta"></span></div>
+    <div class="card c-o"><small><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2.5L4.5 14h6.5l-1 7.5 9-11.5h-6.5z" fill="currentColor"/></svg>Falhas em 2026</small><b id="k26Falhas">–</b><span class="ex">realizado + previsão (nov e dez)</span></div>
+    <div class="card c-b"><small><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l8.5 4.5-8.5 4.5L3.5 8z" fill="currentColor"/><path d="M3.5 12.5l8.5 4.5 8.5-4.5M3.5 16.5l8.5 4.5 8.5-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Transformadores em dez/2026</small><b id="k26Parque">–</b><span class="ex">parque em operação</span></div>
+    <div class="card c-n"><small><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Falhas em 2025</small><b id="k26Real25">–</b><span class="ex">ano anterior (já aconteceu)</span></div>
   </div>
   <div class="chartwrap">
-    <div class="chart"><svg id="chart26" viewBox="0 0 720 300" role="img" aria-label="Taxa de falha móvel por mês em 2026"></svg></div>
-    <p class="leg2"><i></i>calculada pela fórmula &nbsp; <i class="t"></i>meta &nbsp; <span style="opacity:.8">valores em %</span></p>
+    <div class="chart">
+      <svg id="chart26" viewBox="0 0 720 300" role="img" aria-label="Taxa de falha móvel por mês em 2026"></svg>
+      <p class="leg2"><span><i></i>calculada pela fórmula</span><span><i class="t"></i>meta</span><span>valores em %</span></p>
+    </div>
   </div>
  </div>
  <div class="col-plan">
@@ -178,10 +307,10 @@ button.peq{padding:9px 12px;font-size:13px}
 <div class="layout">
  <div class="col-vis">
   <div class="cards">
-    <div class="card main"><small>TAXA EM DEZ/2027</small><b id="kTaxa">–</b><span class="ex" id="kEx"></span></div>
-    <div class="card"><small>FALHAS PREVISTAS EM 2027</small><b id="kFalhas">–</b><span class="ex">previsão (forecast)</span></div>
-    <div class="card"><small>TRANSFORMADORES EM DEZ/2027</small><b id="kParque">–</b><span class="ex">parque em operação</span></div>
-    <div class="card"><small>FALHAS EM 2026</small><b id="kReal">–</b><span class="ex">já aconteceram (nov e dez: previsão)</span></div>
+    <div class="card main c-g"><small><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 17l5-6 4 3.5 7.5-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Taxa em dez/2027</small><b id="kTaxa">–</b><span class="ex" id="kEx"></span></div>
+    <div class="card c-o"><small><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2.5L4.5 14h6.5l-1 7.5 9-11.5h-6.5z" fill="currentColor"/></svg>Falhas previstas em 2027</small><b id="kFalhas">–</b><span class="ex">previsão (forecast)</span></div>
+    <div class="card c-b"><small><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l8.5 4.5-8.5 4.5L3.5 8z" fill="currentColor"/><path d="M3.5 12.5l8.5 4.5 8.5-4.5M3.5 16.5l8.5 4.5 8.5-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Transformadores em dez/2027</small><b id="kParque">–</b><span class="ex">parque em operação</span></div>
+    <div class="card c-n"><small><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Falhas em 2026</small><b id="kReal">–</b><span class="ex">já aconteceram (nov e dez: previsão)</span></div>
   </div>
   <div class="chartwrap">
     <div class="chart"><svg id="chart" viewBox="0 0 720 300" role="img" aria-label="Taxa de falha móvel por mês em 2027"></svg></div>
@@ -190,11 +319,19 @@ button.peq{padding:9px 12px;font-size:13px}
   <div class="box ctrl">
     <div>
       <label for="adjFc">E se houver mais ou menos falhas em 2027 do que o previsto?</label>
-      <div class="line"><input type="range" id="adjFc" min="-50" max="50" step="1" value="0"><output id="adjFcOut">0%</output></div>
+      <div class="line">
+        <div class="slw"><input type="range" class="sl" id="adjFc" min="-50" max="50" step="1" value="0"><div class="escala" aria-hidden="true"><span>−50%</span><span>0</span><span>+50%</span></div></div>
+        <output id="adjFcOut">0%</output>
+        <button type="button" class="zera" data-zera="f" aria-label="Zerar o ajuste de falhas" title="Zerar"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.6 13a7.6 7.6 0 1 0 2.3-6.3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M5.4 3.6v4.6H10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
     </div>
     <div>
       <label for="adjInst">E se forem instalados mais ou menos transformadores novos?</label>
-      <div class="line"><input type="range" id="adjInst" min="-50" max="50" step="1" value="0"><output id="adjInstOut">0%</output></div>
+      <div class="line">
+        <div class="slw"><input type="range" class="sl" id="adjInst" min="-50" max="50" step="1" value="0"><div class="escala" aria-hidden="true"><span>−50%</span><span>0</span><span>+50%</span></div></div>
+        <output id="adjInstOut">0%</output>
+        <button type="button" class="zera" data-zera="i" aria-label="Zerar o ajuste de instalações" title="Zerar"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.6 13a7.6 7.6 0 1 0 2.3-6.3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M5.4 3.6v4.6H10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
     </div>
   </div>
  </div>
@@ -220,6 +357,14 @@ button.peq{padding:9px 12px;font-size:13px}
 </div>
 </section>
 </main>
+
+<div class="alerta" id="alerta" hidden>
+  <div class="cx" role="alertdialog" aria-modal="true" aria-labelledby="alTit" aria-describedby="alTxt">
+    <h3 id="alTit">Voltar aos valores da planilha?</h3>
+    <p id="alTxt">Os números que você alterou e as barras de ajuste voltam ao original.</p>
+    <div class="bts"><button type="button" id="alNao">Cancelar</button><button type="button" id="alSim" class="destr">Voltar</button></div>
+  </div>
+</div>
 
 <script id="logica">
 /* Lógica pura (testada em tests/simulador-falha-trafos.test.js). 12 posições, JAN..DEZ. */
@@ -302,6 +447,10 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
     CAMPOS.forEach(function(k){ dados[k].forEach(function(v, i){ if (v !== PADRAO[k][i]) ed[k + ':' + i] = v; }); });
     return { ed: ed, adjFc: AJ[''].f, adjInst: AJ[''].i, adjFc2: AJ._v2.f, adjInst2: AJ._v2.i };
   }
+  function temAlteracao(){
+    var st = estadoAtual();
+    return Object.keys(st.ed).length > 0 || !!(st.adjFc || st.adjInst || st.adjFc2 || st.adjInst2);
+  }
   function carregar(){
     try { aplicarEstado(JSON.parse(localStorage.getItem(CHAVE) || 'null')); } catch (e) {}
     try { var a = localStorage.getItem(CHAVE_ABA); if (ABAS.indexOf(a) >= 0) aba = a; } catch (e) {}
@@ -360,60 +509,127 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
       linhaCalc('DIFERENÇA PARA A META', 'dif', 'd26') + '</tbody>';
   }
 
-  /* series: [{v:[...], cor, tracejado}] ; a primeira é a principal */
+  /* eixo com valores redondos (passos de 0,01 / 0,02 / 0,05 / 0,1 ... ponto percentual) */
+  function escala(min, max){
+    var lo = min * 100, hi = max * 100, bruto = (hi - lo) / 5;
+    var mag = Math.pow(10, Math.floor(Math.log(bruto) / Math.LN10)), n = bruto / mag;
+    var passo = Math.max(0.01, (n <= 1.000001 ? 1 : n <= 2.000001 ? 2 : n <= 5.000001 ? 5 : 10) * mag);
+    var a = Math.floor(lo / passo + 1e-9), b = Math.ceil(hi / passo - 1e-9), ticks = [];
+    for (var k = a; k <= b; k++) ticks.push(Math.round(k * passo * 1e6) / 1e8);
+    return ticks;
+  }
+
+  /* series: [{v:[...], tracejado}] ; a primeira é a principal (verde), a tracejada é a meta (laranja) */
   function desenhar(el, series){
     var W = Math.max(300, Math.round(el.getBoundingClientRect().width || 720)), estreito = W < 520;
     var ladoALado = window.matchMedia && matchMedia('(min-width:1280px)').matches;
     /* o gráfico é a prioridade: usa a altura da tela quando está ao lado da planilha */
     var H = ladoALado ? Math.max(260, Math.min(520, window.innerHeight - 500)) : (estreito ? 240 : 330);
-    var fs = Math.max(11, Math.min(15, W / 40));
-    var L = Math.round(fs * 4.8), R = 14, T = Math.round(fs * 2.3), B = Math.round(fs * 3), ins = estreito ? 12 : 22;
+    var fs = Math.max(11, Math.min(15, W / 40)), fa = estreito ? 10 : Math.max(11, fs * 0.85);
+    var L = estreito ? 6 : 10, R = Math.round(fa * 3.6) + 8, T = Math.round(fs * 2.3), B = Math.round(fs * 2.4), ins = estreito ? 14 : 22;
     var espac = (W - L - R - 2 * ins) / 11, fsv = estreito ? fs : Math.max(10.5, Math.min(fs, espac * 0.29)); /* rótulo dos pontos acompanha o espaço entre eles */
     var raio = Math.max(3.5, Math.min(5.5, W / 130)), traco = Math.max(2.5, Math.min(3.5, W / 200));
     el.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
     var todos = [].concat.apply([], series.map(function(z){ return z.v; }));
-    var min = Math.min.apply(null, todos), max = Math.max.apply(null, todos);
-    var pad = Math.max((max - min) * 0.35, 0.0005); min -= pad; max += pad;
+    if (!todos.every(isFinite)){
+      el._geo = null;
+      el.innerHTML = '<text class="c-aviso" x="' + W / 2 + '" y="' + H / 2 + '" text-anchor="middle" font-size="' + fs + '">Confira os números: há um parque igual a zero.</text>';
+      return;
+    }
+    var dmin = Math.min.apply(null, todos), dmax = Math.max.apply(null, todos);
+    var pad = Math.max((dmax - dmin) * 0.35, 0.0005);
+    var ticks = escala(dmin >= 0 ? Math.max(0, dmin - pad) : dmin - pad, dmax + pad);
+    var min = ticks[0], max = ticks[ticks.length - 1];
     var x = function(i){ return L + ins + (W - L - R - 2 * ins) * i / 11; };
     var y = function(v){ return T + (H - T - B) * (1 - (v - min) / (max - min)); };
     var princ = series[0].v;
     var iMin = princ.indexOf(Math.min.apply(null, princ)), iMax = princ.indexOf(Math.max.apply(null, princ));
-    var s = '';
-    for (var g = 0; g <= 4; g++){
-      var v = min + (max - min) * g / 4, yy = y(v);
-      s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '" stroke="#2b2e35"/>' +
-           '<text x="' + (L - 8) + '" y="' + (yy + fs * 0.36) + '" text-anchor="end" fill="#a6acb8" font-size="' + fs + '">' + fmtP(v) + '</text>';
-    }
+    var gid = el.id + '-grad';
+    var s = '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="c-gs1"/><stop offset="1" class="c-gs2"/></linearGradient></defs>';
+    ticks.forEach(function(v){
+      var yy = y(v);
+      s += '<line class="c-grid" x1="' + L + '" x2="' + (W - R + 2) + '" y1="' + yy.toFixed(1) + '" y2="' + yy.toFixed(1) + '"/>' +
+           '<text class="c-axis" x="' + (W - R + 8) + '" y="' + (yy + fa * 0.36).toFixed(1) + '" font-size="' + fa + '">' + fmtP(v) + '</text>';
+    });
+    /* área suave sob a linha principal */
+    var base = (H - B).toFixed(1);
+    s += '<path fill="url(#' + gid + ')" d="M' + x(0).toFixed(1) + ',' + base + ' L' + princ.map(function(t, i){ return x(i).toFixed(1) + ',' + y(t).toFixed(1); }).join(' L') + ' L' + x(11).toFixed(1) + ',' + base + ' Z"/>';
     for (var si = series.length - 1; si >= 0; si--){
       var z = series[si];
-      s += '<polyline points="' + z.v.map(function(t, i){ return x(i).toFixed(1) + ',' + y(t).toFixed(1); }).join(' ') + '" fill="none" stroke="' + z.cor + '" stroke-width="' + (z.tracejado ? traco - 0.5 : traco) + '"' + (z.tracejado ? ' stroke-dasharray="6 5"' : '') + ' stroke-linejoin="round"/>';
+      s += '<polyline class="' + (z.tracejado ? 'c-mline' : 'c-line') + '" points="' + z.v.map(function(t, i){ return x(i).toFixed(1) + ',' + y(t).toFixed(1); }).join(' ') + '" stroke-width="' + (z.tracejado ? traco - 0.5 : traco) + '"/>';
     }
     /* pontos sobre a linha tracejada (meta) */
     series.forEach(function(z){
       if (!z.tracejado) return;
       z.v.forEach(function(t, i){
-        s += '<circle class="pt-meta" cx="' + x(i).toFixed(1) + '" cy="' + y(t).toFixed(1) + '" r="' + (raio * 0.9).toFixed(1) + '" fill="' + z.cor + '" stroke="#202228" stroke-width="1.5"/>';
+        s += '<circle class="c-mpt pt-meta" cx="' + x(i).toFixed(1) + '" cy="' + y(t).toFixed(1) + '" r="' + (raio * 0.9).toFixed(1) + '"/>';
       });
     });
     var metaS = series.filter(function(z){ return z.tracejado; })[0];
     /* gráfico estreito com meta: todos os valores, sem o "%" (o eixo já mostra) e com fonte ajustada ao espaço */
     var compacto = estreito && !!metaS;
     var fsr = compacto ? Math.max(9, Math.min(fsv, espac / 2.5)) : fsv;
-    var rot = function(v){ return compacto ? fmtP(v).replace('%', '') : fmtP(v); };
-    var estiloRot = ' stroke="#202228" stroke-width="3.5" stroke-linejoin="round" paint-order="stroke" font-size="' + fsr + '" font-weight="700"';
+    var rotulo = function(v){ return compacto ? fmtP(v).replace('%', '') : fmtP(v); };
     princ.forEach(function(t, i){
-      var rotulo = !estreito || compacto || i === 0 || i === 11 || i === iMin || i === iMax;
+      var mostra = !estreito || compacto || i === 0 || i === 11 || i === iMin || i === iMax;
       var m = metaS ? metaS.v[i] : null;
       /* com meta: o valor da taxa fica do lado oposto ao da meta, para um não cobrir o outro */
       var metaAcima = m !== null && m > t;
       var abaixo = metaS ? metaAcima : ((i === iMin || i === 0) && estreito);
       var yAbaixo = fsr * 1.7, yAcima = -fsr * 0.85;
-      s += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(t).toFixed(1) + '" r="' + raio + '" fill="' + series[0].cor + '"/>' +
-           (rotulo ? '<text x="' + x(i).toFixed(1) + '" y="' + (y(t) + (abaixo ? yAbaixo : yAcima)).toFixed(1) + '" text-anchor="middle" fill="#f7f8fb"' + estiloRot + '>' + rot(t) + '</text>' : '') +
-           (rotulo && metaS ? '<text class="rot-meta" x="' + x(i).toFixed(1) + '" y="' + (y(m) + (metaAcima ? yAcima : yAbaixo)).toFixed(1) + '" text-anchor="middle" fill="' + metaS.cor + '"' + estiloRot + '>' + rot(m) + '</text>' : '') +
-           '<text x="' + x(i).toFixed(1) + '" y="' + (H - fs * 0.8).toFixed(1) + '" text-anchor="middle" fill="#a6acb8" font-size="' + (estreito ? 9 : Math.max(11, fs * 0.92)) + '">' + MESES[i] + '</text>';
+      s += '<circle class="c-pt" cx="' + x(i).toFixed(1) + '" cy="' + y(t).toFixed(1) + '" r="' + raio + '"/>' +
+           (mostra ? '<text class="c-lbl c-val" x="' + x(i).toFixed(1) + '" y="' + (y(t) + (abaixo ? yAbaixo : yAcima)).toFixed(1) + '" text-anchor="middle" font-size="' + fsr + '">' + rotulo(t) + '</text>' : '') +
+           (mostra && metaS ? '<text class="c-lbl c-mlbl rot-meta" x="' + x(i).toFixed(1) + '" y="' + (y(m) + (metaAcima ? yAcima : yAbaixo)).toFixed(1) + '" text-anchor="middle" font-size="' + fsr + '">' + rotulo(m) + '</text>' : '') +
+           '<text class="c-axis" x="' + x(i).toFixed(1) + '" y="' + (H - fs * 0.8).toFixed(1) + '" text-anchor="middle" font-size="' + (estreito ? 9 : Math.max(11, fs * 0.85)) + '">' + MESES[i] + '</text>';
     });
+    s += '<g class="c-scrub"></g>';
     el.innerHTML = s;
+    el._geo = { W: W, H: H, T: T, B: B, fs: fs, raio: raio, x0: L + ins, esp: espac, x: x, y: y, series: series };
+    if (el._iScrub != null) mostrarScrub(el, el._iScrub);
+  }
+
+  /* toque/arraste (ou mouse) sobre o gráfico: linha vertical com o valor do mês */
+  function mostrarScrub(el, i){
+    var g = el._geo, lay = el.querySelector('.c-scrub');
+    el._iScrub = i;
+    if (!g || !lay) return;
+    if (i == null){ el.classList.remove('scrubbing'); lay.innerHTML = ''; return; }
+    el.classList.add('scrubbing');
+    var X = g.x(i), h = Math.round(g.fs * 1.9), fz = Math.round(g.fs * 0.95 * 10) / 10;
+    var s = '<line class="c-rule" x1="' + X.toFixed(1) + '" x2="' + X.toFixed(1) + '" y1="' + (h + 4) + '" y2="' + (g.H - g.B) + '"/>';
+    g.series.slice().reverse().forEach(function(z){
+      s += '<circle class="' + (z.tracejado ? 'c-mpt' : 'c-pt') + '" cx="' + X.toFixed(1) + '" cy="' + g.y(z.v[i]).toFixed(1) + '" r="' + (g.raio * 1.45).toFixed(1) + '"/>';
+    });
+    var meta = g.series[1];
+    s += '<g class="c-tip"><rect rx="8" ry="8" y="2" height="' + h + '"/><text y="' + (2 + h / 2 + fz * 0.36).toFixed(1) + '" font-size="' + fz + '">' +
+         '<tspan class="c-tm">' + MESES[i] + '</tspan><tspan class="c-tv" dx="7">' + fmtP(g.series[0].v[i]) + '</tspan>' +
+         (meta ? '<tspan class="c-tmeta" dx="7">meta ' + fmtP(meta.v[i]) + '</tspan>' : '') + '</text></g>';
+    lay.innerHTML = s;
+    var tx = lay.querySelector('.c-tip text'), rc = lay.querySelector('.c-tip rect'), w = 120;
+    try { w = tx.getBBox().width + 18; } catch (e) {}
+    var esq = Math.max(2, Math.min(g.W - w - 2, X - w / 2));
+    rc.setAttribute('x', esq.toFixed(1)); rc.setAttribute('width', w.toFixed(1));
+    tx.setAttribute('x', (esq + 9).toFixed(1));
+  }
+  function ligarScrub(el){
+    var toque = false;
+    function indice(e){
+      var g = el._geo, r = el.getBoundingClientRect();
+      if (!g || !r.width) return null;
+      var px = (e.clientX - r.left) * g.W / r.width;
+      return Math.max(0, Math.min(11, Math.round((px - g.x0) / g.esp)));
+    }
+    el.addEventListener('pointerdown', function(e){ if (e.pointerType !== 'mouse'){ toque = true; mostrarScrub(el, indice(e)); } });
+    el.addEventListener('pointermove', function(e){ if (e.pointerType === 'mouse' || toque) mostrarScrub(el, indice(e)); });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function(t){
+      el.addEventListener(t, function(e){ if (t === 'pointerleave' || e.pointerType !== 'mouse'){ toque = false; mostrarScrub(el, null); } });
+    });
+  }
+
+  /* barra de ajuste: preenche em azul do centro (0%) até o valor */
+  function pintarSlider(el){
+    var p = (+el.value + 50) / 100;
+    el.style.setProperty('--pa', Math.min(p, 0.5)); el.style.setProperty('--pb', Math.max(p, 0.5));
   }
 
   function atualizarCen(c){
@@ -438,7 +654,11 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
     $('adjFcOut' + sf).textContent = (aj.f > 0 ? '+' : '') + aj.f + '%';
     $('adjInstOut' + sf).textContent = (aj.i > 0 ? '+' : '') + aj.i + '%';
     $('adjFc' + sf).value = aj.f; $('adjInst' + sf).value = aj.i;
-    if (aba === c.ab) desenhar($('chart' + sf), [{ v: r.taxa, cor: '#78d88b' }]);
+    pintarSlider($('adjFc' + sf)); pintarSlider($('adjInst' + sf));
+    var sec = $('aba' + c.ab);
+    sec.querySelector('.zera[data-zera="f"]').classList.toggle('vis', !!aj.f);
+    sec.querySelector('.zera[data-zera="i"]').classList.toggle('vis', !!aj.i);
+    if (aba === c.ab) desenhar($('chart' + sf), [{ v: r.taxa }]);
   }
   function atualizar(){
     var a = calcular2026(dados);
@@ -448,7 +668,9 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
       $('x26' + i).textContent = fmtP(a.taxa[i]);
       $('m26' + i).textContent = TAXA26_META[i].toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + '%';
       if (i === 11) $('m26T').textContent = $('m26' + i).textContent; /* total da meta = meta de dezembro */
-      $('d26' + i).textContent = fmtPP(dif[i]);
+      var td = $('d26' + i);
+      td.textContent = fmtPP(dif[i]);
+      td.className = dif[i] > 0 ? 'pos' : dif[i] < 0 ? 'neg' : ''; /* acima da meta = vermelho; abaixo = verde */
     }
     document.querySelectorAll('td[data-tot]').forEach(function(td){
       var k = td.dataset.tot; td.textContent = fmtN(k === 'parque' ? dados.parque[11] : soma(dados[k], 0, 11));
@@ -458,24 +680,38 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
     });
     $('x26T').textContent = fmtP(a.taxaAno);
     $('k26Taxa').textContent = fmtP(a.taxaAno); $('k26Ex').textContent = exemplo(a.taxaAno);
+    var dDez = dif[11], metaDez = $('m2611').textContent, absDez = Math.abs(dDez).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    $('k26Meta').textContent = dDez > 0 ? absDez + ' p.p. acima da meta de ' + metaDez : dDez < 0 ? absDez + ' p.p. abaixo da meta de ' + metaDez : 'Na meta de ' + metaDez;
+    $('k26Meta').className = 'pill ' + (dDez > 0 ? 'ruim' : 'bom');
     $('k26Falhas').textContent = fmtN(a.tot26);
     $('k26Parque').textContent = fmtN(a.parqueFim);
     $('k26Real25').textContent = fmtN(a.tot25);
     $('fx26').innerHTML = 'Em dezembro, com os números atuais: <b>(' + fmtN(a.tot26 - dados.real[11]) + ' + ' + fmtN(dados.real[11]) + ') ÷ ' + fmtN(a.parqueFim) + ' × 100 = ' + fmtP(a.taxaAno) + '</b>';
     CEN.forEach(atualizarCen);
-    if (aba === '2026') desenhar($('chart26'), [{ v: a.taxa, cor: '#78d88b' }, { v: TAXA26_META.map(function(t){ return t / 100; }), cor: '#ffb74d', tracejado: true }]);
+    if (aba === '2026') desenhar($('chart26'), [{ v: a.taxa }, { v: TAXA26_META.map(function(t){ return t / 100; }), tracejado: true }]);
   }
 
   function mostrarAba(nova){
     aba = nova;
-    ABAS.forEach(function(x){ $('aba' + x).hidden = aba !== x; $('bt' + x).setAttribute('aria-selected', aba === x); });
+    ABAS.forEach(function(x, i){
+      var b = $('bt' + x);
+      $('aba' + x).hidden = aba !== x; b.setAttribute('aria-selected', aba === x); b.tabIndex = aba === x ? 0 : -1;
+      if (aba === x) document.querySelector('.tabs').setAttribute('data-i', i);
+    });
+    ['chart26', 'chart', 'chart_v2'].forEach(function(id){ var el = $(id); el._iScrub = null; el.classList.remove('scrubbing'); });
     try { localStorage.setItem(CHAVE_ABA, aba); } catch (e) {}
     atualizar();
   }
   function destravar(sim){
     document.body.classList.toggle('destrav', sim);
     document.querySelectorAll('td input.fx').forEach(function(el){ el.readOnly = !sim; });
-    $('trava').textContent = sim ? 'Travar dados históricos' : 'Editar dados históricos';
+    $('travaTxt').textContent = sim ? 'Travar dados históricos' : 'Editar dados históricos';
+    $('trava').classList.toggle('on', sim); $('trava').setAttribute('aria-pressed', sim);
+  }
+  function restaurar(){
+    dados = clone(PADRAO); AJ = ajZero(); salvar(); destravar(false);
+    document.querySelectorAll('td input').forEach(function(el){ el.classList.remove('erro'); });
+    atualizar();
   }
 
   function ler(txt){ var t = String(txt).replace(/\./g, '').replace(',', '.').trim(); if (t === '') return null; var n = Number(t); return isFinite(n) && n >= 0 ? n : null; }
@@ -484,26 +720,47 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
   function aoDigitar(e){
     var el = e.target; if (!el.dataset || !el.dataset.k || el.readOnly) return;
     var n = ler(el.value);
-    el.style.borderColor = n === null ? '#ff7f91' : '';
+    el.classList.toggle('erro', n === null);
     if (n === null) return;
     dados[el.dataset.k][+el.dataset.i] = n; salvar(); atualizar();
   }
   function aoSair(e){
-    var el = e.target; if (el.dataset && el.dataset.k){ el.value = fmtN(dados[el.dataset.k][+el.dataset.i]); el.style.borderColor = ''; }
+    var el = e.target; if (el.dataset && el.dataset.k){ el.value = fmtN(dados[el.dataset.k][+el.dataset.i]); el.classList.remove('erro'); }
   }
   ['tab', 'tab_v2', 'tab26'].forEach(function(id){ $(id).addEventListener('input', aoDigitar); $(id).addEventListener('focusout', aoSair); });
   CEN.forEach(function(c){
     $('adjFc' + c.s).addEventListener('input', function(){ AJ[c.s].f = +this.value; salvar(); atualizar(); });
     $('adjInst' + c.s).addEventListener('input', function(){ AJ[c.s].i = +this.value; salvar(); atualizar(); });
+    $('aba' + c.ab).querySelectorAll('.zera').forEach(function(b){
+      b.addEventListener('click', function(){ AJ[c.s][b.dataset.zera] = 0; salvar(); atualizar(); });
+    });
   });
   document.querySelectorAll('.tabs button').forEach(function(b){ b.addEventListener('click', function(){ mostrarAba(b.dataset.aba); }); });
-  $('trava').addEventListener('click', function(){ destravar(!document.body.classList.contains('destrav')); });
-  $('reset').addEventListener('click', function(){
-    dados = clone(PADRAO); AJ = ajZero(); salvar(); destravar(false);
-    document.querySelectorAll('td input').forEach(function(el){ el.style.borderColor = ''; });
-    atualizar();
+  document.querySelector('.tabs').addEventListener('keydown', function(e){
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault();
+    var n = ABAS[(ABAS.indexOf(aba) + (e.key === 'ArrowRight' ? 1 : 2)) % 3];
+    mostrarAba(n); $('bt' + n).focus();
   });
+  $('trava').addEventListener('click', function(){ destravar(!document.body.classList.contains('destrav')); });
+
+  /* "Voltar aos valores da planilha": pede confirmação só se houver algo alterado */
+  var alerta = $('alerta'), focoAntes = null;
+  function fecharAlerta(){ alerta.hidden = true; if (focoAntes && focoAntes.focus) focoAntes.focus(); }
+  $('reset').addEventListener('click', function(){
+    if (!temAlteracao()){ restaurar(); return; }
+    focoAntes = document.activeElement; alerta.hidden = false; $('alNao').focus();
+  });
+  $('alNao').addEventListener('click', fecharAlerta);
+  $('alSim').addEventListener('click', function(){ fecharAlerta(); restaurar(); });
+  document.addEventListener('keydown', function(e){
+    if (alerta.hidden) return;
+    if (e.key === 'Escape'){ e.preventDefault(); fecharAlerta(); }
+    else if (e.key === 'Tab'){ e.preventDefault(); (document.activeElement === $('alNao') ? $('alSim') : $('alNao')).focus(); }
+  });
+
   window.addEventListener('hashchange', function(){ if (ABAS.indexOf(location.hash.slice(1)) >= 0) mostrarAba(location.hash.slice(1)); });
+  ['chart26', 'chart', 'chart_v2'].forEach(function(id){ ligarScrub($(id)); });
   mostrarAba(aba);
   var larg = 0; window.addEventListener('resize', function(){ var w = $(aba === '2026' ? 'chart26' : aba === '2027' ? 'chart' : 'chart_v2').getBoundingClientRect().width; if (Math.abs(w - larg) > 2){ larg = w; atualizar(); } });
 })();
