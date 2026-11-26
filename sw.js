@@ -1,4 +1,4 @@
-const CACHE = 'agenda-lagares-v301-simulador-aba-2026';
+const CACHE = 'agenda-lagares-v302-simulador-visual-didatico';
 const EDIT_SCRIPT = '<script src="./edit-enhancement.js?v=4" defer><\/script>';
 const TREINO_SCRIPT = '<script src="./treino.js?v=15" defer><\/script>';
 const PAINEL_SCRIPT = '<script src="./painel.js?v=2" defer><\/script>';
