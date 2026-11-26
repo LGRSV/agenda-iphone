@@ -86,9 +86,9 @@ button.peq{padding:9px 12px;font-size:13px}
 .chartwrap{position:sticky;top:0;z-index:20;background:#17181c;padding:8px 0 6px;box-shadow:0 8px 10px -8px rgba(0,0,0,.7)}
 .col-plan h2:first-child{margin-top:18px}
 /* computador: planilha à esquerda, cartões + gráfico + cenários à direita, tudo na mesma tela */
-@media (min-width:1200px){
-  main{max-width:1640px}
-  .layout{display:grid;grid-template-columns:minmax(0,1fr) clamp(380px,30vw,520px);gap:20px;align-items:start}
+@media (min-width:1280px){
+  main{max-width:1760px}
+  .layout{display:grid;grid-template-columns:minmax(790px,1fr) minmax(380px,1.15fr);gap:20px;align-items:start}
   .col-plan{grid-column:1;grid-row:1;min-width:0}
   .col-vis{display:block;grid-column:2;grid-row:1;min-width:0}
   .col-plan h2:first-child{margin-top:0}
@@ -103,12 +103,12 @@ button.peq{padding:9px 12px;font-size:13px}
   .ajuda{margin-bottom:12px}
 }
 /* mouse (não toque): planilha compacta para caber ao lado do gráfico */
-@media (min-width:1200px) and (pointer:fine){
+@media (min-width:1280px) and (pointer:fine){
   table{min-width:0}
   th,td{padding:7px 1px;font-size:12.5px}
-  th:first-child,td:first-child{min-width:128px;max-width:128px;padding-left:10px;padding-right:6px}
+  th:first-child,td:first-child{min-width:118px;max-width:118px;padding-left:10px;padding-right:5px}
   .rs{font-size:10px}
-  td input{width:53px;font-size:13px;padding:6px 3px}
+  td input{width:49px;font-size:12.5px;padding:6px 2px}
   td.tot{padding-right:8px}
   tr.taxa td{font-size:13px}
   tr.grp td{padding:0}
@@ -323,8 +323,14 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
 
   /* series: [{v:[...], cor, tracejado}] ; a primeira é a principal */
   function desenhar(el, series){
-    var W = Math.max(300, Math.round(el.getBoundingClientRect().width || 720)), H = W < 520 ? 220 : 300;
-    var L = 52, R = 14, T = 24, B = 32, estreito = W < 520, ins = estreito ? 12 : 22;
+    var W = Math.max(300, Math.round(el.getBoundingClientRect().width || 720)), estreito = W < 520;
+    var ladoALado = window.matchMedia && matchMedia('(min-width:1280px)').matches;
+    /* o gráfico é a prioridade: usa a altura da tela quando está ao lado da planilha */
+    var H = ladoALado ? Math.max(260, Math.min(520, window.innerHeight - 500)) : (estreito ? 240 : 330);
+    var fs = Math.max(11, Math.min(15, W / 40));
+    var L = Math.round(fs * 4.8), R = 14, T = Math.round(fs * 2.3), B = Math.round(fs * 3), ins = estreito ? 12 : 22;
+    var espac = (W - L - R - 2 * ins) / 11, fsv = estreito ? fs : Math.max(10.5, Math.min(fs, espac * 0.29)); /* rótulo dos pontos acompanha o espaço entre eles */
+    var raio = Math.max(3.5, Math.min(5.5, W / 130)), traco = Math.max(2.5, Math.min(3.5, W / 200));
     el.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
     var todos = [].concat.apply([], series.map(function(z){ return z.v; }));
     var min = Math.min.apply(null, todos), max = Math.max.apply(null, todos);
@@ -337,17 +343,18 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
     for (var g = 0; g <= 4; g++){
       var v = min + (max - min) * g / 4, yy = y(v);
       s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '" stroke="#2b2e35"/>' +
-           '<text x="' + (L - 8) + '" y="' + (yy + 4) + '" text-anchor="end" fill="#a6acb8" font-size="11">' + fmtP(v) + '</text>';
+           '<text x="' + (L - 8) + '" y="' + (yy + fs * 0.36) + '" text-anchor="end" fill="#a6acb8" font-size="' + fs + '">' + fmtP(v) + '</text>';
     }
     for (var si = series.length - 1; si >= 0; si--){
       var z = series[si];
-      s += '<polyline points="' + z.v.map(function(t, i){ return x(i).toFixed(1) + ',' + y(t).toFixed(1); }).join(' ') + '" fill="none" stroke="' + z.cor + '" stroke-width="' + (z.tracejado ? 2 : 2.5) + '"' + (z.tracejado ? ' stroke-dasharray="5 4"' : '') + ' stroke-linejoin="round"/>';
+      s += '<polyline points="' + z.v.map(function(t, i){ return x(i).toFixed(1) + ',' + y(t).toFixed(1); }).join(' ') + '" fill="none" stroke="' + z.cor + '" stroke-width="' + (z.tracejado ? traco - 0.5 : traco) + '"' + (z.tracejado ? ' stroke-dasharray="6 5"' : '') + ' stroke-linejoin="round"/>';
     }
     princ.forEach(function(t, i){
       var rotulo = !estreito || i === 0 || i === 11 || i === iMin || i === iMax;
-      s += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(t).toFixed(1) + '" r="3.5" fill="' + series[0].cor + '"/>' +
-           (rotulo ? '<text x="' + x(i).toFixed(1) + '" y="' + ((i === iMin || i === 0) && estreito ? y(t) + 19 : y(t) - 9).toFixed(1) + '" text-anchor="middle" fill="#f7f8fb" font-size="11" font-weight="700">' + fmtP(t) + '</text>' : '') +
-           '<text x="' + x(i).toFixed(1) + '" y="' + (H - 10) + '" text-anchor="middle" fill="#a6acb8" font-size="' + (estreito ? 9 : 11) + '">' + MESES[i] + '</text>';
+      var abaixo = (i === iMin || i === 0) && estreito;
+      s += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(t).toFixed(1) + '" r="' + raio + '" fill="' + series[0].cor + '"/>' +
+           (rotulo ? '<text x="' + x(i).toFixed(1) + '" y="' + (abaixo ? y(t) + fsv * 1.7 : y(t) - fsv * 0.85).toFixed(1) + '" text-anchor="middle" fill="#f7f8fb" stroke="#202228" stroke-width="3.5" stroke-linejoin="round" paint-order="stroke" font-size="' + fsv + '" font-weight="700">' + fmtP(t) + '</text>' : '') +
+           '<text x="' + x(i).toFixed(1) + '" y="' + (H - fs * 0.8).toFixed(1) + '" text-anchor="middle" fill="#a6acb8" font-size="' + (estreito ? 9 : Math.max(11, fs * 0.92)) + '">' + MESES[i] + '</text>';
     });
     el.innerHTML = s;
   }
@@ -412,7 +419,7 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
 
   carregar(); montar();
   /* no computador a ajuda abre recolhida, para planilha e gráfico caberem juntos na tela */
-  if (window.matchMedia && matchMedia('(min-width:1200px)').matches) document.querySelector('.ajuda').open = false;
+  if (window.matchMedia && matchMedia('(min-width:1280px)').matches) document.querySelector('.ajuda').open = false;
   function aoDigitar(e){
     var el = e.target; if (!el.dataset || !el.dataset.k || el.readOnly) return;
     var n = ler(el.value);
