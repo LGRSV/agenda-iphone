@@ -8,51 +8,74 @@
 <style>
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;background:#17181c}
-body{margin:0;background:#17181c;color:#f7f8fb;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:16px 16px 40px}
+body{margin:0;background:#17181c;color:#f7f8fb;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:16px 16px 40px;line-height:1.4}
 main{max-width:1100px;margin:0 auto}
 h1{font-size:20px;margin:6px 0 4px}
-.sub{color:#a6acb8;font-size:13px;margin:0 0 16px;line-height:1.4}
-h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:22px 0 8px;text-transform:uppercase}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-.card{border:1px solid #3b404a;border-radius:16px;background:#202228;padding:12px 14px}
+.sub{color:#a6acb8;font-size:13px;margin:0 0 16px}
+h2{font-size:11px;letter-spacing:.08em;color:#a6acb8;margin:26px 0 10px;text-transform:uppercase}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.card{border:1px solid #3b404a;border-radius:16px;background:#202228;padding:13px 14px}
 .card small{display:block;color:#a6acb8;font-size:11px;font-weight:700}
 .card b{display:block;font-size:22px;margin-top:4px;font-weight:850}
+.card .ex{display:block;color:#a6acb8;font-size:11px;margin-top:3px}
 .card.main{background:linear-gradient(135deg,#123a5c,#202228)}.card.main b{color:#6ec9ff}
 .box{border:1px solid #3b404a;border-radius:16px;background:#202228;padding:14px 16px}
-.ctrl{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.ctrl{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
 .ctrl label{display:block;font-size:12px;font-weight:700;color:#a6acb8;margin-bottom:6px}
 .ctrl .line{display:flex;align-items:center;gap:10px}
 .ctrl input[type=range]{flex:1;accent-color:#6ec9ff;min-width:0}
 .ctrl output{min-width:58px;text-align:right;font-weight:850;font-variant-numeric:tabular-nums}
+.ajuda{border:1px solid #3b404a;border-radius:16px;background:#1c2530;padding:12px 16px;margin:0 0 18px;font-size:13px;color:#c9cdd6}
+.ajuda summary{cursor:pointer;font-weight:800;color:#6ec9ff;font-size:14px}
+.ajuda ul{margin:10px 0 2px;padding-left:20px}.ajuda li{margin:6px 0}
+.ajuda b{color:#f7f8fb}
+.leg{display:flex;gap:14px;flex-wrap:wrap;color:#a6acb8;font-size:12px;font-weight:700;margin:0 2px 10px}
+.leg span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:14px;height:14px;border-radius:5px;border:1px solid}
+.sw.f{background:#2a2d35;border-color:#4a505c}.sw.e{background:#10253a;border-color:#2f6fa3}.sw.r{background:#123524;border-color:#2f8f57}
 .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #3b404a;border-radius:16px;background:#202228}
-table{border-collapse:collapse;width:100%;min-width:900px;font-variant-numeric:tabular-nums}
-th,td{padding:6px 4px;text-align:right;font-size:13px;border-top:1px solid #2b2e35;white-space:nowrap}
-thead th{border-top:0;color:#a6acb8;font-size:11px;font-weight:800}
-th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:#202228;padding-left:12px;font-weight:800;font-size:11px;color:#c9cdd6;z-index:1}
-td.tot{font-weight:850;color:#f7f8fb}
-tr.calc td{color:#6ec9ff;font-weight:750}
-tr.calc td:first-child{color:#6ec9ff}
-tr.taxa td{color:#78d88b;font-weight:850}
-tr.taxa td:first-child{color:#78d88b}
-td input{width:64px;font:inherit;font-size:16px;color:#f7f8fb;background:#17181c;border:1px solid #3b404a;border-radius:8px;padding:6px 6px;text-align:right}
-td input:focus{outline:2px solid #6ec9ff;border-color:transparent}
+table{border-collapse:collapse;width:100%;min-width:960px;font-variant-numeric:tabular-nums}
+th,td{padding:10px 2px;text-align:right;font-size:13px;white-space:nowrap}
+tbody tr:not(.grp){border-top:1px solid #2b2e35}
+thead th{color:#a6acb8;font-size:11px;font-weight:800;padding:12px 4px}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:#202228;padding-left:12px;padding-right:8px;z-index:1;min-width:150px;max-width:150px;white-space:normal}
+.rt{font-weight:800;font-size:12px;color:#e6e8ee;line-height:1.25}
+.rs{font-weight:500;font-size:10.5px;color:#8b93a1;margin-top:2px;line-height:1.25}
+td.tot{font-weight:850;color:#f7f8fb;padding-right:12px}
+tr.grp td{padding:0;border-top:0;text-align:left;background:#191b20}
+tr.grp td:first-child{max-width:none}
+.gt{display:inline-block;position:sticky;left:0;padding:9px 12px;font-size:10.5px;font-weight:850;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+tr.grp.g-f .gt{color:#a6acb8}tr.grp.g-e .gt{color:#6ec9ff}tr.grp.g-r .gt{color:#78d88b}
+.gt small{font-weight:600;letter-spacing:0;text-transform:none;color:#8b93a1;margin-left:6px;font-size:11px}
+tr.calc td{color:#9bd3ff;font-weight:750}
+tr.calc td:first-child .rt{color:#9bd3ff}
+tr.taxa td{color:#78d88b;font-weight:850;font-size:14px;background:#17301f}
+tr.taxa td:first-child{background:#17301f}tr.taxa td:first-child .rt{color:#78d88b}
+tr.inf td{color:#ffb74d;font-weight:750}tr.inf td:first-child .rt{color:#ffb74d}
+tr.dif td{color:#a6acb8;font-weight:700;font-size:12px}
+td input{width:68px;font:inherit;font-size:16px;border-radius:8px;padding:7px 5px;text-align:right;font-variant-numeric:tabular-nums}
+td input.ed{color:#fff;background:#10253a;border:1px solid #2f6fa3}
+td input.ed:focus{outline:2px solid #6ec9ff;border-color:transparent}
+td input.fx{color:#c9cdd6;background:transparent;border:1px solid transparent;cursor:default}
+body.destrav td input.fx{color:#fff;background:#17181c;border-color:#3b404a;cursor:text}
+body.destrav td input.fx:focus{outline:2px solid #ffb74d;border-color:transparent}
 .chart{border:1px solid #3b404a;border-radius:16px;background:#202228;padding:8px}
 svg{display:block;width:100%;height:auto}
-.btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-button{font:inherit;font-size:14px;font-weight:800;color:#f7f8fb;background:#2a2d35;border:1px solid #3b404a;border-radius:12px;padding:10px 16px;cursor:pointer}
+.leg2{color:#a6acb8;font-size:11px;font-weight:700;margin:8px 4px 0}
+.leg2 i{display:inline-block;width:18px;height:0;border-top:3px solid #78d88b;vertical-align:middle;margin-right:5px}
+.leg2 i.t{border-top:2px dashed #ffb74d}
+.btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+button{font:inherit;font-size:14px;font-weight:800;color:#f7f8fb;background:#2a2d35;border:1px solid #3b404a;border-radius:12px;padding:11px 16px;cursor:pointer}
 button:active{background:#3b404a}
-.note{color:#a6acb8;font-size:12px;line-height:1.5;margin-top:14px}
-.note code{background:#2a2d35;border-radius:6px;padding:1px 5px;font-size:11px}
 .tabs{display:flex;gap:6px;margin:10px 0 16px;padding:4px;border:1px solid #3b404a;border-radius:14px;background:#202228;width:max-content;max-width:100%}
 .tabs button{border:0;background:transparent;color:#a6acb8;padding:9px 22px;border-radius:10px;font-size:15px}
 .tabs button[aria-selected=true]{background:#123a5c;color:#6ec9ff}
-.leg{color:#a6acb8;font-size:11px;font-weight:700;margin:6px 4px 0}
-.leg i{display:inline-block;width:18px;height:0;border-top:3px solid #78d88b;vertical-align:middle;margin-right:5px}
-.leg i.t{border-top:2px dashed #ffb74d}
-tr.inf td{color:#ffb74d;font-weight:750}tr.inf td:first-child{color:#ffb74d}
-tr.dif td{color:#a6acb8;font-weight:700;font-size:12px}
+.note{color:#a6acb8;font-size:12px;line-height:1.55;margin-top:16px}
+.note summary{cursor:pointer;font-weight:800;color:#a6acb8}
+.note p{margin:8px 0 0}
+.note code{background:#2a2d35;border-radius:6px;padding:1px 5px;font-size:11px}
 [hidden]{display:none!important}
-@media (max-width:520px){h1{font-size:18px}.card b{font-size:19px}}
+@media (max-width:520px){h1{font-size:18px}.card b{font-size:19px}th:first-child,td:first-child{min-width:118px;max-width:118px}.rs{font-size:10px}}
 </style>
 </head>
 <body>
@@ -63,70 +86,83 @@ tr.dif td{color:#a6acb8;font-weight:700;font-size:12px}
   <button type="button" role="tab" id="bt2027" aria-selected="true" data-aba="2027">2027</button>
 </div>
 
+<details class="ajuda" open>
+  <summary>Como ler esta tela</summary>
+  <ul>
+    <li><b>Taxa de falha</b> é quantos transformadores falham em 12 meses para cada 100 que estão em operação. Exemplo: 2,4% significa cerca de 2,4 falhas a cada 100 transformadores.</li>
+    <li>A taxa é <b>móvel</b>: em cada mês olhamos os últimos 12 meses (parte já aconteceu, parte é previsão). Por isso ela muda um pouco de mês para mês.</li>
+    <li>Na tabela, as cores dizem o que cada número é: <b>cinza</b> é histórico e não muda, <b>azul</b> é o que você pode alterar para simular, <b>verde</b> é o resultado calculado.</li>
+  </ul>
+</details>
+
 <section id="aba2026" hidden>
-<p class="sub">Taxa móvel de 12 meses em 2026: a cada mês, falhas dos últimos 12 meses (meses seguintes de 2025 + realizado/forecast de 2026 até o mês) ÷ parque do mês.</p>
+<p class="sub">Como foi a taxa de falha ao longo de 2026, mês a mês.</p>
 <div class="cards">
-  <div class="card main"><small>TAXA EM DEZ/2026</small><b id="k26Taxa">–</b></div>
-  <div class="card"><small>FALHAS 2026 (REALIZADO / FORECAST)</small><b id="k26Falhas">–</b></div>
-  <div class="card"><small>PARQUE EM DEZ/2026</small><b id="k26Parque">–</b></div>
-  <div class="card"><small>FALHAS REAIS 2025</small><b id="k26Real25">–</b></div>
+  <div class="card main"><small>TAXA EM DEZ/2026</small><b id="k26Taxa">–</b><span class="ex" id="k26Ex"></span></div>
+  <div class="card"><small>FALHAS EM 2026</small><b id="k26Falhas">–</b><span class="ex">realizado + previsão (nov e dez)</span></div>
+  <div class="card"><small>TRANSFORMADORES EM DEZ/2026</small><b id="k26Parque">–</b><span class="ex">parque em operação</span></div>
+  <div class="card"><small>FALHAS EM 2025</small><b id="k26Real25">–</b><span class="ex">ano anterior (já aconteceu)</span></div>
 </div>
-<h2>Taxa móvel por mês</h2>
+<h2>Taxa de falha dos últimos 12 meses, mês a mês</h2>
 <div class="chart"><svg id="chart26" viewBox="0 0 720 300" role="img" aria-label="Taxa de falha móvel por mês em 2026"></svg></div>
-<p class="leg"><i></i>calculada pela fórmula &nbsp; <i class="t"></i>informada na planilha</p>
-<h2>Planilha</h2>
+<p class="leg2"><i></i>calculada pela fórmula &nbsp; <i class="t"></i>informada na planilha original</p>
+<h2>Os números por trás</h2>
+<p class="leg"><span><i class="sw f"></i>Histórico (não muda)</span><span><i class="sw r"></i>Resultado calculado</span></p>
 <div class="tw"><table id="tab26"></table></div>
-<p class="note">
-Fórmula: <code>Taxa(mês) = (falhas de 2025 dos meses seguintes + realizado/forecast 2026 até o mês) ÷ Parque 2026(mês)</code>. Em dez/2026 a janela é só 2026, então a taxa é <code>total do ano ÷ parque de dezembro</code>.
-A linha "TAXA INFORMADA" é a que veio na planilha; de out a dez ela coincide com a calculada, e de jan a set fica de 0,001 a 0,011 ponto percentual abaixo.
-Nov e dez/2026 ainda são meses em curso (valores de forecast até o fechamento).
-</p>
+<details class="note">
+  <summary>Ver a fórmula</summary>
+  <p><code>Taxa(mês) = (falhas de 2025 dos meses seguintes + falhas de 2026 até o mês) ÷ transformadores em operação no mês</code>. Em dezembro a janela é só 2026, então a taxa é <code>total de falhas do ano ÷ parque de dezembro</code>.</p>
+  <p id="notaInf"></p>
+</details>
 </section>
 
 <section id="aba2027">
-<p class="sub">Taxa móvel de 12 meses com o parque real: a cada mês de 2027, falhas dos últimos 12 meses ÷ parque instalado no fim do mês. Edite qualquer número dos campos da tabela, ou use os ajustes para testar cenários.</p>
-
+<p class="sub">Como deve ficar a taxa de falha em 2027, mês a mês. Mexa nos números azuis ou nas barras de ajuste para testar cenários.</p>
 <div class="cards">
-  <div class="card main"><small>TAXA EM DEZ/2027</small><b id="kTaxa">–</b></div>
-  <div class="card"><small>FALHAS FORECAST 2027</small><b id="kFalhas">–</b></div>
-  <div class="card"><small>PARQUE EM DEZ/2027</small><b id="kParque">–</b></div>
-  <div class="card"><small>FALHAS REAIS 2026</small><b id="kReal">–</b></div>
+  <div class="card main"><small>TAXA EM DEZ/2027</small><b id="kTaxa">–</b><span class="ex" id="kEx"></span></div>
+  <div class="card"><small>FALHAS PREVISTAS EM 2027</small><b id="kFalhas">–</b><span class="ex">previsão (forecast)</span></div>
+  <div class="card"><small>TRANSFORMADORES EM DEZ/2027</small><b id="kParque">–</b><span class="ex">parque em operação</span></div>
+  <div class="card"><small>FALHAS EM 2026</small><b id="kReal">–</b><span class="ex">já aconteceram (nov e dez: previsão)</span></div>
 </div>
 
-<h2>Ajustes de cenário</h2>
+<h2>Teste um cenário</h2>
 <div class="box ctrl">
   <div>
-    <label for="adjFc">Forecast 2027 (falhas)</label>
+    <label for="adjFc">E se houver mais ou menos falhas em 2027 do que o previsto?</label>
     <div class="line"><input type="range" id="adjFc" min="-50" max="50" step="1" value="0"><output id="adjFcOut">0%</output></div>
   </div>
   <div>
-    <label for="adjInst">Transformadores instalados em 2027 (QTE TR INST)</label>
+    <label for="adjInst">E se forem instalados mais ou menos transformadores novos?</label>
     <div class="line"><input type="range" id="adjInst" min="-50" max="50" step="1" value="0"><output id="adjInstOut">0%</output></div>
   </div>
 </div>
 
-<h2>Taxa móvel por mês</h2>
+<h2>Taxa de falha dos últimos 12 meses, mês a mês</h2>
 <div class="chart"><svg id="chart" viewBox="0 0 720 300" role="img" aria-label="Taxa de falha móvel por mês em 2027"></svg></div>
 
-<h2>Planilha</h2>
+<h2>Os números por trás</h2>
+<p class="leg"><span><i class="sw f"></i>Histórico (não muda)</span><span><i class="sw e"></i>Você pode alterar</span><span><i class="sw r"></i>Resultado calculado</span></p>
 <div class="tw"><table id="tab"></table></div>
 
-<p class="note">
-Fórmulas (iguais às da planilha): <code>Parque 2027(jan) = Parque dez/2026 + instalados(jan)</code>, depois <code>Parque(mês) = Parque(mês anterior) + instalados(mês)</code>.
-<code>Taxa(mês) = (falhas reais de 2026 dos meses seguintes + forecast 2027 até o mês) ÷ Parque 2027(mês)</code>. O total do ano é <code>forecast total ÷ parque de dez/2027</code>.
-Os ajustes de cenário multiplicam o forecast e as instalações (arredondando para número inteiro); com 0% o resultado é o da planilha.
-O real de 2026 e o parque de 2026 são os mesmos da aba 2026: editar numa aba muda na outra.
-</p>
+<details class="note">
+  <summary>Ver a fórmula</summary>
+  <p><code>Transformadores em operação(mês) = parque de dez/2026 + novos instalados até o mês</code>.</p>
+  <p><code>Taxa(mês) = (falhas de 2026 dos meses seguintes + falhas previstas de 2027 até o mês) ÷ transformadores em operação no mês</code>. Em dezembro, a taxa é <code>falhas previstas no ano ÷ parque de dez/2027</code>.</p>
+  <p>As barras de cenário multiplicam as falhas previstas e as instalações (arredondando para número inteiro); com 0% o resultado é o da planilha. O histórico de 2026 é o mesmo da aba 2026.</p>
+</details>
 </section>
 
-<div class="btns"><button id="reset" type="button">Voltar aos valores da planilha</button></div>
+<div class="btns">
+  <button id="trava" type="button">Editar dados históricos</button>
+  <button id="reset" type="button">Voltar aos valores da planilha</button>
+</div>
 </main>
 
 <script id="logica">
 /* Lógica pura (testada em tests/simulador-falha-trafos.test.js). 12 posições, JAN..DEZ. */
 var MESES = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
 var PADRAO = {
-  real25: [317,239,268,219,101,51,56,60,122,176,327,293],
+  real25: [317,239,268,219,101,51,56,60,121,176,327,293],
   real:   [407,301,260,172,69,64,70,75,115,170,298,236],
   fc:     [352,280,291,215,91,63,50,78,136,205,247,248],
   parque: [91377,91549,91814,91976,92099,92267,92411,92550,92768,93074,93263,93452],
@@ -163,7 +199,7 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
 
 <script id="tela">
 (function(){
-  var CHAVE = 'simulador-falha-trafos-v2';
+  var CHAVE = 'simulador-falha-trafos-v3';
   var CHAVE_ABA = 'simulador-falha-trafos-aba';
   var CAMPOS = ['real25','real','fc','parque','inst'];
   var dados = clone(PADRAO), adjFc = 0, adjInst = 0, aba = '2027';
@@ -171,14 +207,18 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
   var fmtN = function(n){ return Math.round(n).toLocaleString('pt-BR'); };
   var fmtP = function(x, c){ c = c || 2; return (x * 100).toLocaleString('pt-BR', { minimumFractionDigits: c, maximumFractionDigits: c }) + '%'; };
   var fmtPP = function(x){ x = Math.round(x * 1000) / 1000; if (x === 0) x = 0; return (x > 0 ? '+' : '') + x.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }); };
+  var exemplo = function(taxa){ return 'cerca de ' + (taxa * 100).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' falhas a cada 100 transformadores'; };
   function clone(o){ return JSON.parse(JSON.stringify(o)); }
 
+  /* Só as células editadas ficam guardadas (campo:mês -> valor). Assim, quando os dados da planilha mudarem,
+     o que a pessoa não mexeu acompanha os novos valores. */
   function carregar(){
     try {
       var s = JSON.parse(localStorage.getItem(CHAVE) || 'null');
       if (s) {
-        CAMPOS.forEach(function(k){
-          if (Array.isArray(s.d && s.d[k]) && s.d[k].length === 12 && s.d[k].every(function(x){ return typeof x === 'number' && isFinite(x); })) dados[k] = s.d[k];
+        Object.keys(s.ed || {}).forEach(function(c){
+          var p = c.split(':'), k = p[0], i = +p[1], v = s.ed[c];
+          if (CAMPOS.indexOf(k) >= 0 && i >= 0 && i < 12 && typeof v === 'number' && isFinite(v) && v >= 0) dados[k][i] = v;
         });
         if (isFinite(s.adjFc)) adjFc = Math.max(-50, Math.min(50, +s.adjFc));
         if (isFinite(s.adjInst)) adjInst = Math.max(-50, Math.min(50, +s.adjInst));
@@ -187,31 +227,51 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
     try { var a = localStorage.getItem(CHAVE_ABA); if (a === '2026' || a === '2027') aba = a; } catch (e) {}
     if (location.hash === '#2026' || location.hash === '#2027') aba = location.hash.slice(1);
   }
-  function salvar(){ try { localStorage.setItem(CHAVE, JSON.stringify({ d: dados, adjFc: adjFc, adjInst: adjInst })); } catch (e) {} }
+  function salvar(){
+    try {
+      var ed = {};
+      CAMPOS.forEach(function(k){ dados[k].forEach(function(v, i){ if (v !== PADRAO[k][i]) ed[k + ':' + i] = v; }); });
+      localStorage.setItem(CHAVE, JSON.stringify({ ed: ed, adjFc: adjFc, adjInst: adjInst }));
+    } catch (e) {}
+  }
 
-  function linhaInput(rotulo, chave){
+  function rot(titulo, sub){ return '<td><div class="rt">' + titulo + '</div>' + (sub ? '<div class="rs">' + sub + '</div>' : '') + '</td>'; }
+  function linhaInput(titulo, sub, chave, tipo){
     var tds = dados[chave].map(function(v, i){
-      return '<td><input type="text" inputmode="numeric" data-k="' + chave + '" data-i="' + i + '" value="' + v + '"></td>';
+      return '<td><input type="text" inputmode="numeric" class="' + tipo + '"' + (tipo === 'fx' ? ' readonly' : '') + ' data-k="' + chave + '" data-i="' + i + '" value="' + fmtN(v) + '" aria-label="' + titulo + ' ' + MESES[i] + '"></td>';
     }).join('');
-    return '<tr><td>' + rotulo + '</td>' + tds + '<td class="tot" data-tot="' + chave + '"></td></tr>';
+    return '<tr>' + rot(titulo, sub) + tds + '<td class="tot" data-tot="' + chave + '"></td></tr>';
   }
-  function linhaCalc(rotulo, cls, id, comTotal){
-    return '<tr class="' + cls + '"><td>' + rotulo + '</td>' + MESES.map(function(_, i){ return '<td id="' + id + i + '"></td>'; }).join('') +
-      '<td class="tot" id="' + id + 'T">' + (comTotal ? '' : '') + '</td></tr>';
+  function linhaCalc(titulo, sub, cls, id, rid){
+    return '<tr class="' + cls + '"' + (rid ? ' id="' + rid + '"' : '') + '>' + rot(titulo, sub) + MESES.map(function(_, i){ return '<td id="' + id + i + '"></td>'; }).join('') + '<td class="tot" id="' + id + 'T"></td></tr>';
   }
-  function cab(){ return '<thead><tr><th>MÊS</th>' + MESES.map(function(m){ return '<th>' + m + '</th>'; }).join('') + '<th>TOTAL</th></tr></thead><tbody>'; }
+  function grupo(cls, titulo, sub){ return '<tr class="grp ' + cls + '"><td colspan="14"><span class="gt">' + titulo + '<small>' + sub + '</small></span></td></tr>'; }
+  function cab(){ return '<thead><tr><th></th>' + MESES.map(function(m){ return '<th>' + m + '</th>'; }).join('') + '<th>TOTAL</th></tr></thead><tbody>'; }
   function montar(){
     $('tab').innerHTML = cab() +
-      linhaInput('REAL 2026', 'real') + linhaInput('FORECAST 2027', 'fc') +
-      linhaCalc('FORECAST AJUSTADO', 'calc', 'fa') + linhaInput('PARQUE 2026', 'parque') +
-      linhaCalc('PARQUE 2027', 'calc', 'p') + linhaCalc('TAXA 2027', 'taxa', 'x') +
-      linhaInput('QTE TR INST', 'inst') + linhaCalc('INSTALADOS AJUSTADO', 'calc', 'ia') + '</tbody>';
+      grupo('g-f', 'Histórico', 'já aconteceu, não muda') +
+      linhaInput('REAL 2026', 'falhas de 2026 (nov e dez: previsão)', 'real', 'fx') +
+      linhaInput('PARQUE 2026', 'transformadores em operação no mês', 'parque', 'fx') +
+      grupo('g-e', 'Você pode alterar', 'teste cenários') +
+      linhaInput('FORECAST 2027', 'falhas previstas em 2027', 'fc', 'ed') +
+      linhaCalc('FORECAST AJUSTADO', 'previsão com o cenário aplicado', 'calc', 'fa', 'rFcAdj') +
+      linhaInput('QTE TR INST', 'transformadores novos instalados no mês', 'inst', 'ed') +
+      linhaCalc('INSTALADOS AJUSTADO', 'instalações com o cenário aplicado', 'calc', 'ia', 'rInstAdj') +
+      grupo('g-r', 'Resultado', 'calculado, não digite aqui') +
+      linhaCalc('PARQUE 2027', 'transformadores em operação no fim do mês', 'calc', 'p') +
+      linhaCalc('TAXA 2027', 'falhas dos últimos 12 meses ÷ parque', 'taxa', 'x') + '</tbody>';
     $('tab26').innerHTML = cab() +
-      linhaInput('REAL 2025', 'real25') + linhaInput('REALIZADO / FORECAST', 'real') + linhaInput('PARQUE 2026', 'parque') +
-      linhaCalc('TAXA 2026', 'taxa', 'x26') + linhaCalc('TAXA INFORMADA', 'inf', 'xi26') + linhaCalc('DIFERENÇA (P.P.)', 'dif', 'd26') + '</tbody>';
+      grupo('g-f', 'Histórico', 'já aconteceu, não muda') +
+      linhaInput('REAL 2025', 'falhas de 2025', 'real25', 'fx') +
+      linhaInput('REALIZADO / FORECAST 2026', 'falhas de 2026 (nov e dez: previsão)', 'real', 'fx') +
+      linhaInput('PARQUE 2026', 'transformadores em operação no mês', 'parque', 'fx') +
+      grupo('g-r', 'Resultado', 'calculado, não digite aqui') +
+      linhaCalc('TAXA 2026', 'calculada pela fórmula', 'taxa', 'x26') +
+      linhaCalc('TAXA INFORMADA', 'veio na planilha original', 'inf', 'xi26') +
+      linhaCalc('DIFERENÇA', 'calculada menos informada (pontos %)', 'dif', 'd26') + '</tbody>';
   }
 
-  /* series: [{v:[...], cor, tracejado, rotulos}] ; a primeira é a principal */
+  /* series: [{v:[...], cor, tracejado}] ; a primeira é a principal */
   function desenhar(el, series){
     var W = Math.max(300, Math.round(el.getBoundingClientRect().width || 720)), H = W < 520 ? 260 : 300;
     var L = 52, R = 14, T = 24, B = 32, estreito = W < 520, ins = estreito ? 12 : 22;
@@ -244,34 +304,38 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
 
   function atualizar(){
     var r = calcular(dados, adjFc, adjInst), a = calcular2026(dados);
+    var dif = a.taxa.map(function(t, i){ return t * 100 - TAXA26_INFORMADA[i]; });
     for (var i = 0; i < 12; i++){
       $('p' + i).textContent = fmtN(r.parque27[i]);
       $('x' + i).textContent = fmtP(r.taxa[i]);
       $('fa' + i).textContent = fmtN(r.fc[i]);
       $('ia' + i).textContent = fmtN(r.inst[i]);
       $('x26' + i).textContent = fmtP(a.taxa[i], 3);
-      $('xi26' + i).textContent = (TAXA26_INFORMADA[i]).toLocaleString('pt-BR', { minimumFractionDigits: 3 }) + '%';
-      $('d26' + i).textContent = fmtPP(a.taxa[i] * 100 - TAXA26_INFORMADA[i]);
+      $('xi26' + i).textContent = TAXA26_INFORMADA[i].toLocaleString('pt-BR', { minimumFractionDigits: 3 }) + '%';
+      $('d26' + i).textContent = fmtPP(dif[i]);
     }
     document.querySelectorAll('td[data-tot]').forEach(function(td){
       var k = td.dataset.tot; td.textContent = fmtN(k === 'parque' ? dados.parque[11] : soma(dados[k], 0, 11));
     });
     document.querySelectorAll('td input').forEach(function(el){
-      if (el !== document.activeElement) el.value = dados[el.dataset.k][+el.dataset.i];
+      if (el !== document.activeElement) el.value = fmtN(dados[el.dataset.k][+el.dataset.i]);
     });
     $('faT').textContent = fmtN(r.totFc);
     $('iaT').textContent = fmtN(r.totInst);
     $('pT').textContent = fmtN(r.parqueFim);
     $('xT').textContent = fmtP(r.taxaAno);
     $('x26T').textContent = fmtP(a.taxaAno, 3);
-    $('kTaxa').textContent = fmtP(r.taxaAno);
+    $('kTaxa').textContent = fmtP(r.taxaAno); $('kEx').textContent = exemplo(r.taxaAno);
     $('kFalhas').textContent = fmtN(r.totFc);
     $('kParque').textContent = fmtN(r.parqueFim);
     $('kReal').textContent = fmtN(r.totReal);
-    $('k26Taxa').textContent = fmtP(a.taxaAno, 3);
+    $('k26Taxa').textContent = fmtP(a.taxaAno, 3); $('k26Ex').textContent = exemplo(a.taxaAno);
     $('k26Falhas').textContent = fmtN(a.tot26);
     $('k26Parque').textContent = fmtN(a.parqueFim);
     $('k26Real25').textContent = fmtN(a.tot25);
+    var maxAbs = Math.max.apply(null, dif.slice(0, 9).map(Math.abs));
+    $('notaInf').textContent = 'A linha "TAXA INFORMADA" é a que veio na planilha original. De out a dez ela coincide com a calculada; de jan a set a diferença é de no máximo ' + maxAbs.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + ' ponto percentual (a informada fica um pouco abaixo).';
+    $('rFcAdj').hidden = !adjFc; $('rInstAdj').hidden = !adjInst;
     $('adjFcOut').textContent = (adjFc > 0 ? '+' : '') + adjFc + '%';
     $('adjInstOut').textContent = (adjInst > 0 ? '+' : '') + adjInst + '%';
     $('adjFc').value = adjFc; $('adjInst').value = adjInst;
@@ -286,26 +350,32 @@ if (typeof module !== 'undefined') module.exports = { calcular: calcular, calcul
     try { localStorage.setItem(CHAVE_ABA, aba); } catch (e) {}
     atualizar();
   }
+  function destravar(sim){
+    document.body.classList.toggle('destrav', sim);
+    document.querySelectorAll('td input.fx').forEach(function(el){ el.readOnly = !sim; });
+    $('trava').textContent = sim ? 'Travar dados históricos' : 'Editar dados históricos';
+  }
 
   function ler(txt){ var t = String(txt).replace(/\./g, '').replace(',', '.').trim(); if (t === '') return null; var n = Number(t); return isFinite(n) && n >= 0 ? n : null; }
 
   carregar(); montar();
   function aoDigitar(e){
-    var el = e.target; if (!el.dataset || !el.dataset.k) return;
+    var el = e.target; if (!el.dataset || !el.dataset.k || el.readOnly) return;
     var n = ler(el.value);
     el.style.borderColor = n === null ? '#ff7f91' : '';
     if (n === null) return;
     dados[el.dataset.k][+el.dataset.i] = n; salvar(); atualizar();
   }
   function aoSair(e){
-    var el = e.target; if (el.dataset && el.dataset.k){ el.value = dados[el.dataset.k][+el.dataset.i]; el.style.borderColor = ''; }
+    var el = e.target; if (el.dataset && el.dataset.k){ el.value = fmtN(dados[el.dataset.k][+el.dataset.i]); el.style.borderColor = ''; }
   }
   ['tab', 'tab26'].forEach(function(id){ $(id).addEventListener('input', aoDigitar); $(id).addEventListener('focusout', aoSair); });
   $('adjFc').addEventListener('input', function(){ adjFc = +this.value; salvar(); atualizar(); });
   $('adjInst').addEventListener('input', function(){ adjInst = +this.value; salvar(); atualizar(); });
   document.querySelectorAll('.tabs button').forEach(function(b){ b.addEventListener('click', function(){ mostrarAba(b.dataset.aba); }); });
+  $('trava').addEventListener('click', function(){ destravar(!document.body.classList.contains('destrav')); });
   $('reset').addEventListener('click', function(){
-    dados = clone(PADRAO); adjFc = adjInst = 0; salvar();
+    dados = clone(PADRAO); adjFc = adjInst = 0; salvar(); destravar(false);
     document.querySelectorAll('td input').forEach(function(el){ el.style.borderColor = ''; });
     atualizar();
   });

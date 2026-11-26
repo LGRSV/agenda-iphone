@@ -39,8 +39,9 @@ assert.ok(zero.taxa.every(t => t === 0)); ok('sem falhas, taxa zero');
 
 // ---- aba 2026
 const c = calcular2026(PADRAO);
-assert.strictEqual(c.tot25, 2229); assert.strictEqual(c.tot26, 2237); assert.strictEqual(c.parqueFim, 93452); ok('2026: totais 2.229 / 2.237 / parque 93.452');
-perto(c.taxa[0] * 100, 2.5380, 5e-4, 'jan'); perto(c.taxa[11] * 100, 2.3938, 5e-4, 'dez'); ok('2026: jan 2,538% e dez 2,394%');
+assert.strictEqual(PADRAO.real25[8], 121); ok('set/2025 = 121');
+assert.strictEqual(c.tot25, 2228); assert.strictEqual(c.tot26, 2237); assert.strictEqual(c.parqueFim, 93452); ok('2026: totais 2.228 / 2.237 / parque 93.452');
+perto(c.taxa[0] * 100, 2.5367, 5e-5, 'jan'); perto(c.taxa[8] * 100, 2.5106, 5e-5, 'set'); perto(c.taxa[11] * 100, 2.3937, 5e-5, 'dez'); ok('2026: jan 2,5367%, set 2,5106% e dez 2,3937% (calculo independente em Python)');
 perto(c.taxaAno, 2237 / 93452, 1e-12, 'taxa ano 2026'); ok('2026: dez = total do ano ÷ parque de dezembro');
 [9, 10, 11].forEach(i => perto(c.taxa[i] * 100, TAXA26_INFORMADA[i], 5e-4, `out-dez ${i}`)); ok('2026: out, nov e dez coincidem com a linha informada (3 casas)');
-c.taxa.forEach((t, i) => { const d = t * 100 - TAXA26_INFORMADA[i]; assert.ok(d >= -5e-4 && d <= 0.012, `mês ${i}: dif ${d}`); }); ok('2026: jan a set ficam 0 a 0,012 p.p. acima da informada');
+c.taxa.forEach((t, i) => { const d = t * 100 - TAXA26_INFORMADA[i]; assert.ok(d >= -5e-4 && d <= 0.012, `mês ${i}: dif ${d}`); }); ok('2026: jan a set ficam 0 a 0,012 p.p. acima da informada (max real 0,0097)');
