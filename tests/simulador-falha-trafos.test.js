@@ -47,3 +47,20 @@ assert.deepStrictEqual(Array.from(TAXA26_META), [2.55,2.53,2.51,2.49,2.48,2.47,2
 const DIF = [-0.0133,0.0697,0.0735,0.0378,0.0097,0.0293,0.0605,0.0730,0.1106,0.1059,0.0897,0.0237]; // calculado à parte em Python
 c.taxa.forEach((t, i) => perto(t * 100 - TAXA26_META[i], DIF[i], 5e-5, `dif meta mês ${i}`)); ok('2026: diferença para a meta mês a mês confere com cálculo independente');
 assert.strictEqual(c.taxa.filter((t, i) => t * 100 > TAXA26_META[i]).length, 11); ok('2026: taxa acima da meta em 11 dos 12 meses (só jan está abaixo)');
+
+// ---- a fórmula descrita ao usuário: (falhas dos 11 meses anteriores + mês atual) ÷ parque × 100
+const soma = (v, de, ate) => v.slice(de, ate + 1).reduce((a, b) => a + b, 0);
+const serie27 = PADRAO.real.concat(PADRAO.fc);           // jan/2026 ... dez/2027 (24 meses)
+const r27 = calcular(PADRAO, 0, 0);
+for (let m = 0; m < 12; m++) {
+  const fim = 12 + m, onze = soma(serie27, fim - 11, fim - 1), atual = serie27[fim];
+  perto((onze + atual) / r27.parque27[m], r27.taxa[m], 1e-12, `2027 mês ${m}`);
+}
+ok('2027: taxa = (falhas dos 11 meses anteriores + mês atual) ÷ parque, nos 12 meses');
+const serie26 = PADRAO.real25.concat(PADRAO.real);       // jan/2025 ... dez/2026
+const r26 = calcular2026(PADRAO);
+for (let m = 0; m < 12; m++) {
+  const fim = 12 + m, onze = soma(serie26, fim - 11, fim - 1), atual = serie26[fim];
+  perto((onze + atual) / PADRAO.parque[m], r26.taxa[m], 1e-12, `2026 mês ${m}`);
+}
+ok('2026: taxa = (falhas dos 11 meses anteriores + mês atual) ÷ parque, nos 12 meses');
